@@ -2,3 +2,4 @@
 node_modules/
 .impeccable/review/
 *.tar.gz
+__pycache__/
