@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T22:12:03.787741+00:00",
+  "title": "Design System: Campus Compass",
+  "extensions": {
+    "colorMeta": {
+      "green": {
+        "role": "primary",
+        "displayName": "Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.0699 164.58)",
+          "oklch(26.43% 0.0699 164.58)",
+          "oklch(37.86% 0.0699 164.58)",
+          "oklch(49.29% 0.0699 164.58)",
+          "oklch(60.71% 0.0699 164.58)",
+          "oklch(72.14% 0.0699 164.58)",
+          "oklch(83.57% 0.0699 164.58)",
+          "oklch(95.00% 0.0699 164.58)"
+        ]
+      },
+      "green-dark": {
+        "role": "primary",
+        "displayName": "Green Dark",
+        "tonalRamp": [
+          "oklch(15.00% 0.0495 168.24)",
+          "oklch(26.43% 0.0495 168.24)",
+          "oklch(37.86% 0.0495 168.24)",
+          "oklch(49.29% 0.0495 168.24)",
+          "oklch(60.71% 0.0495 168.24)",
+          "oklch(72.14% 0.0495 168.24)",
+          "oklch(83.57% 0.0495 168.24)",
+          "oklch(95.00% 0.0495 168.24)"
+        ]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "oklch(15.00% 0.0160 148.41)",
+          "oklch(26.43% 0.0160 148.41)",
+          "oklch(37.86% 0.0160 148.41)",
+          "oklch(49.29% 0.0160 148.41)",
+          "oklch(60.71% 0.0160 148.41)",
+          "oklch(72.14% 0.0160 148.41)",
+          "oklch(83.57% 0.0160 148.41)",
+          "oklch(95.00% 0.0160 148.41)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.0041 121.56)",
+          "oklch(26.43% 0.0041 121.56)",
+          "oklch(37.86% 0.0041 121.56)",
+          "oklch(49.29% 0.0041 121.56)",
+          "oklch(60.71% 0.0041 121.56)",
+          "oklch(72.14% 0.0041 121.56)",
+          "oklch(83.57% 0.0041 121.56)",
+          "oklch(95.00% 0.0041 121.56)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.0287 162.38)",
+          "oklch(26.43% 0.0287 162.38)",
+          "oklch(37.86% 0.0287 162.38)",
+          "oklch(49.29% 0.0287 162.38)",
+          "oklch(60.71% 0.0287 162.38)",
+          "oklch(72.14% 0.0287 162.38)",
+          "oklch(83.57% 0.0287 162.38)",
+          "oklch(95.00% 0.0287 162.38)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15.00% 0.0199 158.68)",
+          "oklch(26.43% 0.0199 158.68)",
+          "oklch(37.86% 0.0199 158.68)",
+          "oklch(49.29% 0.0199 158.68)",
+          "oklch(60.71% 0.0199 158.68)",
+          "oklch(72.14% 0.0199 158.68)",
+          "oklch(83.57% 0.0199 158.68)",
+          "oklch(95.00% 0.0199 158.68)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "tonalRamp": [
+          "oklch(15.00% 0.0136 134.90)",
+          "oklch(26.43% 0.0136 134.90)",
+          "oklch(37.86% 0.0136 134.90)",
+          "oklch(49.29% 0.0136 134.90)",
+          "oklch(60.71% 0.0136 134.90)",
+          "oklch(72.14% 0.0136 134.90)",
+          "oklch(83.57% 0.0136 134.90)",
+          "oklch(95.00% 0.0136 134.90)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "tonalRamp": [
+          "oklch(15.00% 0.0000 89.88)",
+          "oklch(26.43% 0.0000 89.88)",
+          "oklch(37.86% 0.0000 89.88)",
+          "oklch(49.29% 0.0000 89.88)",
+          "oklch(60.71% 0.0000 89.88)",
+          "oklch(72.14% 0.0000 89.88)",
+          "oklch(83.57% 0.0000 89.88)",
+          "oklch(95.00% 0.0000 89.88)"
+        ]
+      },
+      "focus": {
+        "role": "supporting",
+        "displayName": "Focus",
+        "tonalRamp": [
+          "oklch(15.00% 0.1045 157.26)",
+          "oklch(26.43% 0.1045 157.26)",
+          "oklch(37.86% 0.1045 157.26)",
+          "oklch(49.29% 0.1045 157.26)",
+          "oklch(60.71% 0.1045 157.26)",
+          "oklch(72.14% 0.1045 157.26)",
+          "oklch(83.57% 0.1045 157.26)",
+          "oklch(95.00% 0.1045 157.26)"
+        ]
+      },
+      "poster-academic": {
+        "role": "supporting",
+        "displayName": "Poster Academic",
+        "tonalRamp": [
+          "oklch(15.00% 0.0193 122.84)",
+          "oklch(26.43% 0.0193 122.84)",
+          "oklch(37.86% 0.0193 122.84)",
+          "oklch(49.29% 0.0193 122.84)",
+          "oklch(60.71% 0.0193 122.84)",
+          "oklch(72.14% 0.0193 122.84)",
+          "oklch(83.57% 0.0193 122.84)",
+          "oklch(95.00% 0.0193 122.84)"
+        ]
+      },
+      "poster-career": {
+        "role": "supporting",
+        "displayName": "Poster Career",
+        "tonalRamp": [
+          "oklch(15.00% 0.0185 306.66)",
+          "oklch(26.43% 0.0185 306.66)",
+          "oklch(37.86% 0.0185 306.66)",
+          "oklch(49.29% 0.0185 306.66)",
+          "oklch(60.71% 0.0185 306.66)",
+          "oklch(72.14% 0.0185 306.66)",
+          "oklch(83.57% 0.0185 306.66)",
+          "oklch(95.00% 0.0185 306.66)"
+        ]
+      },
+      "poster-social": {
+        "role": "supporting",
+        "displayName": "Poster Social",
+        "tonalRamp": [
+          "oklch(15.00% 0.0359 83.77)",
+          "oklch(26.43% 0.0359 83.77)",
+          "oklch(37.86% 0.0359 83.77)",
+          "oklch(49.29% 0.0359 83.77)",
+          "oklch(60.71% 0.0359 83.77)",
+          "oklch(72.14% 0.0359 83.77)",
+          "oklch(83.57% 0.0359 83.77)",
+          "oklch(95.00% 0.0359 83.77)"
+        ]
+      },
+      "poster-arts": {
+        "role": "supporting",
+        "displayName": "Poster Arts",
+        "tonalRamp": [
+          "oklch(15.00% 0.0107 286.19)",
+          "oklch(26.43% 0.0107 286.19)",
+          "oklch(37.86% 0.0107 286.19)",
+          "oklch(49.29% 0.0107 286.19)",
+          "oklch(60.71% 0.0107 286.19)",
+          "oklch(72.14% 0.0107 286.19)",
+          "oklch(83.57% 0.0107 286.19)",
+          "oklch(95.00% 0.0107 286.19)"
+        ]
+      },
+      "poster-wellbeing": {
+        "role": "supporting",
+        "displayName": "Poster Wellbeing",
+        "tonalRamp": [
+          "oklch(15.00% 0.0141 185.94)",
+          "oklch(26.43% 0.0141 185.94)",
+          "oklch(37.86% 0.0141 185.94)",
+          "oklch(49.29% 0.0141 185.94)",
+          "oklch(60.71% 0.0141 185.94)",
+          "oklch(72.14% 0.0141 185.94)",
+          "oklch(83.57% 0.0141 185.94)",
+          "oklch(95.00% 0.0141 185.94)"
+        ]
+      },
+      "notice-bg": {
+        "role": "supporting",
+        "displayName": "Notice Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.0241 85.79)",
+          "oklch(26.43% 0.0241 85.79)",
+          "oklch(37.86% 0.0241 85.79)",
+          "oklch(49.29% 0.0241 85.79)",
+          "oklch(60.71% 0.0241 85.79)",
+          "oklch(72.14% 0.0241 85.79)",
+          "oklch(83.57% 0.0241 85.79)",
+          "oklch(95.00% 0.0241 85.79)"
+        ]
+      },
+      "notice-ink": {
+        "role": "supporting",
+        "displayName": "Notice Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.0838 78.84)",
+          "oklch(26.43% 0.0838 78.84)",
+          "oklch(37.86% 0.0838 78.84)",
+          "oklch(49.29% 0.0838 78.84)",
+          "oklch(60.71% 0.0838 78.84)",
+          "oklch(72.14% 0.0838 78.84)",
+          "oklch(83.57% 0.0838 78.84)",
+          "oklch(95.00% 0.0838 78.84)"
+        ]
+      },
+      "cancelled-bg": {
+        "role": "supporting",
+        "displayName": "Cancelled Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.0183 43.22)",
+          "oklch(26.43% 0.0183 43.22)",
+          "oklch(37.86% 0.0183 43.22)",
+          "oklch(49.29% 0.0183 43.22)",
+          "oklch(60.71% 0.0183 43.22)",
+          "oklch(72.14% 0.0183 43.22)",
+          "oklch(83.57% 0.0183 43.22)",
+          "oklch(95.00% 0.0183 43.22)"
+        ]
+      },
+      "cancelled-ink": {
+        "role": "supporting",
+        "displayName": "Cancelled Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.1149 33.03)",
+          "oklch(26.43% 0.1149 33.03)",
+          "oklch(37.86% 0.1149 33.03)",
+          "oklch(49.29% 0.1149 33.03)",
+          "oklch(60.71% 0.1149 33.03)",
+          "oklch(72.14% 0.1149 33.03)",
+          "oklch(83.57% 0.1149 33.03)",
+          "oklch(95.00% 0.1149 33.03)"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 12px 36px #183e3114",
+        "purpose": "Dialog, toast, and mobile drawer."
+      }
+    ],
+    "motion": [
+      {
+        "name": "page-entry",
+        "value": "0.3s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Opacity and 5px vertical reveal."
+      },
+      {
+        "name": "feedback",
+        "value": "0.2s",
+        "purpose": "Toast opacity/position and drawer transform; disabled under reduced-motion preference."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-min",
+        "value": "1600px"
+      },
+      {
+        "name": "compact-max",
+        "value": "1200px"
+      },
+      {
+        "name": "stack-max",
+        "value": "960px"
+      },
+      {
+        "name": "mobile-max",
+        "value": "700px"
+      }
+    ],
+    "tonalRampNote": "Synthesized OKLCH preview ramps; these are not additional implementation tokens or approved colors."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Explicit primary action.",
+      "html": "<button class=\"ds-primary\">Save preferences</button>",
+      "css": ".ds-primary{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:var(--green,#235b45);color:var(--white,#fff);border:1px solid var(--green,#235b45);border-radius:8px;padding:10px 15px;font-size:12px;font-weight:600;line-height:1.4;min-height:38px;cursor:pointer}.ds-primary:hover{background:var(--green-dark,#183e31)}.ds-primary:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Explicit event or supporting action.",
+      "html": "<button class=\"ds-secondary\">Add to calendar</button>",
+      "css": ".ds-secondary{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:var(--white,#fff);color:var(--ink,#22342b);border:1px solid var(--line,#e1e7de);border-radius:8px;padding:10px 15px;font-size:12px;font-weight:600;min-height:38px;cursor:pointer}.ds-secondary:hover{background:var(--mint,#e8f2e9);border-color:#abc8b1}.ds-secondary:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Text Action",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Low-emphasis supporting navigation.",
+      "html": "<button class=\"ds-text\">View calendar \u2192</button>",
+      "css": ".ds-text{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:none;border:0;color:var(--green,#235b45);font-size:12px;font-weight:600;padding:4px;cursor:pointer}.ds-text:hover{text-decoration:underline}.ds-text:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Labelled Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Visible-label form input.",
+      "html": "<label class=\"ds-field\">Demo display name<input value=\"Judy\"></label>",
+      "css": ".ds-field{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;display:flex;flex-direction:column;gap:7px;color:var(--muted,#66736b);font-size:12px}.ds-field input{font:inherit;color:var(--ink,#22342b);border:1px solid var(--line,#e1e7de);border-radius:7px;background:var(--white,#fff);padding:11px}.ds-field input:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Active Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Selected sidebar destination.",
+      "html": "<nav aria-label=\"Example navigation\"><button class=\"ds-nav\" aria-current=\"page\">AI Planner</button></nav>",
+      "css": ".ds-nav{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;display:flex;align-items:center;background:var(--mint,#e8f2e9);color:var(--green,#235b45);border:0;border-radius:9px;padding:13px 15px;font-size:13px;font-weight:600;cursor:pointer}.ds-nav:hover{background:var(--bg,#f7f8f5)}.ds-nav:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Selected Filter",
+      "kind": "chip",
+      "refersTo": "chip-active",
+      "description": "Selected discovery category.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Academic</button>",
+      "css": ".ds-chip{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:var(--green,#235b45);color:var(--white,#fff);border:1px solid var(--green,#235b45);border-radius:7px;padding:7px 12px;font-size:11px;cursor:pointer}.ds-chip:hover{border-color:var(--green,#235b45)}.ds-chip:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat content container.",
+      "html": "<section class=\"ds-panel\"><h2>Your draft plan</h2><p>You choose what makes it into your week.</p></section>",
+      "css": ".ds-panel{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:var(--white,#fff);color:var(--ink,#22342b);border:1px solid var(--line,#e1e7de);border-radius:var(--radius,14px);padding:22px}.ds-panel h2{font-size:18px;font-weight:650;letter-spacing:-.4px;margin:0}.ds-panel p{font-size:11px;line-height:1.5;color:var(--muted,#66736b)}"
+    },
+    {
+      "name": "Event Card",
+      "kind": "card",
+      "refersTo": "event-card",
+      "description": "Poster, event information, and explicit action.",
+      "html": "<article class=\"ds-event\"><div class=\"ds-poster\"><small>CAMPUS COMPASS / OCTOBER</small><b>FRESH<br>IDEAS</b></div><div class=\"ds-body\"><span>ACADEMIC</span><h3>Student research lightning talks</h3><p>Mon, Oct 19 \u00b7 4 PM\u20135:30 PM</p><button>Add to calendar</button></div></article>",
+      "css": ".ds-event{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;border:1px solid var(--line,#e1e7de);border-radius:12px;overflow:hidden;background:var(--white,#fff);color:var(--ink,#22342b);max-width:330px}.ds-poster{background:#e9eee0;color:#344e40;padding:18px;height:118px;display:flex;flex-direction:column;justify-content:space-between}.ds-poster small{font-size:8px;letter-spacing:1.3px}.ds-poster b{font-size:20px;font-weight:550;line-height:1.1}.ds-body{padding:15px}.ds-body span{font-size:10px;font-weight:700;color:#527654;letter-spacing:.7px}.ds-body h3{font-size:15px;font-weight:650;line-height:1.35}.ds-body p{font-size:12px;color:var(--muted,#66736b)}.ds-body button{width:100%;font:inherit;font-size:12px;font-weight:600;background:white;border:1px solid var(--line,#e1e7de);border-radius:8px;padding:7px;min-height:32px;cursor:pointer}.ds-body button:hover{background:var(--mint,#e8f2e9);border-color:#abc8b1}.ds-body button:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "",
+    "overview": "The implemented system preserves the supplied green and white sidebar dashboard, weekly calendar, event cards, and chat beside a draft plan. Its dense desktop layout uses restrained borders and a dark green welcome panel; the supplied cat mascot makes the planner recognizable.\n\nThis is a code-led record of the current functional demo, not a new visual identity or an approval record. No creative metaphor or additional brand prohibitions were selected. CSS and behavior were extracted from `dist/styles.css`, `dist/app.js`, and `dist/index.html`; the four dashboard/planner review screenshots were inspected. The final cascading CSS rules take precedence over earlier declarations and older captures.",
+    "keyCharacteristics": [
+      "Green navigation and actions on white surfaces.",
+      "Five weekday columns with distinct busy, chosen, and cancelled states.",
+      "Readable event details and explicit add actions.",
+      "Supplied cat mascot in planner entry and conversation."
+    ],
+    "rules": [],
+    "dos": [
+      "Do preserve the supplied green and white dashboard and cat mascot.",
+      "Do retain explicit event titles, times, reasons, and separate add actions.",
+      "Do keep the final responsive overrides when extracting components.",
+      "Do preserve focus indicators, accessible names, status announcements, and reduced-motion behavior."
+    ],
+    "donts": [
+      "Don't present simulated chat, fictional events, or disconnected calendars as live services.",
+      "Don't imply a draft recommendation is already on the student's calendar.",
+      "Don't shrink mobile calendar text to fit all five columns; preserve horizontal calendar scrolling."
+    ]
+  }
+}
