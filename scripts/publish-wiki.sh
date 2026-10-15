@@ -33,7 +33,7 @@ fi
 export GIT_TERMINAL_PROMPT=0
 
 if ! git clone --quiet --depth 1 "$WIKI_REMOTE_URL" "$tmp_dir/wiki"; then
-  echo 'Could not clone the Wiki. Create its first page in GitHub and check Wiki write access; see doc/github-wiki.md.' >&2
+  echo 'Could not clone the Wiki. Create its first page in GitHub and check Wiki write access; see docs/github-wiki.md.' >&2
   exit 1
 fi
 wiki_branch="$(git -C "$tmp_dir/wiki" symbolic-ref --short HEAD)"

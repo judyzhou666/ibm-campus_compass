@@ -57,7 +57,7 @@ jobs:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           if [[ -z "$WIKI_TOKEN" ]]; then
-            echo '::error::Add the WIKI_TOKEN Actions secret with Wiki write access. See doc/github-wiki.md.'
+            echo '::error::Add the WIKI_TOKEN Actions secret with Wiki write access. See docs/github-wiki.md.'
             exit 1
           fi
           bash scripts/publish-wiki.sh wiki
