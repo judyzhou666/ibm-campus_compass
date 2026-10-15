@@ -1,0 +1,63 @@
+name: Publish GitHub Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - 'scripts/publish-wiki.sh'
+      - 'tests/test_publish_wiki.py'
+      - '.github/workflows/publish-wiki.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - 'scripts/publish-wiki.sh'
+      - 'tests/test_publish_wiki.py'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wiki-${{ github.repository }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Wiki publisher
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Check script and exercise local Wiki sync
+        run: |
+          bash -n scripts/publish-wiki.sh
+          python3 -m unittest discover -s tests -p 'test_publish_wiki.py' -v
+
+  publish:
+    name: Publish Wiki pages
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Publish wiki folder
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+          WIKI_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}.wiki.git
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          if [[ -z "$WIKI_TOKEN" ]]; then
+            echo '::error::Add the WIKI_TOKEN Actions secret with Wiki write access. See doc/github-wiki.md.'
+            exit 1
+          fi
+          bash scripts/publish-wiki.sh wiki
