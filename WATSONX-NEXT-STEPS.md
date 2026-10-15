@@ -4,7 +4,7 @@ The user has watsonx access but chose to complete the website demonstration befo
 
 ## Recommended boundary
 
-Keep the website's event records and deterministic constraints. Add a small server endpoint that interprets student requests using the team's available watsonx model. The backend should own credentials; never put an IBM API key into browser JavaScript, a public repository, or localStorage.
+Keep the website's event records and deterministic constraints. Add a small Rust server endpoint that interprets student requests using the team's available watsonx model. Keep frontend application code in TypeScript or JavaScript. The backend should own credentials; never put an IBM API key into browser JavaScript, a public repository, or localStorage.
 
 Proposed flow:
 
