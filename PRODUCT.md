@@ -11,6 +11,6 @@ Fictional events and schedules are authorized by the user. No real calendar, Can
 ## Brand Commitments
 Preserve the supplied green and white dashboard, sidebar navigation, weekly calendar, event cards, and chat plus draft-plan layout. Improve density and usability within that established design.
 ## Stack
-Implementation assumption: buildless HTML/CSS and JavaScript for a portable demo; no dependencies or credentials required.
+Rust backend with Axum, Tokio and Serde; React/TypeScript frontend built with Vite. Shared fictional catalog, browser-local demo state, no live IBM credentials required.
 ## Evidence on Hand
 User-supplied product proposal, IBM lab guide, and two dashboard/planner reference images. No real event dataset or IBM credentials supplied. The user also supplied the cat mascot for use in this website.

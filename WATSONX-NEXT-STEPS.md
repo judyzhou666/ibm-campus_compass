@@ -4,19 +4,19 @@ The user has watsonx access but chose to complete the website demonstration befo
 
 ## Recommended boundary
 
-Keep the website's event records and deterministic constraints. Add a small Rust server endpoint that interprets student requests using the team's available watsonx model. Keep frontend application code in TypeScript or JavaScript. The backend should own credentials; never put an IBM API key into browser JavaScript, a public repository, or localStorage.
+Keep the website's event records and deterministic constraints. Extend the Rust server endpoint that interprets student requests using the team's available watsonx model. Keep frontend application code in TypeScript or JavaScript. The backend should own credentials; never put an IBM API key into browser JavaScript, a public repository, or localStorage.
 
 Proposed flow:
 
 1. Browser sends the message, prior structured constraints, and fictional profile to a server endpoint.
 2. Server requests a structured interpretation with topics, included/excluded weekdays, time windows, maximum cost, food requirements and unknown/ambiguous fields.
 3. Validate the returned object against an explicit schema. Ask for clarification when intent is ambiguous or unsupported.
-4. Apply deterministic matching and conflict checks from `planner.js` on trusted event records. Do not let the model fabricate event IDs, eligibility or food availability.
+4. Apply deterministic matching and conflict checks from `backend/src/planner.rs` on trusted event records. Do not let the model fabricate event IDs, eligibility or food availability.
 5. Generate a short explanation based only on the validated records. Return draft event IDs and reasons.
 6. Keep Add to calendar as an explicit student action; validate again at add time.
 7. Preserve the current simulation as a fallback if the live service is unavailable, and display the actual mode honestly.
 
-The chat controller currently lives in `chat()` in `dist/app.js`. Replace its simulated response step with the server request while retaining `issue()` as the final validation. A backend is not yet implemented, so this is an architectural handoff rather than a configured adapter.
+The React chat controller in `frontend/src/App.tsx` calls the Rust `/api/plan` endpoint through `frontend/src/api.ts`. The asynchronous `Interpreter` interface in `backend/src/interpreter.rs` is the future watsonx boundary. Its current implementation is simulated; retain constraint validation, deterministic matching and `/api/validate` when adding the live adapter. See `docs/backend.md`.
 
 ## Before implementation
 

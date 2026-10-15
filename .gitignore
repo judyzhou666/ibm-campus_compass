@@ -3,3 +3,8 @@ node_modules/
 .impeccable/review/
 *.tar.gz
 __pycache__/
+/target/
+/dist/
+.env
+.env.*
+!.env.example

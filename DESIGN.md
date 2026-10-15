@@ -105,7 +105,7 @@ components:
 
 The implemented system preserves the supplied green and white sidebar dashboard, weekly calendar, event cards, and chat beside a draft plan. Its dense desktop layout uses restrained borders and a dark green welcome panel; the supplied cat mascot makes the planner recognizable.
 
-This is a code-led record of the current functional demo, not a new visual identity or an approval record. No creative metaphor or additional brand prohibitions were selected. CSS and behavior were extracted from `dist/styles.css`, `dist/app.js`, and `dist/index.html`; the four dashboard/planner review screenshots were inspected. The final cascading CSS rules take precedence over earlier declarations and older captures.
+This is a code-led record of the current functional demo, not a new visual identity or an approval record. No creative metaphor or additional brand prohibitions were selected. CSS and behavior were extracted from `frontend/src/styles.css`, `frontend/src/App.tsx`, and `frontend/index.html`; the four dashboard/planner review screenshots were inspected. The final cascading CSS rules take precedence over earlier declarations and older captures.
 
 **Key Characteristics:**
 - Green navigation and actions on white surfaces.

@@ -32,7 +32,7 @@ The script clones the Wiki's current default branch (currently `master`), update
 
 ```sh
 bash -n scripts/publish-wiki.sh
-python3 -m unittest discover -s tests -p 'test_publish_wiki.py' -v
+node --test tests/publish-wiki.test.mjs
 ```
 
 The tests use temporary local Git repositories. They do not use a token, network access, or the real Wiki.

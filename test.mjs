@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {EVENTS,DEFAULT_BLOCKS} from './dist/data.js';
-import {parseRequest,issue,recommend,overlap} from './dist/planner.js';
+import {EVENTS,DEFAULT_BLOCKS} from './frontend/src/data.ts';
+import {parseRequest,issue,recommend,overlap} from './frontend/src/planner.ts';
 const s={plan:[],blocks:DEFAULT_BLOCKS,interests:['AI & education','Career','Social'],buffer:15,cancelled:[]};
 assert.equal(EVENTS.length,30);
 assert.deepEqual(parseRequest('AI and education on Tuesday or Thursday afternoons').days,[1,3]);

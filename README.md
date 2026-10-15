@@ -4,19 +4,17 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 
 ## Run locally
 
-No build or npm install is needed. From this directory:
+Install Rust stable and Node.js 22.12+. From the repository root:
 
 ```sh
-python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
+npm ci
+npm run build
+cargo run --locked
 ```
 
-Open http://127.0.0.1:4173. Use an HTTP server; opening index.html directly as a file will not load ES modules reliably.
+Open http://127.0.0.1:4173. Rust serves the React/TypeScript frontend and planning API. For frontend development, run `npm run dev` alongside Rust. Python is not required.
 
-Run the deterministic planning checks with Node 20+:
-
-```sh
-node test.mjs
-```
+See [backend architecture and test commands](docs/backend.md) and [IBM Bob setup](docs/ibm-bob-setup.md).
 
 ## What works
 
@@ -43,19 +41,19 @@ node test.mjs
 
 ## Current boundaries
 
-This version uses a deterministic parser and template responses. It is not a general-purpose language model or a live IBM-powered chatbot. Ambiguous natural language and unsupported constraints may not be understood; use the example prompts for the demo. “Start over” clears prior chat filters. It does not create real RSVPs, send messages, or sync calendars. Local discussion posts are not shared. Data is fixed, not live or fetched daily. The institution and business outcomes in the proposal remain hypotheses.
+This version uses a Rust deterministic parser and template responses, with a labelled TypeScript fallback when the backend is unavailable. It is not a general-purpose language model or a live IBM-powered chatbot. Ambiguous natural language and unsupported constraints may not be understood; use the example prompts for the demo. “Start over” clears prior chat filters. It does not create real RSVPs, send messages, or sync calendars. Local discussion posts are not shared. Data is fixed, not live or fetched daily. The institution and business outcomes in the proposal remain hypotheses.
 
 IBM Bob is a development assistant. This implementation was created in Codex and is not evidence of IBM Bob use. Your team should perform and document genuine Bob-assisted development/testing before describing the course's Bob component as fulfilled. The user has IBM watsonx access and chose to integrate it later.
 
 ## Files and extension point
 
-- `dist/data.js`: fictional event schema, 30 records, sample commitments, date/time helpers.
-- `dist/planner.js`: structured constraints, retrieval/ranking, deterministic conflict and access validation.
-- `dist/app.js`: UI, simulated chat controller, local storage, cancellation and calendar export.
-- `dist/styles.css`: responsive visual system.
-- `dist/assets/mascot.png`: unmodified user-supplied mascot.
-- `test.mjs`: deterministic engine checks.
-- `WATSONX-NEXT-STEPS.md`: integration boundary and proposed next steps.
+- `backend/src/`: Rust Axum API, simulated interpreter, schedule validation and event matching.
+- `frontend/src/`: React/TypeScript UI, typed API calls, local persistence, calendar export and explicit browser simulation fallback.
+- `data/events.json`: shared catalog of 30 fictional events.
+- `frontend/public/assets/mascot.png`: unchanged supplied mascot.
+- `dist/`: generated build output, ignored by Git.
+- `tests/` and `test.mjs`: API, fallback, scheduling and Wiki publisher checks.
+- `WATSONX-NEXT-STEPS.md`: future Rust integration checklist.
 
 ## Data and assets register
 
@@ -67,7 +65,7 @@ Names in the team credit were supplied or inferred from the user's account conte
 
 ## Verification
 
-Syntax checks and `node test.mjs` passed. Browser walkthrough verified prompt matching, event addition, cancellation, replacement, and visible calendar state. Desktop (1440px), intermediate (595px), and mobile (390px) views were inspected. The export action was exercised and showed success; the in-app browser did not expose a completed download path to the automation tool, so an external calendar import was not verified.
+Run the validation commands in [docs/backend.md](docs/backend.md). The refactor includes browser fallback tests and integration checks comparing the Rust API against the TypeScript planner. Generated frontend assets must be built before serving the demo.
 
 ## Team branches
 

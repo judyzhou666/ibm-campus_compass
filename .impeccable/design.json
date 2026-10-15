@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T22:12:03.787741+00:00",
+  "generatedAt": "2026-10-15T23:49:56.869Z",
   "title": "Design System: Campus Compass",
   "extensions": {
     "colorMeta": {
@@ -318,7 +318,7 @@
       "kind": "button",
       "refersTo": "button-text",
       "description": "Low-emphasis supporting navigation.",
-      "html": "<button class=\"ds-text\">View calendar \u2192</button>",
+      "html": "<button class=\"ds-text\">View calendar →</button>",
       "css": ".ds-text{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;background:none;border:0;color:var(--green,#235b45);font-size:12px;font-weight:600;padding:4px;cursor:pointer}.ds-text:hover{text-decoration:underline}.ds-text:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
     },
     {
@@ -358,13 +358,13 @@
       "kind": "card",
       "refersTo": "event-card",
       "description": "Poster, event information, and explicit action.",
-      "html": "<article class=\"ds-event\"><div class=\"ds-poster\"><small>CAMPUS COMPASS / OCTOBER</small><b>FRESH<br>IDEAS</b></div><div class=\"ds-body\"><span>ACADEMIC</span><h3>Student research lightning talks</h3><p>Mon, Oct 19 \u00b7 4 PM\u20135:30 PM</p><button>Add to calendar</button></div></article>",
+      "html": "<article class=\"ds-event\"><div class=\"ds-poster\"><small>CAMPUS COMPASS / OCTOBER</small><b>FRESH<br>IDEAS</b></div><div class=\"ds-body\"><span>ACADEMIC</span><h3>Student research lightning talks</h3><p>Mon, Oct 19 · 4 PM–5:30 PM</p><button>Add to calendar</button></div></article>",
       "css": ".ds-event{font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;border:1px solid var(--line,#e1e7de);border-radius:12px;overflow:hidden;background:var(--white,#fff);color:var(--ink,#22342b);max-width:330px}.ds-poster{background:#e9eee0;color:#344e40;padding:18px;height:118px;display:flex;flex-direction:column;justify-content:space-between}.ds-poster small{font-size:8px;letter-spacing:1.3px}.ds-poster b{font-size:20px;font-weight:550;line-height:1.1}.ds-body{padding:15px}.ds-body span{font-size:10px;font-weight:700;color:#527654;letter-spacing:.7px}.ds-body h3{font-size:15px;font-weight:650;line-height:1.35}.ds-body p{font-size:12px;color:var(--muted,#66736b)}.ds-body button{width:100%;font:inherit;font-size:12px;font-weight:600;background:white;border:1px solid var(--line,#e1e7de);border-radius:8px;padding:7px;min-height:32px;cursor:pointer}.ds-body button:hover{background:var(--mint,#e8f2e9);border-color:#abc8b1}.ds-body button:focus-visible{outline:3px solid var(--focus,#57a77a);outline-offset:3px}"
     }
   ],
   "narrative": {
     "northStar": "",
-    "overview": "The implemented system preserves the supplied green and white sidebar dashboard, weekly calendar, event cards, and chat beside a draft plan. Its dense desktop layout uses restrained borders and a dark green welcome panel; the supplied cat mascot makes the planner recognizable.\n\nThis is a code-led record of the current functional demo, not a new visual identity or an approval record. No creative metaphor or additional brand prohibitions were selected. CSS and behavior were extracted from `dist/styles.css`, `dist/app.js`, and `dist/index.html`; the four dashboard/planner review screenshots were inspected. The final cascading CSS rules take precedence over earlier declarations and older captures.",
+    "overview": "The implemented system preserves the supplied green and white sidebar dashboard, weekly calendar, event cards, and chat beside a draft plan. Its dense desktop layout uses restrained borders and a dark green welcome panel; the supplied cat mascot makes the planner recognizable.\n\nThis is a code-led record of the current functional demo, not a new visual identity or an approval record. No creative metaphor or additional brand prohibitions were selected. CSS and behavior were extracted from `frontend/src/styles.css`, `frontend/src/App.tsx`, and `frontend/index.html`; the four dashboard/planner review screenshots were inspected. The final cascading CSS rules take precedence over earlier declarations and older captures.",
     "keyCharacteristics": [
       "Green navigation and actions on white surfaces.",
       "Five weekday columns with distinct busy, chosen, and cancelled states.",
