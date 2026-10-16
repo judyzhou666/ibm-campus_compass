@@ -107,6 +107,73 @@ try {
     ).json();
     assert.equal(r.issue, issue(event, state));
   }
+  const confirmed = { display_name: "Demo student", attending: true };
+  for (const rsvp of [
+    undefined,
+    { display_name: "Judy", attending: false },
+    { display_name: " ", attending: true },
+  ]) {
+    assert.equal(
+      (
+        await post("/api/enroll", {
+          event_id: "e1",
+          state: schedulePayload(state),
+          rsvp,
+        })
+      ).status,
+      422,
+    );
+  }
+  for (const event of EVENTS) {
+    const response = await post("/api/enroll", {
+      event_id: event.id,
+      state: schedulePayload(state),
+      rsvp: confirmed,
+    });
+    assert.equal(response.status, issue(event, state) ? 409 : 200, event.title);
+  }
+  const enrolled = await (
+    await post("/api/enroll", {
+      event_id: "e1",
+      state: schedulePayload(state),
+      rsvp: confirmed,
+    })
+  ).json();
+  assert.deepEqual(enrolled, {
+    event_id: "e1",
+    demo: true,
+    status: "enrolled",
+    rsvp_confirmed: true,
+  });
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e5",
+        state: schedulePayload(state),
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e1",
+        state: schedulePayload({ ...state, cancelled: ["e1"] }),
+        rsvp: confirmed,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "fake",
+        state: schedulePayload(state),
+        rsvp: confirmed,
+      })
+    ).status,
+    400,
+  );
   const booked = { ...state, plan: ["e1"], cancelled: ["e5"] };
   const result = await (
     await post("/api/plan", {

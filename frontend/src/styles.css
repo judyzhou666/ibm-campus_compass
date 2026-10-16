@@ -1705,3 +1705,143 @@ dialog .source {
 .panel > h2 + .sub {
   margin-top: 10px;
 }
+
+/* Planner actions and calendar share the same live schedule. */
+.chat-event-list {
+  white-space: normal;
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.chat-event {
+  background: var(--white, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+.chat-event h3 {
+  font-size: 15px;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+.chat-event .meta {
+  margin: 5px 0;
+}
+.chat-event .row {
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.event-problem {
+  color: #97412e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.planner-calendar {
+  align-self: start;
+  height: 720px;
+  display: flex;
+  flex-direction: column;
+}
+.planner-calendar .section-bar {
+  margin-bottom: 0;
+}
+.calendar-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--green-dark);
+  margin: 8px 0;
+}
+.planner-agenda {
+  overflow: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+.agenda-day {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.agenda-day h3 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.agenda-day h3 span {
+  font-weight: 400;
+  color: var(--muted);
+}
+.agenda-entry {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  width: 100%;
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.agenda-entry strong {
+  font-weight: 600;
+}
+.agenda-entry span,
+.agenda-entry small {
+  font-size: 11px;
+}
+.agenda-entry.commitment {
+  background: var(--bg);
+  color: var(--muted);
+}
+.agenda-entry.chosen {
+  background: var(--mint);
+  color: var(--green-dark);
+  cursor: pointer;
+}
+.agenda-entry.cancelled {
+  background: #fff0e8;
+  color: #97412e;
+}
+.rsvp-dialog h3 {
+  margin: 18px 0 10px;
+}
+.rsvp-name {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.rsvp-name input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.rsvp-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.rsvp-check input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  accent-color: var(--green-dark);
+}
+.rsvp-dialog .row {
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+@media (max-width: 1000px) {
+  .planner-calendar {
+    height: auto;
+    max-height: 650px;
+  }
+}

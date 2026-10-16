@@ -2,6 +2,28 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Latest update — October 15, 2026
+
+The AI Planner now supports choosing events while keeping your schedule visible. This update builds on the Rust backend and React/TypeScript migration.
+
+| Change | What teammates should expect |
+| --- | --- |
+| Calendar beside chat | The **My calendar** button at the top right of AI Planner toggles a calendar panel on the right without leaving the conversation. It replaces the draft sidebar while open. On narrow screens it stacks below chat. |
+| Actions in AI responses | New recommendation messages contain event cards with **View details** and **Add to calendar** buttons. Added events show a disabled confirmation button. Unavailable events show the reason. |
+| Mandatory RSVP | Adding an event marked **RSVP required** opens a registration dialog. A demo attendee name and an explicit attendance checkbox are required before **Complete RSVP & add** can succeed. Cancelling or pressing Escape leaves the calendar unchanged. |
+| Automatic calendar updates | A successful addition immediately updates the planner panel, dashboard and main calendar. Drop-in events can be added directly. Removing an event also clears its demo RSVP confirmation. |
+| Shared enrollment validation | Every Add entry point—chat, draft plan, dashboard, Explore Events and event details—uses the same flow. Rust and the offline TypeScript fallback both enforce RSVP and current availability. |
+
+The registration dialog is a **demo RSVP page** inside the app. It does not contact an organizer, reserve a real seat, charge a fee, or send a confirmation email. Use a fictional display name. There is no external registration website or live calendar integration.
+
+### Implementation notes for the team
+
+- `frontend/src/PlannerPanels.tsx` contains the chat event cards, side calendar, and RSVP form.
+- `frontend/src/App.tsx` coordinates additions, checks the latest schedule after an asynchronous request, and updates shared state only after successful demo enrollment. One enrollment runs at a time; reset invalidates pending results.
+- `frontend/src/api.ts` sends enrollment requests and supplies the explicitly labelled offline simulation. Backend request rejections are never treated as offline success.
+- `backend/src/lib.rs` exposes `POST /api/enroll`. The Rust event model reads each record’s RSVP requirement from `data/events.json`; the client cannot override it.
+- Browser-local state now records confirmed demo RSVP event IDs and event IDs attached to new chat responses. Existing saved schedules are preserved. Old chat messages remain readable but do not gain buttons retroactively; send a fresh prompt to see the new cards.
+
 ## Run locally
 
 Install Rust stable and Node.js 22.12+. From the repository root:
@@ -33,9 +55,9 @@ See [backend architecture and test commands](docs/backend.md) and [IBM Bob setup
 1. Start at Settings → Reset demo. Show the dashboard and the sample weekly classes.
 2. Open AI Planner. Select “AI and education on Tuesday or Thursday afternoons.”
 3. Show the two matches, their times, and the reasons. The Tuesday research roundtable is excluded because it overlaps a sample class.
-4. Add “Learning with AI: a hands-on lab.” Show it in My Calendar.
-5. Return to AI Planner → Simulate event cancellation → Find a replacement. The Thursday open studio is offered; other confirmed choices are retained.
-6. Add the replacement. Export the calendar. Cancelled records are excluded and exported titles are marked [DEMO].
+4. Click the planner’s top-right **My calendar** button. Chat stays visible with the calendar on the right. In the response, inspect **View details**, then **Add to calendar** for “Learning with AI: a hands-on lab.” Cancel the RSVP once to show that no event is added. Open it again, enter a demo name, check the attendance box, and select **Complete RSVP & add**. The event appears immediately with “Demo RSVP confirmed.”
+5. Close the calendar panel to return to the draft sidebar. Select Simulate event cancellation → Find a replacement. The Thursday open studio is offered; other confirmed choices are retained.
+6. Add the replacement (a drop-in event, so no RSVP form). The side calendar opens automatically. Open My Calendar from the main navigation to export the calendar. Cancelled records are excluded and exported titles are marked [DEMO].
 7. Select “A social event with free food.” Example prompt buttons begin a fresh request; typed follow-ups retain prior filters. Show that free meals and coffee/snacks are distinct.
 8. Close by stating the limitations: fictional data, simulated chat, no external calendar connections, watsonx to be integrated later.
 
@@ -65,7 +87,25 @@ Names in the team credit were supplied or inferred from the user's account conte
 
 ## Verification
 
-Run the validation commands in [docs/backend.md](docs/backend.md). The refactor includes browser fallback tests and integration checks comparing the Rust API against the TypeScript planner. Generated frontend assets must be built before serving the demo.
+Run these from the repository root before sharing application changes:
+
+```sh
+npm test
+npm run build
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
+cargo build --locked
+npm run test:api
+```
+
+The API integration suite starts a temporary local Rust server; allow localhost listeners in your environment. Build the Rust binary and frontend before running it. Coverage includes matching parity, restrictions, conflicts, cancellations, required/missing/invalid RSVP, completed RSVP, drop-in enrollment, request validation and static file boundaries. Browser-fallback tests verify that a rejected server request cannot bypass enrollment rules.
+
+For this update, manual browser checks covered the calendar toggle without navigation, direct response details/add actions, incomplete and cancelled RSVP, successful RSVP, immediate drop-in addition, removal, and a 390px mobile layout without horizontal page overflow. For teammate acceptance, follow the walkthrough above and verify that your added event remains after reloading. Use Settings → Reset demo to restore the original demonstration.
+
+### Documentation convention
+
+With every future push, update this README with the user-visible changes, affected files, setup or API changes, verification performed, and remaining demo limitations so teammates can understand the work without reading chat history. Put longer supporting documentation in `docs/`; GitHub Wiki sources remain in `wiki/`. Commit completed, verified work with a descriptive message.
 
 ## Team branches
 

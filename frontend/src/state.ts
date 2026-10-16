@@ -4,6 +4,7 @@ import type { DemoState } from "./types.ts";
 export const STORAGE_KEY = "campus-compass-demo-v1";
 export const fresh = (): DemoState => ({
   plan: [],
+  rsvps: [],
   saved: ["e1"],
   blocks: structuredClone(DEFAULT_BLOCKS),
   interests: ["AI & education", "Career", "Social"],
@@ -29,6 +30,7 @@ export function restore(): DemoState {
     return {
       ...base,
       plan: ids(value.plan),
+      rsvps: ids(value.rsvps).filter((id) => ids(value.plan).includes(id)),
       saved: ids(value.saved),
       cancelled: ids(value.cancelled),
       draft: ids(value.draft),
@@ -67,6 +69,11 @@ export function restore(): DemoState {
                 typeof m.text === "string",
             )
             .slice(-100)
+            .map((m: DemoState["messages"][number]) => ({
+              role: m.role,
+              text: m.text,
+              eventIds: ids(m.eventIds),
+            }))
         : [],
       posts: Array.isArray(value.posts)
         ? value.posts

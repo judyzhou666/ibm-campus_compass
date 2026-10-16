@@ -314,8 +314,8 @@ export function EventDetails({
         <br />
         Authored for this prototype · Last reviewed {e.checked}
         <br />
-        No real organizer, RSVP, or attendance claim. Adding an event does not
-        reserve a place.
+        RSVP-required events use a mandatory demo registration step. No
+        organizer is contacted and no real place is reserved.
       </div>
       <div className="row">
         <Button

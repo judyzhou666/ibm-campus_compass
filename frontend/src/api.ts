@@ -3,6 +3,7 @@ import type {
   Constraints,
   DemoState,
   PlanResponse,
+  Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
 import { parseRequest, recommend, issue } from "./planner.ts";
@@ -36,7 +37,7 @@ async function post(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(8000),
   });
-  if ([400, 413, 422].includes(response.status)) {
+  if ([400, 401, 403, 409, 413, 422].includes(response.status)) {
     throw new InputError(
       "The planner could not accept this request. Check your message and schedule, then try again.",
     );
@@ -112,6 +113,55 @@ export async function validateEvent(
     return {
       issue: event ? issue(event, state) : "Unknown event",
       notice: "Checked locally; the Rust planner is unavailable.",
+    };
+  }
+}
+
+export async function enrollEvent(
+  id: string,
+  state: Schedule,
+  rsvp?: Rsvp,
+  fetcher = globalThis.fetch,
+) {
+  const event = EVENTS.find((e) => e.id === id);
+  if (!event) throw new InputError("Unknown event.");
+  const problem = issue(event, state);
+  if (problem) throw new InputError(problem);
+  const required = event.rsvp === "RSVP required";
+  if (
+    required &&
+    (!rsvp?.attending ||
+      !rsvp.display_name.trim() ||
+      new TextEncoder().encode(rsvp.display_name).length > 120)
+  ) {
+    throw new InputError(
+      "Complete the required RSVP before adding this event.",
+    );
+  }
+  try {
+    const result = (await post(
+      "/api/enroll",
+      { event_id: id, state: schedulePayload(state), rsvp },
+      fetcher,
+    )) as {
+      event_id: string;
+      demo: boolean;
+      status: string;
+      rsvp_confirmed: boolean;
+    };
+    if (
+      result.event_id !== id ||
+      result.demo !== true ||
+      result.status !== "enrolled" ||
+      result.rsvp_confirmed !== required
+    )
+      throw new Error("Invalid enrollment response");
+    return { notice: "", rsvpConfirmed: required };
+  } catch (error) {
+    if (error instanceof InputError) throw error;
+    return {
+      notice: "Saved locally in demo mode; the Rust service is unavailable.",
+      rsvpConfirmed: required,
     };
   }
 }

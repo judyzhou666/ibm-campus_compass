@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
-import { planningKey, requestPlan, validateEvent } from "./api.ts";
+import { planningKey, requestPlan, enrollEvent } from "./api.ts";
 import { fresh, restore, STORAGE_KEY } from "./state.ts";
 import { calendarText } from "./calendar.ts";
 import {
@@ -13,10 +13,10 @@ import {
   Heading,
   Icon,
   Week,
-  foodLabel,
 } from "./components.tsx";
+import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
-import type { Constraints, DemoState, Message } from "./types.ts";
+import type { Constraints, DemoState, Message, Rsvp } from "./types.ts";
 
 const labels = {
   dashboard: "Dashboard",
@@ -66,6 +66,11 @@ export default function App() {
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState(""),
     [mode, setMode] = useState("Simulated planner");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [rsvpEvent, setRsvpEvent] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
+  const enrollmentLock = useRef(false),
+    enrollmentVersion = useRef(0);
   const messagesRef = useRef<HTMLDivElement>(null);
   function update(change: (s: DemoState) => DemoState) {
     const next = change(current.current);
@@ -127,7 +132,11 @@ export default function App() {
     setMessage("");
   }
   function remove(id: string) {
-    update((s) => ({ ...s, plan: s.plan.filter((x) => x !== id) }));
+    update((s) => ({
+      ...s,
+      plan: s.plan.filter((x) => x !== id),
+      rsvps: s.rsvps.filter((x) => x !== id),
+    }));
     setDetail(null);
     notify("Removed from your calendar.");
   }
@@ -139,40 +148,73 @@ export default function App() {
         : [...s.saved, id],
     }));
   }
-  async function add(id: string) {
+  function add(id: string) {
+    if (enrollmentLock.current) return;
     const event = EVENTS.find((e) => e.id === id);
     if (!event) return;
-    const version = epoch.current;
-    try {
-      const result = await validateEvent(id, current.current);
-      if (version !== epoch.current) return;
-      const latest = current.current;
-      if (latest.plan.includes(id)) {
-        notify("This event is already in your calendar.");
-        return;
-      }
-      const problem = issue(event, latest) || result.issue;
-      if (problem) {
-        notify(problem);
-        setDetail(id);
-        return;
-      }
-      update((s) => ({
-        ...s,
-        plan: [...s.plan, id],
-        draft: s.draft.filter((x) => x !== id),
-      }));
+    if (current.current.plan.includes(id)) {
+      setCalendarOpen(true);
+      notify("This event is already in your calendar.");
+      return;
+    }
+    const problem = issue(event, current.current);
+    if (problem) {
+      notify(problem);
+      setDetail(id);
+      return;
+    }
+    if (event.rsvp === "RSVP required") {
       setDetail(null);
+      setRsvpEvent(id);
+      return;
+    }
+    void completeEnrollment(id);
+  }
+  async function completeEnrollment(
+    id: string,
+    rsvp?: Rsvp,
+  ): Promise<string | null> {
+    if (enrollmentLock.current) return "An addition is already in progress.";
+    enrollmentLock.current = true;
+    setEnrolling(true);
+    const version = enrollmentVersion.current;
+    try {
+      const result = await enrollEvent(id, current.current, rsvp);
+      if (version !== enrollmentVersion.current)
+        return "The demo was reset. Please try again.";
+      const event = EVENTS.find((e) => e.id === id)!;
+      const problem = issue(event, current.current);
+      if (problem) throw new Error(problem);
+      if (!current.current.plan.includes(id))
+        update((s) => ({
+          ...s,
+          plan: [...s.plan, id],
+          rsvps: result.rsvpConfirmed
+            ? [...s.rsvps.filter((x) => x !== id), id]
+            : s.rsvps,
+          draft: s.draft.filter((x) => x !== id),
+        }));
+      setRsvpEvent(null);
+      setDetail(null);
+      setCalendarOpen(true);
       notify(
-        "Added to your calendar. RSVP is not submitted." +
+        (result.rsvpConfirmed ? "Demo RSVP confirmed. " : "") +
+          "Added to your calendar." +
           (result.notice ? " " + result.notice : ""),
       );
+      return null;
     } catch (error) {
-      notify(
+      const text =
         error instanceof Error
           ? error.message
-          : "Could not check this event. Try again.",
-      );
+          : "Could not add this event. Please try again.";
+      notify(text);
+      return text;
+    } finally {
+      if (version === enrollmentVersion.current) {
+        enrollmentLock.current = false;
+        setEnrolling(false);
+      }
     }
   }
   async function chat(text: string, previous?: Constraints) {
@@ -234,14 +276,21 @@ export default function App() {
         .map((id) => EVENTS.find((e) => e.id === id))
         .filter((e) => e && !issue(e, current.current));
       let response = matches.length
-        ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\n${matches.map((e) => `${e!.title}\n${when(e!)} · ${foodLabel(e!.food)}`).join("\n\n")}\n\nThey’re in your draft plan. Add the ones you like, or tell me what to change.`
+        ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
         : "I couldn’t find a verified, conflict-free match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
       if (result.notice) response = result.notice + "\n\n" + response;
       update((s) => ({
         ...s,
         constraints: result.constraints,
         draft: matches.map((e) => e!.id),
-        messages: [...s.messages, { role: "assistant", text: response }],
+        messages: [
+          ...s.messages,
+          {
+            role: "assistant",
+            text: response,
+            eventIds: matches.map((e) => e!.id),
+          },
+        ],
       }));
     } catch (error) {
       if (token === epoch.current)
@@ -280,7 +329,11 @@ export default function App() {
     setBusy(true);
     const token = ++epoch.current;
     nav("planner");
-    update((s) => ({ ...s, plan: s.plan.filter((id) => id !== old.id) }));
+    update((s) => ({
+      ...s,
+      plan: s.plan.filter((id) => id !== old.id),
+      rsvps: s.rsvps.filter((id) => id !== old.id),
+    }));
     const snapshot = current.current,
       key = planningKey(snapshot);
     try {
@@ -324,7 +377,10 @@ export default function App() {
       update((s) => ({
         ...s,
         draft: result.ids,
-        messages: [...s.messages, { role: "assistant", text: response }],
+        messages: [
+          ...s.messages,
+          { role: "assistant", text: response, eventIds: result.ids },
+        ],
       }));
     } catch (error) {
       notify(
@@ -730,10 +786,15 @@ export default function App() {
                 title="Your week, with a little guidance."
                 description="Discover opportunities that fit your interests and your actual free time."
               >
-                <Button onClick={() => nav("calendar")}>
+                <button
+                  className="btn"
+                  aria-expanded={calendarOpen}
+                  aria-controls="planner-calendar"
+                  onClick={() => setCalendarOpen((open) => !open)}
+                >
                   <Icon name="calendar" />
-                  My calendar
-                </Button>
+                  {calendarOpen ? "Hide calendar" : "My calendar"}
+                </button>
               </Heading>
               {cancelled ? (
                 <div className="notice">
@@ -779,7 +840,17 @@ export default function App() {
                         {m.role === "assistant" ? (
                           <img src="/assets/mascot.png" alt="" />
                         ) : null}
-                        <div className="bubble">{m.text}</div>
+                        <div className="bubble">
+                          {m.text}
+                          {m.role === "assistant" && m.eventIds?.length ? (
+                            <ChatEvents
+                              ids={m.eventIds}
+                              state={state}
+                              onDetails={setDetail}
+                              onAdd={add}
+                            />
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                     {busy ? (
@@ -838,102 +909,119 @@ export default function App() {
                     external calendar is connected.
                   </p>
                 </section>
-                <aside className="stack">
-                  <section className="panel">
-                    <div className="section-bar">
-                      <h2>Your draft plan</h2>
-                      <span className="tag">
-                        {draft.length} {draft.length === 1 ? "idea" : "ideas"}
-                      </span>
-                    </div>
-                    {draft.length ? (
-                      draft.map((e) => (
-                        <div className="draft-item" key={e!.id}>
-                          <span className="tag">{e!.category}</span>
-                          <button
-                            className="event-title"
-                            onClick={() => setDetail(e!.id)}
-                          >
-                            <h3>{e!.title}</h3>
-                          </button>
-                          <div className="meta">
-                            <Icon name="clock" />
-                            {when(e!)}
-                          </div>
-                          <div className="reason">
-                            {reasons(e!, state, state.constraints).map((r) => (
-                              <div key={r}>• {r}</div>
-                            ))}
-                          </div>
-                          <Button className="small" onClick={() => add(e!.id)}>
-                            <Icon name="plus" />
-                            Add to my calendar
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <Empty title="A little space for possibility">
-                        Start a conversation to see a few events selected for
-                        you.
-                      </Empty>
-                    )}
-                    <p className="fineprint">
-                      You choose what makes it into your week.
-                    </p>
-                  </section>
-                  <section className="panel">
-                    <div className="section-bar">
-                      <h2>What I’m working with</h2>
-                      <Icon name="settings" />
-                    </div>
-                    {[
-                      ["Demo week", "Oct 19–23"],
-                      ["Busy commitments", state.blocks.length],
-                      ["Travel time", `${state.buffer} minutes`],
-                      [
-                        "Events in your plan",
-                        state.plan.filter((id) => !state.cancelled.includes(id))
-                          .length,
-                      ],
-                    ].map(([key, value]) => (
-                      <div className="summary-line" key={key}>
-                        <span>{key}</span>
-                        <strong>{value}</strong>
-                      </div>
-                    ))}
-                    <p className="sub">{state.interests.join(" · ")}</p>
-                    <button className="text-btn" onClick={() => nav("profile")}>
-                      Edit interests & availability <Icon name="arrow" />
-                    </button>
-                  </section>
-                  {state.plan.some((id) => !state.cancelled.includes(id)) ? (
+                {calendarOpen ? (
+                  <PlannerCalendar
+                    state={state}
+                    onClose={() => setCalendarOpen(false)}
+                    onDetails={setDetail}
+                  />
+                ) : (
+                  <aside className="stack">
                     <section className="panel">
-                      <h2>Try a change of plans</h2>
-                      <p className="sub">
-                        Simulate a cancellation, then find an alternative that
-                        fits.
+                      <div className="section-bar">
+                        <h2>Your draft plan</h2>
+                        <span className="tag">
+                          {draft.length} {draft.length === 1 ? "idea" : "ideas"}
+                        </span>
+                      </div>
+                      {draft.length ? (
+                        draft.map((e) => (
+                          <div className="draft-item" key={e!.id}>
+                            <span className="tag">{e!.category}</span>
+                            <button
+                              className="event-title"
+                              onClick={() => setDetail(e!.id)}
+                            >
+                              <h3>{e!.title}</h3>
+                            </button>
+                            <div className="meta">
+                              <Icon name="clock" />
+                              {when(e!)}
+                            </div>
+                            <div className="reason">
+                              {reasons(e!, state, state.constraints).map(
+                                (r) => (
+                                  <div key={r}>• {r}</div>
+                                ),
+                              )}
+                            </div>
+                            <Button
+                              className="small"
+                              onClick={() => add(e!.id)}
+                            >
+                              <Icon name="plus" />
+                              Add to my calendar
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <Empty title="A little space for possibility">
+                          Start a conversation to see a few events selected for
+                          you.
+                        </Empty>
+                      )}
+                      <p className="fineprint">
+                        You choose what makes it into your week.
                       </p>
-                      <Button
-                        className="small"
-                        onClick={() => {
-                          const id = current.current.plan.find(
-                            (id) => !current.current.cancelled.includes(id),
-                          );
-                          if (id)
-                            update((s) => ({
-                              ...s,
-                              cancelled: [...s.cancelled, id],
-                            }));
-                          notify(
-                            "Demo cancellation created. Your other events are unchanged.",
-                          );
-                        }}
-                      >
-                        Simulate event cancellation
-                      </Button>
                     </section>
-                  ) : null}
-                </aside>
+                    <section className="panel">
+                      <div className="section-bar">
+                        <h2>What I’m working with</h2>
+                        <Icon name="settings" />
+                      </div>
+                      {[
+                        ["Demo week", "Oct 19–23"],
+                        ["Busy commitments", state.blocks.length],
+                        ["Travel time", `${state.buffer} minutes`],
+                        [
+                          "Events in your plan",
+                          state.plan.filter(
+                            (id) => !state.cancelled.includes(id),
+                          ).length,
+                        ],
+                      ].map(([key, value]) => (
+                        <div className="summary-line" key={key}>
+                          <span>{key}</span>
+                          <strong>{value}</strong>
+                        </div>
+                      ))}
+                      <p className="sub">{state.interests.join(" · ")}</p>
+                      <button
+                        className="text-btn"
+                        onClick={() => nav("profile")}
+                      >
+                        Edit interests & availability <Icon name="arrow" />
+                      </button>
+                    </section>
+                    {state.plan.some((id) => !state.cancelled.includes(id)) ? (
+                      <section className="panel">
+                        <h2>Try a change of plans</h2>
+                        <p className="sub">
+                          Simulate a cancellation, then find an alternative that
+                          fits.
+                        </p>
+                        <Button
+                          className="small"
+                          onClick={() => {
+                            const id = current.current.plan.find(
+                              (id) => !current.current.cancelled.includes(id),
+                            );
+                            if (id)
+                              update((s) => ({
+                                ...s,
+                                cancelled: [...s.cancelled, id],
+                              }));
+                            notify(
+                              "Demo cancellation created. Your other events are unchanged.",
+                            );
+                          }}
+                        >
+                          Simulate event cancellation
+                        </Button>
+                      </section>
+                    ) : null}
+                  </aside>
+                )}
               </div>
             </>
           ) : null}
@@ -1033,6 +1121,11 @@ export default function App() {
                 epoch.current++;
                 locked.current = false;
                 setBusy(false);
+                enrollmentVersion.current++;
+                enrollmentLock.current = false;
+                setEnrolling(false);
+                setRsvpEvent(null);
+                setCalendarOpen(false);
                 update(fresh);
                 nav("dashboard");
                 setMode("Simulated planner");
@@ -1058,6 +1151,16 @@ export default function App() {
       >
         {toast}
       </div>
+      {rsvpEvent ? (
+        <RsvpDialog
+          key={rsvpEvent}
+          event={EVENTS.find((e) => e.id === rsvpEvent)!}
+          name={state.name}
+          busy={enrolling}
+          onClose={() => setRsvpEvent(null)}
+          onSubmit={(rsvp) => completeEnrollment(rsvpEvent, rsvp)}
+        />
+      ) : null}
       {detailEvent ? (
         <EventDetails
           event={detailEvent}

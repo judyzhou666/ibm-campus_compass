@@ -72,6 +72,50 @@ async fn validate(
     Ok(Json(json!({"allowed":issue.is_none(),"issue":issue})))
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Rsvp {
+    display_name: String,
+    attending: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EnrollmentRequest {
+    event_id: String,
+    state: Schedule,
+    rsvp: Option<Rsvp>,
+}
+
+async fn enroll(
+    State(events): State<Arc<Vec<Event>>>,
+    Json(request): Json<EnrollmentRequest>,
+) -> Result<Json<Value>, ApiError> {
+    request.state.validate(&events).map_err(bad_request)?;
+    let event = events
+        .iter()
+        .find(|e| e.id == request.event_id)
+        .ok_or_else(|| bad_request("Unknown event ID"))?;
+    if let Some(problem) = planner::issue(event, &request.state, &events) {
+        return Err((StatusCode::CONFLICT, Json(json!({"error":problem}))));
+    }
+    let required = event.rsvp == "RSVP required";
+    if required
+        && !request.rsvp.as_ref().is_some_and(|r| {
+            r.attending && !r.display_name.trim().is_empty() && r.display_name.len() <= 120
+        })
+    {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"error":"Complete the required RSVP before adding this event."})),
+        ));
+    }
+    // Demo confirmation only: no organizer is contacted and no shared booking is persisted.
+    Ok(Json(
+        json!({"event_id":event.id,"demo":true,"status":"enrolled","rsvp_confirmed":required}),
+    ))
+}
+
 pub fn app() -> Router {
     let events: Vec<Event> = serde_json::from_str(include_str!("../../data/events.json"))
         .expect("valid embedded demo events");
@@ -79,6 +123,7 @@ pub fn app() -> Router {
         .route("/api/health",get(|| async { Json(json!({"status":"ok","mode":"simulated","provider":"rust-rules","watsonx_connected":false})) }))
         .route("/api/plan",post(plan))
         .route("/api/validate",post(validate))
+        .route("/api/enroll",post(enroll))
         .layer(DefaultBodyLimit::max(32*1024))
         .with_state(Arc::new(events))
         .fallback_service(ServeDir::new(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../dist")))

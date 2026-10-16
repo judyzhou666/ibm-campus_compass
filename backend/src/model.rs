@@ -19,6 +19,7 @@ pub struct Event {
     pub food: String,
     pub cost: u16,
     pub access: String,
+    pub rsvp: String,
 }
 
 #[derive(Clone, Deserialize, Default)]

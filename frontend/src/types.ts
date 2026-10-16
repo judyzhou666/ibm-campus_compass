@@ -42,6 +42,7 @@ export interface Constraints {
 export interface Message {
   role: "user" | "assistant";
   text: string;
+  eventIds?: string[];
 }
 export interface Post {
   name: string;
@@ -52,6 +53,7 @@ export interface Post {
 export interface DemoState extends Schedule {
   name: string;
   saved: string[];
+  rsvps: string[];
   joined: string[];
   posts: Post[];
   draft: string[];
@@ -63,4 +65,9 @@ export interface PlanResponse {
   provider: string;
   constraints: Constraints;
   event_ids: string[];
+}
+
+export interface Rsvp {
+  display_name: string;
+  attending: boolean;
 }

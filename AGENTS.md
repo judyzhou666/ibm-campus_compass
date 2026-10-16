@@ -19,6 +19,8 @@ Install with `npm ci`. Build with `npm run build`; start with `cargo run --locke
 
 ## Documentation and Bob
 
+Before each push, update README.md with the completed changes, teammate run/demo instructions, verification results, and material limitations. Commit completed work with a descriptive message.
+
 Place new project documentation in `docs/`, except GitHub Wiki sources in `wiki/`. Edit existing documents in place unless the user requests reorganization. Keep agent instruction entrypoints at their tool-required paths.
 
 Read `docs/github-wiki.md` when changing Wiki publishing. Read `docs/ibm-bob-setup.md` when initializing or refreshing Bob project context with `/init`.

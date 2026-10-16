@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   requestPlan,
+  enrollEvent,
   validateEvent,
   schedulePayload,
 } from "../frontend/src/api.ts";
@@ -53,4 +54,73 @@ test("calendar export labels demo records and excludes cancellations", () => {
   assert.ok(text.includes("UID:e5-"));
   assert.ok(text.includes("[DEMO]"));
   assert.ok(text.includes("DTSTART:20261022T190000Z"));
+});
+
+test("required RSVP cannot be bypassed, even offline", async () => {
+  for (const rsvp of [
+    undefined,
+    { display_name: "Judy", attending: false },
+    { display_name: "   ", attending: true },
+    { display_name: "a".repeat(121), attending: true },
+  ]) {
+    await assert.rejects(
+      enrollEvent("e1", fresh(), rsvp, offline),
+      /required RSVP/,
+    );
+  }
+});
+test("demo enrollment supports completed RSVP and drop-in, with explicit offline notice", async () => {
+  const rsvp = await enrollEvent(
+    "e1",
+    fresh(),
+    { display_name: "Judy", attending: true },
+    offline,
+  );
+  assert.equal(rsvp.rsvpConfirmed, true);
+  assert.match(rsvp.notice, /locally/);
+  const dropin = await enrollEvent("e5", fresh(), undefined, offline);
+  assert.equal(dropin.rsvpConfirmed, false);
+});
+test("enrollment checks cancellations and access and respects server rejections", async () => {
+  const confirmed = { display_name: "Judy", attending: true };
+  await assert.rejects(
+    enrollEvent("e1", { ...fresh(), cancelled: ["e1"] }, confirmed, offline),
+    /Cancelled/,
+  );
+  await assert.rejects(
+    enrollEvent("e12", fresh(), confirmed, offline),
+    /Membership/,
+  );
+  for (const status of [400, 401, 403, 409, 422]) {
+    const rejected: typeof fetch = async () => new Response("{}", { status });
+    await assert.rejects(
+      enrollEvent("e1", fresh(), confirmed, rejected),
+      /could not accept/,
+    );
+  }
+});
+test("enrollment sends only the selected RSVP and schedule, and accepts a verified demo response", async () => {
+  const fetcher: typeof fetch = async (path, options) => {
+    assert.equal(path, "/api/enroll");
+    const body = JSON.parse(String(options?.body));
+    assert.equal(body.rsvp.display_name, "Demo student");
+    assert.equal("messages" in body.state, false);
+    return Response.json({
+      event_id: "e1",
+      demo: true,
+      status: "enrolled",
+      rsvp_confirmed: true,
+    });
+  };
+  assert.equal(
+    (
+      await enrollEvent(
+        "e1",
+        fresh(),
+        { display_name: "Demo student", attending: true },
+        fetcher,
+      )
+    ).notice,
+    "",
+  );
 });

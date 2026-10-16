@@ -16,9 +16,9 @@ Install Rust stable and Node.js 22.12+ first. Open [the local demo](http://127.0
 
 1. Reset the demo in Settings.
 2. Open AI Planner and select “AI and education on Tuesday or Thursday afternoons.”
-3. Review the matching events and their schedule-fit explanations.
-4. Add a choice to the calendar.
-5. Simulate an event cancellation and ask for a replacement.
+3. Click the top-right **My calendar** button to see your schedule beside the chat. Each new recommendation includes **View details** and **Add to calendar**.
+4. Add “Learning with AI: a hands-on lab.” Complete the required demo RSVP with a demo name and attendance confirmation. Cancelling leaves the calendar unchanged; completing the form adds the event immediately. Drop-in events do not need this form.
+5. Close the side calendar to show the draft panel, then simulate an event cancellation and ask for a replacement.
 6. Try the social/free-food example or export the calendar.
 
 The fixed demonstration week is October 19–23, 2026, in Eastern Time. No Google Calendar or Canvas connection is required. Calendar additions do not submit real RSVPs.
