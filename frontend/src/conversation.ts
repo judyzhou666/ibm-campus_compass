@@ -1,12 +1,9 @@
-import { requestPlan, schedulePayload } from "./api.ts";
+import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
 import type { CampusEvent, Constraints, DemoState } from "./types.ts";
-
-const planningKey = (state: DemoState) =>
-  JSON.stringify([schedulePayload(state), state.constraints]);
-type Work = { plan: Awaited<ReturnType<typeof requestPlan>>; trade?: string };
+import { replacementConstraints, constraintSummary } from "./replanning.ts";
 
 export function createConversation(
   demo: DemoStore,
@@ -27,13 +24,12 @@ export function createConversation(
   }
 
   async function run(
-    task: (snapshot: DemoState, valid: () => boolean) => Promise<Work | null>,
+    task: (snapshot: DemoState) => ReturnType<typeof requestPlan>,
     old?: CampusEvent,
   ) {
     const token = ++version;
     const snapshot = demo.read(),
       key = planningKey(snapshot);
-    const valid = () => token === version && key === planningKey(demo.read());
     status.update((s) => ({ ...s, busy: true }));
     function stale() {
       if (token !== version) return true;
@@ -46,9 +42,8 @@ export function createConversation(
       return true;
     }
     try {
-      const work = await task(snapshot, valid);
-      if (stale() || !work) return;
-      const { plan, trade = "" } = work;
+      const plan = await task(snapshot);
+      if (stale()) return;
       const matches: CampusEvent[] = [];
       for (const id of plan.ids) {
         const event = EVENTS.find((e) => e.id === id);
@@ -65,8 +60,12 @@ export function createConversation(
           matches.push(event);
       }
       const alternative = matches[0];
+      const retained =
+        snapshot.plan
+          .map((id) => EVENTS.find((e) => e.id === id)?.title)
+          .join(", ") || "none";
       let response = old
-        ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. It shares the ${old.topic.toLowerCase()} topic and fits your schedule. ${trade}\n\nIt’s a suggestion only. Add it if it works for you.` : "No eligible alternative in the same topic fits your current schedule. Try changing your availability or choosing another interest."}`
+        ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${retained}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and it fits your schedule. ${alternative.rsvp}. It’s a suggestion only. Add it if it works for you.` : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`}`
         : matches.length
           ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : "I couldn’t find a verified, conflict-free match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
@@ -88,6 +87,9 @@ export function createConversation(
             role: "assistant",
             text: response,
             eventIds: matches.map((e) => e.id),
+            evidence: plan.evidence.filter((item) =>
+              matches.some((e) => e.id === item.event_id),
+            ),
           },
         ],
       }));
@@ -114,30 +116,9 @@ export function createConversation(
       return;
     }
     remove(old.id);
-    await run(async (snapshot, valid) => {
-      const constraints = {
-        ...snapshot.constraints,
-        topics: [old.topic],
-        limit: 1,
-      };
-      let plan = await requestPlan(
-        "Find events",
-        constraints,
-        snapshot,
-        fetcher,
-      );
-      if (!valid()) return null;
-      let trade = "";
-      if (!plan.ids.length) {
-        const relaxed = { ...constraints };
-        delete relaxed.days;
-        delete relaxed.after;
-        delete relaxed.before;
-        plan = await requestPlan("Find events", relaxed, snapshot, fetcher);
-        trade =
-          "I relaxed your chat day/time filters to show a possible alternative; review the new time before adding it.";
-      }
-      return { plan, trade };
+    await run((snapshot) => {
+      const constraints = replacementConstraints(snapshot.constraints, old);
+      return requestPlan("Find events", constraints, snapshot, fetcher);
     }, old);
   }
 
@@ -166,9 +147,9 @@ export function createConversation(
         constraints: previous ?? s.constraints,
         messages: [...s.messages, { role: "user", text }],
       }));
-      await run(async (snapshot) => ({
-        plan: await requestPlan(text, snapshot.constraints, snapshot, fetcher),
-      }));
+      await run((snapshot) =>
+        requestPlan(text, snapshot.constraints, snapshot, fetcher),
+      );
     },
   };
 }

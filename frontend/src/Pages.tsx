@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
@@ -18,6 +19,10 @@ export function Profile({ state, update, notify }: Props) {
       ...s,
       name: String(f.get("name")).trim() || "Judy",
       interests: f.getAll("topics").map(String),
+      onboarded: true,
+      major: String(f.get("major") || "").trim(),
+      goals: String(f.get("goals") || "").trim(),
+      preferred_time: String(f.get("preferred_time") || "any"),
     }));
     notify("Preferences saved. Ask the planner for updated suggestions.");
   }
@@ -97,6 +102,34 @@ export function Profile({ state, update, notify }: Props) {
             <p className="sub">
               Use a fictional profile for classroom demonstrations. Changes stay
               in this browser.
+            </p>
+            <label className="field">
+              Major or interdisciplinary interests (optional)
+              <input name="major" maxLength={120} defaultValue={state.major} />
+            </label>
+            <label className="field">
+              Research / career exploration goals (optional)
+              <input name="goals" maxLength={240} defaultValue={state.goals} />
+            </label>
+            <p className="fineprint">
+              These notes stay local. Select topics above to influence matching;
+              free-text goals are not interpreted.
+            </p>
+            <label className="field">
+              Preferred event time
+              <select
+                name="preferred_time"
+                defaultValue={state.preferred_time || "any"}
+              >
+                <option value="any">Any time</option>
+                <option value="morning">Morning</option>
+                <option value="afternoon">Afternoon</option>
+                <option value="evening">Evening</option>
+              </select>
+            </label>
+            <p className="fineprint">
+              Time preferences affect ranking. Use chat for strict time limits,
+              busy times below and travel buffer in Settings.
             </p>
             <button className="btn primary">Save preferences</button>
           </form>
@@ -204,13 +237,107 @@ const seedPosts: Post[] = [
     tag: "Arts & culture",
   },
 ];
-export function Forum({ state, update, notify }: Props) {
+export function Forum({
+  state,
+  update,
+  notify,
+  selected,
+  onSelect,
+}: Props & { selected: string | null; onSelect: (id: string | null) => void }) {
+  const detailsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (selected) {
+      detailsRef.current?.focus({ preventScroll: true });
+      detailsRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [selected]);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const community = COMMUNITIES.find((c) => c.id === selected);
+  const shown = COMMUNITIES.filter(
+    (c) =>
+      (category === "All" || c.category === category) &&
+      `${c.name} ${c.description}`.toLowerCase().includes(query.toLowerCase()),
+  );
   return (
     <>
       <Heading
         title="Good things start with a hello."
         description="A sample community board for the Campus Compass demonstration."
       />
+      <section className="panel communities">
+        <h2>All Communities</h2>
+        <p>
+          Fictional groups. Joining and posting only change this browser; no
+          messages are delivered.
+        </p>
+        <label className="field">
+          Search communities
+          <input value={query} onChange={(e) => setQuery(e.target.value)} />
+        </label>
+        <div className="filters">
+          {["All", "Academic", "Career", "Social", "Arts"].map((c) => (
+            <button
+              className={`chip ${category === c ? "active" : ""}`}
+              aria-pressed={category === c}
+              key={c}
+              onClick={() => setCategory(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <div className="briefing-grid">
+          {shown.map((c) => (
+            <article key={c.id}>
+              <h3>
+                <button className="text-btn" onClick={() => onSelect(c.id)}>
+                  {c.name}
+                </button>
+              </h3>
+              <p>{c.description}</p>
+              <p className="fineprint">{c.category} · Fictional community</p>
+              <Button
+                onClick={() =>
+                  update((s) => toggleCommunityMembership(s, c.id))
+                }
+              >
+                {state.joinedCommunities.includes(c.id)
+                  ? "Leave community"
+                  : "Join locally"}
+              </Button>
+            </article>
+          ))}
+        </div>
+        {!shown.length && (
+          <p role="status">
+            No communities match. Try another search or category.
+          </p>
+        )}
+        {community && (
+          <section
+            className="notice"
+            aria-label="Community details"
+            ref={detailsRef}
+            tabIndex={-1}
+          >
+            <h3>{community.name}</h3>
+            <p>{community.description}</p>
+            <p>
+              Topics: {community.topics.join(", ")}. Membership is local only.
+            </p>
+            <h4>Related fictional events</h4>
+            {EVENTS.filter((e) => community.topics.includes(e.topic))
+              .slice(0, 3)
+              .map((e) => (
+                <p key={e.id}>{e.title}</p>
+              ))}
+            <Button onClick={() => onSelect(null)}>
+              Close community details
+            </Button>
+          </section>
+        )}
+      </section>
       <div className="wide-grid">
         <section className="panel">
           <h2>Campus conversations</h2>

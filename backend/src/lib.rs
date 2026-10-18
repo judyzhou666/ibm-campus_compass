@@ -51,16 +51,18 @@ async fn plan(
     let constraints = interpretation.constraints;
     // This validation is also required for any future watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let ids: Vec<_> = if interpretation.understood {
+    let selected = if interpretation.understood {
         planner::recommend(&request.state, &constraints, &events)
     } else {
         Vec::new()
-    }
-    .iter()
-    .map(|e| &e.id)
-    .collect();
+    };
+    let evidence: Vec<_> = selected
+        .iter()
+        .map(|e| planner::evidence(e, &request.state, &constraints))
+        .collect();
+    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "event_ids":ids}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "event_ids":ids, "recommendations":evidence}),
     ))
 }
 

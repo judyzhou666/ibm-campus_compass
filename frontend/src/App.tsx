@@ -1,3 +1,4 @@
+import { communityFromHash, communityHash } from "./communities.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -16,6 +17,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
+import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 
@@ -45,8 +47,10 @@ const prompts = [
   "A social event with free food",
   "Career events after 1 PM",
 ];
-const validPage = (s: string): Page =>
-  s in labels ? (s as Page) : "dashboard";
+const validPage = (s: string): Page => {
+  const page = s.split("?")[0];
+  return page in labels ? (page as Page) : "dashboard";
+};
 export default function App() {
   const [demo] = useState(() => createStore(restore()));
   const state = useSyncExternalStore(demo.subscribe, demo.read);
@@ -65,6 +69,9 @@ export default function App() {
   );
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
+  );
+  const [selectedCommunity, setSelectedCommunity] = useState(() =>
+    communityFromHash(location.hash),
   );
   const [filter, setFilter] = useState("All"),
     [query, setQuery] = useState(""),
@@ -85,14 +92,16 @@ export default function App() {
   function notify(text: string) {
     setToast(text);
   }
-  function nav(next: Page) {
+  function nav(next: Page, communityId?: string) {
+    setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
     setDetail(null);
     setFilter("All");
     setQuery("");
     setSearch("");
-    location.hash = next;
+    location.hash =
+      next === "forum" && communityId ? communityHash(communityId) : next;
     window.scrollTo(0, 0);
   }
   useEffect(() => {
@@ -112,6 +121,7 @@ export default function App() {
   useEffect(() => {
     const handle = () => {
       setPage(validPage(location.hash.slice(1)));
+      setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
     };
     window.addEventListener("hashchange", handle);
@@ -266,6 +276,15 @@ export default function App() {
 
   return (
     <>
+      {!state.onboarded ? (
+        <Welcome
+          onStart={() => {
+            update((s) => ({ ...s, onboarded: true }));
+            nav("profile");
+          }}
+          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
+        />
+      ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
         <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
           <span className="logo">
@@ -425,6 +444,12 @@ export default function App() {
                         Explore all <Icon name="arrow" />
                       </button>
                     </div>
+                    <Briefing
+                      state={state}
+                      onDetail={setDetail}
+                      onPlanner={() => nav("planner")}
+                      onCalendar={() => nav("calendar")}
+                    />
                     <Filters value={filter} onChange={setFilter} />
                     {cards(recommended.slice(0, 3))}
                     {!recommended.length ? (
@@ -630,6 +655,7 @@ export default function App() {
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
+                              evidence={m.evidence}
                               state={state}
                               onDetails={setDetail}
                               onAdd={add}
@@ -897,7 +923,13 @@ export default function App() {
             <Profile state={state} update={update} notify={notify} />
           ) : null}
           {page === "forum" ? (
-            <Forum state={state} update={update} notify={notify} />
+            <Forum
+              state={state}
+              update={update}
+              notify={notify}
+              selected={selectedCommunity}
+              onSelect={(id) => nav("forum", id ?? undefined)}
+            />
           ) : null}
           {page === "settings" ? (
             <Settings

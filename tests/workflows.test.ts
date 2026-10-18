@@ -161,7 +161,12 @@ test("new chat invalidates planning without cancelling an independently approved
   assert.deepEqual(demo.read().messages, []);
 });
 
-for (const change of ["schedule", "preferences", "constraints"] as const) {
+for (const change of [
+  "schedule",
+  "preferences",
+  "preferred time",
+  "constraints",
+] as const) {
   test(`conversation rejects results after ${change} changes`, async () => {
     const { fetcher, calls } = transport();
     const { demo, conversation } = setup(fetcher);
@@ -173,7 +178,9 @@ for (const change of ["schedule", "preferences", "constraints"] as const) {
         ? { ...s, cancelled: ["e1"] }
         : change === "preferences"
           ? { ...s, interests: ["Social"] }
-          : { ...s, constraints: { days: [3] } },
+          : change === "preferred time"
+            ? { ...s, preferred_time: "evening" }
+            : { ...s, constraints: { days: [3] } },
     );
     calls[0].resolve(planned());
     await pending;
@@ -227,36 +234,80 @@ test("planning errors release busy state and unsupported requests get explicit f
   assert.equal(conversation.read().busy, false);
 });
 
-test("replacement relaxes only chat time filters, removes old RSVP and keeps additions student-approved", async () => {
+test("replacement preserves every filter and asks the student before changing them", async () => {
   const bodies: { previous: Constraints }[] = [];
   const fetcher: typeof fetch = async (_path, options) => {
     const body: { previous: Constraints } = JSON.parse(String(options?.body));
     bodies.push(body);
-    return planned(bodies.length === 1 ? [] : ["e5"], body.previous);
+    return planned([], body.previous);
   };
   const { demo, conversation } = setup(fetcher);
+  const previous = {
+    topics: ["Career"],
+    days: [1],
+    after: 780,
+    before: 1020,
+    free: true,
+    food: "Coffee & snacks",
+    excluded: ["Social"],
+  };
   demo.update((s) => ({
     ...s,
     plan: ["e1", "e2"],
     rsvps: ["e1"],
     cancelled: ["e1"],
-    constraints: { days: [1], after: 780, before: 1020, free: true },
+    constraints: previous,
   }));
   await conversation.chat("find a replacement");
-  assert.equal(bodies.length, 2);
-  assert.deepEqual(bodies[0].previous.days, [1]);
-  assert.equal("days" in bodies[1].previous, false);
-  assert.equal("after" in bodies[1].previous, false);
-  assert.equal("before" in bodies[1].previous, false);
-  assert.equal(bodies[1].previous.free, true);
+  assert.equal(bodies.length, 1);
+  assert.deepEqual(bodies[0].previous, { ...previous, limit: 1 });
+  assert.deepEqual(demo.read().plan, ["e2"]);
+  assert.deepEqual(demo.read().rsvps, []);
+  assert.deepEqual(demo.read().draft, []);
+  assert.match(
+    demo.read().messages.at(-1)!.text,
+    /explicitly request a different/,
+  );
+  assert.match(
+    demo.read().messages.at(-1)!.text,
+    /Conversations beyond your major/,
+  );
+});
+
+test("replacement carries Rust evidence and RSVP requirements without adding the alternative", async () => {
+  const evidence = {
+    event_id: "e5",
+    interest_match: "AI",
+    schedule_fit: "Thursday",
+    practical: "Drop-in welcome",
+    trade_offs: "Fictional record",
+  };
+  const { demo, conversation } = setup(async (_path, options) => {
+    const body: { previous: Constraints } = JSON.parse(String(options?.body));
+    return Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: body.previous,
+      event_ids: ["e5"],
+      recommendations: [evidence],
+    });
+  });
+  demo.update((s) => ({
+    ...s,
+    plan: ["e1", "e2"],
+    rsvps: ["e1"],
+    cancelled: ["e1"],
+  }));
+  await conversation.replace();
   assert.deepEqual(demo.read().plan, ["e2"]);
   assert.deepEqual(demo.read().rsvps, []);
   assert.deepEqual(demo.read().draft, ["e5"]);
-  assert.match(demo.read().messages.at(-1)!.text, /relaxed/);
+  assert.deepEqual(demo.read().messages.at(-1)!.evidence, [evidence]);
+  assert.match(demo.read().messages.at(-1)!.text, /Drop-in welcome/);
   assert.match(demo.read().messages.at(-1)!.text, /suggestion only/);
 });
 
-test("replacement stops before a relaxed request if its first result becomes obsolete", async () => {
+test("replacement discards a result after new chat", async () => {
   const { fetcher, calls } = transport();
   const { demo, conversation } = setup(fetcher);
   demo.update((s) => ({ ...s, plan: ["e1"], cancelled: ["e1"] }));
@@ -268,10 +319,9 @@ test("replacement stops before a relaxed request if its first result becomes obs
   assert.deepEqual(demo.read().messages, []);
 });
 
-test("a schedule change during relaxed replacement prevents accepting the alternative", async () => {
+test("a schedule change during replacement prevents accepting the alternative", async () => {
   const { demo, conversation } = setup(async (_path, options) => {
     const body: { previous: Constraints } = JSON.parse(String(options?.body));
-    if (body.previous.days) return planned([], body.previous);
     demo.update((s) => ({ ...s, cancelled: [...s.cancelled, "e5"] }));
     return planned(["e5"], body.previous);
   });
