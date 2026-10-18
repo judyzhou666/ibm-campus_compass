@@ -1,3 +1,4 @@
+import type { DemoState } from "./types.ts";
 export const COMMUNITIES = [
   {
     id: "research",
@@ -43,3 +44,29 @@ export const COMMUNITIES = [
     description: "Find relaxed activities and make room for wellbeing.",
   },
 ];
+
+export function toggleCommunityMembership(
+  state: DemoState,
+  id: string,
+): DemoState {
+  if (!COMMUNITIES.some((c) => c.id === id)) return state;
+  return {
+    ...state,
+    joinedCommunities: state.joinedCommunities.includes(id)
+      ? state.joinedCommunities.filter((joined) => joined !== id)
+      : [...state.joinedCommunities, id],
+  };
+}
+
+export function communityFromHash(hash: string): string | null {
+  const [page, query] = hash.replace(/^#/, "").split("?");
+  if (page !== "forum") return null;
+  const id = new URLSearchParams(query).get("community");
+  return COMMUNITIES.some((c) => c.id === id) ? id : null;
+}
+
+export function communityHash(id: string): string {
+  return COMMUNITIES.some((c) => c.id === id)
+    ? "#forum?community=" + encodeURIComponent(id)
+    : "#forum";
+}

@@ -1,5 +1,5 @@
-import { COMMUNITIES } from "./communities.ts";
-import { useState, type FormEvent } from "react";
+import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
@@ -237,10 +237,22 @@ const seedPosts: Post[] = [
     tag: "Arts & culture",
   },
 ];
-export function Forum({ state, update, notify }: Props) {
+export function Forum({
+  state,
+  update,
+  notify,
+  selected,
+  onSelect,
+}: Props & { selected: string | null; onSelect: (id: string | null) => void }) {
+  const detailsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (selected) {
+      detailsRef.current?.focus({ preventScroll: true });
+      detailsRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [selected]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
-  const [selected, setSelected] = useState<string | null>(null);
   const community = COMMUNITIES.find((c) => c.id === selected);
   const shown = COMMUNITIES.filter(
     (c) =>
@@ -279,7 +291,7 @@ export function Forum({ state, update, notify }: Props) {
           {shown.map((c) => (
             <article key={c.id}>
               <h3>
-                <button className="text-btn" onClick={() => setSelected(c.id)}>
+                <button className="text-btn" onClick={() => onSelect(c.id)}>
                   {c.name}
                 </button>
               </h3>
@@ -287,15 +299,10 @@ export function Forum({ state, update, notify }: Props) {
               <p className="fineprint">{c.category} · Fictional community</p>
               <Button
                 onClick={() =>
-                  update((s) => ({
-                    ...s,
-                    joined: s.joined.includes(c.id)
-                      ? s.joined.filter((id) => id !== c.id)
-                      : [...s.joined, c.id],
-                  }))
+                  update((s) => toggleCommunityMembership(s, c.id))
                 }
               >
-                {state.joined.includes(c.id)
+                {state.joinedCommunities.includes(c.id)
                   ? "Leave community"
                   : "Join locally"}
               </Button>
@@ -308,7 +315,12 @@ export function Forum({ state, update, notify }: Props) {
           </p>
         )}
         {community && (
-          <section className="notice" aria-label="Community details">
+          <section
+            className="notice"
+            aria-label="Community details"
+            ref={detailsRef}
+            tabIndex={-1}
+          >
             <h3>{community.name}</h3>
             <p>{community.description}</p>
             <p>
@@ -320,7 +332,7 @@ export function Forum({ state, update, notify }: Props) {
               .map((e) => (
                 <p key={e.id}>{e.title}</p>
               ))}
-            <Button onClick={() => setSelected(null)}>
+            <Button onClick={() => onSelect(null)}>
               Close community details
             </Button>
           </section>

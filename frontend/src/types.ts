@@ -68,6 +68,7 @@ export interface DemoState extends Schedule {
   saved: string[];
   rsvps: string[];
   joined: string[];
+  joinedCommunities: string[];
   posts: Post[];
   draft: string[];
   constraints: Constraints;

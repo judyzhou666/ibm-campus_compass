@@ -1,4 +1,4 @@
-import { COMMUNITIES } from "./communities.ts";
+import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -315,7 +315,7 @@ export function EventDetails({
         </p>
         {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
           <p key={c.id}>
-            <a href="#forum" onClick={onClose}>
+            <a href={communityHash(c.id)} onClick={onClose}>
               {c.name}
             </a>
           </p>

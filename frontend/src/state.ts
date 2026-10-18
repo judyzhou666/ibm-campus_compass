@@ -1,3 +1,4 @@
+import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
 
@@ -15,6 +16,7 @@ export const fresh = (): DemoState => ({
   buffer: 15,
   cancelled: [],
   joined: [],
+  joinedCommunities: [],
   posts: [],
   draft: [],
   constraints: {},
@@ -97,6 +99,11 @@ export function restore(): DemoState {
                 ),
             )
             .slice(0, 100)
+        : [],
+      joinedCommunities: Array.isArray(value.joinedCommunities)
+        ? value.joinedCommunities.filter((id: unknown) =>
+            COMMUNITIES.some((c) => c.id === id),
+          )
         : [],
       joined: Array.isArray(value.joined)
         ? value.joined.filter((s: unknown) => typeof s === "string")

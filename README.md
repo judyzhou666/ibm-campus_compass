@@ -2,6 +2,17 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## PR #3 review fixes — October 18, 2026
+
+Two community interaction bugs found during review have been fixed on the PR branch:
+
+- Community memberships now persist in `joinedCommunities`, independently of conversation joins in `joined`. A conversation named `ai` can no longer join or leave the AI community accidentally. Existing conversation joins remain intact. Legacy `joined` values are not inferred as community memberships because post titles can match community IDs; rejoin any groups tested on the earlier PR preview once.
+- Related-community links in event details now carry a validated community ID, such as `#forum?community=ai`. They open the selected group's details, scroll it into view and move keyboard focus there. Reloading or using Back/Forward retains the group in the URL. Unknown IDs safely show the general forum.
+
+Files changed for these fixes: `communities.ts` (membership operations and community links), `state.ts` / `types.ts` (separate persisted membership field), and `App.tsx` / `Pages.tsx` / `components.tsx` (selected-community navigation). `tests/communities.test.ts` covers name collisions, persistence and valid/invalid links.
+
+Verification: `npm test` passes the planner assertions, 18 TypeScript tests and 5 Wiki tests; `npm run build` passes. The reviewed Rust code passes its 4 unit tests and API integration suite. Browser checks verify named event-to-community navigation, independent conversation/community joins and leave actions, reload persistence, and a 390px mobile layout without horizontal page overflow. To reproduce the collision regression check, create a local post titled `ai`, join its conversation, and confirm **AI & learning circle** still offers **Join locally**. Join and leave that community; the conversation must remain joined.
+
 ## Proposal-aligned MVP improvements — Doris
 
 The Rust planner now returns structured recommendation evidence: interest relevance using the event description, schedule fit including travel buffer, practical requirements, and trade-offs. Chat cards display backend evidence; unavailable-backend suggestions carry an explicit browser simulation notice and do not invent Rust evidence. Evidence describes the recommendation-time snapshot; add actions always check current availability again. Reloaded chat retains event links but does not restore evidence as fresh verification.

@@ -1,3 +1,4 @@
+import { communityFromHash, communityHash } from "./communities.ts";
 import { replacementConstraints, constraintSummary } from "./replanning.ts";
 import { useEffect, useRef, useState } from "react";
 import { EVENTS, when } from "./data.ts";
@@ -46,8 +47,10 @@ const prompts = [
   "A social event with free food",
   "Career events after 1 PM",
 ];
-const validPage = (s: string): Page =>
-  s in labels ? (s as Page) : "dashboard";
+const validPage = (s: string): Page => {
+  const page = s.split("?")[0];
+  return page in labels ? (page as Page) : "dashboard";
+};
 const recognizable =
   /\b(ai|education|research|learning|tech|coding|data|career|job|industry|alumni|networking|resume|social|friend|friends|meet|people|dinner|lunch|community|art|arts|culture|cultural|film|museum|creative|sketch|wellbeing|wellness|relax|mindful|movement|quiet|plan|event|events|week|free|after|before|afternoon|morning|evening|tuesday|thursday|monday|wednesday|friday|weekend|coffee|tea|options|choices|reset|start over)\b/i;
 
@@ -56,6 +59,9 @@ export default function App() {
     current = useRef(state);
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
+  );
+  const [selectedCommunity, setSelectedCommunity] = useState(() =>
+    communityFromHash(location.hash),
   );
   const [filter, setFilter] = useState("All"),
     [query, setQuery] = useState(""),
@@ -82,14 +88,16 @@ export default function App() {
   function notify(text: string) {
     setToast(text);
   }
-  function nav(next: Page) {
+  function nav(next: Page, communityId?: string) {
+    setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
     setDetail(null);
     setFilter("All");
     setQuery("");
     setSearch("");
-    location.hash = next;
+    location.hash =
+      next === "forum" && communityId ? communityHash(communityId) : next;
     window.scrollTo(0, 0);
   }
   useEffect(() => {
@@ -109,6 +117,7 @@ export default function App() {
   useEffect(() => {
     const handle = () => {
       setPage(validPage(location.hash.slice(1)));
+      setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
     };
     window.addEventListener("hashchange", handle);
@@ -1124,7 +1133,13 @@ export default function App() {
             <Profile state={state} update={update} notify={notify} />
           ) : null}
           {page === "forum" ? (
-            <Forum state={state} update={update} notify={notify} />
+            <Forum
+              state={state}
+              update={update}
+              notify={notify}
+              selected={selectedCommunity}
+              onSelect={(id) => nav("forum", id ?? undefined)}
+            />
           ) : null}
           {page === "settings" ? (
             <Settings
