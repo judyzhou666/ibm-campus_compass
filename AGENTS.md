@@ -24,3 +24,17 @@ Before each push, update README.md with the completed changes, teammate run/demo
 Place new project documentation in `docs/`, except GitHub Wiki sources in `wiki/`. Edit existing documents in place unless the user requests reorganization. Keep agent instruction entrypoints at their tool-required paths.
 
 Read `docs/github-wiki.md` when changing Wiki publishing. Read `docs/ibm-bob-setup.md` when initializing or refreshing Bob project context with `/init`.
+
+## Agent skills
+
+### Issue tracker
+
+Use GitHub Issues for work tracking. Read `docs/agents/issue-tracker.md` before issue operations.
+
+### Triage labels
+
+Use the five default triage labels. Read `docs/agents/triage-labels.md` before applying triage roles.
+
+### Domain docs
+
+Use a single-context layout. Read `docs/agents/domain.md` before exploring domain terminology or architecture decisions.
