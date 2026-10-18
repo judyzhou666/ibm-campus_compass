@@ -124,3 +124,28 @@ test("enrollment sends only the selected RSVP and schedule, and accepts a verifi
     "",
   );
 });
+
+test("offline planning supplies no invented Rust recommendation evidence", async () => {
+  const result = await requestPlan("AI", {}, fresh(), offline);
+  assert.deepEqual(result.evidence, []);
+  assert.equal(result.source, "browser-fallback");
+});
+
+test("Rust recommendation evidence is retained only for selected event IDs", async () => {
+  const evidence = {
+    event_id: "e1",
+    interest_match: "AI",
+    schedule_fit: "Tuesday",
+    practical: "RSVP required",
+    trade_offs: "Fictional record",
+  };
+  const result = await requestPlan("AI", {}, fresh(), async () =>
+    Response.json({
+      mode: "simulated",
+      constraints: {},
+      event_ids: ["e1"],
+      recommendations: [evidence, { ...evidence, event_id: "fake" }],
+    }),
+  );
+  assert.deepEqual(result.evidence, [evidence]);
+});

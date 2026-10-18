@@ -68,7 +68,11 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         .collect();
     candidates.sort_by_key(|e| {
         (
-            std::cmp::Reverse(u8::from(topics.contains(&e.topic)) * 10 + u8::from(e.cost == 0)),
+            std::cmp::Reverse(
+                u8::from(topics.contains(&e.topic)) * 10
+                    + u8::from(e.cost == 0)
+                    + 2 * u8::from(preferred(e, state)),
+            ),
             e.day,
             e.start,
         )
@@ -93,4 +97,67 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         }
     }
     selected
+}
+
+fn preferred(e: &Event, state: &Schedule) -> bool {
+    match state.preferred_time.as_str() {
+        "morning" => e.end <= 720,
+        "afternoon" => e.start >= 720 && e.end <= 1020,
+        "evening" => e.start >= 1020,
+        _ => false,
+    }
+}
+
+fn clock(minutes: u16) -> String {
+    format!("{:02}:{:02}", minutes / 60, minutes % 60)
+}
+
+pub fn evidence(e: &Event, state: &Schedule, c: &Constraints) -> serde_json::Value {
+    let topics = c
+        .topics
+        .as_ref()
+        .filter(|t| !t.is_empty())
+        .unwrap_or(&state.interests);
+    serde_json::json!({
+        "event_id": e.id,
+        "interest_match": format!("{}: {} — {}", if topics.contains(&e.topic) { "Interest match" } else { "Explore beyond your interests" }, e.topic, e.description),
+        "schedule_fit": format!("{}, {}–{} Eastern; no current conflicts including a {}-minute buffer. Preferred time {}.", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][usize::from(e.day)], clock(e.start), clock(e.end), state.buffer, if preferred(e,state) { "matched" } else { "not matched or unspecified" }),
+        "practical": format!("${} admission · {} · {} · {} · {}", e.cost, e.location, e.rsvp, e.eligibility, e.food),
+        "trade_offs": format!("{} minutes; {}. Food: {}. Capacity is not confirmed unless marked full. {}. Source: {}. Demo eligibility only; no real registration.", e.end-e.start, if e.cost == 0 { "no admission cost" } else { "paid admission" }, e.food, e.verification_status, e.source)
+    })
+}
+
+#[cfg(test)]
+mod evidence_tests {
+    use super::*;
+    #[test]
+    fn evidence_uses_catalog_facts_without_claiming_live_verification() {
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let state = Schedule {
+            interests: vec!["AI & education".into()],
+            buffer: 15,
+            ..Default::default()
+        };
+        let selected = recommend(&state, &Constraints::default(), &events);
+        assert!(!selected.is_empty());
+        for e in selected {
+            let proof = evidence(e, &state, &Constraints::default());
+            assert_eq!(proof["event_id"], e.id);
+            assert!(
+                proof["interest_match"]
+                    .as_str()
+                    .unwrap()
+                    .contains(&e.description)
+            );
+            assert!(proof["practical"].as_str().unwrap().contains(&e.rsvp));
+            assert!(
+                proof["trade_offs"]
+                    .as_str()
+                    .unwrap()
+                    .contains("not externally verified")
+            );
+            assert!(issue(e, &state, &events).is_none());
+        }
+    }
 }

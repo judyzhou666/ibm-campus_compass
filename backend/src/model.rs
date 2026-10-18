@@ -20,6 +20,16 @@ pub struct Event {
     pub cost: u16,
     pub access: String,
     pub rsvp: String,
+    #[serde(default)]
+    pub location: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub verification_status: String,
+    #[serde(default)]
+    pub eligibility: String,
 }
 
 #[derive(Clone, Deserialize, Default)]
@@ -39,6 +49,8 @@ pub struct Schedule {
     pub interests: Vec<String>,
     pub blocks: Vec<Block>,
     pub buffer: u16,
+    #[serde(default)]
+    pub preferred_time: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default, PartialEq)]
@@ -92,6 +104,9 @@ impl Constraints {
 
 impl Schedule {
     pub fn validate(&self, events: &[Event]) -> Result<(), &'static str> {
+        if !["", "any", "morning", "afternoon", "evening"].contains(&self.preferred_time.as_str()) {
+            return Err("Unknown preferred time");
+        }
         if ![0, 15].contains(&self.buffer)
             || self.blocks.len() > 100
             || self.plan.len() > events.len()

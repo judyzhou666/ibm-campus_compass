@@ -1845,3 +1845,17 @@ dialog .source {
     max-height: 650px;
   }
 }
+
+.evidence { margin:12px 0; font-size:12px; line-height:1.6; }
+.evidence div { margin-bottom:8px; }
+.evidence dt { font-weight:700; text-transform:capitalize; }
+.evidence dd { margin:0; overflow-wrap:anywhere; }
+.briefing { margin:18px 0; }
+.briefing-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.briefing-grid > * { min-width:0; overflow-wrap:anywhere; }
+.briefing ul { padding-left:18px; }
+.communities { margin-bottom:24px; }
+.communities article { padding:16px; border:1px solid #e1e7de; border-radius:12px; }
+.search:focus-within,.composer:focus-within { outline:3px solid #57a77a; outline-offset:3px; }
+dialog { max-height:90dvh; overflow-y:auto; }
+@media(max-width:700px) { .briefing-grid { grid-template-columns:minmax(0,1fr); } .row { flex-wrap:wrap; } .text-btn { white-space:normal; text-align:left; } }

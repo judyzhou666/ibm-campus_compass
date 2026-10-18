@@ -6,7 +6,8 @@ export function issue(e: CampusEvent, state: Schedule) {
   if (state.cancelled.includes(e.id)) return "Cancelled in demo";
   if (e.access === "full") return "Event is full";
   if (e.access === "members") return "Membership not verified";
-  if (e.access === "unknown") return "Eligibility not confirmed";
+  if (!["open", "members", "full"].includes(e.access))
+    return "Eligibility not confirmed";
   const conflict = [
     ...state.blocks,
     ...EVENTS.filter(
@@ -125,8 +126,11 @@ export function recommend(
   candidates.sort(
     (a, b) =>
       Number(topics.includes(b.topic)) * 10 +
-        Number(b.cost === 0) -
-        (Number(topics.includes(a.topic)) * 10 + Number(a.cost === 0)) ||
+        Number(b.cost === 0) +
+        2 * Number(preferred(b, state)) -
+        (Number(topics.includes(a.topic)) * 10 +
+          Number(a.cost === 0) +
+          2 * Number(preferred(a, state))) ||
       a.day - b.day ||
       a.start - b.start,
   );
@@ -150,4 +154,14 @@ export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
         ? "No food provided"
         : e.food,
   ];
+}
+
+function preferred(e: CampusEvent, state: Schedule) {
+  return state.preferred_time === "morning"
+    ? e.end <= 720
+    : state.preferred_time === "afternoon"
+      ? e.start >= 720 && e.end <= 1020
+      : state.preferred_time === "evening"
+        ? e.start >= 1020
+        : false;
 }

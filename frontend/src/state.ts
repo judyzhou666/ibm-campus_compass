@@ -1,8 +1,13 @@
+import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
 
 export const STORAGE_KEY = "campus-compass-demo-v1";
 export const fresh = (): DemoState => ({
+  onboarded: false,
+  major: "",
+  goals: "",
+  preferred_time: "any",
   plan: [],
   rsvps: [],
   saved: ["e1"],
@@ -11,6 +16,7 @@ export const fresh = (): DemoState => ({
   buffer: 15,
   cancelled: [],
   joined: [],
+  joinedCommunities: [],
   posts: [],
   draft: [],
   constraints: {},
@@ -29,6 +35,14 @@ export function restore(): DemoState {
         : [];
     return {
       ...base,
+      onboarded: value.onboarded === true,
+      major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
+      goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
+      preferred_time: ["any", "morning", "afternoon", "evening"].includes(
+        value.preferred_time,
+      )
+        ? value.preferred_time
+        : "any",
       plan: ids(value.plan),
       rsvps: ids(value.rsvps).filter((id) => ids(value.plan).includes(id)),
       saved: ids(value.saved),
@@ -85,6 +99,11 @@ export function restore(): DemoState {
                 ),
             )
             .slice(0, 100)
+        : [],
+      joinedCommunities: Array.isArray(value.joinedCommunities)
+        ? value.joinedCommunities.filter((id: unknown) =>
+            COMMUNITIES.some((c) => c.id === id),
+          )
         : [],
       joined: Array.isArray(value.joined)
         ? value.joined.filter((s: unknown) => typeof s === "string")
