@@ -50,12 +50,14 @@ async fn plan(
         .await;
     // This validation is also required for any future watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let ids: Vec<_> = planner::recommend(&request.state, &constraints, &events)
+    let selected = planner::recommend(&request.state, &constraints, &events);
+    let evidence: Vec<_> = selected
         .iter()
-        .map(|e| &e.id)
+        .map(|e| planner::evidence(e, &request.state, &constraints))
         .collect();
+    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "event_ids":ids}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "event_ids":ids, "recommendations":evidence}),
     ))
 }
 

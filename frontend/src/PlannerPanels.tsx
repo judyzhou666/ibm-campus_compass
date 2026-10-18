@@ -9,7 +9,9 @@ export function ChatEvents({
   state,
   onDetails,
   onAdd,
+  evidence = [],
 }: {
+  evidence?: import("./types.ts").RecommendationEvidence[];
   ids: string[];
   state: DemoState;
   onDetails: (id: string) => void;
@@ -30,6 +32,27 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
+            {evidence.find((item) => item.event_id === id) ? (
+              <dl
+                className="evidence"
+                aria-label="Evidence at recommendation time; current availability is checked again before adding"
+              >
+                {Object.entries(evidence.find((item) => item.event_id === id)!)
+                  .filter(([key]) => key !== "event_id")
+                  .map(([key, value]) => (
+                    <div key={key}>
+                      <dt>{key.replaceAll("_", " ")}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+              </dl>
+            ) : (
+              <p className="fineprint">
+                No current Rust evidence available. Review the fictional record
+                and current availability in details; browser suggestions are
+                simulated.
+              </p>
+            )}
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">
               <Button className="small" onClick={() => onDetails(id)}>

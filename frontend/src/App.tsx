@@ -1,3 +1,4 @@
+import { replacementConstraints, constraintSummary } from "./replanning.ts";
 import { useEffect, useRef, useState } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -15,6 +16,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
+import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, DemoState, Message, Rsvp } from "./types.ts";
 
@@ -289,6 +291,7 @@ export default function App() {
             role: "assistant",
             text: response,
             eventIds: matches.map((e) => e!.id),
+            evidence: result.evidence,
           },
         ],
       }));
@@ -337,21 +340,11 @@ export default function App() {
     const snapshot = current.current,
       key = planningKey(snapshot);
     try {
-      const constraints = {
-        ...snapshot.constraints,
-        topics: [old.topic],
-        limit: 1,
-      };
-      let result = await requestPlan("Find events", constraints, snapshot),
-        trade = "";
+      const constraints = replacementConstraints(snapshot.constraints, old);
+      const result = await requestPlan("Find events", constraints, snapshot);
+      let trade = "";
       if (!result.ids.length) {
-        const relaxed = { ...constraints };
-        delete relaxed.days;
-        delete relaxed.after;
-        delete relaxed.before;
-        result = await requestPlan("Find events", relaxed, snapshot);
-        trade =
-          "I relaxed your chat day/time filters to show a possible alternative; review the new time before adding it.";
+        trade = `No replacement satisfies the current filters: ${constraintSummary(constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`;
       }
       if (token !== epoch.current) return;
       if (key !== planningKey(current.current)) {
@@ -373,13 +366,18 @@ export default function App() {
           ? "Rust planner · Simulated"
           : "Browser fallback · Simulated",
       );
-      const response = `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. It shares the ${old.topic.toLowerCase()} topic and fits your schedule. ${trade}\n\nIt’s a suggestion only. Add it if it works for you.` : "No eligible alternative in the same topic fits your current schedule. Try changing your availability or choosing another interest."}${result.notice ? "\n\n" + result.notice : ""}`;
+      const response = `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${snapshot.plan.map((id) => EVENTS.find((e) => e.id === id)?.title).join(", ") || "none"}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and it fits your schedule. ${trade}\n\n${alternative.rsvp}. Your other choices: ${snapshot.plan.map((id) => EVENTS.find((e) => e.id === id)?.title).join(", ") || "none"}. It’s a suggestion only. Add it if it works for you.` : "No eligible alternative in the same topic fits your current schedule. Try changing your availability or choosing another interest. " + trade}${result.notice ? "\n\n" + result.notice : ""}`;
       update((s) => ({
         ...s,
         draft: result.ids,
         messages: [
           ...s.messages,
-          { role: "assistant", text: response, eventIds: result.ids },
+          {
+            role: "assistant",
+            text: response,
+            eventIds: result.ids,
+            evidence: result.evidence,
+          },
         ],
       }));
     } catch (error) {
@@ -481,6 +479,15 @@ export default function App() {
 
   return (
     <>
+      {!state.onboarded ? (
+        <Welcome
+          onStart={() => {
+            update((s) => ({ ...s, onboarded: true }));
+            nav("profile");
+          }}
+          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
+        />
+      ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
         <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
           <span className="logo">
@@ -640,6 +647,12 @@ export default function App() {
                         Explore all <Icon name="arrow" />
                       </button>
                     </div>
+                    <Briefing
+                      state={state}
+                      onDetail={setDetail}
+                      onPlanner={() => nav("planner")}
+                      onCalendar={() => nav("calendar")}
+                    />
                     <Filters value={filter} onChange={setFilter} />
                     {cards(recommended.slice(0, 3))}
                     {!recommended.length ? (
@@ -845,6 +858,7 @@ export default function App() {
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
+                              evidence={m.evidence}
                               state={state}
                               onDetails={setDetail}
                               onAdd={add}

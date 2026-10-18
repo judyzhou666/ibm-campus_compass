@@ -76,6 +76,20 @@ try {
     const result = await response.json(),
       c = parseRequest(query);
     assert.deepEqual(result.constraints, c, query);
+    assert.equal(result.recommendations.length, result.event_ids.length);
+    for (const evidence of result.recommendations) {
+      const event = EVENTS.find((e) => e.id === evidence.event_id)!;
+      assert.ok(result.event_ids.includes(event.id));
+      assert.match(
+        evidence.interest_match,
+        new RegExp(event.topic.replace(/[&]/g, "[&]")),
+      );
+      assert.ok(evidence.practical.includes(event.location));
+      assert.ok(evidence.practical.includes(event.rsvp));
+      assert.match(evidence.trade_offs, /not externally verified/);
+      assert.match(evidence.schedule_fit, /no current conflicts/);
+    }
+
     assert.deepEqual(
       result.event_ids,
       recommend(state, c).map((e) => e.id),
@@ -218,6 +232,30 @@ try {
       })
     ).status,
     413,
+  );
+
+  for (const preferred_time of ["morning", "afternoon", "evening", "any"]) {
+    const state = { ...fresh(), preferred_time };
+    const r = await (
+      await post("/api/plan", {
+        message: "Find events",
+        previous: {},
+        state: schedulePayload(state),
+      })
+    ).json();
+    assert.deepEqual(
+      r.event_ids,
+      recommend(state).map((e) => e.id),
+    );
+  }
+  assert.equal(
+    (
+      await post("/api/plan", {
+        message: "AI",
+        state: { ...schedulePayload(fresh()), preferred_time: "invalid" },
+      })
+    ).status,
+    400,
   );
   assert.equal((await fetch(base + "/")).status, 200);
   assert.equal(

@@ -15,7 +15,15 @@
     "poster": "LEARN / MAKE",
     "source": "Original fictional record CC-001",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e2",
@@ -33,7 +41,15 @@
     "poster": "MEET / SHARE",
     "source": "Original fictional record CC-002",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Full meal"
   },
   {
     "id": "e3",
@@ -51,7 +67,15 @@
     "poster": "IDEAS / FUTURES",
     "source": "Original fictional record CC-003",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e4",
@@ -69,7 +93,15 @@
     "poster": "ASK / DISCOVER",
     "source": "Original fictional record CC-004",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e5",
@@ -87,7 +119,15 @@
     "poster": "BUILD / LEARN",
     "source": "Original fictional record CC-005",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e6",
@@ -105,7 +145,15 @@
     "poster": "FOOD / FRIENDS",
     "source": "Original fictional record CC-006",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Full meal"
   },
   {
     "id": "e7",
@@ -123,7 +171,15 @@
     "poster": "NEXT / CHAPTER",
     "source": "Original fictional record CC-007",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e8",
@@ -141,7 +197,15 @@
     "poster": "LOOK / CREATE",
     "source": "Original fictional record CC-008",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Unknown"
   },
   {
     "id": "e9",
@@ -159,7 +223,15 @@
     "poster": "THINK / MAKE",
     "source": "Original fictional record CC-009",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Paid food"
   },
   {
     "id": "e10",
@@ -177,7 +249,15 @@
     "poster": "PAUSE / RESET",
     "source": "Original fictional record CC-010",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e11",
@@ -195,7 +275,15 @@
     "poster": "TEA / TALK",
     "source": "Original fictional record CC-011",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e12",
@@ -213,7 +301,15 @@
     "poster": "DATA / IDEAS",
     "source": "Original fictional record CC-012",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Unknown",
+    "eligibility": "Membership required; membership not verified",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e13",
@@ -231,7 +327,15 @@
     "poster": "WATCH / TALK",
     "source": "Original fictional record CC-013",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Paid food"
   },
   {
     "id": "e14",
@@ -249,7 +353,15 @@
     "poster": "FRESH / IDEAS",
     "source": "Original fictional record CC-014",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e15",
@@ -267,7 +379,15 @@
     "poster": "COFFEE / PATHS",
     "source": "Original fictional record CC-015",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Unknown",
+    "eligibility": "Unknown",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e16",
@@ -285,7 +405,15 @@
     "poster": "LUNCH / TOGETHER",
     "source": "Original fictional record CC-016",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Full meal"
   },
   {
     "id": "e17",
@@ -303,7 +431,15 @@
     "poster": "SPACE / BREATHE",
     "source": "Original fictional record CC-017",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e18",
@@ -321,7 +457,15 @@
     "poster": "CODE / PLAY",
     "source": "Original fictional record CC-018",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e19",
@@ -339,7 +483,15 @@
     "poster": "ART / PERSPECTIVE",
     "source": "Original fictional record CC-019",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e20",
@@ -357,7 +509,15 @@
     "poster": "HELLO / NEXT",
     "source": "Original fictional record CC-020",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e21",
@@ -375,7 +535,15 @@
     "poster": "READ / QUESTION",
     "source": "Original fictional record CC-021",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Unknown"
   },
   {
     "id": "e22",
@@ -393,7 +561,15 @@
     "poster": "PLAY / CONNECT",
     "source": "Original fictional record CC-022",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Full meal"
   },
   {
     "id": "e23",
@@ -411,7 +587,15 @@
     "poster": "MAKE / BELONG",
     "source": "Original fictional record CC-023",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments"
   },
   {
     "id": "e24",
@@ -429,7 +613,15 @@
     "poster": "REFINE / APPLY",
     "source": "Original fictional record CC-024",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e25",
@@ -447,7 +639,15 @@
     "poster": "FOCUS / FLOW",
     "source": "Original fictional record CC-025",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e26",
@@ -465,7 +665,15 @@
     "poster": "ASK / CHALLENGE",
     "source": "Original fictional record CC-026",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e27",
@@ -483,7 +691,15 @@
     "poster": "NEW / CONNECTIONS",
     "source": "Original fictional record CC-027",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Unknown"
   },
   {
     "id": "e28",
@@ -501,7 +717,15 @@
     "poster": "PURPOSE / WORK",
     "source": "Original fictional record CC-028",
     "checked": "October 15, 2026",
-    "rsvp": "RSVP required"
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e29",
@@ -519,7 +743,15 @@
     "poster": "SHAPE / CREATE",
     "source": "Original fictional record CC-029",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Demo students",
+    "eligibility": "Open to demo students",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   },
   {
     "id": "e30",
@@ -537,6 +769,14 @@
     "poster": "ASK / REFINE",
     "source": "Original fictional record CC-030",
     "checked": "October 15, 2026",
-    "rsvp": "Drop-in welcome"
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": null,
+    "last_checked_at": null,
+    "intended_audience": "Unknown",
+    "eligibility": "At capacity",
+    "availability": "Full",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None"
   }
 ]

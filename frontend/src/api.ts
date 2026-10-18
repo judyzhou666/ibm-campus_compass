@@ -13,6 +13,7 @@ export const schedulePayload = (state: Schedule) => ({
   cancelled: [...state.cancelled],
   interests: [...state.interests],
   buffer: state.buffer,
+  preferred_time: state.preferred_time || "any",
   blocks: state.blocks.map(({ title, day, start, end }) => ({
     title,
     day,
@@ -70,6 +71,13 @@ export async function requestPlan(
     return {
       constraints: result.constraints,
       ids: result.event_ids,
+      evidence: (result.recommendations || []).filter(
+        (e) =>
+          result.event_ids.includes(e.event_id) &&
+          [e.interest_match, e.schedule_fit, e.practical, e.trade_offs].every(
+            (v) => typeof v === "string",
+          ),
+      ),
       source: "rust",
       notice: "",
     };
@@ -79,6 +87,7 @@ export async function requestPlan(
     return {
       constraints,
       ids: recommend(state, constraints).map((e) => e.id),
+      evidence: [],
       source: "browser-fallback",
       notice:
         "The Rust planner is unavailable. These suggestions use the browser’s simulated demo planner.",
