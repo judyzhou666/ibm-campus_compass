@@ -45,17 +45,22 @@ async fn plan(
     }
     request.state.validate(&events).map_err(bad_request)?;
     request.previous.validate().map_err(bad_request)?;
-    let constraints = SimulatedInterpreter
+    let interpretation = SimulatedInterpreter
         .interpret(&request.message, request.previous)
         .await;
+    let constraints = interpretation.constraints;
     // This validation is also required for any future watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let ids: Vec<_> = planner::recommend(&request.state, &constraints, &events)
-        .iter()
-        .map(|e| &e.id)
-        .collect();
+    let ids: Vec<_> = if interpretation.understood {
+        planner::recommend(&request.state, &constraints, &events)
+    } else {
+        Vec::new()
+    }
+    .iter()
+    .map(|e| &e.id)
+    .collect();
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "event_ids":ids}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "event_ids":ids}),
     ))
 }
 
@@ -140,7 +145,8 @@ mod tests {
             ..Default::default()
         };
         let actual = SimulatedInterpreter.interpret("start over", previous).await;
-        assert_eq!(actual, Constraints::default());
+        assert_eq!(actual.constraints, Constraints::default());
+        assert!(actual.understood);
     }
     #[test]
     fn travel_buffer_boundary_is_non_overlapping() {

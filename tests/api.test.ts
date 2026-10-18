@@ -29,10 +29,70 @@ test("server input rejection is surfaced, not bypassed", async () => {
 });
 test("unknown model event IDs cannot enter a draft", async () => {
   const fake: typeof fetch = async () =>
-    Response.json({ mode: "simulated", constraints: {}, event_ids: ["fake"] });
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: {},
+      event_ids: ["fake"],
+    });
   const r = await requestPlan("AI", {}, fresh(), fake);
   assert.equal(r.source, "browser-fallback");
   assert.ok(!r.ids.includes("fake"));
+});
+
+test("invalid clock input is rejected before network or offline matching", async () => {
+  for (const message of [
+    "before 11:99 am",
+    "after 99 pm",
+    "after 13 pm",
+    "before 0 am",
+    "before 11:9",
+    "after 1:999",
+    "after 999999999999999999999999999999",
+  ]) {
+    let called = false;
+    const fetcher: typeof fetch = async () => {
+      called = true;
+      throw new Error("offline");
+    };
+    await assert.rejects(
+      requestPlan(message, {}, fresh(), fetcher),
+      /Invalid day, time/,
+    );
+    assert.equal(called, false);
+  }
+});
+
+test("invalid prior filters and oversized messages cannot bypass validation offline", async () => {
+  for (const constraints of [
+    { limit: 99 },
+    { days: [9] },
+    { after: -1 },
+    { topics: ["invented"] },
+  ]) {
+    await assert.rejects(
+      requestPlan("AI", constraints, fresh(), offline),
+      /Invalid|Unknown/,
+    );
+  }
+  await assert.rejects(
+    requestPlan("AI" + "界".repeat(700), {}, fresh(), offline),
+    /2000 bytes/,
+  );
+});
+
+test("malformed server constraints use a validated labelled simulation", async () => {
+  const fetcher: typeof fetch = async () =>
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: { after: -1 },
+      event_ids: ["e1"],
+    });
+  const result = await requestPlan("AI", {}, fresh(), fetcher);
+  assert.equal(result.source, "browser-fallback");
+  assert.deepEqual(result.constraints, { topics: ["AI & education"] });
+  assert.match(result.notice, /simulated demo planner/);
 });
 test("payload omits history; offline validation checks access", async () => {
   const state = fresh();

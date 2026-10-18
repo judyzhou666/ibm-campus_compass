@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
-import { planningKey, requestPlan, enrollEvent } from "./api.ts";
-import { fresh, restore, STORAGE_KEY } from "./state.ts";
+import { createEnrollment, type EnrollmentOutcome } from "./enrollment.ts";
+import { createConversation } from "./conversation.ts";
+import { createStore, fresh, restore, STORAGE_KEY } from "./state.ts";
 import { calendarText } from "./calendar.ts";
 import {
   Button,
@@ -16,7 +17,7 @@ import {
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
-import type { Constraints, DemoState, Message, Rsvp } from "./types.ts";
+import type { Constraints, Message, Rsvp } from "./types.ts";
 
 const labels = {
   dashboard: "Dashboard",
@@ -46,37 +47,41 @@ const prompts = [
 ];
 const validPage = (s: string): Page =>
   s in labels ? (s as Page) : "dashboard";
-const recognizable =
-  /\b(ai|education|research|learning|tech|coding|data|career|job|industry|alumni|networking|resume|social|friend|friends|meet|people|dinner|lunch|community|art|arts|culture|cultural|film|museum|creative|sketch|wellbeing|wellness|relax|mindful|movement|quiet|plan|event|events|week|free|after|before|afternoon|morning|evening|tuesday|thursday|monday|wednesday|friday|weekend|coffee|tea|options|choices|reset|start over)\b/i;
-
 export default function App() {
-  const [state, setState] = useState(restore),
-    current = useRef(state);
+  const [demo] = useState(() => createStore(restore()));
+  const state = useSyncExternalStore(demo.subscribe, demo.read);
+  const update = demo.update;
+  const [enrollment] = useState(() => createEnrollment(demo));
+  const [conversation] = useState(() =>
+    createConversation(demo, enrollment.remove),
+  );
+  const { busy, mode } = useSyncExternalStore(
+    conversation.subscribe,
+    conversation.read,
+  );
+  const { busy: enrolling, rsvpEvent } = useSyncExternalStore(
+    enrollment.subscribe,
+    enrollment.read,
+  );
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
   );
   const [filter, setFilter] = useState("All"),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
-  const [busy, setBusy] = useState(false),
-    locked = useRef(false),
-    epoch = useRef(0);
   const [message, setMessage] = useState(""),
     [detail, setDetail] = useState<string | null>(null),
     [menu, setMenu] = useState(false);
-  const [toast, setToast] = useState(""),
-    [mode, setMode] = useState("Simulated planner");
+  const [toast, setToast] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [rsvpEvent, setRsvpEvent] = useState<string | null>(null);
-  const [enrolling, setEnrolling] = useState(false);
-  const enrollmentLock = useRef(false),
-    enrollmentVersion = useRef(0);
   const messagesRef = useRef<HTMLDivElement>(null);
-  function update(change: (s: DemoState) => DemoState) {
-    const next = change(current.current);
-    current.current = next;
-    setState(next);
-  }
+  useEffect(
+    () => () => {
+      enrollment.reset();
+      conversation.reset();
+    },
+    [enrollment, conversation],
+  );
   function notify(text: string) {
     setToast(text);
   }
@@ -125,18 +130,11 @@ export default function App() {
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
   function clearChat() {
-    epoch.current++;
-    locked.current = false;
-    setBusy(false);
-    update((s) => ({ ...s, messages: [], constraints: {}, draft: [] }));
+    conversation.clear();
     setMessage("");
   }
   function remove(id: string) {
-    update((s) => ({
-      ...s,
-      plan: s.plan.filter((x) => x !== id),
-      rsvps: s.rsvps.filter((x) => x !== id),
-    }));
+    enrollment.remove(id);
     setDetail(null);
     notify("Removed from your calendar.");
   }
@@ -148,255 +146,42 @@ export default function App() {
         : [...s.saved, id],
     }));
   }
-  function add(id: string) {
-    if (enrollmentLock.current) return;
-    const event = EVENTS.find((e) => e.id === id);
-    if (!event) return;
-    if (current.current.plan.includes(id)) {
+  function presentEnrollment(result: EnrollmentOutcome): string | null {
+    if (result.kind === "added") {
+      setDetail(null);
+      setCalendarOpen(true);
+      notify(result.notice);
+    } else if (result.kind === "already-added") {
       setCalendarOpen(true);
       notify("This event is already in your calendar.");
-      return;
-    }
-    const problem = issue(event, current.current);
-    if (problem) {
-      notify(problem);
-      setDetail(id);
-      return;
-    }
-    if (event.rsvp === "RSVP required") {
+    } else if (result.kind === "rsvp") {
       setDetail(null);
-      setRsvpEvent(id);
-      return;
+    } else if (result.kind === "rejected") {
+      notify(result.message);
+      return result.message;
     }
-    void completeEnrollment(id);
+    return null;
   }
-  async function completeEnrollment(
-    id: string,
-    rsvp?: Rsvp,
-  ): Promise<string | null> {
-    if (enrollmentLock.current) return "An addition is already in progress.";
-    enrollmentLock.current = true;
-    setEnrolling(true);
-    const version = enrollmentVersion.current;
-    try {
-      const result = await enrollEvent(id, current.current, rsvp);
-      if (version !== enrollmentVersion.current)
-        return "The demo was reset. Please try again.";
-      const event = EVENTS.find((e) => e.id === id)!;
-      const problem = issue(event, current.current);
-      if (problem) throw new Error(problem);
-      if (!current.current.plan.includes(id))
-        update((s) => ({
-          ...s,
-          plan: [...s.plan, id],
-          rsvps: result.rsvpConfirmed
-            ? [...s.rsvps.filter((x) => x !== id), id]
-            : s.rsvps,
-          draft: s.draft.filter((x) => x !== id),
-        }));
-      setRsvpEvent(null);
-      setDetail(null);
-      setCalendarOpen(true);
-      notify(
-        (result.rsvpConfirmed ? "Demo RSVP confirmed. " : "") +
-          "Added to your calendar." +
-          (result.notice ? " " + result.notice : ""),
-      );
-      return null;
-    } catch (error) {
-      const text =
-        error instanceof Error
-          ? error.message
-          : "Could not add this event. Please try again.";
-      notify(text);
-      return text;
-    } finally {
-      if (version === enrollmentVersion.current) {
-        enrollmentLock.current = false;
-        setEnrolling(false);
-      }
-    }
+  async function add(id: string) {
+    const result = await enrollment.choose(id);
+    if (result.kind === "rejected") setDetail(id);
+    presentEnrollment(result);
+  }
+  async function completeEnrollment(rsvp: Rsvp) {
+    return presentEnrollment(await enrollment.confirm(rsvp));
   }
   async function chat(text: string, previous?: Constraints) {
-    if (locked.current || !text.trim()) return;
-    text = text.trim();
-    if (
-      /\b(cancelled|canceled|replacement|replan|re-plan)\b/i.test(text) &&
-      current.current.cancelled.some((id) => current.current.plan.includes(id))
-    ) {
-      await replan();
-      return;
-    }
-    locked.current = true;
-    setBusy(true);
-    const token = ++epoch.current;
+    if (conversation.read().busy || !text.trim()) return;
     setMessage("");
-    update((s) => ({
-      ...s,
-      constraints: previous ?? s.constraints,
-      messages: [...s.messages, { role: "user", text }],
-    }));
-    const snapshot = current.current,
-      key = planningKey(snapshot);
-    try {
-      if (!recognizable.test(text)) {
-        update((s) => ({
-          ...s,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              text: "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
-            },
-          ],
-        }));
-        return;
-      }
-      const result = await requestPlan(text, snapshot.constraints, snapshot);
-      if (token !== epoch.current) return;
-      if (key !== planningKey(current.current)) {
-        update((s) => ({
-          ...s,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              text: "Your schedule or preferences changed while I was planning. Please send your request again so I can use the latest details.",
-            },
-          ],
-        }));
-        return;
-      }
-      setMode(
-        result.source === "rust"
-          ? "Rust planner · Simulated"
-          : "Browser fallback · Simulated",
-      );
-      const matches = result.ids
-        .map((id) => EVENTS.find((e) => e.id === id))
-        .filter((e) => e && !issue(e, current.current));
-      let response = matches.length
-        ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-        : "I couldn’t find a verified, conflict-free match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
-      if (result.notice) response = result.notice + "\n\n" + response;
-      update((s) => ({
-        ...s,
-        constraints: result.constraints,
-        draft: matches.map((e) => e!.id),
-        messages: [
-          ...s.messages,
-          {
-            role: "assistant",
-            text: response,
-            eventIds: matches.map((e) => e!.id),
-          },
-        ],
-      }));
-    } catch (error) {
-      if (token === epoch.current)
-        update((s) => ({
-          ...s,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              text:
-                error instanceof Error
-                  ? error.message
-                  : "The planner could not finish. Try again.",
-            },
-          ],
-        }));
-    } finally {
-      if (token === epoch.current) {
-        locked.current = false;
-        setBusy(false);
-      }
-    }
+    await conversation.chat(text, previous);
   }
   async function replan() {
-    if (locked.current) return;
-    const old = EVENTS.find(
-      (e) =>
-        current.current.plan.includes(e.id) &&
-        current.current.cancelled.includes(e.id),
-    );
-    if (!old) {
-      notify("There are no cancelled events in your plan.");
-      return;
-    }
-    locked.current = true;
-    setBusy(true);
-    const token = ++epoch.current;
+    if (conversation.read().busy) return;
     nav("planner");
-    update((s) => ({
-      ...s,
-      plan: s.plan.filter((id) => id !== old.id),
-      rsvps: s.rsvps.filter((id) => id !== old.id),
-    }));
-    const snapshot = current.current,
-      key = planningKey(snapshot);
-    try {
-      const constraints = {
-        ...snapshot.constraints,
-        topics: [old.topic],
-        limit: 1,
-      };
-      let result = await requestPlan("Find events", constraints, snapshot),
-        trade = "";
-      if (!result.ids.length) {
-        const relaxed = { ...constraints };
-        delete relaxed.days;
-        delete relaxed.after;
-        delete relaxed.before;
-        result = await requestPlan("Find events", relaxed, snapshot);
-        trade =
-          "I relaxed your chat day/time filters to show a possible alternative; review the new time before adding it.";
-      }
-      if (token !== epoch.current) return;
-      if (key !== planningKey(current.current)) {
-        update((s) => ({
-          ...s,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              text: "Your schedule changed. The cancelled entry was removed; ask for another suggestion using your latest availability.",
-            },
-          ],
-        }));
-        return;
-      }
-      const alternative = EVENTS.find((e) => e.id === result.ids[0]);
-      setMode(
-        result.source === "rust"
-          ? "Rust planner · Simulated"
-          : "Browser fallback · Simulated",
-      );
-      const response = `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. It shares the ${old.topic.toLowerCase()} topic and fits your schedule. ${trade}\n\nIt’s a suggestion only. Add it if it works for you.` : "No eligible alternative in the same topic fits your current schedule. Try changing your availability or choosing another interest."}${result.notice ? "\n\n" + result.notice : ""}`;
-      update((s) => ({
-        ...s,
-        draft: result.ids,
-        messages: [
-          ...s.messages,
-          { role: "assistant", text: response, eventIds: result.ids },
-        ],
-      }));
-    } catch (error) {
-      notify(
-        error instanceof Error
-          ? error.message
-          : "Could not find a replacement. Try the planner again.",
-      );
-    } finally {
-      if (token === epoch.current) {
-        locked.current = false;
-        setBusy(false);
-      }
-    }
+    await conversation.replace();
   }
   function exportCalendar() {
-    const text = calendarText(current.current);
+    const text = calendarText(demo.read());
     if (!text) {
       notify("Add an event to your calendar before exporting.");
       return;
@@ -1003,9 +788,11 @@ export default function App() {
                         <Button
                           className="small"
                           onClick={() => {
-                            const id = current.current.plan.find(
-                              (id) => !current.current.cancelled.includes(id),
-                            );
+                            const id = demo
+                              .read()
+                              .plan.find(
+                                (id) => !demo.read().cancelled.includes(id),
+                              );
                             if (id)
                               update((s) => ({
                                 ...s,
@@ -1118,17 +905,11 @@ export default function App() {
               update={update}
               notify={notify}
               onReset={() => {
-                epoch.current++;
-                locked.current = false;
-                setBusy(false);
-                enrollmentVersion.current++;
-                enrollmentLock.current = false;
-                setEnrolling(false);
-                setRsvpEvent(null);
+                conversation.reset();
+                enrollment.reset();
                 setCalendarOpen(false);
                 update(fresh);
                 nav("dashboard");
-                setMode("Simulated planner");
                 notify("Demo restored. You’re ready to present.");
               }}
             />
@@ -1157,8 +938,8 @@ export default function App() {
           event={EVENTS.find((e) => e.id === rsvpEvent)!}
           name={state.name}
           busy={enrolling}
-          onClose={() => setRsvpEvent(null)}
-          onSubmit={(rsvp) => completeEnrollment(rsvpEvent, rsvp)}
+          onClose={enrollment.cancel}
+          onSubmit={completeEnrollment}
         />
       ) : null}
       {detailEvent ? (

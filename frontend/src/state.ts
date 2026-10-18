@@ -1,6 +1,26 @@
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
 
+export function createStore<T>(initial: T) {
+  let value = initial;
+  const listeners = new Set<() => void>();
+  return {
+    read: () => value,
+    update(change: (state: T) => T) {
+      value = change(value);
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+export type DemoStore = ReturnType<typeof createStore<DemoState>>;
+
 export const STORAGE_KEY = "campus-compass-demo-v1";
 export const fresh = (): DemoState => ({
   plan: [],

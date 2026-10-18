@@ -1,12 +1,7 @@
-import type {
-  Schedule,
-  Constraints,
-  DemoState,
-  PlanResponse,
-  Rsvp,
-} from "./types.ts";
+import type { Schedule, Constraints, PlanResponse, Rsvp } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { parseRequest, recommend, issue } from "./planner.ts";
+import { recommend, issue } from "./planner.ts";
+import { interpretRequest, validateConstraints } from "./interpretation.ts";
 
 export const schedulePayload = (state: Schedule) => ({
   plan: [...state.plan],
@@ -20,9 +15,6 @@ export const schedulePayload = (state: Schedule) => ({
     end,
   })),
 });
-
-export const planningKey = (state: DemoState) =>
-  JSON.stringify([schedulePayload(state), state.constraints]);
 
 class InputError extends Error {}
 
@@ -52,6 +44,11 @@ export async function requestPlan(
   state: Schedule,
   fetcher = globalThis.fetch,
 ) {
+  const interpreted = interpretRequest(message, previous);
+  if (!interpreted.understood)
+    throw new InputError(
+      "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
+    );
   try {
     const result = (await post(
       "/api/plan",
@@ -60,6 +57,7 @@ export async function requestPlan(
     )) as PlanResponse;
     if (
       result.mode !== "simulated" ||
+      typeof result.understood !== "boolean" ||
       !Array.isArray(result.event_ids) ||
       !result.constraints ||
       typeof result.constraints !== "object" ||
@@ -67,6 +65,11 @@ export async function requestPlan(
     ) {
       throw new Error("Invalid planner response");
     }
+    validateConstraints(result.constraints);
+    if (!result.understood)
+      throw new InputError(
+        "The simulated planner did not understand this request. Try an interest, day or time.",
+      );
     return {
       constraints: result.constraints,
       ids: result.event_ids,
@@ -75,7 +78,7 @@ export async function requestPlan(
     };
   } catch (error) {
     if (error instanceof InputError) throw error;
-    const constraints = parseRequest(message, previous);
+    const { constraints } = interpreted;
     return {
       constraints,
       ids: recommend(state, constraints).map((e) => e.id),

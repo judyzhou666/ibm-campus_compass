@@ -1,9 +1,10 @@
+import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { EVENTS } from "../frontend/src/data.ts";
 import { fresh } from "../frontend/src/state.ts";
-import { parseRequest, recommend, issue } from "../frontend/src/planner.ts";
+import { recommend, issue } from "../frontend/src/planner.ts";
 import { schedulePayload } from "../frontend/src/api.ts";
 import type { Constraints } from "../frontend/src/types.ts";
 const server = spawn(
@@ -66,6 +67,18 @@ try {
     "3 events",
     "start over",
     "wellbeing weekdays",
+    "professional",
+    "ceramics",
+    "balance",
+    "snack",
+    "refreshment",
+    "any day",
+    "any time",
+    "options",
+    "purple flying giraffes",
+    "before 12 am",
+    "after 12 pm",
+    "after 23:59",
   ]) {
     const response = await post("/api/plan", {
       message: query,
@@ -74,11 +87,13 @@ try {
     });
     assert.equal(response.status, 200);
     const result = await response.json(),
-      c = parseRequest(query);
+      interpreted = interpretRequest(query),
+      c = interpreted.constraints;
+    assert.equal(result.understood, interpreted.understood, query);
     assert.deepEqual(result.constraints, c, query);
     assert.deepEqual(
       result.event_ids,
-      recommend(state, c).map((e) => e.id),
+      interpreted.understood ? recommend(state, c).map((e) => e.id) : [],
       query,
     );
   }
@@ -96,7 +111,7 @@ try {
   ).json();
   assert.deepEqual(
     followup.constraints,
-    parseRequest("no food preference", previous),
+    interpretRequest("no food preference", previous).constraints,
   );
   for (const event of EVENTS) {
     const r = await (
@@ -196,6 +211,14 @@ try {
     },
     { message: "AI", state: schedulePayload(state), previous: { limit: 100 } },
     { message: "after 99 pm", state: schedulePayload(state) },
+    ...[
+      "before 11:99 am",
+      "after 13 pm",
+      "before 0 am",
+      "before 11:9",
+      "after 1:999",
+      "after 999999999999999999999999999999",
+    ].map((message) => ({ message, state: schedulePayload(state) })),
     { message: "", state: schedulePayload(state) },
   ]) {
     const r = await post("/api/plan", body);

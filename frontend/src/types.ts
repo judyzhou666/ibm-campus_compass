@@ -62,6 +62,7 @@ export interface DemoState extends Schedule {
 }
 export interface PlanResponse {
   mode: "simulated";
+  understood: boolean;
   provider: string;
   constraints: Constraints;
   event_ids: string[];

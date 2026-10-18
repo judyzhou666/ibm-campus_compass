@@ -26,6 +26,9 @@ For frontend development, leave Rust running and run `npm run dev` in another te
 - `backend/src/planner.rs`: trusted event selection, access checks, conflicts and travel buffers.
 - `backend/src/model.rs`: typed request models and validation.
 - `frontend/src/`: React components, TypeScript API client, local state, calendar export and browser simulation fallback.
+- `frontend/src/enrollment.ts`: demo enrollment approval, pending-request invalidation, latest-schedule checks, and calendar/RSVP updates.
+- `frontend/src/conversation.ts`: planning conversation lifecycle, stale-result rejection, and cancellation replacement coordination.
+- `frontend/src/interpretation.ts`: TypeScript request recognition, parsing and constraint validation, aligned with the Rust interpreter.
 - `frontend/public/assets/mascot.png`: unchanged supplied mascot.
 - `data/events.json`: single shared fictional event catalog.
 
@@ -34,13 +37,17 @@ For frontend development, leave Rust running and run `npm run dev` in another te
 | Route | Purpose |
 | --- | --- |
 | `GET /api/health` | Reports simulated mode and `watsonx_connected: false`. |
-| `POST /api/plan` | Accepts `message`, `previous` constraints and `state`; returns validated constraints, trusted `event_ids`, mode and provider. |
+| `POST /api/plan` | Accepts `message`, `previous` constraints and `state`; returns validated constraints, `understood`, trusted `event_ids`, mode and provider. |
 | `POST /api/validate` | Accepts `event_id` and latest schedule `state`; returns `allowed` and `issue`. |
 | `POST /api/enroll` | Accepts `event_id`, latest `state`, and optional `rsvp`; checks access/conflicts and mandatory RSVP, then returns a simulated enrollment confirmation. |
 
 Schedule state contains `plan`, `cancelled`, `interests`, `blocks` and `buffer`. Busy blocks contain title, day (Monday = 0), and start/end minutes after midnight. Planning and validation requests omit display names, discussion posts and chat history. Enrollment sends only the RSVP form’s demo display name and attendance confirmation alongside the schedule snapshot. Only known event IDs and topics are accepted. JSON bodies are capped at 32 KiB; messages at 2,000 bytes. Travel buffers are 0 or 15 minutes.
 
 The frontend rechecks the current schedule before accepting asynchronous results. Reset invalidates pending planning and enrollment requests; new-chat invalidates planning requests. Additions always require a student action and are checked again against current state. Backend requests do not create real RSVPs or persist a shared calendar.
+
+Request recognition belongs to interpretation, including synonyms such as “professional”, “ceramics”, “balance”, “snack” and “refreshment”, plus generic requests such as “options”. An unsupported request returns `understood: false` with no event IDs; the browser shows explicit guidance. A recognized request with no eligible matches returns `understood: true` and an empty list. Both interpreters reject invalid clock input, including invalid minutes and out-of-range AM/PM hours. The browser validates messages and constraints before choosing Rust or fallback, and validates constraints received from Rust. Rebuild both sides together for the added recognition field.
+
+The browser's demo state is an observable store. Enrollment and conversation modules own their pending work and expose read-only status to React through `useSyncExternalStore`; views handle form rendering and navigation. Reset and unmount discard obsolete successes and failures without changing a newer request's busy status. Replacement checks validity before starting a relaxed search and before accepting it. Calendar removal goes through enrollment so RSVP state is cleared consistently. Workflow tests cross these same module interfaces with controlled fetch completion, rather than testing private tokens or refs.
 
 Rust handles chat and replacement matching. TypeScript retains the same rules for instant event-card feedback and a portable static-demo fallback; integration tests compare the two implementations. An unavailable backend triggers an explicit fallback notice. Rejected input is shown as an error, not silently retried through the local planner.
 
@@ -54,7 +61,7 @@ Closing the form before submission changes nothing. Submitting locks enrollment 
 
 ## Future watsonx integration
 
-Implement the interpreter interface in Rust using the verified IBM region, project/model, authentication and API contract. Keep credentials in server-side environment/secret storage. The adapter must return structured constraints, never unvalidated event IDs; keep `Constraints::validate`, deterministic matching, and add-time validation after model output. Add timeout, authentication failure and malformed-output tests before enabling a live provider. See `WATSONX-NEXT-STEPS.md` for the integration checklist.
+Implement the interpreter interface in Rust using the verified IBM region, project/model, authentication and API contract. Keep credentials in server-side environment/secret storage. The adapter must return structured constraints and recognition status, never unvalidated event IDs; keep `Constraints::validate`, deterministic matching, and add-time validation after model output. Add timeout, authentication failure and malformed-output tests before enabling a live provider. See `WATSONX-NEXT-STEPS.md` for the integration checklist.
 
 PostgreSQL/SQLx and authentication are future production work, not demo dependencies. If introduced, the backend must own authorization and persisted state rather than trusting the browser's schedule snapshot. The current server binds to localhost by default; it is not a production multi-user service.
 

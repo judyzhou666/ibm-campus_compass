@@ -1,5 +1,6 @@
 //! Replace this interpreter with a Rust watsonx adapter when live access is configured.
-//! Interpreters return constraints only; trusted event matching always runs afterwards.
+//! Interpreters return constraints and recognition status, never event IDs.
+//! Trusted event matching always runs after constraint validation.
 use crate::model::{Constraints, TOPICS};
 use regex::Regex;
 
@@ -8,10 +9,15 @@ pub trait Interpreter {
         &self,
         message: &str,
         previous: Constraints,
-    ) -> impl std::future::Future<Output = Constraints> + Send;
+    ) -> impl std::future::Future<Output = Interpretation> + Send;
 }
 
 pub struct SimulatedInterpreter;
+
+pub struct Interpretation {
+    pub constraints: Constraints,
+    pub understood: bool,
+}
 
 fn matches(pattern: &str, text: &str) -> bool {
     Regex::new(pattern)
@@ -20,8 +26,14 @@ fn matches(pattern: &str, text: &str) -> bool {
 }
 
 impl Interpreter for SimulatedInterpreter {
-    async fn interpret(&self, message: &str, mut c: Constraints) -> Constraints {
+    async fn interpret(&self, message: &str, mut c: Constraints) -> Interpretation {
         let q = message.to_lowercase();
+        let mut understood = matches(r"\b(plan|events?|week|options|choices)\b", &q);
+        let mut matches = |pattern: &str, text: &str| {
+            let found = matches(pattern, text);
+            understood |= found;
+            found
+        };
         if matches(r"\b(reset|start over)\b", &q) {
             c = Constraints::default();
         }
@@ -92,13 +104,12 @@ impl Interpreter for SimulatedInterpreter {
             c.after = None;
         }
         for kind in ["after", "before"] {
-            let re = Regex::new(&format!(
-                r"\b{kind}\s+(\d{{1,2}})(?::(\d{{2}}))?\s*(am|pm)?\b"
-            ))
-            .unwrap();
-            if let Some(m) = re.captures(&q) {
-                let mut hour: u16 = m[1].parse().unwrap();
+            let re = Regex::new(&format!(r"\b{kind}\s+(\d+)(?::(\d+))?\s*(am|pm)?\b")).unwrap();
+            let recognized = matches(re.as_str(), &q);
+            if let Some(m) = re.captures(&q).filter(|_| recognized) {
+                let mut hour = m[1].parse::<u32>().unwrap_or(u32::MAX);
                 let suffix = m.get(3).map(|x| x.as_str());
+                let invalid_hour = suffix.is_some() && !(1..=12).contains(&hour);
                 if suffix == Some("pm") && hour < 12 {
                     hour += 12;
                 }
@@ -108,12 +119,18 @@ impl Interpreter for SimulatedInterpreter {
                 if suffix.is_none() && hour < 8 {
                     hour += 12;
                 }
-                let minute = m.get(2).map_or(0, |x| x.as_str().parse::<u16>().unwrap());
+                let minute = m
+                    .get(2)
+                    .map_or(0, |x| x.as_str().parse::<u32>().unwrap_or(u32::MAX));
                 // An invalid time is rejected by constraint validation, not guessed.
-                let value = if minute >= 60 || hour > 23 {
+                let value = if invalid_hour
+                    || minute >= 60
+                    || hour > 23
+                    || m.get(2).is_some_and(|x| x.as_str().len() != 2)
+                {
                     1441
                 } else {
-                    hour * 60 + minute
+                    (hour * 60 + minute) as u16
                 };
                 if kind == "after" {
                     c.after = Some(value);
@@ -138,8 +155,12 @@ impl Interpreter for SimulatedInterpreter {
             .unwrap()
             .captures(&q)
         {
+            understood = true;
             c.limit = Some(m[1].parse().unwrap());
         }
-        c
+        Interpretation {
+            constraints: c,
+            understood,
+        }
     }
 }
