@@ -1,3 +1,4 @@
+import { WEEK_LABEL } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
 import { requestPlan, planningKey } from "./api.ts";
@@ -100,7 +101,7 @@ export function Briefing({
     <section className="panel briefing">
       <h2>This Week&apos;s Briefing</h2>
       <p className="fineprint">
-        October 19–23, 2026 · Deterministic simulation · No live updates
+        {WEEK_LABEL} · Deterministic simulation · No live updates
       </p>
       {!ready ? (
         <p role="status">Checking availability…</p>

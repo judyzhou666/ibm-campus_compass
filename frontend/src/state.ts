@@ -1,3 +1,4 @@
+import { storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
@@ -22,7 +23,7 @@ export function createStore<T>(initial: T) {
 
 export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 
-export const STORAGE_KEY = "campus-compass-demo-v1";
+export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
   onboarded: false,
   major: "",

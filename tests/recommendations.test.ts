@@ -1,3 +1,4 @@
+import { DEMO } from "../frontend/src/config.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { EVENTS } from "../frontend/src/data.ts";
@@ -10,7 +11,7 @@ import {
 
 test("synthetic provenance never claims external verification", () => {
   for (const e of EVENTS) {
-    assert.equal(e.campus_id, "fictional-campus");
+    assert.equal(e.campus_id, DEMO.campus_id);
     assert.equal(e.source_url, null);
     assert.equal(e.last_checked_at, null);
     assert.match(e.verification_status!, /not externally verified/);

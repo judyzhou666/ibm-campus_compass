@@ -1,3 +1,4 @@
+import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
@@ -38,7 +39,10 @@ export function ChatEvents({
                 aria-label="Evidence at recommendation time; current availability is checked again before adding"
               >
                 {Object.entries(evidence.find((item) => item.event_id === id)!)
-                  .filter(([key]) => key !== "event_id")
+                  .filter(
+                    ([key]) =>
+                      key !== "event_id" && key !== "constraints_satisfied",
+                  )
                   .map(([key, value]) => (
                     <div key={key}>
                       <dt>{key.replaceAll("_", " ")}</dt>
@@ -98,7 +102,9 @@ export function PlannerCalendar({
           <Icon name="close" />
         </button>
       </div>
-      <p className="sub">October 19–23, 2026 · Eastern Time</p>
+      <p className="sub">
+        {WEEK_LABEL} · {DEMO.time_zone}
+      </p>
       <div className="calendar-legend">
         <span>● Your events</span>
         <span>○ Busy commitments</span>
@@ -124,11 +130,11 @@ export function PlannerCalendar({
             <section
               className="agenda-day"
               key={day}
-              aria-label={`${day}, October ${19 + index}`}
+              aria-label={`${day}, ${dayLabel(index)}`}
             >
               <h3>
                 {day}
-                <span>Oct {19 + index}</span>
+                <span>{dayLabel(index)}</span>
               </h3>
               {entries.length ? (
                 entries.map((entry) =>
@@ -209,7 +215,9 @@ export function RsvpDialog({
       <span className="tag">RSVP required · Demo registration</span>
       <h2 id="rsvp-title">Reserve your spot</h2>
       <h3>{event.title}</h3>
-      <p className="meta">{when(event)} · Eastern Time</p>
+      <p className="meta">
+        {when(event)} · {DEMO.time_zone}
+      </p>
       <p className="meta">{event.location}</p>
       <p>Complete this RSVP to add the event to your calendar.</p>
       <form

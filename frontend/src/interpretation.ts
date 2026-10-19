@@ -61,7 +61,7 @@ const keywords = {
 export function interpretRequest(
   text: string,
   previous: Constraints = {},
-): { constraints: Constraints; understood: boolean } {
+): { constraints: Constraints; understood: boolean; clarification?: string } {
   validateConstraints(previous);
   if (!text.trim() || new TextEncoder().encode(text).length > 2000)
     throw new Error("Message must contain 1–2000 bytes");
@@ -150,5 +150,15 @@ export function interpretRequest(
     c.limit = +n[1];
   }
   validateConstraints(c);
-  return { constraints: c, understood };
+  const ambiguousClock = [
+    ...q.matchAll(/\b(?:after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b/g),
+  ].some((m) => !m[3] && +m[1] >= 1 && +m[1] <= 12);
+  const clarification = ambiguousClock
+    ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
+    : /\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b/.test(
+          q,
+        )
+      ? "Which weekdays/times and maximum cost should I use? I cannot infer your location or weekday exclusions; please state the days you can attend."
+      : undefined;
+  return { constraints: c, understood, clarification };
 }

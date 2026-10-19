@@ -1,3 +1,7 @@
+import { DataReview } from "./DataReview.tsx";
+import { DemoLauncher } from "./DemoLauncher.tsx";
+import { guidedScenario } from "./demoScenario.ts";
+import { DEMO, WEEK_LABEL } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTS, when } from "./data.ts";
@@ -22,6 +26,7 @@ import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 
 const labels = {
+  review: "Team data review",
   dashboard: "Dashboard",
   calendar: "My Calendar",
   explore: "Explore Events",
@@ -33,6 +38,7 @@ const labels = {
 };
 type Page = keyof typeof labels;
 const navIcons: Record<Page, string> = {
+  review: "settings",
   dashboard: "home",
   calendar: "calendar",
   explore: "search",
@@ -295,7 +301,9 @@ export default function App() {
           </span>
         </a>
         <nav className="nav" aria-label="Main navigation">
-          {(Object.keys(labels) as Page[]).map((p, i) => (
+          {(
+            Object.keys(labels).filter((key) => key !== "review") as Page[]
+          ).map((p, i) => (
             <div key={p}>
               {i === 6 ? <div className="break" /> : null}
               <button
@@ -359,7 +367,7 @@ export default function App() {
             />
           </form>
           <div className="top-actions">
-            <span className="term">Fall semester 2026</span>
+            <span className="term">{DEMO.campus_name}</span>
             <button
               className="icon-btn"
               aria-label="View notifications"
@@ -590,6 +598,9 @@ export default function App() {
               ) : null}
             </>
           ) : null}
+          {page === "review" ? (
+            <DataReview onDetail={setDetail} onExit={() => nav("dashboard")} />
+          ) : null}
           {page === "planner" ? (
             <>
               <Heading
@@ -606,6 +617,57 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
+              <DemoLauncher
+                state={state}
+                busy={busy || enrolling}
+                onPrepare={() => {
+                  try {
+                    if (
+                      !localStorage.getItem(STORAGE_KEY + ":before-guided-demo")
+                    )
+                      localStorage.setItem(
+                        STORAGE_KEY + ":before-guided-demo",
+                        JSON.stringify(demo.read()),
+                      );
+                  } catch {
+                    notify("Could not archive current demo. Nothing changed.");
+                    return false;
+                  }
+                  enrollment.reset();
+                  conversation.reset();
+                  update(() => guidedScenario());
+                  setCalendarOpen(false);
+                  return true;
+                }}
+                onRestore={() => {
+                  try {
+                    const saved = localStorage.getItem(
+                      STORAGE_KEY + ":before-guided-demo",
+                    );
+                    if (!saved) {
+                      notify("No previous demo has been archived.");
+                      return;
+                    }
+                    localStorage.setItem(STORAGE_KEY, saved);
+                    localStorage.removeItem(
+                      STORAGE_KEY + ":before-guided-demo",
+                    );
+                    location.reload();
+                  } catch {
+                    notify("Could not restore browser storage.");
+                  }
+                }}
+                onPlan={(text) => void chat(text, {})}
+                onCancel={() => {
+                  const id = demo
+                    .read()
+                    .plan.find((id) => !demo.read().cancelled.includes(id));
+                  if (id)
+                    update((s) => ({ ...s, cancelled: [...s.cancelled, id] }));
+                }}
+                onReplace={replan}
+                onExport={exportCalendar}
+              />
               {cancelled ? (
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
@@ -781,7 +843,7 @@ export default function App() {
                         <Icon name="settings" />
                       </div>
                       {[
-                        ["Demo week", "Oct 19–23"],
+                        ["Demo week", WEEK_LABEL],
                         ["Busy commitments", state.blocks.length],
                         ["Travel time", `${state.buffer} minutes`],
                         [
@@ -849,6 +911,7 @@ export default function App() {
                   Export calendar
                 </Button>
               </Heading>
+
               {cancelled ? (
                 <div className="notice">
                   A planned event was cancelled.{" "}
@@ -859,7 +922,7 @@ export default function App() {
               ) : null}
               <section className="panel calendar-full">
                 <div className="section-bar">
-                  <h2>October 19–23, 2026</h2>
+                  <h2>{WEEK_LABEL}</h2>
                   <button className="text-btn" onClick={() => nav("profile")}>
                     Edit availability <Icon name="arrow" />
                   </button>
@@ -875,7 +938,7 @@ export default function App() {
                     Chosen events
                   </span>
                   <span>
-                    Eastern Time · {state.buffer}-minute travel buffer
+                    {DEMO.time_zone} · {state.buffer}-minute travel buffer
                   </span>
                 </div>
               </section>
@@ -932,6 +995,18 @@ export default function App() {
             />
           ) : null}
           {page === "settings" ? (
+            <section className="panel briefing">
+              <h2>Team tools</h2>
+              <p>
+                Read-only review of fictional event quality, separate from
+                student planning.
+              </p>
+              <Button onClick={() => nav("review")}>
+                Open synthetic-data review
+              </Button>
+            </section>
+          ) : null}
+          {page === "settings" ? (
             <Settings
               state={state}
               update={update}
@@ -951,7 +1026,7 @@ export default function App() {
               Campus Compass · IBM AI Experiential Learning Lab project
             </span>
             <span>
-              Fictional data · Demo week, Oct 19–23, 2026 · Eastern Time
+              Fictional data · Demo week, {WEEK_LABEL} · {DEMO.time_zone}
             </span>
           </footer>
         </main>

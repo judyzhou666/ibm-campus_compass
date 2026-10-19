@@ -1,4 +1,5 @@
-import { DATES, EVENTS } from "./data.ts";
+import { DEMO, utcStamp } from "./config.ts";
+import { EVENTS } from "./data.ts";
 import type { DemoState, CampusEvent } from "./types.ts";
 
 export function calendarText(state: DemoState): string | null {
@@ -6,14 +7,7 @@ export function calendarText(state: DemoState): string | null {
     (e) => state.plan.includes(e.id) && !state.cancelled.includes(e.id),
   );
   if (!chosen.length) return null;
-  const stamp = (e: CampusEvent, minute: number) => {
-    const date = new Date(`${DATES[e.day]}T00:00:00-04:00`);
-    date.setUTCMinutes(date.getUTCMinutes() + minute);
-    return date
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}/, "");
-  };
+  const stamp = (e: CampusEvent, minute: number) => utcStamp(e.day, minute);
   const clean = (s: string) =>
     s
       .replace(/\\/g, "\\\\")
@@ -27,7 +21,7 @@ export function calendarText(state: DemoState): string | null {
     "CALSCALE:GREGORIAN",
     ...chosen.flatMap((e) => [
       "BEGIN:VEVENT",
-      `UID:${e.id}-20261019@campus-compass-demo`,
+      `UID:${e.id}-${DEMO.campus_id}-${DEMO.week_start}@campus-compass-demo`,
       `DTSTAMP:${new Date()
         .toISOString()
         .replace(/[-:]/g, "")

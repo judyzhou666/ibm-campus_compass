@@ -92,3 +92,28 @@ Browser state keeps the existing storage key with safe defaults for `onboarded`,
 Communities are static fictional TypeScript data, with local membership/posts. Event-community association uses exact catalog topics. No scraping, background jobs, new credentials or external services are introduced. Future watsonx remains a Rust interpreter adapter returning validated constraints and recognition status, with trusted event selection/evidence after interpretation.
 
 Community memberships use browser-local `joinedCommunities` IDs independently of discussion joins in `joined`, whose values are post titles. Unknown stored community IDs are ignored. Event-to-community links use `#forum?community=<known-id>`; selected details follow URL changes and reloads. Older ambiguous `joined` values remain conversation joins and are not migrated into community memberships.
+
+## Final proposal refinement
+
+`data/demo.json` is the single build-time demo configuration (`campus_id`, `campus_name`, Monday `week_start`, IANA `time_zone`). Both builds consume it; rebuild frontend and backend together. `GET /api/config` exposes that same non-secret configuration. Frontend validates the Monday/date and IANA zone, derives all visible dates, and converts local event minutes to UTC for ICS using the configured zone instead of a fixed offset. Event IDs/data remain synthetic; campus labels use the configured fictional identity. Alternate campus/week/zone configurations have separate browser storage keys, preserving old plans rather than reinterpreting them. This is not real multi-campus tenancy or an interactive scenario switcher.
+
+Rust and TypeScript selection now prioritize previously unrepresented requested/selected topics, while hard filters, current commitments, pairwise travel buffers, cancellations and access stay authoritative. Unknown RSVP requirements and invalid event times fail closed. Evidence adds `comparison`, `discovery_context` and `constraints_satisfied`. Comparisons reuse the in-memory trusted catalog and compare actual cost, duration and RSVP conditions of another eligible same-topic record; no record is claimed universally superior.
+
+The interpreter adds optional `clarification`: ambiguous proximity/cost, unsupported weekday negation, and unqualified 1–12 clock hours ask a short question and return no selections. Unsupported recognition and understood/no-match remain distinct. Recognized empty results include an optional `diagnostic` explaining filter absence or counts of conflicting/restricted/cancelled/incomplete/already-chosen records within those filters. Browser fallback retains deterministic filters and makes no claim of Rust evidence or live IBM operation.
+
+Settings → Team tools opens a read-only synthetic-data review, with missing source/URL, stale/missing verification, unknown eligibility/RSVP/food and invalid metadata flags. Reference date is the configured week, with a 30-day freshness threshold; this is a reproducible review heuristic, not external verification. No editor mutates trusted catalog state.
+
+The Demo Scenario Launcher uses existing conversation/enrollment interfaces, explicitly archives the prior local demo before reset, and never pre-approves an RSVP or adds events. It keeps cancellation, replacement and export in the Planner view; Reset/Restore are explicit. See `docs/demo-script.md`, `docs/proposal-alignment.md` and `docs/evaluation-methodology.md`.
+
+## Optional browser regression
+
+The checked-in `scripts/browser-journey.mjs` exercises desktop/mobile journeys against a running built app. Playwright is optional test tooling, not an application dependency. Install it in an external tooling directory, then supply its module path, your Chromium binary, and the internal test URL:
+
+```sh
+npm install --prefix /tmp/campus-browser-tools --no-package-lock playwright
+PLAYWRIGHT_MODULE=/tmp/campus-browser-tools/node_modules/playwright/index.mjs \
+CHROMIUM_PATH=/usr/bin/chromium CAMPUS_TEST_URL=http://127.0.0.1:4173 \
+node scripts/browser-journey.mjs
+```
+
+It uses isolated browser contexts and synthetic names. It checks manual RSVP, replacement consent, ICS download, archival restoration, clarification, review filters and horizontal overflow. No full accessibility certification is claimed. `npm run evaluate` starts its own ephemeral Rust server independently; build Rust first.

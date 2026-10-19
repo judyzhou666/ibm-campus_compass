@@ -1,3 +1,4 @@
+import { DEMO, dayLabel } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -65,7 +66,9 @@ export function Heading({
         <p className="sub">{description}</p>
       </div>
       {children || (
-        <span className="date">Monday, October 19, 2026 · Demo</span>
+        <span className="date">
+          {dayLabel(0)}, {DEMO.week_start.slice(0, 4)} · Demo
+        </span>
       )}
     </div>
   );
@@ -117,7 +120,9 @@ export function EventCard({
   return (
     <article className="event-card">
       <div className={`poster ${category}`}>
-        <small>CAMPUS COMPASS / OCTOBER</small>
+        <small>
+          {DEMO.campus_name} / {dayLabel(e.day)}
+        </small>
         <b>
           {e.poster.split(" / ").map((part, i) => (
             <span key={part}>
@@ -198,7 +203,7 @@ export function Week({
             <div className="week-day" key={day}>
               <div className={`day-head ${i === 0 ? "today" : ""}`}>
                 {day}
-                <strong>{19 + i}</strong>
+                <strong>{dayLabel(i)}</strong>
               </div>
               {items.map((e) => {
                 const cancelled = state.cancelled.includes(e.id),
@@ -278,7 +283,7 @@ export function EventDetails({
       <p>{e.description}</p>
       <div className="meta">
         <Icon name="calendar" />
-        {when(e)} · Eastern Time
+        {when(e)} · {DEMO.time_zone}
       </div>
       <div className="meta">
         <Icon name="pin" />

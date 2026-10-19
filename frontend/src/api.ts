@@ -55,6 +55,8 @@ export async function requestPlan(
   fetcher = globalThis.fetch,
 ) {
   const interpreted = interpretRequest(message, previous);
+  if (interpreted.clarification)
+    throw new InputError(interpreted.clarification);
   if (!interpreted.understood)
     throw new InputError(
       "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
@@ -76,6 +78,7 @@ export async function requestPlan(
       throw new Error("Invalid planner response");
     }
     validateConstraints(result.constraints);
+    if (result.clarification) throw new InputError(result.clarification);
     if (!result.understood)
       throw new InputError(
         "The simulated planner did not understand this request. Try an interest, day or time.",
@@ -91,7 +94,10 @@ export async function requestPlan(
           ),
       ),
       source: "rust",
-      notice: "",
+      notice:
+        !result.event_ids.length && typeof result.diagnostic === "string"
+          ? result.diagnostic
+          : "",
     };
   } catch (error) {
     if (error instanceof InputError) throw error;

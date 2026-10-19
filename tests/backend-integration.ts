@@ -111,6 +111,48 @@ try {
       query,
     );
   }
+
+  assert.deepEqual(
+    await (await fetch(base + "/api/config")).json(),
+    (await import("../frontend/src/config.ts")).DEMO,
+  );
+  for (const message of [
+    "events near me",
+    "social but not Tuesday",
+    "career after 3",
+  ]) {
+    const r = await (
+      await post("/api/plan", { message, state: schedulePayload(state) })
+    ).json();
+    assert.equal(r.event_ids.length, 0);
+    assert.equal(r.clarification, interpretRequest(message).clarification);
+  }
+  const impossible = await (
+    await post("/api/plan", {
+      message: "AI on Tuesday morning",
+      state: schedulePayload(state),
+    })
+  ).json();
+  assert.match(impossible.diagnostic, /scheduling conflicts/);
+  const diverse = await (
+    await post("/api/plan", {
+      message: "AI career social events",
+      state: schedulePayload(state),
+    })
+  ).json();
+  assert.equal(
+    new Set(
+      diverse.event_ids.map(
+        (id: string) => EVENTS.find((e) => e.id === id)!.topic,
+      ),
+    ).size,
+    3,
+  );
+  for (const e of diverse.recommendations) {
+    assert.ok(e.comparison);
+    assert.match(e.comparison, /Major and free-text/);
+    assert.ok(e.constraints_satisfied);
+  }
   const previous: Constraints = {
     days: [1],
     food: "Free meal",

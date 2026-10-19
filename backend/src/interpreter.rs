@@ -17,6 +17,7 @@ pub struct SimulatedInterpreter;
 pub struct Interpretation {
     pub constraints: Constraints,
     pub understood: bool,
+    pub clarification: Option<String>,
 }
 
 fn matches(pattern: &str, text: &str) -> bool {
@@ -158,9 +159,29 @@ impl Interpreter for SimulatedInterpreter {
             understood = true;
             c.limit = Some(m[1].parse().unwrap());
         }
+        let ambiguous_clock = Regex::new(r"\b(?:after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b")
+            .unwrap()
+            .captures_iter(&q)
+            .any(|m| {
+                m.get(3).is_none() && m[1].parse::<u16>().is_ok_and(|h| (1..=12).contains(&h))
+            });
+        let clarification = if ambiguous_clock {
+            Some(
+                "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
+                    .into(),
+            )
+        } else if self::matches(
+            r"\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b",
+            &q,
+        ) {
+            Some("Which weekdays/times and maximum cost should I use? I cannot infer your location or weekday exclusions; please state the days you can attend.".into())
+        } else {
+            None
+        };
         Interpretation {
             constraints: c,
             understood,
+            clarification,
         }
     }
 }

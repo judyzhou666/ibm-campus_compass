@@ -3,6 +3,10 @@ import { EVENTS } from "./data.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
   a.day === b.day && a.start < b.end + buffer && b.start < a.end + buffer;
 export function issue(e: CampusEvent, state: Schedule) {
+  if (e.day > 4 || e.day < 0 || e.start >= e.end || e.end > 1440)
+    return "Invalid event metadata; team review required";
+  if (!["RSVP required", "Drop-in welcome"].includes(e.rsvp))
+    return "RSVP requirements unknown; team review required";
   if (state.cancelled.includes(e.id)) return "Cancelled in demo";
   if (e.access === "full") return "Event is full";
   if (e.access === "members") return "Membership not verified";
@@ -25,6 +29,7 @@ export function recommend(
   state: Schedule,
   constraints: Constraints = {},
   limit = 3,
+  contextual = true,
 ) {
   const topics = constraints.topics?.length
     ? constraints.topics
@@ -56,9 +61,27 @@ export function recommend(
       a.start - b.start,
   );
   const selected: CampusEvent[] = [];
-  for (const e of candidates) {
-    if (!selected.some((x) => overlap(e, x, state.buffer))) selected.push(e);
-    if (selected.length === (constraints.limit || limit)) break;
+  while (candidates.length && selected.length < (constraints.limit || limit)) {
+    const feasible = candidates.filter(
+      (e) => !selected.some((x) => overlap(e, x, state.buffer)),
+    );
+    const score = (e: CampusEvent) =>
+      contextual
+        ? Number(topics.includes(e.topic)) * 10 +
+          Number(
+            topics.includes(e.topic) &&
+              !selected.some((x) => x.topic === e.topic),
+          ) *
+            4 +
+          2 * Number(preferred(e, state)) +
+          Number(e.cost === 0)
+        : Number(e.cost === 0);
+    feasible.sort(
+      (a, b) => score(b) - score(a) || a.day - b.day || a.start - b.start,
+    );
+    if (!feasible.length) break;
+    selected.push(feasible[0]);
+    candidates = candidates.filter((e) => e.id !== feasible[0].id);
   }
   return selected;
 }
