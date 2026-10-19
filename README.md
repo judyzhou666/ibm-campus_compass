@@ -6,6 +6,12 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 
 The architecture changes are merged with the latest teammate discovery, evidence, personalization and community work. Conversation ownership retains strict replacement filters and preserves Rust evidence in chat; preferred-time changes invalidate pending suggestions. Weekly briefing and targeted community navigation remain available. Engineering skills now use GitHub Issues, default triage labels and the domain conventions in `docs/agents/`.
 
+### Doris synchronization — October 19, 2026
+
+Doris incorporates main at `cfe617a` without conflicts, preserving the latest community fixes and workflow refactoring. The backend remains Rust/Axum/Tokio/Serde, including the future watsonx interpreter interface; the frontend remains React/TypeScript compiled to JavaScript. No tracked Python files or Python dependency manifests are present, so no additional language migration was needed.
+
+Validation after synchronization: catalog/planner assertions, all 43 TypeScript tests, 5 Wiki fixture tests, frontend type checking/build, Rust formatting, Clippy with warnings denied, 4 Rust unit tests, Rust build and API integration passed. Run with `npm ci`, `npm run build`, and `cargo run --locked`; use `npm run dev` alongside Rust for frontend development. Live watsonx remains deferred and requires a Rust adapter; the current planner and all registrations remain explicitly simulated.
+
 ## PR #3 review fixes — October 18, 2026
 
 Two community interaction bugs found during review have been fixed on the PR branch:
