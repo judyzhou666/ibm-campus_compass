@@ -6,8 +6,9 @@ import {
   weekDates,
   utcStamp,
   storageKey,
+  dayLabel,
 } from "../frontend/src/config.ts";
-import { EVENTS } from "../frontend/src/data.ts";
+import { EVENTS, when } from "../frontend/src/data.ts";
 import { fresh } from "../frontend/src/state.ts";
 import { recommend, issue, overlap } from "../frontend/src/planner.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
@@ -84,6 +85,15 @@ test("data review reports honest missing sources and invalid metadata without mu
     issue({ ...e, rsvp: "Unknown" }, fresh())!,
     /RSVP requirements unknown/,
   );
+});
+test("invalid catalog days stay inspectable instead of crashing event details", () => {
+  for (const day of [-1, 5, 7, 1.5, NaN]) {
+    const event = { ...EVENTS[0], day };
+    assert.ok(qualityIssues(event).includes("Invalid metadata"));
+    assert.equal(dayLabel(day), "Date needs review");
+    assert.match(when(event), /Unknown day, Date needs review/);
+  }
+  assert.match(when(EVENTS[0]), /^Tue, Oct 20/);
 });
 test("guided scenario is resettable, limited, and never grants enrollment or RSVP", () => {
   const a = guidedScenario(),

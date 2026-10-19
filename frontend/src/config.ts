@@ -30,6 +30,7 @@ export function weekDates(c = DEMO) {
   });
 }
 export function dayLabel(day: number, c = DEMO) {
+  if (!Number.isInteger(day) || day < 0 || day >= 5) return "Date needs review";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",

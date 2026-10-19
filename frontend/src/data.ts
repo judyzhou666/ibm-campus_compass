@@ -24,4 +24,4 @@ export const EVENTS: CampusEvent[] = events.map((e) => ({
 export const time = (m: number) =>
   `${Math.floor(m / 60) % 12 || 12}${m % 60 ? ":" + String(m % 60).padStart(2, "0") : ""} ${m >= 720 ? "PM" : "AM"}`;
 export const when = (e: { day: number; start: number; end: number }) =>
-  `${DAYS[e.day]}, ${dayLabel(e.day)} · ${time(e.start)}–${time(e.end)}`;
+  `${DAYS[e.day] || "Unknown day"}, ${dayLabel(e.day)} · ${time(e.start)}–${time(e.end)}`;
