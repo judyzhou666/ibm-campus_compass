@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## PR #4 clarification fixes — October 21, 2026
+
+- AM/PM questions now retain non-ambiguous topic/day filters in pending conversation context. “career after 3” followed by either “PM” or “after 3 PM” produces only Career suggestions after 15:00. The ambiguous time is omitted from constraints until resolved; asking or answering a clarification never adds events or confirms RSVP. New chat/reset discards pending context. With multiple ambiguous times, a bare AM/PM answer requires a complete restatement rather than guessing.
+- Numeric budgets are explicitly unsupported in both Rust and browser interpretation. “arts on Wednesday evening under $5” produces no suggestions and explains the supported free-admission option instead of silently returning the $12 ceramics workshop. Generic clarification no longer asks for a maximum budget; location/weekday questions request a complete restatement.
+- Rust recommendation, comparison and no-match diagnostics now share the same constraint predicate. The reviewer's invalid-weekday detail fix (`9e52a88`) is preserved.
+
+Validation: all required commands passed: catalog/planner assertions, 60 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust fmt/Clippy/build, 6 Rust tests, and API integration. Integration also runs actual online/offline conversation follow-ups. Chromium verified both AM/PM answer forms and numeric-budget rejection online/offline with no calendar additions. The frozen 20-scenario report/results remain unchanged; follow-up regressions are separate from that single-request evaluation. Run with `npm ci`, `npm run build`, `cargo run --locked`; in AI Planner try the quoted requests above. No live watsonx or real enrollment is claimed.
+
 ## PR #4 review follow-up — October 19, 2026
 
 Fixed an invalid-date inspection crash: Team Data Review can flag a record with an out-of-range or fractional weekday, and opening it now shows “Unknown day, Date needs review” instead of throwing a date-formatting error. `frontend/src/config.ts` guards weekday formatting, `frontend/src/data.ts` keeps the label readable, and `tests/final-alignment.test.ts` covers invalid weekdays plus an unchanged valid date. No catalog records were modified.

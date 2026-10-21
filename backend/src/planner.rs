@@ -55,6 +55,18 @@ pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String
     })
 }
 
+fn matches_constraints(e: &Event, c: &Constraints) -> bool {
+    c.topics
+        .as_ref()
+        .is_none_or(|t| t.is_empty() || t.contains(&e.topic))
+        && c.days.as_ref().is_none_or(|d| d.contains(&e.day))
+        && c.after.is_none_or(|t| e.start >= t)
+        && c.before.is_none_or(|t| e.end <= t)
+        && c.food.as_ref().is_none_or(|f| e.food == *f)
+        && (c.free != Some(true) || e.cost == 0)
+        && c.excluded.as_ref().is_none_or(|t| !t.contains(&e.topic))
+}
+
 pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> Vec<&'a Event> {
     let explicit = c.topics.as_ref().filter(|t| !t.is_empty());
     let topics = explicit.unwrap_or(&state.interests);
@@ -63,13 +75,7 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         .filter(|e| {
             !state.plan.contains(&e.id)
                 && issue(e, state, events).is_none()
-                && c.days.as_ref().is_none_or(|d| d.contains(&e.day))
-                && c.after.is_none_or(|t| e.start >= t)
-                && c.before.is_none_or(|t| e.end <= t)
-                && c.food.as_ref().is_none_or(|f| e.food == *f)
-                && (c.free != Some(true) || e.cost == 0)
-                && c.excluded.as_ref().is_none_or(|t| !t.contains(&e.topic))
-                && explicit.is_none_or(|t| t.contains(&e.topic))
+                && matches_constraints(e, c)
         })
         .collect();
     candidates.sort_by_key(|e| {
@@ -198,11 +204,7 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
         other.id != e.id
             && other.topic == e.topic
             && issue(other, state, events).is_none()
-            && c.days.as_ref().is_none_or(|d| d.contains(&other.day))
-            && c.after.is_none_or(|t| other.start >= t)
-            && c.before.is_none_or(|t| other.end <= t)
-            && c.food.as_ref().is_none_or(|f| other.food == *f)
-            && (c.free != Some(true) || other.cost == 0)
+            && matches_constraints(other, c)
             && !state.plan.contains(&other.id)
     });
     match other {
@@ -214,17 +216,7 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
 pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> String {
     let within: Vec<_> = events
         .iter()
-        .filter(|e| {
-            c.topics
-                .as_ref()
-                .is_none_or(|t| t.is_empty() || t.contains(&e.topic))
-                && c.days.as_ref().is_none_or(|d| d.contains(&e.day))
-                && c.after.is_none_or(|t| e.start >= t)
-                && c.before.is_none_or(|t| e.end <= t)
-                && c.food.as_ref().is_none_or(|f| e.food == *f)
-                && (c.free != Some(true) || e.cost == 0)
-                && c.excluded.as_ref().is_none_or(|t| !t.contains(&e.topic))
-        })
+        .filter(|e| matches_constraints(e, c))
         .collect();
     if within.is_empty() {
         return "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically.".into();

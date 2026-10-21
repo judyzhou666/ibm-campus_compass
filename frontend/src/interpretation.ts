@@ -58,14 +58,36 @@ const keywords = {
     /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics)\b/i,
   Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance)\b/i,
 };
+export class PlanningClarification extends Error {
+  constructor(
+    message: string,
+    readonly constraints: Constraints,
+    readonly clocks: string[],
+  ) {
+    super(message);
+  }
+}
 export function interpretRequest(
   text: string,
   previous: Constraints = {},
-): { constraints: Constraints; understood: boolean; clarification?: string } {
+): {
+  constraints: Constraints;
+  understood: boolean;
+  clarification?: string;
+  clocks?: string[];
+} {
   validateConstraints(previous);
   if (!text.trim() || new TextEncoder().encode(text).length > 2000)
     throw new Error("Message must contain 1–2000 bytes");
   const q = text.toLowerCase();
+  if (
+    /\$|\b(?:under|less than|at most|up to|no more than|budget(?: of)?)\s*-?\d|\b\d+(?:\.\d+)?\s*(?:dollars?|usd|euros?)\b/.test(
+      q,
+    )
+  )
+    throw new Error(
+      "Numeric budgets are not supported. Please restate your complete request with ‘free admission’ if required, or omit the budget. No budget-filtered plan was generated.",
+    );
   let understood = /\b(plan|events?|week|options|choices)\b/.test(q);
   const test = (pattern: RegExp) => {
     const found = pattern.test(q);
@@ -150,15 +172,18 @@ export function interpretRequest(
     c.limit = +n[1];
   }
   validateConstraints(c);
-  const ambiguousClock = [
-    ...q.matchAll(/\b(?:after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b/g),
-  ].some((m) => !m[3] && +m[1] >= 1 && +m[1] <= 12);
+  const ambiguous = [
+    ...q.matchAll(/\b(after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b/g),
+  ].filter((m) => !m[4] && +m[2] >= 1 && +m[2] <= 12);
+  const clocks = ambiguous.map((m) => m[0].trim());
+  for (const m of ambiguous) delete c[m[1] as "after" | "before"];
+  const ambiguousClock = clocks.length > 0;
   const clarification = ambiguousClock
     ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
     : /\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b/.test(
           q,
         )
-      ? "Which weekdays/times and maximum cost should I use? I cannot infer your location or weekday exclusions; please state the days you can attend."
+      ? "Please restate your complete request with the weekdays/times you can attend. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported."
       : undefined;
-  return { constraints: c, understood, clarification };
+  return { constraints: c, understood, clarification, clocks };
 }

@@ -117,3 +117,11 @@ node scripts/browser-journey.mjs
 ```
 
 It uses isolated browser contexts and synthetic names. It checks manual RSVP, replacement consent, ICS download, archival restoration, clarification, review filters and horizontal overflow. No full accessibility certification is claimed. `npm run evaluate` starts its own ephemeral Rust server independently; build Rust first.
+
+## PR #4 clarification follow-ups
+
+AM/PM interpretation omits ambiguous clock bounds rather than returning guessed values. The browser API raises a typed clarification carrying validated non-ambiguous constraints and unresolved clock phrases. Conversation ownership keeps that context pending (not persisted as an active plan) and resolves a single bare AM/PM answer or a full time answer before calling the Rust planner or labelled browser fallback. New chat/reset/replacement clears pending context. Multiple ambiguous clock phrases require an explicit full answer. Direct HTTP clients must provide the returned safe `constraints` as `previous` with a fully specified follow-up such as `after 3 PM`; the server remains stateless.
+
+Only the existing boolean free-admission cost filter is supported. Numeric price/budget requests such as `under $5` are explicitly rejected: browser interpretation surfaces an unsupported-budget error without making a request; direct Rust requests return a clarification with zero event IDs. General clarification no longer solicits a maximum budget. Other non-clock clarifications explicitly require restating the full request. No maximum-cost field has been introduced, and no numeric budget may be treated as satisfied.
+
+The Rust `matches_constraints` predicate is shared by selection, same-topic comparisons and no-match diagnostics, covering topic, excluded topic, weekday, start/end, food and free admission. Existing API/fallback parity and the frozen evaluation report remain unchanged; conversation-level tests cover clarification follow-ups independently.

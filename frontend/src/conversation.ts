@@ -1,3 +1,4 @@
+import { PlanningClarification } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
@@ -12,8 +13,10 @@ export function createConversation(
 ) {
   const status = createStore({ busy: false, mode: "Simulated planner" });
   let version = 0;
+  let pending: PlanningClarification | undefined;
   function invalidate() {
     version++;
+    pending = undefined;
     status.update((s) => ({ ...s, busy: false }));
   }
   function assistant(text: string) {
@@ -44,6 +47,7 @@ export function createConversation(
     try {
       const plan = await task(snapshot);
       if (stale()) return;
+      pending = undefined;
       const matches: CampusEvent[] = [];
       for (const id of plan.ids) {
         const event = EVENTS.find((e) => e.id === id);
@@ -94,12 +98,17 @@ export function createConversation(
         ],
       }));
     } catch (error) {
-      if (!stale())
+      if (!stale()) {
+        pending =
+          error instanceof PlanningClarification && error.clocks.length
+            ? error
+            : undefined;
         assistant(
           error instanceof Error
             ? error.message
             : "The planner could not finish. Try again.",
         );
+      }
     } finally {
       if (token === version) status.update((s) => ({ ...s, busy: false }));
     }
@@ -115,6 +124,7 @@ export function createConversation(
       assistant("There are no cancelled events in your plan.");
       return;
     }
+    pending = undefined;
     remove(old.id);
     await run((snapshot) => {
       const constraints = replacementConstraints(snapshot.constraints, old);
@@ -137,6 +147,20 @@ export function createConversation(
     async chat(text: string, previous?: Constraints) {
       if (status.read().busy || !text.trim()) return;
       text = text.trim();
+      if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
+        pending = undefined;
+      let resolvedText = text;
+      const context = pending?.constraints;
+      if (pending && /^(am|pm)[.!]?$/i.test(text)) {
+        if (pending.clocks.length !== 1) {
+          assistant(
+            "Please restate the complete request with AM/PM for each time.",
+          );
+          return;
+        }
+        resolvedText = `${pending.clocks[0]} ${text.replace(/[.!]/g, "")}`;
+      }
+
       if (
         /\b(cancelled|canceled|replacement|replan|re-plan)\b/i.test(text) &&
         demo.read().cancelled.some((id) => demo.read().plan.includes(id))
@@ -148,7 +172,12 @@ export function createConversation(
         messages: [...s.messages, { role: "user", text }],
       }));
       await run((snapshot) =>
-        requestPlan(text, snapshot.constraints, snapshot, fetcher),
+        requestPlan(
+          resolvedText,
+          context ?? snapshot.constraints,
+          snapshot,
+          fetcher,
+        ),
       );
     },
   };

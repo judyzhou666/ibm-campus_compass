@@ -359,3 +359,60 @@ test("offline conversation recognizes parser synonyms and keeps the calendar unc
   }
   assert.deepEqual(demo.read().plan, []);
 });
+
+for (const request of ["career after 3", "career on Thursday after 3"]) {
+  for (const answer of ["PM", "after 3 PM"]) {
+    for (const offline of [true, false]) {
+      test(`AM/PM clarification retains ${request} context for ${answer}, offline=${offline}`, async () => {
+        const fetcher: typeof fetch = async (_path, options) => {
+          if (offline) throw Error("offline");
+          const body = JSON.parse(String(options?.body));
+          assert.deepEqual(body.previous.topics, ["Career"]);
+          assert.deepEqual(
+            body.previous.days,
+            request.includes("Thursday") ? [3] : undefined,
+          );
+          assert.equal(body.previous.after, undefined);
+          const { interpretRequest } =
+            await import("../frontend/src/interpretation.ts");
+          const { recommend } = await import("../frontend/src/planner.ts");
+          const parsed = interpretRequest(body.message, body.previous);
+          return planned(
+            recommend({ ...fresh(), ...body.state }, parsed.constraints).map(
+              (e) => e.id,
+            ),
+            parsed.constraints,
+          );
+        };
+        const { demo, conversation } = setup(fetcher);
+        await conversation.chat(request);
+        assert.match(demo.read().messages.at(-1)!.text, /AM or PM/);
+        assert.equal(demo.read().constraints.after, undefined);
+        assert.deepEqual(demo.read().draft, []);
+        await conversation.chat(answer);
+        assert.deepEqual(demo.read().constraints.topics, ["Career"]);
+        assert.deepEqual(
+          demo.read().constraints.days,
+          request.includes("Thursday") ? [3] : undefined,
+        );
+        assert.equal(demo.read().constraints.after, 900);
+        assert.deepEqual(
+          demo.read().draft,
+          request.includes("Thursday") ? ["e28"] : ["e20", "e28"],
+        );
+        assert.deepEqual(demo.read().plan, []);
+        assert.deepEqual(demo.read().rsvps, []);
+      });
+    }
+  }
+}
+test("new chat discards pending clarification context", async () => {
+  const { demo, conversation } = setup(async () => {
+    throw Error("offline");
+  });
+  await conversation.chat("career after 3");
+  conversation.clear();
+  await conversation.chat("PM");
+  assert.match(demo.read().messages.at(-1)!.text, /limited demo/);
+  assert.deepEqual(demo.read().constraints, {});
+});

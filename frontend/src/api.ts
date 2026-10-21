@@ -7,7 +7,11 @@ import type {
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
 import { recommend, issue } from "./planner.ts";
-import { interpretRequest, validateConstraints } from "./interpretation.ts";
+import {
+  PlanningClarification,
+  interpretRequest,
+  validateConstraints,
+} from "./interpretation.ts";
 
 export const schedulePayload = (state: Schedule) => ({
   plan: [...state.plan],
@@ -56,7 +60,11 @@ export async function requestPlan(
 ) {
   const interpreted = interpretRequest(message, previous);
   if (interpreted.clarification)
-    throw new InputError(interpreted.clarification);
+    throw new PlanningClarification(
+      interpreted.clarification,
+      interpreted.constraints,
+      interpreted.clocks || [],
+    );
   if (!interpreted.understood)
     throw new InputError(
       "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",

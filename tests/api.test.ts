@@ -210,3 +210,29 @@ test("Rust recommendation evidence is retained only for selected event IDs", asy
   );
   assert.deepEqual(result.evidence, [evidence]);
 });
+
+test("numeric budgets are explicitly rejected before Rust or fallback can drop them", async () => {
+  for (const message of [
+    "arts on Wednesday evening under $5",
+    "arts budget 5",
+    "arts less than 5 dollars",
+  ]) {
+    let called = false;
+    await assert.rejects(
+      requestPlan(message, {}, fresh(), async () => {
+        called = true;
+        throw Error("offline");
+      }),
+      /Numeric budgets are not supported/,
+    );
+    assert.equal(called, false);
+  }
+  const r = await requestPlan(
+    "arts on Wednesday evening free admission",
+    {},
+    fresh(),
+    offline,
+  );
+  assert.deepEqual(r.ids, []);
+  assert.equal(r.constraints.free, true);
+});
