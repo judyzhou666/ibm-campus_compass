@@ -80,9 +80,13 @@ export function interpretRequest(
   if (!text.trim() || new TextEncoder().encode(text).length > 2000)
     throw new Error("Message must contain 1–2000 bytes");
   const q = text.toLowerCase();
+  const budgetText = q.replace(
+    /\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b/g,
+    "",
+  );
   if (
     /\$|\b(?:under|less than|at most|up to|no more than|budget(?: of)?)\s*-?\d|\b\d+(?:\.\d+)?\s*(?:dollars?|usd|euros?)\b/.test(
-      q,
+      budgetText,
     )
   )
     throw new Error(

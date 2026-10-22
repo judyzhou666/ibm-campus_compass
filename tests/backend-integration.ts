@@ -208,6 +208,35 @@ try {
       assert.deepEqual(demo.read().rsvps, []);
     }
   }
+  for (const [message, limit] of [
+    ["career up to 3 events", 3],
+    ["career at most 2 options", 2],
+    ["career no more than 1 choices", 1],
+  ] as const) {
+    const response = await post("/api/plan", {
+      message,
+      state: schedulePayload(state),
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.clarification, null);
+    assert.equal(result.constraints.limit, limit);
+    assert.deepEqual(
+      result.event_ids,
+      recommend(state, { topics: ["Career"], limit }).map((e) => e.id),
+    );
+  }
+  const budgetWithCount = await (
+    await post("/api/plan", {
+      message: "career up to 3 events under $5",
+      state: schedulePayload(state),
+    })
+  ).json();
+  assert.match(
+    budgetWithCount.clarification,
+    /Numeric budgets are not supported/,
+  );
+  assert.deepEqual(budgetWithCount.event_ids, []);
   const previous: Constraints = {
     days: [1],
     food: "Free meal",

@@ -29,9 +29,13 @@ fn matches(pattern: &str, text: &str) -> bool {
 impl Interpreter for SimulatedInterpreter {
     async fn interpret(&self, message: &str, mut c: Constraints) -> Interpretation {
         let q = message.to_lowercase();
+        let budget_text =
+            Regex::new(r"\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b")
+                .unwrap()
+                .replace_all(&q, "");
         if self::matches(
             r"\$|\b(?:under|less than|at most|up to|no more than|budget(?: of)?)\s*-?\d|\b\d+(?:\.\d+)?\s*(?:dollars?|usd|euros?)\b",
-            &q,
+            &budget_text,
         ) {
             return Interpretation { constraints: c, understood: true, clarification: Some("Numeric budgets are not supported. Please restate your complete request with ‘free admission’ if required, or omit the budget. No budget-filtered plan was generated.".into()) };
         }

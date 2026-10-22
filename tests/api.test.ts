@@ -236,3 +236,19 @@ test("numeric budgets are explicitly rejected before Rust or fallback can drop t
   assert.deepEqual(r.ids, []);
   assert.equal(r.constraints.free, true);
 });
+
+test("result counts remain supported without bypassing numeric budget rejection", async () => {
+  for (const [message, limit] of [
+    ["career up to 3 events", 3],
+    ["career at most 2 options", 2],
+    ["career no more than 1 choices", 1],
+  ] as const) {
+    const result = await requestPlan(message, {}, fresh(), offline);
+    assert.equal(result.constraints.limit, limit);
+    assert.ok(result.ids.length > 0 && result.ids.length <= limit);
+  }
+  await assert.rejects(
+    requestPlan("career up to 3 events under $5", {}, fresh(), offline),
+    /Numeric budgets are not supported/,
+  );
+});
