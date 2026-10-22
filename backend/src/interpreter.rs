@@ -189,16 +189,20 @@ impl Interpreter for SimulatedInterpreter {
                 *bound = None;
             }
         }
-        let clarification = if ambiguous_clock {
+        let restatement = self::matches(
+            r"\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b",
+            &q,
+        );
+        if restatement {
+            c.days = None;
+        }
+        let clarification = if restatement {
+            Some("Please restate your complete request with the topic, weekdays you CAN attend, and AM/PM for every time. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported.".into())
+        } else if ambiguous_clock {
             Some(
                 "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
                     .into(),
             )
-        } else if self::matches(
-            r"\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b",
-            &q,
-        ) {
-            Some("Please restate your complete request with the weekdays/times you can attend. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported.".into())
         } else {
             None
         };

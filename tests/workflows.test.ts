@@ -416,3 +416,89 @@ test("new chat discards pending clarification context", async () => {
   assert.match(demo.read().messages.at(-1)!.text, /limited demo/);
   assert.deepEqual(demo.read().constraints, {});
 });
+
+for (const offline of [false, true]) {
+  for (const scenario of [
+    {
+      request: "career on Thursday after 3",
+      partial: "before 5 PM",
+      complete: "after 3 PM before 5 PM",
+      ids: [],
+      topic: "Career",
+    },
+    {
+      request: "social but not Tuesday after 3",
+      partial: "PM",
+      complete: "social on Thursday after 3 PM",
+      ids: ["e2"],
+      topic: "Social",
+    },
+    {
+      request: "social but not Tuesday after 3",
+      partial: "after 3 PM",
+      complete: "social on Thursday after 3 PM",
+      ids: ["e2"],
+      topic: "Social",
+    },
+    {
+      request: "career near me after 3",
+      partial: "PM",
+      complete: "career on Thursday after 3 PM",
+      ids: ["e28"],
+      topic: "Career",
+    },
+    {
+      request: "career on Thursday after 3 before 5",
+      partial: "after 3 PM",
+      complete: "after 3 PM before 5 PM",
+      ids: [],
+      topic: "Career",
+    },
+    {
+      request: "career on Thursday after 3 before 5",
+      partial: "before 5 PM",
+      complete: "after 3 PM before 5 PM",
+      ids: [],
+      topic: "Career",
+    },
+  ]) {
+    test(`all clarification parts retained: ${scenario.request} / ${scenario.partial} offline=${offline}`, async () => {
+      let calls = 0;
+      const fetcher: typeof fetch = async (_path, options) => {
+        calls++;
+        if (offline) throw Error("offline");
+        const body = JSON.parse(String(options?.body));
+        const { interpretRequest } =
+          await import("../frontend/src/interpretation.ts");
+        const { recommend } = await import("../frontend/src/planner.ts");
+        const parsed = interpretRequest(body.message, body.previous);
+        assert.equal(parsed.clarification, undefined);
+        return planned(
+          recommend({ ...fresh(), ...body.state }, parsed.constraints).map(
+            (e) => e.id,
+          ),
+          parsed.constraints,
+        );
+      };
+      const { demo, conversation } = setup(fetcher);
+      await conversation.chat(scenario.request);
+      await conversation.chat(scenario.partial);
+      assert.equal(calls, 0);
+      assert.deepEqual(demo.read().draft, []);
+      assert.deepEqual(demo.read().constraints, {});
+      assert.match(demo.read().messages.at(-1)!.text, /complete request/);
+      await conversation.chat("PM");
+      assert.equal(calls, 0);
+      await conversation.chat(scenario.complete);
+      assert.equal(calls, 1);
+      assert.deepEqual(demo.read().draft, scenario.ids);
+      assert.deepEqual(demo.read().constraints.topics, [scenario.topic]);
+      assert.deepEqual(demo.read().constraints.days, [3]);
+      assert.equal(demo.read().constraints.after, 900);
+      if (scenario.complete.includes("before"))
+        assert.equal(demo.read().constraints.before, 1020);
+      assert.deepEqual(demo.read().plan, []);
+      assert.deepEqual(demo.read().rsvps, []);
+    });
+  }
+}

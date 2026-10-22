@@ -64,6 +64,7 @@ export async function requestPlan(
       interpreted.clarification,
       interpreted.constraints,
       interpreted.clocks || [],
+      interpreted.restatement,
     );
   if (!interpreted.understood)
     throw new InputError(

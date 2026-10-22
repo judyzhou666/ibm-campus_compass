@@ -63,6 +63,7 @@ export class PlanningClarification extends Error {
     message: string,
     readonly constraints: Constraints,
     readonly clocks: string[],
+    readonly restatement = false,
   ) {
     super(message);
   }
@@ -75,6 +76,7 @@ export function interpretRequest(
   understood: boolean;
   clarification?: string;
   clocks?: string[];
+  restatement?: boolean;
 } {
   validateConstraints(previous);
   if (!text.trim() || new TextEncoder().encode(text).length > 2000)
@@ -182,12 +184,15 @@ export function interpretRequest(
   const clocks = ambiguous.map((m) => m[0].trim());
   for (const m of ambiguous) delete c[m[1] as "after" | "before"];
   const ambiguousClock = clocks.length > 0;
-  const clarification = ambiguousClock
-    ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
-    : /\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b/.test(
-          q,
-        )
-      ? "Please restate your complete request with the weekdays/times you can attend. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported."
+  const restatement =
+    /\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b/.test(
+      q,
+    );
+  if (restatement) delete c.days;
+  const clarification = restatement
+    ? "Please restate your complete request with the topic, weekdays you CAN attend, and AM/PM for every time. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported."
+    : ambiguousClock
+      ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
       : undefined;
-  return { constraints: c, understood, clarification, clocks };
+  return { constraints: c, understood, clarification, clocks, restatement };
 }

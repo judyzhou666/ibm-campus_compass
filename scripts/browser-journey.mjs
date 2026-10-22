@@ -183,7 +183,8 @@ for (const width of [1280, 390]) {
   await page.goto(base + "/#planner");
   await page.getByLabel("Message your AI planner").fill("events near me");
   await page.getByLabel("Message your AI planner").press("Enter");
-  await page.getByText(/Which weekdays\/times/).waitFor();
+  await page.getByText(/Please restate your complete request/).waitFor();
+  await page.getByRole("button", { name: "New chat", exact: true }).click();
   await page.getByLabel("Message your AI planner").fill("career after 3");
   await page.getByLabel("Message your AI planner").press("Enter");
   await page.getByText(/Do you mean AM or PM/).waitFor();

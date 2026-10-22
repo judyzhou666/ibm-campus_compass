@@ -1,4 +1,4 @@
-import { PlanningClarification } from "./interpretation.ts";
+import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
@@ -99,10 +99,7 @@ export function createConversation(
       }));
     } catch (error) {
       if (!stale()) {
-        pending =
-          error instanceof PlanningClarification && error.clocks.length
-            ? error
-            : undefined;
+        pending = error instanceof PlanningClarification ? error : undefined;
         assistant(
           error instanceof Error
             ? error.message
@@ -150,7 +147,60 @@ export function createConversation(
       if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
         pending = undefined;
       let resolvedText = text;
-      const context = pending?.constraints;
+      let context = pending?.constraints;
+      if (
+        pending &&
+        !(
+          pending.clocks.length === 1 &&
+          !pending.restatement &&
+          /^(am|pm)[.!]?$/i.test(text)
+        )
+      ) {
+        try {
+          const reply = interpretRequest(text, {});
+          const bounds = pending.clocks.map((clock) =>
+            clock.startsWith("after")
+              ? ("after" as const)
+              : ("before" as const),
+          );
+          if (
+            reply.clarification ||
+            !reply.understood ||
+            bounds.some((bound) => reply.constraints[bound] === undefined) ||
+            (pending.restatement &&
+              (!reply.constraints.topics?.length ||
+                !reply.constraints.days?.length))
+          ) {
+            // A partial reply may introduce another bound; require it in the full restatement too.
+            for (const match of text.matchAll(
+              /\b(after|before)\s+\d+(?::\d+)?\s*(?:am|pm)?\b/gi,
+            )) {
+              const bound = match[1].toLowerCase() as "after" | "before";
+              if (
+                reply.constraints[bound] !== undefined &&
+                !pending.clocks.some((clock) => clock.startsWith(bound))
+              )
+                pending.clocks.push(match[0].toLowerCase());
+            }
+            demo.update((s) => ({
+              ...s,
+              messages: [...s.messages, { role: "user", text }],
+            }));
+            assistant(
+              "Please restate the complete request with the topic, weekdays you CAN attend, and AM/PM for every time. No suggestions will be generated until every requirement is resolved.",
+            );
+            return;
+          }
+          if (pending.restatement) context = {};
+        } catch (error) {
+          assistant(
+            error instanceof Error
+              ? error.message
+              : "Please restate the complete request.",
+          );
+          return;
+        }
+      }
       if (pending && /^(am|pm)[.!]?$/i.test(text)) {
         if (pending.clocks.length !== 1) {
           assistant(

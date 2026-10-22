@@ -237,6 +237,69 @@ try {
     /Numeric budgets are not supported/,
   );
   assert.deepEqual(budgetWithCount.event_ids, []);
+
+  for (const message of [
+    "social but not Tuesday after 3",
+    "career near me after 3",
+  ]) {
+    const r = await (
+      await post("/api/plan", { message, state: schedulePayload(state) })
+    ).json();
+    assert.match(r.clarification, /complete request/);
+    assert.equal(r.constraints.days, undefined);
+    assert.equal(r.constraints.after, undefined);
+    assert.deepEqual(r.event_ids, []);
+  }
+  for (const offline of [false, true]) {
+    for (const partial of ["after 3 PM", "before 5 PM"]) {
+      const demo = createStore(fresh());
+      let calls = 0;
+      const fetcher: typeof fetch = async (path, options) => {
+        calls++;
+        if (offline) throw Error("offline");
+        return fetch(base + String(path), options);
+      };
+      const conversation = createConversation(
+        demo,
+        () => {
+          throw Error("Unexpected calendar change");
+        },
+        fetcher,
+      );
+      await conversation.chat("career on Thursday after 3 before 5");
+      await conversation.chat(partial);
+      assert.equal(calls, 0);
+      assert.deepEqual(demo.read().draft, []);
+      await conversation.chat("after 3 PM before 5 PM");
+      assert.equal(calls, 1);
+      assert.deepEqual(demo.read().constraints, {
+        topics: ["Career"],
+        days: [3],
+        after: 900,
+        before: 1020,
+      });
+      assert.deepEqual(demo.read().plan, []);
+    }
+    for (const original of [
+      "social but not Tuesday after 3",
+      "social near me after 3",
+    ]) {
+      const demo = createStore(fresh());
+      let calls = 0;
+      const fetcher: typeof fetch = async (path, options) => {
+        calls++;
+        if (offline) throw Error("offline");
+        return fetch(base + String(path), options);
+      };
+      const conversation = createConversation(demo, () => {}, fetcher);
+      await conversation.chat(original);
+      await conversation.chat("PM");
+      assert.equal(calls, 0);
+      await conversation.chat("social on Thursday after 3 PM");
+      assert.deepEqual(demo.read().draft, ["e2"]);
+      assert.deepEqual(demo.read().plan, []);
+    }
+  }
   const previous: Constraints = {
     days: [1],
     food: "Free meal",
