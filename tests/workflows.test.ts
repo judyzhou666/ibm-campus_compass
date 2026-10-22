@@ -1,3 +1,4 @@
+import { evolvingClarifications } from "./clarification-fixtures.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createStore, fresh } from "../frontend/src/state.ts";
@@ -497,6 +498,46 @@ for (const offline of [false, true]) {
       assert.equal(demo.read().constraints.after, 900);
       if (scenario.complete.includes("before"))
         assert.equal(demo.read().constraints.before, 1020);
+      assert.deepEqual(demo.read().plan, []);
+      assert.deepEqual(demo.read().rsvps, []);
+    });
+  }
+}
+
+for (const scenario of evolvingClarifications) {
+  for (const offline of [false, true]) {
+    test(`partial replies retain newly introduced requirements: ${scenario.partial}, offline=${offline}`, async () => {
+      let calls = 0;
+      const fetcher: typeof fetch = async (_path, options) => {
+        calls++;
+        if (offline) throw Error("offline");
+        const { interpretRequest } =
+          await import("../frontend/src/interpretation.ts");
+        const { recommend } = await import("../frontend/src/planner.ts");
+        const body = JSON.parse(String(options?.body));
+        const parsed = interpretRequest(body.message, body.previous);
+        return planned(
+          recommend({ ...fresh(), ...body.state }, parsed.constraints).map(
+            (e) => e.id,
+          ),
+          parsed.constraints,
+        );
+      };
+      const { demo, conversation } = setup(fetcher);
+      await conversation.chat("career on Thursday after 3");
+      await conversation.chat(scenario.partial);
+      await conversation.chat(scenario.incomplete);
+      assert.equal(calls, 0);
+      assert.deepEqual(demo.read().draft, []);
+      assert.deepEqual(demo.read().constraints, {});
+      assert.match(demo.read().messages.at(-1)!.text, /complete request/);
+      await conversation.chat(scenario.complete);
+      assert.equal(calls, 1);
+      assert.deepEqual(demo.read().constraints.topics, scenario.topics);
+      assert.deepEqual(demo.read().constraints.days, scenario.days);
+      assert.equal(demo.read().constraints.after, 900);
+      assert.equal(demo.read().constraints.before, scenario.before);
+      assert.deepEqual(demo.read().draft, scenario.ids);
       assert.deepEqual(demo.read().plan, []);
       assert.deepEqual(demo.read().rsvps, []);
     });

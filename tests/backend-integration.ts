@@ -1,3 +1,4 @@
+import { evolvingClarifications } from "./clarification-fixtures.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -298,6 +299,37 @@ try {
       await conversation.chat("social on Thursday after 3 PM");
       assert.deepEqual(demo.read().draft, ["e2"]);
       assert.deepEqual(demo.read().plan, []);
+    }
+  }
+  for (const offline of [false, true]) {
+    for (const scenario of evolvingClarifications) {
+      const demo = createStore(fresh());
+      let calls = 0;
+      const conversation = createConversation(
+        demo,
+        () => {
+          throw Error("Unexpected removal");
+        },
+        async (path, options) => {
+          calls++;
+          if (offline) throw Error("offline");
+          return fetch(base + String(path), options);
+        },
+      );
+      await conversation.chat("career on Thursday after 3");
+      await conversation.chat(scenario.partial);
+      await conversation.chat(scenario.incomplete);
+      assert.equal(calls, 0);
+      assert.deepEqual(demo.read().draft, []);
+      await conversation.chat(scenario.complete);
+      assert.equal(calls, 1);
+      assert.deepEqual(demo.read().constraints.topics, scenario.topics);
+      assert.deepEqual(demo.read().constraints.days, scenario.days);
+      assert.equal(demo.read().constraints.after, 900);
+      assert.equal(demo.read().constraints.before, scenario.before);
+      assert.deepEqual(demo.read().draft, scenario.ids);
+      assert.deepEqual(demo.read().plan, []);
+      assert.deepEqual(demo.read().rsvps, []);
     }
   }
   const previous: Constraints = {

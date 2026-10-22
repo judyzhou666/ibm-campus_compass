@@ -171,17 +171,30 @@ export function createConversation(
               (!reply.constraints.topics?.length ||
                 !reply.constraints.days?.length))
           ) {
-            // A partial reply may introduce another bound; require it in the full restatement too.
+            const clocks = [...pending.clocks];
             for (const match of text.matchAll(
               /\b(after|before)\s+\d+(?::\d+)?\s*(?:am|pm)?\b/gi,
             )) {
               const bound = match[1].toLowerCase() as "after" | "before";
-              if (
-                reply.constraints[bound] !== undefined &&
-                !pending.clocks.some((clock) => clock.startsWith(bound))
-              )
-                pending.clocks.push(match[0].toLowerCase());
+              if (!clocks.some((clock) => clock.startsWith(bound)))
+                clocks.push(match[0].toLowerCase());
             }
+            const constraints = {
+              ...pending.constraints,
+              ...reply.constraints,
+            };
+            for (const clock of reply.clocks || [])
+              delete constraints[
+                clock.startsWith("after") ? "after" : "before"
+              ];
+            const restatement = pending.restatement || reply.restatement;
+            if (restatement) delete constraints.days;
+            pending = new PlanningClarification(
+              pending.message,
+              constraints,
+              clocks,
+              restatement,
+            );
             demo.update((s) => ({
               ...s,
               messages: [...s.messages, { role: "user", text }],
