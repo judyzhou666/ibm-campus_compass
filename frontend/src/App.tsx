@@ -1,4 +1,9 @@
 import {
+  createPreferenceProposals,
+  proposalChanges,
+  proposalRevision,
+} from "./preferenceProposals.ts";
+import {
   UsingPreferences,
   RecommendationInfo,
 } from "./RecommendationPresentation.tsx";
@@ -6,7 +11,6 @@ import {
   activeTopics,
   preferenceSettingsKey,
   migratePreferences,
-  proposalTopic,
 } from "./preferences.ts";
 import { PreferenceProposal } from "./PreferenceProposal.tsx";
 import { useRecommendations } from "./useRecommendations.ts";
@@ -105,11 +109,8 @@ export default function App() {
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [proposal, setProposal] = useState<{
-    topics: string[];
-    text: string;
-    key: string;
-  } | null>(null);
+  const [proposals] = useState(() => createPreferenceProposals(demo));
+  const proposal = useSyncExternalStore(proposals.subscribe, proposals.read);
   const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
   const recommendationResult = useRecommendations({
     ...state,
@@ -124,15 +125,9 @@ export default function App() {
     },
   });
   const settingsKey = preferenceSettingsKey(state);
-  const preferenceRevision = JSON.stringify([
-    state.interests,
-    state.preferences,
-    state.preferred_time,
-    state.buffer,
-    state.blocks,
-  ]);
+  const preferenceRevision = proposalRevision(state);
   useEffect(() => {
-    setProposal(null);
+    proposals.dismiss();
     setSessionSkipped([]);
   }, [page, preferenceRevision]);
   useEffect(() => {
@@ -143,8 +138,9 @@ export default function App() {
     () => () => {
       enrollment.reset();
       conversation.reset();
+      proposals.dispose();
     },
-    [enrollment, conversation],
+    [enrollment, conversation, proposals],
   );
   function notify(text: string) {
     setToast(text);
@@ -166,6 +162,7 @@ export default function App() {
   }
   function nav(next: Page, communityId?: string) {
     if (next !== "profile" && !allowPreferenceDeparture()) return false;
+    if (next !== "planner") proposals.dismiss();
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
@@ -199,6 +196,7 @@ export default function App() {
         history.replaceState(null, "", "#profile");
         return;
       }
+      if (next !== "planner") proposals.dismiss();
       setPage(next);
       setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
@@ -219,7 +217,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
   function clearChat() {
-    setProposal(null);
+    proposals.dismiss();
     conversation.clear();
     setMessage("");
   }
@@ -267,13 +265,10 @@ export default function App() {
       previous === undefined &&
       /\b(interested in|learning about|explore next)\b/i.test(text)
     ) {
-      setProposal({
-        topics: proposalTopic(text),
-        text,
-        key: preferenceRevision,
-      });
+      proposals.propose(text);
       return;
     }
+    proposals.dismiss();
     await conversation.chat(text, previous);
   }
   async function replan() {
@@ -777,51 +772,36 @@ export default function App() {
               </div>
               {proposal && (
                 <PreferenceProposal
+                  key={proposal.id}
                   topics={proposal.topics}
+                  changes={proposalChanges(proposal, state)}
                   onOnce={() => {
-                    const { topics, text } = proposal;
-                    setProposal(null);
-                    const constraints = { ...demo.read().constraints, topics };
-                    delete constraints.explore;
-                    void conversation.chat("Find events. " + text, constraints);
-                  }}
-                  onDismiss={() => setProposal(null)}
-                  onManual={() => {
-                    setProposal(null);
-                    nav("profile");
-                  }}
-                  onSave={() => {
-                    if (proposal.key !== preferenceRevision) {
-                      setProposal(null);
+                    const once = proposals.useOnce(proposal.id);
+                    if (!once) {
                       notify(
-                        "Preferences changed. Please review a fresh proposal.",
+                        "That proposal expired. Please make a fresh request.",
                       );
                       return;
                     }
-                    const topics = proposal.topics;
+                    void conversation.chat(
+                      "Find events. " + once.text,
+                      once.constraints,
+                      once.constraints.topics,
+                    );
+                  }}
+                  onDismiss={() => proposals.dismiss(proposal.id)}
+                  onManual={() => {
+                    proposals.dismiss();
+                    nav("profile");
+                  }}
+                  onSave={() => {
+                    if (!proposals.confirm(proposal.id)) {
+                      notify(
+                        "That proposal expired. Please review a fresh proposal.",
+                      );
+                      return;
+                    }
                     conversation.reset();
-                    update((s) => {
-                      const p = migratePreferences(s.preferences);
-                      return {
-                        ...s,
-                        preferences: {
-                          ...p,
-                          use_learning: true,
-                          learning_topics: [
-                            ...p.learning_topics.filter(
-                              (x) => !topics.includes(x.topic),
-                            ),
-                            ...topics.map((topic) => ({
-                              topic,
-                              source: "Confirmed from a conversation" as const,
-                            })),
-                          ],
-                        },
-                        draft: [],
-                        constraints: {},
-                      };
-                    });
-                    setProposal(null);
                     notify(
                       "Confirmed topics saved. You can edit them in My Preferences.",
                     );
@@ -831,7 +811,7 @@ export default function App() {
               <div className="row">
                 <Button
                   onClick={() => {
-                    setProposal(null);
+                    proposals.dismiss();
                     void conversation.chat("Find events", { explore: true });
                   }}
                 >
@@ -949,7 +929,7 @@ export default function App() {
                                 <Button
                                   disabled={busy}
                                   onClick={() => {
-                                    setProposal(null);
+                                    proposals.dismiss();
                                     void conversation.refresh(
                                       m.recommendationMode,
                                     );
@@ -984,7 +964,7 @@ export default function App() {
                                 }));
                               }}
                               onAnother={(id) => {
-                                setProposal(null);
+                                proposals.dismiss();
                                 void conversation.another(id);
                               }}
                               onDetails={setDetail}

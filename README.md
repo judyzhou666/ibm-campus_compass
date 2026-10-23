@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Explicit pending preference proposals
+
+Interest proposals now use a separate transient, one-shot controller. This search only preserves current filters and saved preferences; Review and save displays exact additions, preserved provenance and all topics that will be enabled; Dismiss saves nothing. Only confirmation updates saved topics. Confirmed changes preserve current search/hard constraints, plans, RSVP and conversations. Unsupported/negated statements offer manual selection rather than guessed understanding.
+
+Dismissed, superseded, deleted and stale proposals cannot be confirmed or reused, including when preferences change and later revert. Navigation/new chat/new requests invalidate proposals; delayed search results cannot restore preferences. Verification: frontend build/type checking, 31 focused tests and desktop-online/mobile-offline proposal checks passed. The optional regression is `scripts/browser-preference-proposals.mjs`; see `docs/backend.md` for tooling. No backend/ranking change or integration was added.
+
 ## Discovery alternatives and compatible plans
 
 The optional shared selection mode is now `discovery` or `plan-building`; omitted mode preserves the old compatible-plan behavior. Dashboard/briefing and ordinary Planner discovery can show mutually overlapping alternatives, clearly labelled by conflicting event title. Build weekly plan keeps suggestions mutually compatible; Discover alternatives switches modes without dropping filters. Both modes still respect commitments, existing plans, eligibility and hard constraints. Adding one alternative rechecks the current schedule and RSVP, so a conflicting partner cannot also be added. Historical chat retains its selection mode.

@@ -201,7 +201,11 @@ export function createConversation(
       invalidate();
       demo.update((s) => ({ ...s, messages: [], constraints: {}, draft: [] }));
     },
-    async chat(text: string, previous?: Constraints) {
+    async chat(
+      text: string,
+      previous?: Constraints,
+      exactTopics?: readonly string[],
+    ) {
       if (status.read().busy || !text.trim()) return;
       text = text.trim();
       if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
@@ -287,6 +291,7 @@ export function createConversation(
           { mode: "discovery", ...(context ?? snapshot.constraints) },
           snapshot,
           fetcher,
+          exactTopics,
         ),
       );
     },

@@ -286,9 +286,22 @@ export function suggestedTopics(text: string) {
   return found;
 }
 export function proposalTopic(text: string) {
-  return /\b(interested in|learning about|explore)\b/i.test(text)
-    ? suggestedTopics(text)
-    : [];
+  const statement = text
+    .trim()
+    .match(
+      /^(?:i(?: am|['’]m)?\s+)?(?:interested in|learning about|explore next)\s+(.+)$/i,
+    );
+  if (
+    !statement ||
+    /\b(not|no|never|avoid|without|instead)\b/i.test(statement[1])
+  )
+    return [];
+  const content = statement[1];
+  const topics = suggestedTopics(content);
+  if (/\b(social|friends|community)\b/i.test(content)) topics.push("Social");
+  if (/\b(wellbeing|wellness|mindfulness)\b/i.test(content))
+    topics.push("Wellbeing");
+  return [...new Set(topics)];
 }
 
 /** Local snapshot identity: only structured settings, never note text or busy labels. */

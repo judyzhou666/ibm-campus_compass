@@ -73,8 +73,18 @@ export async function requestPlan(
   previous: Constraints,
   state: Schedule,
   fetcher = globalThis.fetch,
+  exactTopics?: readonly string[],
 ) {
   const interpreted = interpretRequest(message, previous);
+  // Proposal topics are already reviewed mappings. Parse all safeguards first,
+  // then keep those exact topics instead of reinterpreting intent-prefix words.
+  if (exactTopics) {
+    interpreted.constraints = {
+      ...interpreted.constraints,
+      topics: [...exactTopics],
+    };
+    validateConstraints(interpreted.constraints);
+  }
   if (interpreted.clarification)
     throw new PlanningClarification(
       interpreted.clarification,
@@ -89,7 +99,11 @@ export async function requestPlan(
   try {
     const result = (await post(
       "/api/plan",
-      { message, previous, state: schedulePayload(state) },
+      {
+        message: exactTopics ? "Find events" : message,
+        previous: exactTopics ? interpreted.constraints : previous,
+        state: schedulePayload(state),
+      },
       fetcher,
     )) as PlanResponse;
     if (

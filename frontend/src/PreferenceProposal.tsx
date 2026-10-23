@@ -1,13 +1,16 @@
+import type { proposalChanges } from "./preferenceProposals.ts";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./components.tsx";
 export function PreferenceProposal({
   topics,
+  changes,
   onOnce,
   onSave,
   onDismiss,
   onManual,
 }: {
   topics: string[];
+  changes: ReturnType<typeof proposalChanges>;
   onOnce: () => void;
   onSave: () => void;
   onDismiss: () => void;
@@ -19,9 +22,13 @@ export function PreferenceProposal({
     <section className="notice" aria-label="Proposed preference change">
       <h3>Use this for your search or save it?</h3>
       <p>
-        Simulated topic mapping:{" "}
+        Deterministic keyword mapping only:{" "}
         {topics.join(" · ") || "No reliable supported topic found"}. Nothing has
         been saved.
+      </p>
+      <p>
+        This demo recognizes limited interest phrases and keywords; it does not
+        understand arbitrary language.
       </p>
       {topics.length ? (
         <>
@@ -40,7 +47,7 @@ export function PreferenceProposal({
       <Button onClick={onDismiss}>Dismiss</Button>
       {review && (
         <Review
-          topics={topics}
+          changes={changes}
           onClose={() => setReview(false)}
           onConfirm={onSave}
           onReturnFocus={() => reviewTrigger.current?.focus()}
@@ -50,12 +57,12 @@ export function PreferenceProposal({
   );
 }
 function Review({
-  topics,
+  changes,
   onClose,
   onConfirm,
   onReturnFocus,
 }: {
-  topics: string[];
+  changes: ReturnType<typeof proposalChanges>;
   onClose: () => void;
   onConfirm: () => void;
   onReturnFocus: () => void;
@@ -72,12 +79,27 @@ function Review({
   return (
     <dialog ref={ref} aria-labelledby="proposal-title" onCancel={onClose}>
       <h2 id="proposal-title">Review preference change</h2>
-      <p>Add these confirmed learning topics: {topics.join(", ")}.</p>
       <p>
-        Source: Confirmed from a conversation. Enable these topics for future
-        recommendations. Existing notes, plans and RSVPs are unchanged. Current
-        draft/search filters reset so future suggestions use your new choices.
-        You can remove or disable them in My Preferences.
+        Add confirmed learning topics:{" "}
+        {changes.additions.join(", ") || "None — already confirmed"}.
+      </p>
+      {changes.existing.length > 0 && (
+        <p>
+          Already confirmed: {changes.existing.join(", ")}. Their existing
+          provenance will be preserved.
+        </p>
+      )}
+      <p>
+        {changes.alreadyEnabled ? "Keep enabled" : "Enable"} all confirmed
+        learning topics for recommendations: {changes.enabledTopics.join(", ")}.
+      </p>
+      <p>
+        Source for newly added topics: Confirmed from a conversation. Use the
+        listed topics for future recommendations. Existing notes, plans and
+        RSVPs are unchanged. Current draft suggestions reset; search filters and
+        saved hard requirements stay in place. You can remove or disable topics
+        in My Preferences. Only the listed topic settings change; this does not
+        save or infer a budget, location, time requirement or arbitrary note.
       </p>
       <Button onClick={onClose}>Cancel</Button>
       <Button onClick={onConfirm}>Confirm and save topics</Button>
