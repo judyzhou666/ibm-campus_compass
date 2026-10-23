@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Preference editor shell safeguards
+
+My Preferences remains the single full interest/time editor (`#profile`), reachable from navigation and the sidebar demo profile. The five existing sections and summary use an isolated draft; Save applies changes and Cancel asks before discarding edits. Browser-native confirmation protects internal navigation, global search and hash/back navigation; a standard before-unload warning protects reload/close where the browser supports it. The helper reads “Skip any question and change your preferences anytime.” No new section fields or ranking changes were added.
+
+Verification: frontend type check/build and desktop/mobile Chromium shell checks (1280/390px) passed, covering draft isolation, Cancel confirmation, refusal to leave, hash/search navigation, Save/reload and before-unload registration. Run `scripts/browser-preference-shell.mjs` with the optional Playwright/Chromium environment described in `docs/backend.md`.
+
 ## My Preferences — October 23, 2026
 
 My Preferences now replaces the old Profile editing form in navigation (`#profile`). It integrates direction/goals, optional learning notes and explicitly confirmed topics, participation/guidance choices, practical needs and personalization controls. Desktop has a live summary beside the editor; mobile stacks it above the form. The summary previews unsaved changes; only Save changes affects recommendations. Cancel discards edits. Quick setup is optional and supports general browsing.

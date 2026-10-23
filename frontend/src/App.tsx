@@ -10,7 +10,13 @@ import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { createEnrollment, type EnrollmentOutcome } from "./enrollment.ts";
@@ -137,7 +143,23 @@ export default function App() {
   function notify(text: string) {
     setToast(text);
   }
+  const preferenceDirty = useRef(false);
+  const setPreferenceDirty = useCallback((dirty: boolean) => {
+    preferenceDirty.current = dirty;
+  }, []);
+  function allowPreferenceDeparture() {
+    if (!preferenceDirty.current) return true;
+    if (
+      !window.confirm(
+        "Discard unsaved preference changes and leave My Preferences? Recommendations still use your saved choices.",
+      )
+    )
+      return false;
+    preferenceDirty.current = false;
+    return true;
+  }
   function nav(next: Page, communityId?: string) {
+    if (next !== "profile" && !allowPreferenceDeparture()) return false;
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
@@ -148,6 +170,7 @@ export default function App() {
     location.hash =
       next === "forum" && communityId ? communityHash(communityId) : next;
     window.scrollTo(0, 0);
+    return true;
   }
   useEffect(() => {
     try {
@@ -165,7 +188,12 @@ export default function App() {
   }, [toast]);
   useEffect(() => {
     const handle = () => {
-      setPage(validPage(location.hash.slice(1)));
+      const next = validPage(location.hash.slice(1));
+      if (next !== "profile" && !allowPreferenceDeparture()) {
+        history.replaceState(null, "", "#profile");
+        return;
+      }
+      setPage(next);
       setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
     };
@@ -410,6 +438,9 @@ export default function App() {
             <div>
               <strong>{state.name}’s campus</strong>
               <small>Graduate student · Demo profile</small>
+              <button className="text-btn" onClick={() => nav("profile")}>
+                My Preferences
+              </button>
             </div>
           </div>
         </div>
@@ -432,10 +463,8 @@ export default function App() {
             className="search"
             onSubmit={(e) => {
               e.preventDefault();
-              setQuery(search.trim());
-              setFilter("All");
-              setPage("explore");
-              location.hash = "explore";
+              const term = search.trim();
+              if (nav("explore")) setQuery(term);
             }}
           >
             <Icon name="search" />
@@ -1165,6 +1194,7 @@ export default function App() {
               update={update}
               notify={notify}
               onClearChat={clearChat}
+              onDirtyChange={setPreferenceDirty}
             />
           ) : null}
           {page === "forum" ? (

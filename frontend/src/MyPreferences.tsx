@@ -48,11 +48,13 @@ export function MyPreferences({
   update,
   notify,
   onClearChat,
+  onDirtyChange,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   notify: (s: string) => void;
   onClearChat: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [draft, setDraft] = useState(() => editable(state));
   const savedKey = JSON.stringify(editable(state));
@@ -75,6 +77,18 @@ export function MyPreferences({
   const [topic, setTopic] = useState(TOPICS[0]);
   const p = draft.preferences,
     dirty = JSON.stringify(draft) !== savedKey;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    if (dirty) globalThis.addEventListener("beforeunload", beforeUnload);
+    return () => {
+      onDirtyChange?.(false);
+      globalThis.removeEventListener("beforeunload", beforeUnload);
+    };
+  }, [dirty, onDirtyChange]);
   const change = (value: Partial<typeof draft>) =>
     setDraft((d) => ({ ...d, ...value }));
   const pref = (value: Partial<typeof p>) =>
@@ -205,7 +219,7 @@ export function MyPreferences({
         title="My Preferences"
         description="Shape your campus experience around what matters to you."
       />
-      <p>You can skip questions and change your preferences anytime.</p>
+      <p>Skip any question and change your preferences anytime.</p>
       <div className="preferences-layout">
         <form
           onSubmit={(e) => {
@@ -236,6 +250,13 @@ export function MyPreferences({
             </button>
             <Button
               onClick={() => {
+                if (
+                  dirty &&
+                  !globalThis.confirm(
+                    "Discard unsaved preference changes? Recommendations still use your saved choices.",
+                  )
+                )
+                  return;
                 setDraft(editable(state));
                 setError("");
                 notify("Unsaved changes discarded.");
@@ -245,7 +266,10 @@ export function MyPreferences({
             </Button>
           </div>
         </form>
-        <aside className="panel preference-summary">
+        <aside
+          className="panel preference-summary"
+          aria-label="Preference summary"
+        >
           <h2>Your choices</h2>
           <p role="status">
             {dirty ? "Unsaved changes — preview only" : "Saved preferences"}

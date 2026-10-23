@@ -41,6 +41,7 @@ for (const { width, offline } of [
     .getByLabel("How many suggestions would you like to consider at a time?")
     .selectOption("1");
   assert.equal((await state()).preferences.count, 3);
+  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   assert.equal(
     await page
