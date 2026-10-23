@@ -12,6 +12,29 @@ pub fn overlap(
     day == other_day && start < other_end + buffer && other_start < end + buffer
 }
 
+pub fn active_topics(state: &Schedule) -> Vec<String> {
+    let mut topics = state.interests.clone();
+    if let Some(p) = &state.preferences {
+        topics.extend(p.goal_topics.clone());
+        topics.extend(p.learning_topics.clone());
+    }
+    topics.sort();
+    topics.dedup();
+    topics
+}
+fn preference_score(e: &Event, state: &Schedule) -> u8 {
+    state.preferences.as_ref().map_or(0, |p| {
+        u8::from(p.learning_topics.contains(&e.topic)) * 6
+            + u8::from(p.goal_topics.contains(&e.topic)) * 3
+            + u8::from(p.primary_topics.contains(&e.topic)) * 2
+            + u8::from(
+                p.participation
+                    .iter()
+                    .any(|s| s == e.participation.as_str()),
+            ) * 2
+    })
+}
+
 pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String> {
     if event.day > 4 || event.start >= event.end || event.end > 1440 {
         return Some("Invalid event metadata; team review required".into());
@@ -27,6 +50,19 @@ pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String
         "members" => return Some("Membership not verified".into()),
         "open" => {}
         _ => return Some("Eligibility not confirmed".into()),
+    }
+    if let Some(p) = &state.preferences {
+        if p.free_only && event.cost != 0 {
+            return Some("Outside your saved free-admission requirement".into());
+        }
+        if !p.windows.is_empty()
+            && !p
+                .windows
+                .iter()
+                .any(|w| w.day == event.day && event.start >= w.start && event.end <= w.end)
+        {
+            return Some("Outside your saved available-only windows".into());
+        }
     }
     let conflict = state
         .blocks
@@ -69,13 +105,19 @@ fn matches_constraints(e: &Event, c: &Constraints) -> bool {
 
 pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> Vec<&'a Event> {
     let explicit = c.topics.as_ref().filter(|t| !t.is_empty());
-    let topics = explicit.unwrap_or(&state.interests);
+    let active = active_topics(state);
+    let topics = explicit.unwrap_or(&active);
     let mut candidates: Vec<_> = events
         .iter()
         .filter(|e| {
             !state.plan.contains(&e.id)
                 && issue(e, state, events).is_none()
                 && matches_constraints(e, c)
+                && (c.explore != Some(true) || !active.contains(&e.topic))
+                && state
+                    .preferences
+                    .as_ref()
+                    .is_none_or(|p| !p.dismissed.contains(&e.id))
         })
         .collect();
     candidates.sort_by_key(|e| {
@@ -83,14 +125,19 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
             std::cmp::Reverse(
                 u8::from(topics.contains(&e.topic)) * 10
                     + u8::from(e.cost == 0)
-                    + 2 * u8::from(preferred(e, state)),
+                    + 2 * u8::from(preferred(e, state))
+                    + preference_score(e, state),
             ),
             e.day,
             e.start,
         )
     });
     let mut selected: Vec<&Event> = Vec::new();
-    while !candidates.is_empty() && selected.len() < c.limit.unwrap_or(3) {
+    while !candidates.is_empty()
+        && selected.len()
+            < c.limit
+                .unwrap_or_else(|| state.preferences.as_ref().map_or(3, |p| p.count))
+    {
         let best = candidates
             .iter()
             .enumerate()
@@ -114,7 +161,11 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
                     u8::from(topics.contains(&e.topic)) * 10
                         + u8::from(novel) * 4
                         + u8::from(preferred(e, state)) * 2
-                        + u8::from(e.cost == 0),
+                        + u8::from(e.cost == 0)
+                        + preference_score(e, state),
+                    std::cmp::Reverse(e.day),
+                    std::cmp::Reverse(e.start),
+                    std::cmp::Reverse(e.id.clone()),
                     std::cmp::Reverse(*index),
                 )
             })
@@ -146,11 +197,12 @@ pub fn evidence(
     c: &Constraints,
     events: &[Event],
 ) -> serde_json::Value {
+    let active = active_topics(state);
     let topics = c
         .topics
         .as_ref()
         .filter(|t| !t.is_empty())
-        .unwrap_or(&state.interests);
+        .unwrap_or(&active);
     let comparison = events_comparison(e, state, c, events);
     let mut filters = Vec::new();
     if let Some(days) = &c.days {
@@ -189,11 +241,13 @@ pub fn evidence(
     };
     serde_json::json!({
         "event_id": e.id,
+        "learning_connection": if state.preferences.as_ref().is_some_and(|p|p.learning_topics.contains(&e.topic)){format!("Connects to your confirmed {} topic; this does not establish what you learned in class.",e.topic)}else{"No confirmed learning-topic connection used.".into()},
+        "participation_fit": if e.participation.as_str()=="unknown" {"Participation format: Unknown; confirm before deciding.".into()}else{format!("Fictional participation format: {}. No belonging or ability is inferred.",e.participation.as_str())},
         "comparison": comparison,
         "discovery_context":format!("{} / {} opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.", e.category, e.topic),
         "constraints_satisfied": c,
         "interest_match": format!("{}: {} — {}", if topics.contains(&e.topic) { "Interest match" } else { "Explore beyond your interests" }, e.topic, e.description),
-        "schedule_fit": format!("{}, {}–{} {}; no current conflicts including a {}-minute buffer. Preferred time {}. {}", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][usize::from(e.day)], clock(e.start), clock(e.end), crate::demo_config()["time_zone"].as_str().unwrap_or("Unknown"), state.buffer, if preferred(e,state) { "matched" } else { "not matched or unspecified" }, filter_summary),
+        "schedule_fit": format!("{}, {}–{} {}; No conflict with the commitments you entered, including a {}-minute buffer. Preferred time {}. {}", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][usize::from(e.day)], clock(e.start), clock(e.end), crate::demo_config()["time_zone"].as_str().unwrap_or("Unknown"), state.buffer, if preferred(e,state) { "matched" } else { "not matched or unspecified" }, filter_summary),
         "practical": format!("${} admission · {} · {} · {} · {}", e.cost, e.location, e.rsvp, e.eligibility, e.food),
         "trade_offs": format!("{} minutes; {}. Food: {}. Capacity is not confirmed unless marked full. {}. Source: {}. Demo eligibility only; no real registration.", e.end-e.start, if e.cost == 0 { "no admission cost" } else { "paid admission" }, e.food, e.verification_status, e.source)
     })
@@ -208,8 +262,8 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
             && !state.plan.contains(&other.id)
     });
     match other {
-        Some(other) => format!("Compared with {}: ${} vs ${}; {} vs {} minutes; {} vs {}. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",other.title,e.cost,other.cost,e.end-e.start,other.end-other.start,e.rsvp,other.rsvp),
-        None => "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.".into(),
+        Some(other) => format!("Compared with {}: ${} vs ${}; {} vs {} minutes; {} vs {}. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",other.title,e.cost,other.cost,e.end-e.start,other.end-other.start,e.rsvp,other.rsvp),
+        None => "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.".into(),
     }
 }
 

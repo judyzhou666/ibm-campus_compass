@@ -78,6 +78,7 @@ impl Interpreter for SimulatedInterpreter {
             }
         }
         if !topics.is_empty() {
+            c.explore = None;
             c.topics = Some(
                 topics
                     .into_iter()

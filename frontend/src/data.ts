@@ -20,6 +20,11 @@ export const DEFAULT_BLOCKS: Block[] = [
 export const EVENTS: CampusEvent[] = events.map((e) => ({
   ...e,
   campus_id: DEMO.campus_id,
+  participation: (["independent", "one-to-one", "small-group", "open"].includes(
+    e.participation,
+  )
+    ? e.participation
+    : "unknown") as CampusEvent["participation"],
 }));
 export const time = (m: number) =>
   `${Math.floor(m / 60) % 12 || 12}${m % 60 ? ":" + String(m % 60).padStart(2, "0") : ""} ${m >= 720 ? "PM" : "AM"}`;

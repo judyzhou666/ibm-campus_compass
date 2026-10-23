@@ -1,3 +1,4 @@
+import type { Preferences } from "./preferences.ts";
 export interface TimeSlot {
   day: number;
   start: number;
@@ -18,6 +19,8 @@ export interface CampusEvent extends TimeSlot {
   access: string;
   description: string;
   poster: string;
+  participation?:
+    "independent" | "one-to-one" | "small-group" | "open" | "unknown";
   source: string;
   checked: string;
   rsvp: string;
@@ -37,6 +40,7 @@ export interface Schedule {
   blocks: Block[];
   buffer: number;
   preferred_time?: string;
+  preferences?: Preferences;
 }
 export interface Constraints {
   topics?: string[];
@@ -47,6 +51,7 @@ export interface Constraints {
   food?: string;
   free?: boolean;
   limit?: number;
+  explore?: boolean;
 }
 export interface Message {
   role: "user" | "assistant";

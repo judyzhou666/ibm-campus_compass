@@ -1,3 +1,10 @@
+import {
+  activeTopics,
+  migratePreferences,
+  proposalTopic,
+} from "./preferences.ts";
+import { PreferenceProposal } from "./PreferenceProposal.tsx";
+import { useRecommendations } from "./useRecommendations.ts";
 import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
@@ -33,7 +40,7 @@ const labels = {
   forum: "Discussion Forum",
   planner: "AI Planner",
   saved: "Saved Events",
-  profile: "Profile",
+  profile: "My Preferences",
   settings: "Settings",
 };
 type Page = keyof typeof labels;
@@ -87,6 +94,38 @@ export default function App() {
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [proposal, setProposal] = useState<{
+    topics: string[];
+    text: string;
+    key: string;
+  } | null>(null);
+  const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
+  const recommendationResult = useRecommendations({
+    ...state,
+    preferences: {
+      ...migratePreferences(state.preferences),
+      dismissed: [
+        ...new Set([
+          ...migratePreferences(state.preferences).dismissed,
+          ...sessionSkipped,
+        ]),
+      ],
+    },
+  });
+  const preferenceRevision = JSON.stringify([
+    state.interests,
+    state.preferences,
+    state.preferred_time,
+    state.buffer,
+    state.blocks,
+  ]);
+  useEffect(() => {
+    setProposal(null);
+    setSessionSkipped([]);
+  }, [page, preferenceRevision]);
+  useEffect(() => {
+    conversation.reset();
+  }, [preferenceRevision, conversation]);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -146,6 +185,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
   function clearChat() {
+    setProposal(null);
     conversation.clear();
     setMessage("");
   }
@@ -189,6 +229,17 @@ export default function App() {
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
     setMessage("");
+    if (
+      previous === undefined &&
+      /\b(interested in|learning about|explore next)\b/i.test(text)
+    ) {
+      setProposal({
+        topics: proposalTopic(text),
+        text,
+        key: preferenceRevision,
+      });
+      return;
+    }
     await conversation.chat(text, previous);
   }
   async function replan() {
@@ -234,6 +285,24 @@ export default function App() {
           onSave={save}
           onDetail={setDetail}
           onCalendar={() => nav("calendar")}
+          onAnother={(id) =>
+            setSessionSkipped((ids) => [...new Set([...ids, id])])
+          }
+          onDecline={(id) => {
+            update((s) => ({
+              ...s,
+              preferences: {
+                ...migratePreferences(s.preferences),
+                dismissed: [
+                  ...new Set([
+                    ...migratePreferences(s.preferences).dismissed,
+                    id,
+                  ]),
+                ],
+              },
+              draft: s.draft.filter((x) => x !== id),
+            }));
+          }}
         />
       ))}
     </div>
@@ -271,13 +340,9 @@ export default function App() {
       : EVENTS,
   );
   const recommended = filterEvents(
-    EVENTS.filter((e) => !state.plan.includes(e.id) && !issue(e, state)),
-  ).sort(
-    (a, b) =>
-      Number(state.interests.includes(b.topic)) -
-        Number(state.interests.includes(a.topic)) ||
-      a.day - b.day ||
-      a.start - b.start,
+    recommendationResult.ids
+      .map((id) => EVENTS.find((e) => e.id === id)!)
+      .filter(Boolean),
   );
 
   return (
@@ -288,6 +353,21 @@ export default function App() {
             update((s) => ({ ...s, onboarded: true }));
             nav("profile");
           }}
+          onFinish={(interests, participation, guidance) => {
+            update((s) => ({
+              ...s,
+              interests,
+              onboarded: true,
+              preferences: {
+                ...migratePreferences(s.preferences),
+                participation,
+                guidance,
+              },
+            }));
+          }}
+          onBrowse={() =>
+            update((s) => ({ ...s, interests: [], onboarded: true }))
+          }
           onSkip={() => update((s) => ({ ...s, onboarded: true }))}
         />
       ) : null}
@@ -459,7 +539,8 @@ export default function App() {
                       onCalendar={() => nav("calendar")}
                     />
                     <Filters value={filter} onChange={setFilter} />
-                    {cards(recommended.slice(0, 3))}
+                    <p role="status">{recommendationResult.notice}</p>
+                    {cards(recommended)}
                     {!recommended.length ? (
                       <Empty title="Try another category">
                         There are no available matches in this category.
@@ -617,6 +698,72 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
+              {proposal && (
+                <PreferenceProposal
+                  topics={proposal.topics}
+                  onOnce={() => {
+                    const { topics, text } = proposal;
+                    setProposal(null);
+                    const constraints = { ...demo.read().constraints, topics };
+                    delete constraints.explore;
+                    void conversation.chat("Find events. " + text, constraints);
+                  }}
+                  onDismiss={() => setProposal(null)}
+                  onManual={() => {
+                    setProposal(null);
+                    nav("profile");
+                  }}
+                  onSave={() => {
+                    if (proposal.key !== preferenceRevision) {
+                      setProposal(null);
+                      notify(
+                        "Preferences changed. Please review a fresh proposal.",
+                      );
+                      return;
+                    }
+                    const topics = proposal.topics;
+                    conversation.reset();
+                    update((s) => {
+                      const p = migratePreferences(s.preferences);
+                      return {
+                        ...s,
+                        preferences: {
+                          ...p,
+                          use_learning: true,
+                          learning_topics: [
+                            ...p.learning_topics.filter(
+                              (x) => !topics.includes(x.topic),
+                            ),
+                            ...topics.map((topic) => ({
+                              topic,
+                              source: "Confirmed from a conversation" as const,
+                            })),
+                          ],
+                        },
+                        draft: [],
+                        constraints: {},
+                      };
+                    });
+                    setProposal(null);
+                    notify(
+                      "Confirmed topics saved. You can edit them in My Preferences.",
+                    );
+                  }}
+                />
+              )}
+              <div className="row">
+                <Button
+                  onClick={() => {
+                    setProposal(null);
+                    void conversation.chat("Find events", { explore: true });
+                  }}
+                >
+                  Explore beyond my interests
+                </Button>
+                <Button onClick={() => nav("profile")}>
+                  Edit My Preferences
+                </Button>
+              </div>
               <DemoLauncher
                 state={state}
                 busy={busy || enrolling}
@@ -719,6 +866,26 @@ export default function App() {
                               ids={m.eventIds}
                               evidence={m.evidence}
                               state={state}
+                              onDecline={(id) => {
+                                update((s) => ({
+                                  ...s,
+                                  preferences: {
+                                    ...migratePreferences(s.preferences),
+                                    dismissed: [
+                                      ...new Set([
+                                        ...migratePreferences(s.preferences)
+                                          .dismissed,
+                                        id,
+                                      ]),
+                                    ],
+                                  },
+                                  draft: s.draft.filter((x) => x !== id),
+                                }));
+                              }}
+                              onAnother={(id) => {
+                                setProposal(null);
+                                void conversation.another(id);
+                              }}
                               onDetails={setDetail}
                               onAdd={add}
                             />
@@ -920,6 +1087,16 @@ export default function App() {
                   </Button>
                 </div>
               ) : null}
+              {state.plan.some((id) => {
+                const e = EVENTS.find((e) => e.id === id);
+                return e && issue(e, state);
+              }) && (
+                <div className="notice" role="status">
+                  Some existing choices no longer fit your saved requirements or
+                  commitments. They have been preserved. Review details, edit My
+                  Preferences, or remove an event yourself.
+                </div>
+              )}
               <section className="panel calendar-full">
                 <div className="section-bar">
                   <h2>{WEEK_LABEL}</h2>
@@ -983,7 +1160,12 @@ export default function App() {
             </>
           ) : null}
           {page === "profile" ? (
-            <Profile state={state} update={update} notify={notify} />
+            <Profile
+              state={state}
+              update={update}
+              notify={notify}
+              onClearChat={clearChat}
+            />
           ) : null}
           {page === "forum" ? (
             <Forum

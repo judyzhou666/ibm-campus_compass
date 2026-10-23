@@ -1,3 +1,4 @@
+import { fitReasons, guidanceText } from "./preferences.ts";
 import { DEMO, dayLabel } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -104,6 +105,8 @@ export function EventCard({
   onSave,
   onDetail,
   onCalendar,
+  onDecline,
+  onAnother,
 }: {
   event: CampusEvent;
   state: DemoState;
@@ -111,6 +114,8 @@ export function EventCard({
   onSave: (id: string) => void;
   onDetail: (id: string) => void;
   onCalendar: () => void;
+  onDecline?: (id: string) => void;
+  onAnother?: (id: string) => void;
 }) {
   const inPlan = state.plan.includes(e.id),
     problem = issue(e, state),
@@ -158,10 +163,21 @@ export function EventCard({
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
         <div className="reason">
-          {problem ||
-            `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
+          {problem || fitReasons(e, state).join(" · ")}
         </div>
-        <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
+        <p className="fineprint">{guidanceText(state, e)}</p>
+        {onDecline && !inPlan && (
+          <>
+            <Button onClick={() => onDecline(e.id)}>Not for me</Button>
+            {onAnother && (
+              <Button onClick={() => onAnother(e.id)}>Show another</Button>
+            )}
+          </>
+        )}
+        <Button
+          disabled={!inPlan && !!problem}
+          onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}
+        >
           <Icon name={inPlan ? "check" : "plus"} />
           {inPlan ? "In your calendar" : "Add to calendar"}
         </Button>
@@ -339,6 +355,7 @@ export function EventDetails({
             Eligibility: e.eligibility || "Unknown",
             RSVP: e.rsvp || "Unknown",
             Availability: e.availability || "Unknown",
+            "Participation format": e.participation || "unknown",
             "Food status": e.food_status || "Unknown",
             Verification: e.verification_status || "Not verified",
           }).map(([label, value]) => (

@@ -1863,3 +1863,15 @@ dialog { max-height:90dvh; overflow-y:auto; }
 .demo-launcher ol { padding-left:20px; line-height:1.7; }
 .review-record { border-top:1px solid #e1e7de; padding:12px 0; overflow-wrap:anywhere; }
 .demo-launcher .row { display:flex; flex-wrap:wrap; gap:8px; }
+.preferences-layout { display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start; }
+.preference-section { margin-bottom:20px; }
+.preference-section .field { margin:16px 0; }
+.preference-section fieldset { margin:16px 0;padding:12px;border:1px solid #e1e7de;border-radius:8px; }
+.preference-summary { position:sticky;top:100px;overflow-wrap:anywhere; }
+.preference-actions { display:flex;gap:12px;padding:18px 0; }
+.preference-section .rsvp-check { margin:15px 0; }
+.preferences-layout > *, .preferences-layout form { min-width:0; }
+@media(max-width:960px){.preferences-layout{grid-template-columns:minmax(0,1fr);}.preference-summary{position:static;grid-row:1;}.preference-section .block-row{flex-wrap:wrap;gap:8px;}}
+.quick-choice { display:block;padding:6px 0; }
+.preference-section .btn { margin:4px; }
+.preference-section input,.preference-section textarea { max-width:100%; }

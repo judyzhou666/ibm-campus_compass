@@ -8,6 +8,7 @@ export function validateConstraints(
     throw new Error("Invalid constraints");
   const c = value as Record<string, unknown>;
   const fields = [
+    "explore",
     "topics",
     "excluded",
     "days",
@@ -46,6 +47,8 @@ export function validateConstraints(
       !["Free meal", "Coffee & snacks"].includes(c.food))
   )
     throw new Error("Unknown food preference");
+  if (c.explore !== undefined && typeof c.explore !== "boolean")
+    throw new Error("Invalid exploration choice");
   if (c.free !== undefined && typeof c.free !== "boolean")
     throw new Error("Invalid free-admission preference");
 }
@@ -123,7 +126,10 @@ export function interpretRequest(
       ),
     )
     .map(([k]) => k);
-  if (topics.length) c.topics = topics.filter((t) => !excluded.includes(t));
+  if (topics.length) {
+    c.topics = topics.filter((t) => !excluded.includes(t));
+    delete c.explore;
+  }
   if (excluded.length) c.excluded = excluded;
   const days = DAYS.map((d, i) =>
     test(new RegExp(`\\b${d.toLowerCase()}(?:day|sday|nesday|rsday)?\\b`))

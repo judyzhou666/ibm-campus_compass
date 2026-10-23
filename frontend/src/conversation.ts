@@ -1,3 +1,4 @@
+import { migratePreferences } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
@@ -13,10 +14,12 @@ export function createConversation(
 ) {
   const status = createStore({ busy: false, mode: "Simulated planner" });
   let version = 0;
+  const sessionSkipped = new Set<string>();
   let pending: PlanningClarification | undefined;
   function invalidate() {
     version++;
     pending = undefined;
+    sessionSkipped.clear();
     status.update((s) => ({ ...s, busy: false }));
   }
   function assistant(text: string) {
@@ -69,9 +72,9 @@ export function createConversation(
           .map((id) => EVENTS.find((e) => e.id === id)?.title)
           .join(", ") || "none";
       let response = old
-        ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${retained}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and it fits your schedule. ${alternative.rsvp}. It’s a suggestion only. Add it if it works for you.` : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`}`
+        ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${retained}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and has no conflict with the commitments you entered. ${alternative.rsvp}. It’s a suggestion only. Add it if it works for you.` : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`}`
         : matches.length
-          ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
+          ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each has no conflict with the commitments you entered${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : "I couldn’t find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
@@ -133,6 +136,30 @@ export function createConversation(
     read: status.read,
     subscribe: status.subscribe,
     replace,
+    async another(id: string) {
+      if (status.read().busy) return;
+      if (EVENTS.some((e) => e.id === id)) sessionSkipped.add(id);
+      pending = undefined;
+      await run((snapshot) =>
+        requestPlan(
+          "Find events",
+          snapshot.constraints,
+          {
+            ...snapshot,
+            preferences: {
+              ...migratePreferences(snapshot.preferences),
+              dismissed: [
+                ...new Set([
+                  ...migratePreferences(snapshot.preferences).dismissed,
+                  ...sessionSkipped,
+                ]),
+              ],
+            },
+          },
+          fetcher,
+        ),
+      );
+    },
     reset() {
       invalidate();
       status.update(() => ({ busy: false, mode: "Simulated planner" }));

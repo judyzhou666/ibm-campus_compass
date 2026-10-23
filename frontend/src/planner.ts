@@ -1,3 +1,8 @@
+import {
+  activeTopics,
+  wirePreferences,
+  practicalIssue,
+} from "./preferences.ts";
 import type { CampusEvent, Schedule, Constraints, TimeSlot } from "./types.ts";
 import { EVENTS } from "./data.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
@@ -12,6 +17,8 @@ export function issue(e: CampusEvent, state: Schedule) {
   if (e.access === "members") return "Membership not verified";
   if (!["open", "members", "full"].includes(e.access))
     return "Eligibility not confirmed";
+  const practical = practicalIssue(e, state);
+  if (practical) return practical;
   const conflict = [
     ...state.blocks,
     ...EVENTS.filter(
@@ -31,9 +38,9 @@ export function recommend(
   limit = 3,
   contextual = true,
 ) {
-  const topics = constraints.topics?.length
-    ? constraints.topics
-    : state.interests;
+  const prefs = wirePreferences(state);
+  const active = activeTopics(state);
+  const topics = constraints.topics?.length ? constraints.topics : active;
   let candidates = EVENTS.filter(
     (e) =>
       !state.plan.includes(e.id) &&
@@ -43,7 +50,9 @@ export function recommend(
       (constraints.before == null || e.end <= constraints.before) &&
       (!constraints.food || e.food === constraints.food) &&
       (!constraints.free || e.cost === 0) &&
-      !constraints.excluded?.includes(e.topic),
+      !constraints.excluded?.includes(e.topic) &&
+      (!constraints.explore || !active.includes(e.topic)) &&
+      !prefs.dismissed.includes(e.id),
   );
   if (constraints.topics?.length)
     candidates = candidates.filter((e) =>
@@ -60,8 +69,17 @@ export function recommend(
       a.day - b.day ||
       a.start - b.start,
   );
+  const preferenceScore = (e: CampusEvent) =>
+    Number(prefs.learning_topics.includes(e.topic)) * 6 +
+    Number(prefs.goal_topics.includes(e.topic)) * 3 +
+    Number(prefs.primary_topics.includes(e.topic)) * 2 +
+    Number(prefs.participation.includes(e.participation || "unknown")) * 2;
   const selected: CampusEvent[] = [];
-  while (candidates.length && selected.length < (constraints.limit || limit)) {
+  while (
+    candidates.length &&
+    selected.length <
+      (constraints.limit || (state.preferences ? prefs.count : limit))
+  ) {
     const feasible = candidates.filter(
       (e) => !selected.some((x) => overlap(e, x, state.buffer)),
     );
@@ -74,10 +92,15 @@ export function recommend(
           ) *
             4 +
           2 * Number(preferred(e, state)) +
-          Number(e.cost === 0)
+          Number(e.cost === 0) +
+          preferenceScore(e)
         : Number(e.cost === 0);
     feasible.sort(
-      (a, b) => score(b) - score(a) || a.day - b.day || a.start - b.start,
+      (a, b) =>
+        score(b) - score(a) ||
+        a.day - b.day ||
+        a.start - b.start ||
+        a.id.localeCompare(b.id),
     );
     if (!feasible.length) break;
     selected.push(feasible[0]);
@@ -90,7 +113,7 @@ export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
     (c.topics || state.interests).includes(e.topic)
       ? `Matches your interest in ${e.topic.toLowerCase()}`
       : `An opportunity to explore ${e.topic.toLowerCase()}`,
-    `Fits your schedule${state.buffer ? " with a 15-minute travel buffer" : ""}`,
+    `No conflict with the commitments you entered${state.buffer ? " with a 15-minute travel buffer" : ""}`,
     e.cost === 0 ? "Free admission" : `$${e.cost} admission`,
     e.food === "Unknown"
       ? "Food availability is unconfirmed"

@@ -1,3 +1,4 @@
+import { fitReasons, guidanceText, wirePreferences } from "./preferences.ts";
 import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -11,8 +12,12 @@ export function ChatEvents({
   onDetails,
   onAdd,
   evidence = [],
+  onDecline,
+  onAnother,
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
+  onDecline?: (id: string) => void;
+  onAnother?: (id: string) => void;
   ids: string[];
   state: DemoState;
   onDetails: (id: string) => void;
@@ -33,23 +38,37 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
+            <p className="fineprint">
+              Earlier evidence describes the suggestion-time snapshot. Current
+              conflicts and choices are checked again before adding.
+            </p>
             {evidence.find((item) => item.event_id === id) ? (
-              <dl
-                className="evidence"
-                aria-label="Evidence at recommendation time; current availability is checked again before adding"
+              <details
+                className="evidence-details"
+                open={["steps", "information"].includes(
+                  wirePreferences(state).guidance,
+                )}
               >
-                {Object.entries(evidence.find((item) => item.event_id === id)!)
-                  .filter(
-                    ([key]) =>
-                      key !== "event_id" && key !== "constraints_satisfied",
+                <summary>Recommendation evidence</summary>
+                <dl
+                  className="evidence"
+                  aria-label="Evidence at recommendation time; current availability is checked again before adding"
+                >
+                  {Object.entries(
+                    evidence.find((item) => item.event_id === id)!,
                   )
-                  .map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{key.replaceAll("_", " ")}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
-              </dl>
+                    .filter(
+                      ([key]) =>
+                        key !== "event_id" && key !== "constraints_satisfied",
+                    )
+                    .map(([key, value]) => (
+                      <div key={key}>
+                        <dt>{key.replaceAll("_", " ")}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                </dl>
+              </details>
             ) : (
               <p className="fineprint">
                 No current Rust evidence available. Review the fictional record
@@ -57,8 +76,31 @@ export function ChatEvents({
                 simulated.
               </p>
             )}
+            <div className="reason">
+              <strong>Why this fits</strong>
+              {problem ? (
+                <p>Review required: {problem}</p>
+              ) : (
+                fitReasons(event, state).map((reason) => (
+                  <p key={reason}>{reason}</p>
+                ))
+              )}
+            </div>
+            <p>{guidanceText(state, event)}</p>
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">
+              {onDecline && !added && (
+                <Button onClick={() => onDecline(id)}>Not for me</Button>
+              )}
+              {onAnother && (
+                <Button
+                  onClick={() => {
+                    onAnother(id);
+                  }}
+                >
+                  Show another
+                </Button>
+              )}
               <Button className="small" onClick={() => onDetails(id)}>
                 View details
               </Button>

@@ -8,6 +8,28 @@ pub const TOPICS: [&str; 5] = [
     "Wellbeing",
 ];
 
+#[derive(Clone, Deserialize, Serialize, Default, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ParticipationFormat {
+    Independent,
+    OneToOne,
+    SmallGroup,
+    Open,
+    #[default]
+    Unknown,
+}
+impl ParticipationFormat {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Independent => "independent",
+            Self::OneToOne => "one-to-one",
+            Self::SmallGroup => "small-group",
+            Self::Open => "open",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Event {
     pub id: String,
@@ -18,6 +40,8 @@ pub struct Event {
     pub topic: String,
     #[serde(default)]
     pub category: String,
+    #[serde(default)]
+    pub participation: ParticipationFormat,
     pub food: String,
     pub cost: u16,
     pub access: String,
@@ -53,6 +77,8 @@ pub struct Schedule {
     pub buffer: u16,
     #[serde(default)]
     pub preferred_time: String,
+    #[serde(default)]
+    pub preferences: Option<PreferenceInput>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default, PartialEq)]
@@ -74,6 +100,93 @@ pub struct Constraints {
     pub free: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub explore: Option<bool>,
+}
+
+#[derive(Clone, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub struct Window {
+    pub day: u8,
+    pub start: u16,
+    pub end: u16,
+}
+fn default_count() -> usize {
+    3
+}
+#[derive(Clone, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct PreferenceInput {
+    pub version: u8,
+    pub goal_topics: Vec<String>,
+    pub primary_topics: Vec<String>,
+    pub learning_topics: Vec<String>,
+    pub participation: Vec<String>,
+    pub guidance: String,
+    pub count: usize,
+    pub free_only: bool,
+    pub windows: Vec<Window>,
+    pub dismissed: Vec<String>,
+}
+impl Default for PreferenceInput {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            goal_topics: vec![],
+            primary_topics: vec![],
+            learning_topics: vec![],
+            participation: vec![],
+            guidance: "few".into(),
+            count: default_count(),
+            free_only: false,
+            windows: vec![],
+            dismissed: vec![],
+        }
+    }
+}
+impl PreferenceInput {
+    fn validate(&self, events: &[Event]) -> Result<(), &'static str> {
+        if self.version != 1
+            || ![1, 3, 5].contains(&self.count)
+            || !["few", "first", "steps", "information", "none"].contains(&self.guidance.as_str())
+            || self.participation.len() > 4
+            || self.participation.iter().any(|s| {
+                !["independent", "one-to-one", "small-group", "open"].contains(&s.as_str())
+            })
+        {
+            return Err("Invalid preference enum or count");
+        }
+        if self
+            .primary_topics
+            .iter()
+            .any(|t| !self.goal_topics.contains(t))
+        {
+            return Err("Primary topics must belong to enabled goal topics");
+        }
+        for topics in [
+            &self.goal_topics,
+            &self.primary_topics,
+            &self.learning_topics,
+        ] {
+            if topics.len() > 5 || topics.iter().any(|s| !TOPICS.contains(&s.as_str())) {
+                return Err("Invalid confirmed preference topics");
+            }
+        }
+        if self.windows.len() > 20
+            || self
+                .windows
+                .iter()
+                .any(|w| w.day > 4 || w.start >= w.end || w.end > 1440)
+            || self.dismissed.len() > events.len()
+            || self
+                .dismissed
+                .iter()
+                .any(|id| !events.iter().any(|e| e.id == *id))
+        {
+            return Err("Invalid practical preference or dismissed event");
+        }
+        Ok(())
+    }
 }
 
 impl Constraints {
@@ -106,6 +219,9 @@ impl Constraints {
 
 impl Schedule {
     pub fn validate(&self, events: &[Event]) -> Result<(), &'static str> {
+        if let Some(p) = &self.preferences {
+            p.validate(events)?;
+        }
         if !["", "any", "morning", "afternoon", "evening"].contains(&self.preferred_time.as_str()) {
             return Err("Unknown preferred time");
         }

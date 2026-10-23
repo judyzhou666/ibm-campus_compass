@@ -1,3 +1,4 @@
+import { wirePreferences } from "./preferences.ts";
 import type {
   Schedule,
   Constraints,
@@ -19,6 +20,7 @@ export const schedulePayload = (state: Schedule) => ({
   interests: [...state.interests],
   buffer: state.buffer,
   preferred_time: state.preferred_time || "any",
+  preferences: state.preferences ? wirePreferences(state) : undefined,
   blocks: state.blocks.map(({ title, day, start, end }) => ({
     title,
     day,
@@ -28,7 +30,11 @@ export const schedulePayload = (state: Schedule) => ({
 });
 
 export const planningKey = (state: DemoState) =>
-  JSON.stringify([schedulePayload(state), state.constraints]);
+  JSON.stringify([
+    schedulePayload(state),
+    state.constraints,
+    state.preferences,
+  ]);
 
 class InputError extends Error {}
 

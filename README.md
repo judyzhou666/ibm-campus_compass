@@ -2,6 +2,20 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## My Preferences — October 23, 2026
+
+My Preferences now replaces the old Profile editing form in navigation (`#profile`). It integrates direction/goals, optional learning notes and explicitly confirmed topics, participation/guidance choices, practical needs and personalization controls. Desktop has a live summary beside the editor; mobile stacks it above the form. The summary previews unsaved changes; only Save changes affects recommendations. Cancel discards edits. Quick setup is optional and supports general browsing.
+
+Dashboard, Weekly Briefing and AI Planner share the Rust selection rules and labelled TypeScript fallback. Enabled structured goals and confirmed learning topics affect ranking, explicit fictional participation formats add a soft bonus, and guidance/count choices change presentation and result quantity. Preferred time ranks; entered busy commitments, travel buffer, saved free-only and available-only windows are hard checks. A current request can change the search topic, but cannot relax saved hard constraints. Unknown metadata is disclosed instead of inferred. No attendance target, competence score or belonging claim is made.
+
+“I’m interested in UX research now” offers a disclosed broad-topic proposal: This search only, Review and save, or Dismiss. Only the exact confirmation dialog adds/enables a long-term learning topic. Raw reflection, major/goals, custom learning and location/format notes remain local and are not recommendation payloads. Existing interests, notes, plans, saved events, RSVP confirmations, messages and community memberships are migrated without inferred learning consent. Saving/clearing preferences preserves chosen plans and flags new conflicts. Clear chat is separate; active clearing does not purge an existing guided-demo archive.
+
+The implementation keeps React/TypeScript and Rust/Axum/Tokio/Serde, with no Python backend or new application dependency. The added participation fixture fields are explicitly authored fictional metadata. Arbitrary notes are not semantically understood; unsupported text stays a note until the student chooses a supported topic. Numeric budgets, strict location filtering, live watsonx, institutional authentication and real calendar/Canvas integration remain unimplemented.
+
+Run from the repository root: `npm ci`, `npm run build`, `cargo run --locked`; optionally `npm run dev` alongside Rust. Open My Preferences to test Save/Cancel, confirmed learning, disabled topics, guidance/count and narrow practical constraints. See [design, theory rationale and data flow](docs/preferences-design.md) for SDT/BPNT mapping and the five-step poster walkthrough. These are design hypotheses, not proven theory outcomes or a validated psychological scale.
+
+Verification: planner/catalog assertions, 84 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust tests and API integration passed. Chromium exercised the preferences flows at 1280px online and 390px with the API unavailable, including Save/Cancel/reload, consent, temporary searches, RSVP approval, hard constraints and note-payload exclusion. The existing guided demo journey also passed at both widths. The 20-scenario evaluation retains its metrics; raw evidence was refreshed for the new metadata and wording. Personalized behavior is covered separately by the new tests. No live watsonx or real enrollment was tested.
+
 ## PR #4 multi-part clarification fixes — October 22, 2026
 
 Clock clarification no longer hides an unresolved weekday exclusion or location condition. Mixed requests such as “social but not Tuesday after 3” now require a complete restatement with the topic, days the student CAN attend and explicit times. A reply of “PM” or “after 3 PM” cannot turn the excluded Tuesday into an allowed day. Rust and TypeScript mirror this policy and omit unsafe positively parsed days from mixed-ambiguity output.

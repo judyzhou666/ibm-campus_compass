@@ -1,3 +1,11 @@
+import {
+  activeTopics,
+  wirePreferences,
+  PARTICIPATION,
+  GUIDANCE,
+  type Guidance,
+} from "./preferences.ts";
+import { TOPICS } from "./data.ts";
 import { WEEK_LABEL } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
@@ -8,10 +16,21 @@ import type { DemoState } from "./types.ts";
 export function Welcome({
   onStart,
   onSkip,
+  onFinish,
+  onBrowse,
 }: {
   onStart: () => void;
   onSkip: () => void;
+  onBrowse: () => void;
+  onFinish: (
+    topics: string[],
+    participation: string[],
+    guidance: Guidance,
+  ) => void;
 }) {
+  const [topics, setTopics] = useState<string[]>([]),
+    [participation, setParticipation] = useState<string[]>([]),
+    [guidance, setGuidance] = useState<Guidance>("few");
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current!;
@@ -23,12 +42,66 @@ export function Welcome({
       <h2 id="welcome-title">Make campus feel more familiar.</h2>
       <p>
         Personalize academic, research, career, social and cultural interests
-        and preferred times. No career goal is required. Your fictional profile
-        stays in this browser.
+        and preferred times. No career goal is required. Preferences are saved
+        in this browser. Recommendation requests are processed by the app’s
+        Rust service when available.
       </p>
+      <fieldset>
+        <legend>1. What would you like to explore?</legend>
+        {TOPICS.map((t) => (
+          <label className="quick-choice" key={t}>
+            <input
+              type="checkbox"
+              checked={topics.includes(t)}
+              onChange={() =>
+                setTopics(
+                  topics.includes(t)
+                    ? topics.filter((x) => x !== t)
+                    : [...topics, t],
+                )
+              }
+            />
+            {t}
+          </label>
+        ))}
+        <p>No choices? Browse generally — you can decide later.</p>
+      </fieldset>
+      <label className="field">
+        2. Preferred participation
+        <select
+          value={participation[0] || ""}
+          onChange={(e) =>
+            setParticipation(e.target.value ? [e.target.value] : [])
+          }
+        >
+          <option value="">No preference</option>
+          {Object.entries(PARTICIPATION).map(([id, label]) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        3. Preferred guidance
+        <select
+          value={guidance}
+          onChange={(e) => setGuidance(e.target.value as Guidance)}
+        >
+          {Object.entries(GUIDANCE).map(([id, label]) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <Button onClick={() => onFinish(topics, participation, guidance)}>
+        Save quick setup
+      </Button>
       <div className="row">
         <Button onClick={onStart}>Personalize my demo</Button>
         <Button onClick={onSkip}>Use sample preferences</Button>
+        <Button onClick={onBrowse}>Skip and browse generally</Button>
       </div>
     </dialog>
   );
@@ -57,7 +130,7 @@ export function Briefing({
       requestPlan("Find events", {}, state),
       requestPlan(
         "Find events",
-        { excluded: state.interests, limit: 2 },
+        { explore: true, limit: Math.min(2, wirePreferences(state).count) },
         state,
       ),
     ])
@@ -114,7 +187,7 @@ export function Briefing({
               <ul>
                 {links(
                   ids.filter((id) =>
-                    state.interests.includes(
+                    activeTopics(state).includes(
                       EVENTS.find((e) => e.id === id)!.topic,
                     ),
                   ),
