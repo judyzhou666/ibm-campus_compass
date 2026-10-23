@@ -97,6 +97,7 @@ try {
       .getByRole("list", { name: "Confirmed learning topics" })
       .getByText("Career — Confirmed from a conversation")
       .waitFor();
+    page.once("dialog", (dialog) => dialog.accept());
     await page
       .getByRole("button", { name: "Remove Career", exact: true })
       .click();

@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Personalization controls and data boundaries
+
+Goal/learning switches are saved draft choices: disabling excludes their structured topics without deleting them. Individual topic and bulk learning-data removal now require browser-native confirmation and remain drafts until Save; Cancel retains saved data. Clear personalization has a separate explicit confirmation and applies immediately, preserving plans, saved events, RSVP records, conversation messages, memberships, busy blocks and hard scheduling requirements. Current filters/draft suggestions reset. Guided-demo archives remain separate snapshots and can explicitly restore earlier preferences.
+
+Privacy copy follows the actual allowlisted API: raw preference reflection/learning notes, major/free-text goals, provenance and conversation history are not automatically included. Current planner text, structured filters/preferences, plan/cancellation IDs, interests and busy commitment titles/times may reach the Rust service. Text explicitly copied into a planner message can be sent. Browser fallback is labelled; no all-on-device claim is made. Timetable data supports conflict checks, not inferred learning.
+
+Verification: frontend type check/build, 15 focused preference/migration tests, desktop/mobile controls checks and the Direction/Learning regression passed. The request-capture regression asserts note/history exclusion from actual request bodies. Optional controls browser coverage: `scripts/browser-personalization-controls.mjs`, using the environment described in `docs/backend.md`. No integrations, logging, production infrastructure or ranking changes were introduced.
+
 ## Direction, Learning, Participation & Support controls
 
 The existing draft editor keeps multiple structured goals, an optional selected primary goal, exclusive “Not sure yet”, interests and optional local reflection. Learning notes remain separate from confirmed topics: “Choose a supported topic below to use this in recommendations.” Confirming prepares a draft change; Save applies it. Re-confirming an existing topic preserves its manual/chat provenance, and removing a topic does not erase notes. No arbitrary-text understanding is claimed.

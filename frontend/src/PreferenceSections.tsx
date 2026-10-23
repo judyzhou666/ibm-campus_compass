@@ -214,13 +214,19 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
           <li key={t.topic}>
             {t.topic} — {t.source}{" "}
             <Button
-              onClick={() =>
+              onClick={() => {
+                if (
+                  !globalThis.confirm(
+                    `Remove the confirmed ${t.topic} topic from this draft? Notes will remain. Save changes to apply removal.`,
+                  )
+                )
+                  return;
                 pref({
                   learning_topics: p.learning_topics.filter(
                     (x) => x.topic !== t.topic,
                   ),
-                })
-              }
+                });
+              }}
             >
               Remove {t.topic}
             </Button>
@@ -228,14 +234,20 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
         ))}
       </ul>
       <Button
-        onClick={() =>
+        onClick={() => {
+          if (
+            !globalThis.confirm(
+              "Remove learning notes and confirmed topics from this draft? Save changes to apply removal, or Cancel to keep saved data.",
+            )
+          )
+            return;
           pref({
             learning_note: "",
             next_note: "",
             learning_topics: [],
             use_learning: false,
-          })
-        }
+          });
+        }}
       >
         Remove learning notes and topics
       </Button>
@@ -438,10 +450,12 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
         search session.
       </p>
       <p>
-        Saved interests, enabled structured goals, confirmed learning topics,
-        participation and guidance choices, time/practical settings and entered
-        commitments may be used. Chat guides the current search; it never saves
-        topics without your review.
+        Saved interests, enabled structured goals, enabled confirmed learning
+        topics, participation choices, preferred time and practical settings
+        influence selection. Guidance and result count control presentation.
+        Busy commitments and travel buffer support conflict checking, not
+        knowledge of what you learned. Chat guides the current search; it never
+        saves topics without your review.
       </p>
       <p className="fineprint">
         Clearing affects active settings. The guided demo can retain an earlier
@@ -465,10 +479,19 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
         Use confirmed learning topics in recommendations
       </label>
       <p>
+        Disabling goals or learning topics stops their use after Save changes
+        without deleting them.
+      </p>
+      <p>
         Preferences are saved in this browser. Recommendation requests are
         processed by the app’s Rust service when it is available. Raw
         reflection, learning notes, major and free-text goals are not included
-        in those requests.
+        in those requests. The current planner message, structured search
+        filters, plan/cancellation IDs, interests, practical settings and busy
+        commitment titles/times may be sent to that service. Conversation
+        history is not included automatically. If you copy a note into a planner
+        message, that message can be sent. When the service is unavailable, the
+        labelled browser fallback processes recommendations locally.
       </p>
       <Button
         onClick={() => {
@@ -485,9 +508,11 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
         <div className="notice" role="alert">
           <p>
             Clear interests, goals, learning notes/topics and personalization
-            choices? Existing plans, RSVP, communities, busy commitments and
-            saved hard practical requirements will remain. Unsaved edits will be
-            discarded.
+            choices now? Existing plans, saved events, RSVP records,
+            conversations, community memberships, busy commitments and saved
+            hard practical requirements will remain. Unsaved edits and current
+            search/draft suggestions will be discarded. This action applies
+            immediately; it does not wait for Save.
           </p>
           <Button onClick={() => setConfirm(false)}>Keep preferences</Button>
           <Button

@@ -231,11 +231,17 @@ test("saved count controls quantity and explicit topics cannot relax hard practi
   };
   assert.equal(recommend(one).length, 1);
 });
-test("clearing personalization preserves plan, RSVP, communities and hard scheduling requirements", () => {
+test("clearing personalization preserves plans, saved events, RSVP, conversations, communities and hard requirements", () => {
   const s = {
     ...fresh(),
     plan: ["e1"],
     rsvps: ["e1"],
+    saved: ["e3"],
+    messages: [{ role: "user" as const, text: "Keep conversation" }],
+    joined: ["Keep discussion"],
+    posts: [
+      { name: "Demo", title: "Keep post", body: "Keep body", tag: "demo" },
+    ],
     joinedCommunities: ["ai"],
     preferences: {
       ...defaultPreferences(),
@@ -252,6 +258,9 @@ test("clearing personalization preserves plan, RSVP, communities and hard schedu
     "blocks",
     "buffer",
     "joinedCommunities",
+    "messages",
+    "joined",
+    "posts",
   ] as const)
     assert.deepEqual(next[k], s[k]);
   assert.deepEqual(next.interests, []);
@@ -340,4 +349,42 @@ test("Show another excludes only for the current conversation without changing s
   conversation.clear();
   await conversation.chat("AI events");
   assert.ok(demo.read().draft.includes(first));
+});
+
+test("actual plan requests exclude private notes/history and respect disabled topic inputs", async () => {
+  const s = {
+    ...fresh(),
+    major: "PRIVATE_MAJOR",
+    goals: "PRIVATE_RAW_GOAL",
+    messages: [{ role: "user" as const, text: "PRIVATE_HISTORY" }],
+    preferences: {
+      ...defaultPreferences(),
+      goals: ["career"],
+      primary_goal: "career",
+      learning_topics: [{ topic: "Career", source: "Added by you" as const }],
+      why: "PRIVATE_REFLECTION",
+      learning_note: "PRIVATE_LEARNING",
+      next_note: "PRIVATE_NEXT",
+      use_goals: false,
+      use_learning: false,
+    },
+  };
+  let body = "";
+  await requestPlan("AI events", {}, s, async (_url, init) => {
+    body = String(init?.body);
+    return Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: {},
+      event_ids: [],
+    });
+  });
+  const sent = JSON.parse(body);
+  assert.equal(sent.message, "AI events");
+  assert.deepEqual(sent.state.preferences.goal_topics, []);
+  assert.deepEqual(sent.state.preferences.learning_topics, []);
+  assert.equal(sent.state.blocks[0].title, s.blocks[0].title);
+  assert.ok(!body.includes("PRIVATE_"));
+  assert.deepEqual(s.preferences.goals, ["career"]);
+  assert.equal(s.preferences.learning_topics.length, 1);
 });
