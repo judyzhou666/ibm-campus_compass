@@ -19,6 +19,10 @@ export function DirectionSection({ editor }: { editor: PreferenceEditor }) {
       <h2>A. My Direction</h2>
       <h3>What would you like to explore right now?</h3>
       <p>
+        Select more than one goal, or choose Not sure yet on its own. A primary
+        goal is optional.
+      </p>
+      <p>
         Structured goals affect recommendations only when enabled in
         Personalization Controls. Raw notes stay local.
       </p>
@@ -101,14 +105,15 @@ export function DirectionSection({ editor }: { editor: PreferenceEditor }) {
       <label className="field">
         Why does this matter to you right now?
         <textarea
+          aria-describedby="reflection-help"
           maxLength={240}
           value={p.why}
           onChange={(e) => pref({ why: e.target.value })}
         />
       </label>
-      <p className="fineprint">
-        Reflection and custom text remain local notes. They are not interpreted
-        or sent for recommendations.
+      <p className="fineprint" id="reflection-help">
+        Optional. Reflection and custom text remain local notes. They are not
+        interpreted or sent for recommendations.
       </p>
       <label className="field">
         Demo display name
@@ -153,6 +158,7 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
         What have you been learning or trying recently?
         <textarea
           maxLength={500}
+          aria-describedby="learning-notes-help"
           placeholder="A concept, tool or topic — course names are optional"
           value={p.learning_note}
           onChange={(e) => pref({ learning_note: e.target.value })}
@@ -162,13 +168,19 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
         What would you like to explore next?
         <textarea
           maxLength={500}
+          aria-describedby="learning-notes-help"
           value={p.next_note}
           onChange={(e) => pref({ next_note: e.target.value })}
         />
       </label>
-      <p>
+      <p id="learning-notes-help">
+        These optional notes stay in this browser and do not become
+        recommendation topics. Choose a supported topic below to use this in
+        recommendations.
+      </p>
+      <p className="fineprint">
         Please do not share grades, assignments or confidential course
-        materials. Choose a topic below to use this in recommendations.
+        materials. Arbitrary text is not semantically understood.
       </p>
       {suggestedTopics(p.learning_note + " " + p.next_note).length > 0 && (
         <div className="notice">
@@ -191,7 +203,13 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
       <Button onClick={() => confirmTopic(topic)}>
         Confirm topic for recommendations
       </Button>
-      <ul>
+      <p>
+        Confirming adds a topic to this draft and enables learning connections.
+        Select Save changes to apply it to recommendations; Cancel discards the
+        change.
+      </p>
+      {!p.learning_topics.length && <p>No confirmed learning topics.</p>}
+      <ul aria-label="Confirmed learning topics">
         {p.learning_topics.map((t) => (
           <li key={t.topic}>
             {t.topic} — {t.source}{" "}
@@ -231,8 +249,16 @@ export function ParticipationSection({ editor }: { editor: PreferenceEditor }) {
   return (
     <section className="panel preference-section">
       <h2>C. My Participation &amp; Support</h2>
-      <fieldset>
+      <p>
+        Optional. Choose any formats that suit you, or select No preference on
+        its own. You can change these choices anytime.
+      </p>
+      <fieldset aria-describedby="participation-help">
         <legend>How would you like to participate?</legend>
+        <p id="participation-help">
+          You can select more than one. Choosing a format clears No preference;
+          choosing No preference clears the other formats.
+        </p>
         <div className="topic-options">
           {Object.entries(PARTICIPATION).map(([id, label]) => (
             <label key={id}>
@@ -279,6 +305,7 @@ export function ParticipationSection({ editor }: { editor: PreferenceEditor }) {
         How many suggestions would you like to consider at a time?
         <select
           value={p.count}
+          aria-describedby="result-count-help"
           onChange={(e) => pref({ count: +e.target.value as 1 | 3 | 5 })}
         >
           {[1, 3, 5].map((n) => (
@@ -286,7 +313,7 @@ export function ParticipationSection({ editor }: { editor: PreferenceEditor }) {
           ))}
         </select>
       </label>
-      <p>
+      <p id="result-count-help">
         This limits suggestions shown, not attendance. You can decline every
         suggestion; there is no weekly quota or workload estimate.
       </p>

@@ -94,10 +94,14 @@ export function MyPreferences({
   const pref = (value: Partial<typeof p>) =>
     setDraft((d) => ({ ...d, preferences: { ...d.preferences, ...value } }));
   function confirmTopic(t: string) {
+    if (!TOPICS.includes(t)) return;
     pref({
       learning_topics: [
         ...p.learning_topics.filter((x) => x.topic !== t),
-        { topic: t, source: "Added by you" },
+        p.learning_topics.find((x) => x.topic === t) ?? {
+          topic: t,
+          source: "Added by you",
+        },
       ],
       use_learning: true,
     });
@@ -289,6 +293,9 @@ export function MyPreferences({
           </p>
           <p>
             {GUIDANCE[p.guidance]} · Up to {p.count} suggestions
+          </p>
+          <p className="fineprint">
+            Suggestion count is a display limit, not an attendance target.
           </p>
           <p>
             {p.participation

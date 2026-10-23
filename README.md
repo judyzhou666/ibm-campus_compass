@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Direction, Learning, Participation & Support controls
+
+The existing draft editor keeps multiple structured goals, an optional selected primary goal, exclusive “Not sure yet”, interests and optional local reflection. Learning notes remain separate from confirmed topics: “Choose a supported topic below to use this in recommendations.” Confirming prepares a draft change; Save applies it. Re-confirming an existing topic preserves its manual/chat provenance, and removing a topic does not erase notes. No arbitrary-text understanding is claimed.
+
+Participation supports multiple formats or exclusive No preference. Guidance is one of five choices and result count is 1/3/5. These optional controls update the unsaved summary and follow Save/Cancel. Count limits displayed suggestions, not attendance. No recommendation/ranking logic changed in this UI update.
+
+Verification: frontend build/type checking, 14 focused preference/migration tests, and Chromium Direction/Learning and Participation/Support checks at 1280/390px passed. The optional scripts are `scripts/browser-direction-learning.mjs` and `scripts/browser-participation-support.mjs`; use the Playwright/Chromium environment described in `docs/backend.md` against a running built app.
+
 ## Preference editor shell safeguards
 
 My Preferences remains the single full interest/time editor (`#profile`), reachable from navigation and the sidebar demo profile. The five existing sections and summary use an isolated draft; Save applies changes and Cancel asks before discarding edits. Browser-native confirmation protects internal navigation, global search and hash/back navigation; a standard before-unload warning protects reload/close where the browser supports it. The helper reads “Skip any question and change your preferences anytime.” No new section fields or ranking changes were added.
