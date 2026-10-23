@@ -73,7 +73,12 @@ export function recommend(
     Number(prefs.learning_topics.includes(e.topic)) * 6 +
     Number(prefs.goal_topics.includes(e.topic)) * 3 +
     Number(prefs.primary_topics.includes(e.topic)) * 2 +
-    Number(prefs.participation.includes(e.participation || "unknown")) * 2;
+    Number(
+      (prefs.participation as readonly string[]).includes(
+        e.participation || "unknown",
+      ),
+    ) *
+      2;
   const selected: CampusEvent[] = [];
   while (
     candidates.length &&

@@ -1,4 +1,4 @@
-import type { Preferences } from "./preferences.ts";
+import type { Preferences, Guidance, ResultCount } from "./preferences.ts";
 export interface TimeSlot {
   day: number;
   start: number;
@@ -7,6 +7,31 @@ export interface TimeSlot {
 export interface Block extends TimeSlot {
   id: string;
   title: string;
+}
+export type ParticipationChoice =
+  "independent" | "one-to-one" | "small-group" | "open";
+export type ParticipationFormat = ParticipationChoice | "unknown";
+/** Minimal v1 API projection: local notes, provenance and consent flags stay local. */
+export interface RecommendationPreferences {
+  version: 1;
+  goal_topics: string[];
+  primary_topics: string[];
+  learning_topics: string[];
+  participation: ParticipationChoice[];
+  guidance: Guidance;
+  count: ResultCount;
+  free_only: boolean;
+  windows: TimeSlot[];
+  dismissed: string[];
+}
+export interface RecommendationSchedule {
+  plan: string[];
+  cancelled: string[];
+  interests: string[];
+  blocks: TimeSlot[];
+  buffer: number;
+  preferred_time: string;
+  preferences?: Omit<RecommendationPreferences, "guidance">;
 }
 export interface CampusEvent extends TimeSlot {
   id: string;
@@ -19,8 +44,7 @@ export interface CampusEvent extends TimeSlot {
   access: string;
   description: string;
   poster: string;
-  participation?:
-    "independent" | "one-to-one" | "small-group" | "open" | "unknown";
+  participation?: ParticipationFormat;
   source: string;
   checked: string;
   rsvp: string;

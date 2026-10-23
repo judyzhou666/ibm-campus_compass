@@ -1,6 +1,7 @@
 import { wirePreferences } from "./preferences.ts";
 import type {
   Schedule,
+  RecommendationSchedule,
   Constraints,
   DemoState,
   PlanResponse,
@@ -14,15 +15,20 @@ import {
   validateConstraints,
 } from "./interpretation.ts";
 
-export const schedulePayload = (state: Schedule) => ({
+// Guidance only changes browser presentation; it is not needed by the server.
+function requestPreferences(state: Schedule) {
+  const { guidance: _guidance, ...preferences } = wirePreferences(state);
+  return preferences;
+}
+
+export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
   plan: [...state.plan],
   cancelled: [...state.cancelled],
   interests: [...state.interests],
   buffer: state.buffer,
   preferred_time: state.preferred_time || "any",
-  preferences: state.preferences ? wirePreferences(state) : undefined,
-  blocks: state.blocks.map(({ title, day, start, end }) => ({
-    title,
+  preferences: state.preferences ? requestPreferences(state) : undefined,
+  blocks: state.blocks.map(({ day, start, end }) => ({
     day,
     start,
     end,

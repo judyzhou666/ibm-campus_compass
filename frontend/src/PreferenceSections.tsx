@@ -488,10 +488,11 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
         reflection, learning notes, major and free-text goals are not included
         in those requests. The current planner message, structured search
         filters, plan/cancellation IDs, interests, practical settings and busy
-        commitment titles/times may be sent to that service. Conversation
-        history is not included automatically. If you copy a note into a planner
-        message, that message can be sent. When the service is unavailable, the
-        labelled browser fallback processes recommendations locally.
+        commitment times (without titles) may be sent to that service.
+        Conversation history is not included automatically. If you copy a note
+        into a planner message, that message can be sent. When the service is
+        unavailable, the labelled browser fallback processes recommendations
+        locally.
       </p>
       <Button
         onClick={() => {

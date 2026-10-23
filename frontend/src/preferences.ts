@@ -1,5 +1,12 @@
 import { TOPICS, EVENTS } from "./data.ts";
-import type { DemoState, Schedule, TimeSlot, CampusEvent } from "./types.ts";
+import type {
+  DemoState,
+  Schedule,
+  TimeSlot,
+  CampusEvent,
+  RecommendationPreferences,
+  ParticipationChoice,
+} from "./types.ts";
 export const GOALS = {
   career: "Explore career possibilities",
   practice: "Connect learning to practice",
@@ -178,7 +185,7 @@ export function migratePreferences(value: unknown): Preferences {
     : [];
   return p;
 }
-export function wirePreferences(state: Schedule) {
+export function wirePreferences(state: Schedule): RecommendationPreferences {
   const p = migratePreferences(state.preferences);
   return {
     version: 1,
@@ -189,7 +196,7 @@ export function wirePreferences(state: Schedule) {
     learning_topics: p.use_learning
       ? p.learning_topics.map((t) => t.topic)
       : [],
-    participation: p.participation,
+    participation: p.participation as ParticipationChoice[],
     guidance: p.guidance,
     count: p.count,
     free_only: p.free_only,

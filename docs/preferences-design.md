@@ -36,8 +36,8 @@ These are theory-informed design rationales, not validated scales or proven outc
 | Information | Browser storage | Sent to Rust |
 |---|---|---|
 | Interests, enabled mapped goals and learning tags | Yes | Only required structured topic values |
-| Primary-goal ranking, participation, guidance, count | Yes | Bounded structured settings (schema version 1) |
-| Busy commitments, buffer, preferred time, free-only/windows | Yes | Conflict/ranking fields; commitment titles support conflict explanations |
+| Primary-goal ranking, participation, guidance, count | Yes | Bounded structured settings (schema version 1), except guidance stays local for presentation |
+| Busy commitments, buffer, preferred time, free-only/windows | Yes | Only conflict/ranking fields; busy commitment titles are omitted |
 | Reflection, custom interest, major, raw goal, learning/next and location/format notes | Yes, plaintext in browser-local demo state | No |
 | Demo display name | Local profile | Only when the student explicitly submits a required demo RSVP |
 | Learning provenance | Yes | Topic strings only; provenance is a local UI record |

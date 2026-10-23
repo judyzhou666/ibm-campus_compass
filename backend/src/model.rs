@@ -58,9 +58,14 @@ pub struct Event {
     pub eligibility: String,
 }
 
+fn default_block_title() -> String {
+    "Busy commitment".into()
+}
 #[derive(Clone, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Block {
+    // Accept legacy labels, but new clients send only conflict-checking times.
+    #[serde(default = "default_block_title")]
     pub title: String,
     pub day: u8,
     pub start: u16,
@@ -252,5 +257,36 @@ impl Schedule {
             return Err("Invalid busy commitment");
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    #[test]
+    fn event_participation_is_optional_explicit_and_never_inferred_from_title() {
+        let catalog: serde_json::Value =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let mut record = catalog[0].clone();
+        record.as_object_mut().unwrap().remove("participation");
+        record["title"] = serde_json::json!("One-on-one small-group independent open event");
+        let event: Event = serde_json::from_value(record.clone()).unwrap();
+        assert!(event.participation == ParticipationFormat::Unknown);
+        record["participation"] = serde_json::json!("unknown");
+        assert!(serde_json::from_value::<Event>(record.clone()).is_ok());
+        record["participation"] = serde_json::json!("inferred-from-title");
+        assert!(serde_json::from_value::<Event>(record).is_err());
+    }
+
+    #[test]
+    fn busy_blocks_accept_minimal_times_and_legacy_labels() {
+        let minimal = serde_json::json!({"day": 1, "start": 600, "end": 660});
+        let block: Block = serde_json::from_value(minimal.clone()).unwrap();
+        assert_eq!(block.title, "Busy commitment");
+        let mut legacy = minimal;
+        legacy["title"] = serde_json::json!("Legacy commitment");
+        let block: Block = serde_json::from_value(legacy).unwrap();
+        assert_eq!(block.title, "Legacy commitment");
     }
 }

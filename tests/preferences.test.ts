@@ -355,6 +355,7 @@ test("actual plan requests exclude private notes/history and respect disabled to
   const s = {
     ...fresh(),
     major: "PRIVATE_MAJOR",
+    blocks: fresh().blocks.map((b) => ({ ...b, title: "PRIVATE_BUSY_TITLE" })),
     goals: "PRIVATE_RAW_GOAL",
     messages: [{ role: "user" as const, text: "PRIVATE_HISTORY" }],
     preferences: {
@@ -381,9 +382,15 @@ test("actual plan requests exclude private notes/history and respect disabled to
   });
   const sent = JSON.parse(body);
   assert.equal(sent.message, "AI events");
+  assert.equal("guidance" in sent.state.preferences, false);
   assert.deepEqual(sent.state.preferences.goal_topics, []);
   assert.deepEqual(sent.state.preferences.learning_topics, []);
-  assert.equal(sent.state.blocks[0].title, s.blocks[0].title);
+  assert.equal("title" in sent.state.blocks[0], false);
+  assert.deepEqual(sent.state.blocks[0], {
+    day: s.blocks[0].day,
+    start: s.blocks[0].start,
+    end: s.blocks[0].end,
+  });
   assert.ok(!body.includes("PRIVATE_"));
   assert.deepEqual(s.preferences.goals, ["career"]);
   assert.equal(s.preferences.learning_topics.length, 1);

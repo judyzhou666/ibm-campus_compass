@@ -2,11 +2,17 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Minimal recommendation contracts
+
+The frontend now names its v1 recommendation preference/schedule contracts. Requests exclude raw notes, provenance, browser-only guidance and busy-block titles; local schedule labels remain saved. Rust accepts new time-only blocks with a generic conflict label, as well as legacy labelled blocks and schedules without preferences. Existing enums/counts/collection bounds are validated, including oversized arrays and nonnumeric result counts. Optional event participation metadata explicitly supports Unknown; tests prove missing values are not inferred from titles. The existing authored event topic and structured-goal mapping suffice for goal matching, so no extra suitability metadata or fixture edits were needed. Ranking algorithms are unchanged.
+
+Verification: frontend build/type checking, 31 focused API/preference/migration tests, 8 Rust tests, Rust formatting/Clippy/build and API integration passed. API regressions check old/new caller compatibility, collection limits and unchanged event selection. Service diagnostics for unnamed busy blocks use “Busy commitment”; the browser can still display its local labels. No integrations, logging or production infrastructure were added.
+
 ## Personalization controls and data boundaries
 
 Goal/learning switches are saved draft choices: disabling excludes their structured topics without deleting them. Individual topic and bulk learning-data removal now require browser-native confirmation and remain drafts until Save; Cancel retains saved data. Clear personalization has a separate explicit confirmation and applies immediately, preserving plans, saved events, RSVP records, conversation messages, memberships, busy blocks and hard scheduling requirements. Current filters/draft suggestions reset. Guided-demo archives remain separate snapshots and can explicitly restore earlier preferences.
 
-Privacy copy follows the actual allowlisted API: raw preference reflection/learning notes, major/free-text goals, provenance and conversation history are not automatically included. Current planner text, structured filters/preferences, plan/cancellation IDs, interests and busy commitment titles/times may reach the Rust service. Text explicitly copied into a planner message can be sent. Browser fallback is labelled; no all-on-device claim is made. Timetable data supports conflict checks, not inferred learning.
+Privacy copy follows the actual allowlisted API: raw preference reflection/learning notes, major/free-text goals, provenance and conversation history are not automatically included. Current planner text, structured filters/preferences, plan/cancellation IDs, interests and busy commitment times (without titles) may reach the Rust service. Text explicitly copied into a planner message can be sent. Browser fallback is labelled; no all-on-device claim is made. Timetable data supports conflict checks, not inferred learning.
 
 Verification: frontend type check/build, 15 focused preference/migration tests, desktop/mobile controls checks and the Direction/Learning regression passed. The request-capture regression asserts note/history exclusion from actual request bodies. Optional controls browser coverage: `scripts/browser-personalization-controls.mjs`, using the environment described in `docs/backend.md`. No integrations, logging, production infrastructure or ranking changes were introduced.
 

@@ -55,6 +55,32 @@ try {
   const health = await (await fetch(base + "/api/health")).json();
   assert.equal(health.watsonx_connected, false);
   const state = fresh();
+  // Old callers may omit preferences and still send block titles; new ones omit labels.
+  const modern = schedulePayload(state);
+  const { preferences: _preferences, ...legacy } = modern;
+  const legacyResponse = await post("/api/plan", {
+    message: "Find events",
+    state: {
+      ...legacy,
+      blocks: state.blocks.map(({ title, day, start, end }) => ({
+        title,
+        day,
+        start,
+        end,
+      })),
+    },
+  });
+  const modernResponse = await post("/api/plan", {
+    message: "Find events",
+    state: modern,
+  });
+  assert.equal(legacyResponse.status, 200);
+  assert.equal(modernResponse.status, 200);
+  assert.deepEqual(
+    (await legacyResponse.json()).event_ids,
+    (await modernResponse.json()).event_ids,
+  );
+  assert.ok(modern.blocks.every((block) => !("title" in block)));
   for (const query of [
     "AI and education on Tuesday or Thursday afternoons",
     "social with free food",
@@ -370,6 +396,13 @@ try {
     { version: 2 },
     { primary_topics: ["Career"], goal_topics: [] },
     { count: 9 },
+    { count: "3" },
+    { count: true },
+    { participation: Array(5).fill("open") },
+    { goal_topics: Array(6).fill("Career") },
+    { learning_topics: Array(6).fill("Career") },
+    { windows: Array(21).fill({ day: 0, start: 600, end: 660 }) },
+    { dismissed: Array(EVENTS.length + 1).fill("e1") },
     { guidance: "infer-ability" },
     { participation: ["unknown"] },
     { learning_topics: ["fake"] },
@@ -447,7 +480,11 @@ try {
         state: schedulePayload(state),
       })
     ).json();
-    assert.equal(r.issue, issue(event, state));
+    const redacted = {
+      ...state,
+      blocks: state.blocks.map((b) => ({ ...b, title: "Busy commitment" })),
+    };
+    assert.equal(r.issue, issue(event, redacted));
   }
   const confirmed = { display_name: "Demo student", attending: true };
   for (const rsvp of [
