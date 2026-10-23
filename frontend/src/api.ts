@@ -8,7 +8,7 @@ import type {
   Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { recommendWithReasons, issue } from "./planner.ts";
+import { recommendWithReasons, issue, RANKING_WEIGHTS } from "./planner.ts";
 import {
   PlanningClarification,
   interpretRequest,
@@ -99,6 +99,33 @@ export async function requestPlan(
       throw new Error("Invalid planner response");
     }
     validateConstraints(result.constraints);
+    const matchReasons = result.matchReasons ?? [];
+    if (
+      !Array.isArray(matchReasons) ||
+      matchReasons.length > result.event_ids.length ||
+      new Set(matchReasons.map((r) => r?.event_id)).size !==
+        matchReasons.length ||
+      matchReasons.some(
+        (r) =>
+          !r ||
+          !result.event_ids.includes(r.event_id) ||
+          !Number.isInteger(r.score) ||
+          !Array.isArray(r.matches) ||
+          r.matches.length > 8 ||
+          new Set(r.matches.map((m) => m?.kind)).size !== r.matches.length ||
+          r.matches.some(
+            (m) =>
+              !m ||
+              !Object.hasOwn(RANKING_WEIGHTS, m.kind) ||
+              m.points !== RANKING_WEIGHTS[m.kind] ||
+              typeof m.explanation !== "string" ||
+              m.explanation.length > 500,
+          ) ||
+          r.score !== r.matches.reduce((sum, m) => sum + m.points, 0),
+      )
+    ) {
+      throw new Error("Invalid structured match reasons");
+    }
     if (result.clarification) throw new InputError(result.clarification);
     if (!result.understood)
       throw new InputError(
@@ -107,6 +134,7 @@ export async function requestPlan(
     return {
       constraints: result.constraints,
       ids: result.event_ids,
+      matchReasons,
       evidence: (result.recommendations || []).filter(
         (e) =>
           result.event_ids.includes(e.event_id) &&

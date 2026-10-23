@@ -252,3 +252,51 @@ test("result counts remain supported without bypassing numeric budget rejection"
     /Numeric budgets are not supported/,
   );
 });
+
+test("structured Rust match reasons are validated; legacy responses may omit them", async () => {
+  const response = {
+    mode: "simulated",
+    understood: true,
+    constraints: {},
+    event_ids: ["e1"],
+  };
+  const old = await requestPlan("Find events", {}, fresh(), async () =>
+    Response.json(response),
+  );
+  assert.equal(old.source, "rust");
+  assert.deepEqual(old.matchReasons, []);
+  for (const matchReasons of [
+    [{ event_id: "fake", score: 1, matches: [] }],
+    [{ event_id: "e1", score: 999, matches: [] }],
+    [
+      {
+        event_id: "e1",
+        score: 1,
+        matches: [{ kind: "inferred-ability", points: 1, explanation: "bad" }],
+      },
+    ],
+    [
+      {
+        event_id: "e1",
+        score: 2,
+        matches: [{ kind: "free", points: 2, explanation: "bad" }],
+      },
+    ],
+    [
+      {
+        event_id: "e1",
+        score: 2,
+        matches: [
+          { kind: "free", points: 1, explanation: "duplicate" },
+          { kind: "free", points: 1, explanation: "duplicate" },
+        ],
+      },
+    ],
+  ]) {
+    const result = await requestPlan("Find events", {}, fresh(), async () =>
+      Response.json({ ...response, matchReasons }),
+    );
+    assert.equal(result.source, "browser-fallback");
+    assert.deepEqual(result.evidence, []);
+  }
+});

@@ -112,6 +112,11 @@ export interface PlanResponse {
   constraints: Constraints;
   event_ids: string[];
   recommendations?: RecommendationEvidence[];
+  matchReasons?: {
+    event_id: string;
+    score: number;
+    matches: import("./planner.ts").RecommendationMatch[];
+  }[];
 }
 
 export interface Rsvp {

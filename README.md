@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Rust structured preference parity
+
+Rust selection now uses its structured scoring explanation function and returns the same ordered `matchReasons` as TypeScript: topic/diversity, enabled mapped goals/primary/confirmed learning, known participation, preferred time and free admission. Current-topic/limit behavior and hard constraints are preserved. The typed client validates reason codes, exact weights, totals and bounded collections, while accepting older responses without reasons. Goal IDs are projected once to validated topic arrays before requests; no title/note inference or duplicate mapping is introduced.
+
+Verification: 12 Rust tests, formatting/Clippy/build, TypeScript type checking, 23 focused API/fallback tests and 18 exact shared-fixture/goal comparisons passed. Six server validation/RSVP/conflict checks also passed. Run `cargo build --locked` then `node --import tsx tests/preference-parity.ts`. No ranking/reason differences appeared in those canonical fixtures. Intentional differences remain in offline notices, Rust-only catalog evidence, local-vs-generic busy labels and malformed-input handling; see `docs/preferences-design.md`. No LLM, Python backend, push or deployment was introduced.
+
 ## Explainable TypeScript fallback scoring
 
 The shared fallback recommendation path now produces structured local match reasons and exact point totals using saved interests, enabled goals/confirmed learning, known participation formats and preferred time. Existing weights are centralized without changing hard filters. Saved counts apply through the shared path; explicit request topics/limits replace only search defaults. Unknown metadata and raw notes add no score. Ties use weekday/start/ordinal event ID. These local explanations remain separate from Rust evidence. See `docs/preferences-design.md` for the exact score table, goal mapping and Rust parity contract.
