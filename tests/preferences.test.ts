@@ -35,6 +35,19 @@ test("legacy migration preserves notes and unrelated data without inventing lear
   const legacy = {
     ...fresh(),
     preferences: undefined,
+    interests: ["Arts & culture"],
+    preferred_time: "evening",
+    buffer: 0,
+    blocks: [
+      {
+        id: "legacy-class",
+        title: "Existing class",
+        day: 2,
+        start: 600,
+        end: 660,
+      },
+    ],
+    cancelled: ["e5"],
     major: "Existing major",
     goals: "Existing raw goal",
     plan: ["e1"],
@@ -52,7 +65,12 @@ test("legacy migration preserves notes and unrelated data without inventing lear
     const s = restore();
     assert.equal(s.major, legacy.major);
     assert.equal(s.goals, legacy.goals);
+    assert.equal(s.preferred_time, legacy.preferred_time);
+    assert.equal(s.buffer, legacy.buffer);
     for (const k of [
+      "interests",
+      "blocks",
+      "cancelled",
       "plan",
       "rsvps",
       "saved",

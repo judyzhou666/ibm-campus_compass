@@ -33,13 +33,17 @@ export const GUIDANCE = {
   information: "More information before deciding",
   none: "No preference",
 } as const;
+export const PREFERENCE_VERSION = 1 as const;
 export type Guidance = keyof typeof GUIDANCE;
+export type ResultCount = 1 | 3 | 5;
+export type LearningTopicSource =
+  "Added by you" | "Confirmed from a conversation";
 export interface LearningTopic {
   topic: string;
-  source: "Added by you" | "Confirmed from a conversation";
+  source: LearningTopicSource;
 }
 export interface Preferences {
-  version: 1;
+  version: typeof PREFERENCE_VERSION;
   goals: string[];
   primary_goal: string;
   custom_interest: string;
@@ -49,7 +53,7 @@ export interface Preferences {
   learning_topics: LearningTopic[];
   participation: string[];
   guidance: Guidance;
-  count: 1 | 3 | 5;
+  count: ResultCount;
   use_goals: boolean;
   use_learning: boolean;
   free_only: boolean;
@@ -59,7 +63,7 @@ export interface Preferences {
   dismissed: string[];
 }
 export const defaultPreferences = (): Preferences => ({
-  version: 1,
+  version: PREFERENCE_VERSION,
   goals: [],
   primary_goal: "",
   custom_interest: "",
@@ -80,7 +84,7 @@ export const defaultPreferences = (): Preferences => ({
 });
 export function migratePreferences(value: unknown): Preferences {
   const p = defaultPreferences();
-  if (!value || typeof value !== "object") return p;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return p;
   const v = value as Record<string, unknown>;
   const text = (key: string, max: number) =>
     typeof v[key] === "string" ? (v[key] as string).slice(0, max) : "";
@@ -88,15 +92,18 @@ export function migratePreferences(value: unknown): Preferences {
     ? [
         ...new Set(
           v.goals.filter(
-            (s): s is keyof typeof GOALS => typeof s === "string" && s in GOALS,
+            (s): s is keyof typeof GOALS =>
+              typeof s === "string" && Object.hasOwn(GOALS, s),
           ),
         ),
       ].slice(0, 8)
     : [];
   if (p.goals.includes("unsure")) p.goals = ["unsure"];
   p.primary_goal =
-    v.primary_goal !== "unsure" && p.goals.includes(String(v.primary_goal))
-      ? String(v.primary_goal)
+    typeof v.primary_goal === "string" &&
+    v.primary_goal !== "unsure" &&
+    p.goals.includes(v.primary_goal)
+      ? v.primary_goal
       : "";
   for (const key of [
     "custom_interest",
@@ -120,23 +127,26 @@ export function migratePreferences(value: unknown): Preferences {
         )
         .filter((t, i, a) => a.findIndex((x) => x.topic === t.topic) === i)
         .slice(0, 5)
+        .map(({ topic, source }) => ({ topic, source }))
     : [];
   p.participation = Array.isArray(v.participation)
     ? [
         ...new Set(
           v.participation.filter(
-            (s): s is string => typeof s === "string" && s in PARTICIPATION,
+            (s): s is string =>
+              typeof s === "string" && Object.hasOwn(PARTICIPATION, s),
           ),
         ),
       ]
     : [];
   p.guidance =
-    typeof v.guidance === "string" && v.guidance in GUIDANCE
+    typeof v.guidance === "string" && Object.hasOwn(GUIDANCE, v.guidance)
       ? (v.guidance as Guidance)
       : "few";
-  p.count = [1, 3, 5].includes(Number(v.count))
-    ? (Number(v.count) as 1 | 3 | 5)
-    : 3;
+  p.count =
+    typeof v.count === "number" && [1, 3, 5].includes(v.count)
+      ? (v.count as ResultCount)
+      : 3;
   p.use_goals = v.use_goals === true;
   p.use_learning = v.use_learning === true;
   p.free_only = v.free_only === true;
@@ -156,6 +166,7 @@ export function migratePreferences(value: unknown): Preferences {
             w.start < w.end,
         )
         .slice(0, 20)
+        .map(({ day, start, end }) => ({ day, start, end }))
     : [];
   p.dismissed = Array.isArray(v.dismissed)
     ? v.dismissed
