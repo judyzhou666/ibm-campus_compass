@@ -1,4 +1,4 @@
-import { fitReasons, guidanceText } from "./preferences.ts";
+import { RecommendationInfo } from "./RecommendationPresentation.tsx";
 import { DEMO, dayLabel } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -107,8 +107,10 @@ export function EventCard({
   onCalendar,
   onDecline,
   onAnother,
+  matchReasons,
 }: {
   event: CampusEvent;
+  matchReasons?: import("./planner.ts").RecommendationMatch[];
   state: DemoState;
   onAdd: (id: string) => void;
   onSave: (id: string) => void;
@@ -162,10 +164,7 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
-        <div className="reason">
-          {problem || fitReasons(e, state).join(" · ")}
-        </div>
-        <p className="fineprint">{guidanceText(state, e)}</p>
+        <RecommendationInfo event={e} state={state} matches={matchReasons} />
         {onDecline && !inPlan && (
           <>
             <Button onClick={() => onDecline(e.id)}>Not for me</Button>

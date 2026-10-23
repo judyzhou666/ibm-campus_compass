@@ -1,5 +1,10 @@
 import {
+  UsingPreferences,
+  RecommendationInfo,
+} from "./RecommendationPresentation.tsx";
+import {
   activeTopics,
+  preferenceSettingsKey,
   migratePreferences,
   proposalTopic,
 } from "./preferences.ts";
@@ -18,7 +23,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { EVENTS, when } from "./data.ts";
-import { issue, reasons } from "./planner.ts";
+import { issue } from "./planner.ts";
 import { createEnrollment, type EnrollmentOutcome } from "./enrollment.ts";
 import { createConversation } from "./conversation.ts";
 import { createStore, fresh, restore, STORAGE_KEY } from "./state.ts";
@@ -118,6 +123,7 @@ export default function App() {
       ],
     },
   });
+  const settingsKey = preferenceSettingsKey(state);
   const preferenceRevision = JSON.stringify([
     state.interests,
     state.preferences,
@@ -308,6 +314,13 @@ export default function App() {
         <EventCard
           key={e.id}
           event={e}
+          matchReasons={
+            page === "dashboard"
+              ? recommendationResult.matchReasons.find(
+                  (r) => r.event_id === e.id,
+                )?.matches
+              : undefined
+          }
           state={state}
           onAdd={add}
           onSave={save}
@@ -566,6 +579,7 @@ export default function App() {
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
                       onCalendar={() => nav("calendar")}
+                      onPreferences={() => nav("profile")}
                     />
                     <Filters value={filter} onChange={setFilter} />
                     <p role="status">{recommendationResult.notice}</p>
@@ -727,6 +741,7 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
+              <UsingPreferences state={state} onEdit={() => nav("profile")} />
               {proposal && (
                 <PreferenceProposal
                   topics={proposal.topics}
@@ -890,10 +905,31 @@ export default function App() {
                         ) : null}
                         <div className="bubble">
                           {m.text}
+                          {m.role === "assistant" &&
+                            !!m.eventIds?.length &&
+                            m.settingsKey !== settingsKey && (
+                              <div className="notice previous-settings">
+                                <p>
+                                  Based on previous settings. These earlier
+                                  suggestions have not been refreshed.
+                                </p>
+                                <Button
+                                  disabled={busy}
+                                  onClick={() => {
+                                    setProposal(null);
+                                    void conversation.refresh();
+                                  }}
+                                >
+                                  Refresh suggestions
+                                </Button>
+                              </div>
+                            )}
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
                               evidence={m.evidence}
+                              matchReasons={m.matchReasons}
+                              previousSettings={m.settingsKey !== settingsKey}
                               state={state}
                               onDecline={(id) => {
                                 update((s) => ({
@@ -1007,13 +1043,22 @@ export default function App() {
                               <Icon name="clock" />
                               {when(e!)}
                             </div>
-                            <div className="reason">
-                              {reasons(e!, state, state.constraints).map(
-                                (r) => (
-                                  <div key={r}>• {r}</div>
-                                ),
-                              )}
-                            </div>
+                            <RecommendationInfo
+                              event={e!}
+                              state={state}
+                              matches={
+                                [...state.messages]
+                                  .reverse()
+                                  .find(
+                                    (m) =>
+                                      m.settingsKey === settingsKey &&
+                                      m.eventIds?.includes(e!.id),
+                                  )
+                                  ?.matchReasons?.find(
+                                    (r) => r.event_id === e!.id,
+                                  )?.matches
+                              }
+                            />
                             <Button
                               className="small"
                               onClick={() => add(e!.id)}

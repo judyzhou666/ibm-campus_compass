@@ -1,4 +1,5 @@
-import { fitReasons, guidanceText, wirePreferences } from "./preferences.ts";
+import { RecommendationInfo } from "./RecommendationPresentation.tsx";
+import { wirePreferences } from "./preferences.ts";
 import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -12,10 +13,14 @@ export function ChatEvents({
   onDetails,
   onAdd,
   evidence = [],
+  matchReasons = [],
+  previousSettings = false,
   onDecline,
   onAnother,
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
+  matchReasons?: import("./types.ts").RecommendationMatchResult[];
+  previousSettings?: boolean;
   onDecline?: (id: string) => void;
   onAnother?: (id: string) => void;
   ids: string[];
@@ -45,9 +50,7 @@ export function ChatEvents({
             {evidence.find((item) => item.event_id === id) ? (
               <details
                 className="evidence-details"
-                open={["steps", "information"].includes(
-                  wirePreferences(state).guidance,
-                )}
+                open={wirePreferences(state).guidance === "information"}
               >
                 <summary>Recommendation evidence</summary>
                 <dl
@@ -71,22 +74,17 @@ export function ChatEvents({
               </details>
             ) : (
               <p className="fineprint">
-                No current Rust evidence available. Review the fictional record
-                and current availability in details; browser suggestions are
-                simulated.
+                No stored Rust evidence is available for this suggestion. Review
+                the fictional record and current availability in details;
+                browser suggestions are simulated.
               </p>
             )}
-            <div className="reason">
-              <strong>Why this fits</strong>
-              {problem ? (
-                <p>Review required: {problem}</p>
-              ) : (
-                fitReasons(event, state).map((reason) => (
-                  <p key={reason}>{reason}</p>
-                ))
-              )}
-            </div>
-            <p>{guidanceText(state, event)}</p>
+            <RecommendationInfo
+              event={event}
+              state={state}
+              matches={matchReasons.find((r) => r.event_id === id)?.matches}
+              previousSettings={previousSettings}
+            />
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">
               {onDecline && !added && (

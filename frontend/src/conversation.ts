@@ -1,4 +1,4 @@
-import { migratePreferences } from "./preferences.ts";
+import { migratePreferences, preferenceSettingsKey } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
@@ -94,6 +94,10 @@ export function createConversation(
             role: "assistant",
             text: response,
             eventIds: matches.map((e) => e.id),
+            settingsKey: preferenceSettingsKey(snapshot),
+            matchReasons: plan.matchReasons.filter((r) =>
+              matches.some((e) => e.id === r.event_id),
+            ),
             evidence: plan.evidence.filter((item) =>
               matches.some((e) => e.id === item.event_id),
             ),
@@ -136,6 +140,14 @@ export function createConversation(
     read: status.read,
     subscribe: status.subscribe,
     replace,
+    async refresh() {
+      if (status.read().busy) return;
+      pending = undefined;
+      sessionSkipped.clear();
+      await run((snapshot) =>
+        requestPlan("Find events", {}, snapshot, fetcher),
+      );
+    },
     async another(id: string) {
       if (status.read().busy) return;
       if (EVENTS.some((e) => e.id === id)) sessionSkipped.add(id);

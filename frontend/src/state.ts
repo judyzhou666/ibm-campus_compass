@@ -1,3 +1,7 @@
+import {
+  readMatchReasons,
+  readCatalogEvidence,
+} from "./recommendationReasons.ts";
 import { defaultPreferences, migratePreferences } from "./preferences.ts";
 import { storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
@@ -110,7 +114,22 @@ export function restore(): DemoState {
             .map((m: DemoState["messages"][number]) => ({
               role: m.role,
               text: m.text,
-              eventIds: ids(m.eventIds),
+              ...(Array.isArray(m.eventIds)
+                ? { eventIds: ids(m.eventIds) }
+                : {}),
+              ...(typeof m.settingsKey === "string" &&
+              m.settingsKey.length <= 20000
+                ? { settingsKey: m.settingsKey }
+                : {}),
+              ...(Array.isArray(m.matchReasons)
+                ? {
+                    matchReasons:
+                      readMatchReasons(m.matchReasons, ids(m.eventIds)) ?? [],
+                  }
+                : {}),
+              ...(Array.isArray(m.evidence)
+                ? { evidence: readCatalogEvidence(m.evidence, ids(m.eventIds)) }
+                : {}),
             }))
         : [],
       posts: Array.isArray(value.posts)

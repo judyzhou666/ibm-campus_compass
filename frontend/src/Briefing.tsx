@@ -9,7 +9,11 @@ import { TOPICS } from "./data.ts";
 import { WEEK_LABEL } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
-import { requestPlan, planningKey } from "./api.ts";
+import { useRecommendations } from "./useRecommendations.ts";
+import {
+  UsingPreferences,
+  RecommendationInfo,
+} from "./RecommendationPresentation.tsx";
 import { issue } from "./planner.ts";
 import { Button } from "./components.tsx";
 import type { DemoState } from "./types.ts";
@@ -43,8 +47,8 @@ export function Welcome({
       <p>
         Personalize academic, research, career, social and cultural interests
         and preferred times. No career goal is required. Preferences are saved
-        in this browser. Recommendation requests are processed by the app’s
-        Rust service when available.
+        in this browser. Recommendation requests are processed by the app’s Rust
+        service when available.
       </p>
       <fieldset>
         <legend>1. What would you like to explore?</legend>
@@ -111,64 +115,43 @@ export function Briefing({
   onDetail,
   onPlanner,
   onCalendar,
+  onPreferences,
 }: {
   state: DemoState;
   onDetail: (id: string) => void;
   onPlanner: () => void;
   onCalendar: () => void;
+  onPreferences: () => void;
 }) {
-  const [result, setResult] = useState<{
-    key: string;
-    ids: string[];
-    cross: string[];
-    notice: string;
-  } | null>(null);
-  const key = planningKey(state);
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      requestPlan("Find events", {}, state),
-      requestPlan(
-        "Find events",
-        { explore: true, limit: Math.min(2, wirePreferences(state).count) },
-        state,
-      ),
-    ])
-      .then(([r, c]) => {
-        if (active)
-          setResult({
-            key,
-            ids: r.ids,
-            cross: c.ids,
-            notice: r.notice || c.notice,
-          });
-      })
-      .catch(() => {
-        if (active)
-          setResult({
-            key,
-            ids: [],
-            cross: [],
-            notice: "Briefing unavailable. Review your schedule and retry.",
-          });
-      });
-    return () => {
-      active = false;
-    };
-  }, [key]);
-  const links = (ids: string[]) =>
+  const result = useRecommendations(state);
+  const cross = useRecommendations(state, {
+    explore: true,
+    limit: Math.min(2, wirePreferences(state).count),
+  });
+  const links = (
+    ids: string[],
+    explain = false,
+    matches = result.matchReasons,
+  ) =>
     ids.length ? (
       ids.map((id) => (
         <li key={id}>
           <button className="text-btn" onClick={() => onDetail(id)}>
             {EVENTS.find((e) => e.id === id)?.title}
           </button>
+          {explain && (
+            <RecommendationInfo
+              event={EVENTS.find((e) => e.id === id)!}
+              state={state}
+              matches={matches.find((r) => r.event_id === id)?.matches}
+            />
+          )}
         </li>
       ))
     ) : (
       <li>No items this demo week.</li>
     );
-  const ready = result?.key === key,
+  const ready = !result.loading && !cross.loading,
     ids = ready ? result.ids : [];
   return (
     <section className="panel briefing">
@@ -176,6 +159,7 @@ export function Briefing({
       <p className="fineprint">
         {WEEK_LABEL} · Deterministic simulation · No live updates
       </p>
+      <UsingPreferences state={state} onEdit={onPreferences} />
       {!ready ? (
         <p role="status">Checking availability…</p>
       ) : (
@@ -186,11 +170,14 @@ export function Briefing({
               <h3>Matching your interests</h3>
               <ul>
                 {links(
-                  ids.filter((id) =>
-                    activeTopics(state).includes(
-                      EVENTS.find((e) => e.id === id)!.topic,
-                    ),
+                  ids.filter(
+                    (id) =>
+                      !activeTopics(state).length ||
+                      activeTopics(state).includes(
+                        EVENTS.find((e) => e.id === id)!.topic,
+                      ),
                   ),
+                  true,
                 )}
               </ul>
             </div>
@@ -200,7 +187,7 @@ export function Briefing({
                 Explore topics beyond your selections; departments are not
                 verified.
               </p>
-              <ul>{links(result.cross)}</ul>
+              <ul>{links(cross.ids, true, cross.matchReasons)}</ul>
             </div>
             <div>
               <h3>Saved, not yet added</h3>

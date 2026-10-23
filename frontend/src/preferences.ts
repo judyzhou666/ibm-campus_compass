@@ -290,3 +290,14 @@ export function proposalTopic(text: string) {
     ? suggestedTopics(text)
     : [];
 }
+
+/** Local snapshot identity: only structured settings, never note text or busy labels. */
+export function preferenceSettingsKey(state: Schedule) {
+  return JSON.stringify([
+    state.interests,
+    wirePreferences(state),
+    state.preferred_time || "any",
+    state.buffer,
+    state.blocks.map(({ day, start, end }) => ({ day, start, end })),
+  ]);
+}

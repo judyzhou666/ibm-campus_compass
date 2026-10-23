@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Preferences across Dashboard, briefing and Planner
+
+All recommendation surfaces now use the shared request path and show “Using your preferences” with Edit preferences. Cards, briefing, chat and draft suggestions render grounded matching explanations and selected guidance depth. Optional decision/preparation guidance is distinguished from the fictional catalog’s recorded requirements; no real registration workflow or missing event facts are invented.
+
+Saving preferences refreshes Dashboard/briefing and invalidates obsolete requests. Plans, RSVP records and conversations remain. Chat retains validated reason/evidence snapshots across reloads, marks old suggestions as based on previous settings, and offers Refresh suggestions to append current results. Legacy messages without snapshots abstain from new-fit claims. Snapshot identities exclude raw notes and busy labels; these local history fields are never recommendation payloads. Clearing personalization preserves history; clear chat separately to remove it.
+
+Verification: frontend build/type checking, 78 focused tests, desktop-online/mobile-offline surface checks, existing preferences journeys and full guided desktop/mobile journeys passed. Browser checks cover save/refresh/reload, historical labels, guidance, preserved plans/conversation, RSVP and cancellation safeguards, plus a delayed obsolete response. Run `scripts/browser-preference-surfaces.mjs` using the optional tooling described in `docs/backend.md`. No backend ranking or enrollment changes were needed; live watsonx remains deferred.
+
 ## Rust structured preference parity
 
 Rust selection now uses its structured scoring explanation function and returns the same ordered `matchReasons` as TypeScript: topic/diversity, enabled mapped goals/primary/confirmed learning, known participation, preferred time and free admission. Current-topic/limit behavior and hard constraints are preserved. The typed client validates reason codes, exact weights, totals and bounded collections, while accepting older responses without reasons. Goal IDs are projected once to validated topic arrays before requests; no title/note inference or duplicate mapping is introduced.

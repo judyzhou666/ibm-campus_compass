@@ -460,7 +460,9 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
       <p className="fineprint">
         Clearing affects active settings. The guided demo can retain an earlier
         local snapshot; restoring that snapshot explicitly restores its
-        preferences too.
+        preferences too. Earlier chat suggestions can retain structured matching
+        explanations. Clear the planner conversation separately if you want to
+        remove that history.
       </p>
       <label className="rsvp-check">
         <input

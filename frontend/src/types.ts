@@ -77,11 +77,18 @@ export interface Constraints {
   limit?: number;
   explore?: boolean;
 }
+export interface RecommendationMatchResult {
+  event_id: string;
+  score: number;
+  matches: import("./planner.ts").RecommendationMatch[];
+}
 export interface Message {
   role: "user" | "assistant";
   text: string;
   eventIds?: string[];
   evidence?: RecommendationEvidence[];
+  settingsKey?: string;
+  matchReasons?: RecommendationMatchResult[];
 }
 export interface Post {
   name: string;
@@ -112,11 +119,7 @@ export interface PlanResponse {
   constraints: Constraints;
   event_ids: string[];
   recommendations?: RecommendationEvidence[];
-  matchReasons?: {
-    event_id: string;
-    score: number;
-    matches: import("./planner.ts").RecommendationMatch[];
-  }[];
+  matchReasons?: RecommendationMatchResult[];
 }
 
 export interface Rsvp {
@@ -132,4 +135,7 @@ export interface RecommendationEvidence {
   trade_offs: string;
   comparison?: string;
   discovery_context?: string;
+  learning_connection?: string;
+  participation_fit?: string;
+  constraints_satisfied?: Constraints;
 }

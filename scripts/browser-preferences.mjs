@@ -126,10 +126,7 @@ for (const { width, offline } of [
     await page.locator(".event-card h3").textContent(),
     /Creative coding/,
   );
-  assert.match(
-    await page.locator(".event-card").textContent(),
-    /1\. Review access/,
-  );
+  assert.equal(await page.locator(".event-card .event-guidance li").count(), 3);
   await go("profile");
   await page
     .getByRole("checkbox", { name: "Explore independently", exact: true })
