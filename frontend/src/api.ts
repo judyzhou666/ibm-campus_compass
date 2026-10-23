@@ -8,7 +8,7 @@ import type {
   Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { recommend, issue } from "./planner.ts";
+import { recommendWithReasons, issue } from "./planner.ts";
 import {
   PlanningClarification,
   interpretRequest,
@@ -123,9 +123,15 @@ export async function requestPlan(
   } catch (error) {
     if (error instanceof InputError) throw error;
     const { constraints } = interpreted;
+    const selected = recommendWithReasons(state, constraints);
     return {
       constraints,
-      ids: recommend(state, constraints).map((e) => e.id),
+      ids: selected.map(({ event }) => event.id),
+      matchReasons: selected.map(({ event, score, matches }) => ({
+        event_id: event.id,
+        score,
+        matches,
+      })),
       evidence: [],
       source: "browser-fallback",
       notice:

@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Explainable TypeScript fallback scoring
+
+The shared fallback recommendation path now produces structured local match reasons and exact point totals using saved interests, enabled goals/confirmed learning, known participation formats and preferred time. Existing weights are centralized without changing hard filters. Saved counts apply through the shared path; explicit request topics/limits replace only search defaults. Unknown metadata and raw notes add no score. Ties use weekday/start/ordinal event ID. These local explanations remain separate from Rust evidence. See `docs/preferences-design.md` for the exact score table, goal mapping and Rust parity contract.
+
+Verification: TypeScript type checking, 34 focused fallback/API/preference tests and diff checks passed. Checks cover exact scores, switches, unknown metadata, note exclusion, hard constraints, current-search overrides, count propagation and order-independent ties. No full suites or Rust implementation changes were run for this fallback-only task.
+
 ## Minimal recommendation contracts
 
 The frontend now names its v1 recommendation preference/schedule contracts. Requests exclude raw notes, provenance, browser-only guidance and busy-block titles; local schedule labels remain saved. Rust accepts new time-only blocks with a generic conflict label, as well as legacy labelled blocks and schedules without preferences. Existing enums/counts/collection bounds are validated, including oversized arrays and nonnumeric result counts. Optional event participation metadata explicitly supports Unknown; tests prove missing values are not inferred from titles. The existing authored event topic and structured-goal mapping suffice for goal matching, so no extra suitability metadata or fixture edits were needed. Ranking algorithms are unchanged.

@@ -54,6 +54,27 @@ Both Rust and the labelled fallback use the same order: validate event/access/ca
 
 Ranking score: matching current/active topic **10**, an unrepresented matching topic **4**, confirmed enabled learning connection **6**, enabled structured goal topic **3**, primary-goal topic **2**, matching explicit fictional participation format **2**, preferred time **2**, free admission **1**. Stable ties use weekday, start time and event ID. Current topics restrict the candidate set; saved defaults cannot widen it. Goal mapping: career → Career; practice/research → AI & education; people → Social; wellbeing → Wellbeing; discovery/not sure/other → no inferred topic. Unknown participation formats receive no matching bonus.
 
+### TypeScript scoring details for Rust parity
+
+`frontend/src/planner.ts` exports `RANKING_WEIGHTS`, `rankingDetails` and `recommendWithReasons`. The shared fallback request path returns local `matchReasons` (event ID, total score, and ordered `kind/points/explanation` entries); Rust evidence remains separate and is never fabricated. Reasons are recomputed per greedy selection using only already-selected events for diversity. Ranking details alone do not prove eligibility: filtering and pairwise travel checks run before selection.
+
+| Reason code | Exact condition | Points |
+|---|---|---:|
+| topic | Event topic in nonempty current topics, otherwise union of interests + enabled goal/learning topics | 10 |
+| diversity | Same topic match and no earlier suggestion has that topic | 4 |
+| learning | Exact event-topic match in enabled confirmed learning topics | 6 |
+| goal | Exact event-topic match in enabled mapped structured goals | 3 |
+| primary | Exact event-topic match in enabled selected primary goal mapping | 2 |
+| participation | Event format is known and exactly equals a selected format | 2 |
+| preferred_time | Morning: end ≤720; afternoon: start ≥720 and end ≤1020; evening: start ≥1020 | 2 |
+| free | Event admission cost is zero | 1 |
+
+All true conditions add once, including both goal and primary bonuses. Duplicate goals/tags never multiply a bonus. Goal IDs map as follows: `career→Career`, `practice/research→AI & education`, `people→Social`, `wellbeing→Wellbeing`; `discover/unsure/other→[]`. Goals and learning topics contribute only when their respective saved switch is enabled. Raw notes, major, unconfirmed learning and guidance add zero points; unknown/missing event participation adds zero. No metadata is inferred from titles.
+
+At every selection step, choose descending total score, then ascending numeric weekday, start minute, and ordinal event ID (no locale-dependent collation). Enforce pairwise travel-buffer compatibility with earlier suggestions before scoring. The selected saved count (1/3/5) is the default; a validated current-request limit (1–5) replaces it for that request. Old schedules without preferences retain the existing caller/default limit. The evaluation-only `contextual=false` baseline continues to score free admission only.
+
+Current topics are a strict candidate filter and replace saved topic defaults for the base/diversity components; enabled secondary goal/learning/participation/time bonuses remain available among eligible candidates. Current topics cannot bypass saved free-only/windows, busy blocks, travel buffer, cancelled/chosen records, eligibility, RSVP metadata, or explicit day/start/end/food/free/exclusion filters. Numeric budgets remain explicitly unsupported; the existing free-admission hard constraint is preserved.
+
 The fixtures now explicitly author a small participation-format field, including Unknown, for classroom demonstration. This is not inferred beginner suitability, real group size, cross-department eligibility or actual availability. Relevance never establishes permission to attend. Card learning claims refer only to exact confirmed broad topics, never to what a student actually learned in class. “No conflict with the commitments you entered” deliberately avoids claiming verified free time.
 
 ## Poster/demo walkthrough
