@@ -1,3 +1,4 @@
+import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fixtures from "./fixtures/preference-parity.json";
@@ -52,21 +53,24 @@ try {
     name: string,
     state: DemoState,
     constraints: Constraints = {},
+    message = "Find events",
   ) {
-    const expected = recommendWithReasons(state, constraints).map(
+    const interpreted = interpretRequest(message, constraints);
+    const expected = recommendWithReasons(state, interpreted.constraints).map(
       ({ event, score, matches }) => ({ event_id: event.id, score, matches }),
     );
     const response = await fetch(base + "/api/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: "Find events",
+        message,
         previous: constraints,
         state: schedulePayload(state),
       }),
     });
     assert.equal(response.status, 200, name);
     const actual = await response.json();
+    assert.deepEqual(actual.constraints, interpreted.constraints, name);
     assert.deepEqual(actual.matchReasons, expected, name);
     assert.deepEqual(
       actual.event_ids,
@@ -100,6 +104,18 @@ try {
       fixture.constraints as Constraints | undefined,
     );
   }
+  await compare(
+    "explicit weekly planning",
+    fresh(),
+    { mode: "discovery" },
+    "Build a weekly plan",
+  );
+  await compare(
+    "explicit discovery",
+    fresh(),
+    { mode: "plan-building" },
+    "Discover events",
+  );
   for (const goal of Object.keys(GOAL_TOPICS)) {
     const state = {
       ...fresh(),

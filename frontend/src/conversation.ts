@@ -4,7 +4,12 @@ import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
-import type { CampusEvent, Constraints, DemoState } from "./types.ts";
+import type {
+  CampusEvent,
+  Constraints,
+  DemoState,
+  RecommendationMode,
+} from "./types.ts";
 import { replacementConstraints, constraintSummary } from "./replanning.ts";
 
 export function createConversation(
@@ -61,7 +66,10 @@ export function createConversation(
           !matches.some((e) => e.id === id) &&
           !issue(event, {
             ...latest,
-            plan: [...latest.plan, ...matches.map((e) => e.id)],
+            plan:
+              plan.constraints.mode === "discovery"
+                ? latest.plan
+                : [...latest.plan, ...matches.map((e) => e.id)],
           })
         )
           matches.push(event);
@@ -76,6 +84,11 @@ export function createConversation(
         : matches.length
           ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each has no conflict with the commitments you entered${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : "I couldn’t find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
+      if (matches.length)
+        response +=
+          plan.constraints.mode === "discovery"
+            ? "\n\nDiscovery alternatives: these are not a combined plan. Overlapping options cannot both be attended."
+            : "\n\nPlan-building: these suggestions are mutually compatible with the selected travel buffer.";
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
         ...s,
@@ -95,6 +108,7 @@ export function createConversation(
             text: response,
             eventIds: matches.map((e) => e.id),
             settingsKey: preferenceSettingsKey(snapshot),
+            recommendationMode: plan.constraints.mode ?? "plan-building",
             matchReasons: plan.matchReasons.filter((r) =>
               matches.some((e) => e.id === r.event_id),
             ),
@@ -132,7 +146,12 @@ export function createConversation(
     remove(old.id);
     await run((snapshot) => {
       const constraints = replacementConstraints(snapshot.constraints, old);
-      return requestPlan("Find events", constraints, snapshot, fetcher);
+      return requestPlan(
+        "Find events",
+        { ...constraints, mode: "discovery" },
+        snapshot,
+        fetcher,
+      );
     }, old);
   }
 
@@ -140,12 +159,14 @@ export function createConversation(
     read: status.read,
     subscribe: status.subscribe,
     replace,
-    async refresh() {
+    async refresh(
+      mode: RecommendationMode = demo.read().constraints.mode ?? "discovery",
+    ) {
       if (status.read().busy) return;
       pending = undefined;
       sessionSkipped.clear();
       await run((snapshot) =>
-        requestPlan("Find events", {}, snapshot, fetcher),
+        requestPlan("Find events", { mode }, snapshot, fetcher),
       );
     },
     async another(id: string) {
@@ -155,7 +176,7 @@ export function createConversation(
       await run((snapshot) =>
         requestPlan(
           "Find events",
-          snapshot.constraints,
+          { mode: "discovery", ...snapshot.constraints },
           {
             ...snapshot,
             preferences: {
@@ -263,7 +284,7 @@ export function createConversation(
       await run((snapshot) =>
         requestPlan(
           resolvedText,
-          context ?? snapshot.constraints,
+          { mode: "discovery", ...(context ?? snapshot.constraints) },
           snapshot,
           fetcher,
         ),

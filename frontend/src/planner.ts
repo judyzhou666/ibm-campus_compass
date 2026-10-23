@@ -142,7 +142,9 @@ export function recommend(
       (constraints.limit || (state.preferences ? prefs.count : limit))
   ) {
     const feasible = candidates.filter(
-      (e) => !selected.some((x) => overlap(e, x, state.buffer)),
+      (e) =>
+        constraints.mode === "discovery" ||
+        !selected.some((x) => overlap(e, x, state.buffer)),
     );
     const score = (e: CampusEvent) =>
       contextual
@@ -196,4 +198,17 @@ function preferred(e: CampusEvent, state: Schedule) {
       : state.preferred_time === "evening"
         ? e.start >= 1020
         : false;
+}
+
+export function overlappingAlternatives(
+  event: CampusEvent,
+  ids: readonly string[],
+  state: Schedule,
+) {
+  return EVENTS.filter(
+    (other) =>
+      other.id !== event.id &&
+      ids.includes(other.id) &&
+      overlap(event, other, state.buffer),
+  ).map((other) => other.id);
 }

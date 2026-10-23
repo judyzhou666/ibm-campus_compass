@@ -108,8 +108,10 @@ export function EventCard({
   onDecline,
   onAnother,
   matchReasons,
+  alternativeIds,
 }: {
   event: CampusEvent;
+  alternativeIds?: string[];
   matchReasons?: import("./planner.ts").RecommendationMatch[];
   state: DemoState;
   onAdd: (id: string) => void;
@@ -164,7 +166,12 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
-        <RecommendationInfo event={e} state={state} matches={matchReasons} />
+        <RecommendationInfo
+          event={e}
+          state={state}
+          matches={matchReasons}
+          alternativeIds={alternativeIds}
+        />
         {onDecline && !inPlan && (
           <>
             <Button onClick={() => onDecline(e.id)}>Not for me</Button>

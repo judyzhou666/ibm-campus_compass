@@ -47,7 +47,10 @@ impl Interpreter for SimulatedInterpreter {
             found
         };
         if matches(r"\b(reset|start over)\b", &q) {
-            c = Constraints::default();
+            c = Constraints {
+                mode: c.mode,
+                ..Constraints::default()
+            };
         }
         if matches(r"\b(reset|start over|any time|any day)\b", &q) {
             c.days = None;
@@ -64,6 +67,14 @@ impl Interpreter for SimulatedInterpreter {
             "art|arts|culture|cultural|film|museum|creative|sketch|ceramics",
             "wellbeing|wellness|relax|mindful|movement|quiet|balance",
         ];
+        if matches(
+            r"\bweekly plan\b|\b(plan|build|create|make)\b.*\b(week|weekly|schedule)\b",
+            &q,
+        ) {
+            c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
+        } else if matches(r"\b(discover|browse)\b|\bshow\b.*\balternatives\b", &q) {
+            c.mode = Some(crate::model::RecommendationMode::Discovery);
+        }
         let mut topics = Vec::new();
         let mut excluded = Vec::new();
         for (topic, words) in TOPICS.iter().zip(keywords) {

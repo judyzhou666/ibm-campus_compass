@@ -8,6 +8,7 @@ export function validateConstraints(
     throw new Error("Invalid constraints");
   const c = value as Record<string, unknown>;
   const fields = [
+    "mode",
     "explore",
     "topics",
     "excluded",
@@ -20,6 +21,12 @@ export function validateConstraints(
   ];
   if (Object.keys(c).some((key) => !fields.includes(key)))
     throw new Error("Unknown constraint field");
+  if (
+    c.mode !== undefined &&
+    (typeof c.mode !== "string" ||
+      !["discovery", "plan-building"].includes(c.mode))
+  )
+    throw new Error("Invalid recommendation mode");
   const integer = (n: unknown, min: number, max: number) =>
     typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
   if (
@@ -104,7 +111,8 @@ export function interpretRequest(
     return found;
   };
   let c = { ...previous };
-  if (test(/\b(reset|start over)\b/)) c = {};
+  if (test(/\b(reset|start over)\b/))
+    c = previous.mode ? { mode: previous.mode } : {};
   if (test(/\b(reset|start over|any time|any day)\b/)) {
     delete c.days;
     delete c.after;
@@ -113,6 +121,14 @@ export function interpretRequest(
     delete c.free;
     delete c.excluded;
   }
+  if (
+    test(
+      /\bweekly plan\b|\b(plan|build|create|make)\b.*\b(week|weekly|schedule)\b/,
+    )
+  )
+    c.mode = "plan-building";
+  else if (test(/\b(discover|browse)\b|\bshow\b.*\balternatives\b/))
+    c.mode = "discovery";
   const topics = Object.entries(keywords)
     .filter(([k, re]) => test(re))
     .map(([k]) => k);

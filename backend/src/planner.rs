@@ -230,17 +230,18 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
             .iter()
             .enumerate()
             .filter(|(_, event)| {
-                selected.iter().all(|other| {
-                    !overlap(
-                        event.day,
-                        event.start,
-                        event.end,
-                        other.day,
-                        other.start,
-                        other.end,
-                        state.buffer,
-                    )
-                })
+                c.mode == Some(crate::model::RecommendationMode::Discovery)
+                    || selected.iter().all(|other| {
+                        !overlap(
+                            event.day,
+                            event.start,
+                            event.end,
+                            other.day,
+                            other.start,
+                            other.end,
+                            state.buffer,
+                        )
+                    })
             })
             .max_by_key(|(index, e)| {
                 (
@@ -567,5 +568,42 @@ mod preference_parity_tests {
             recommend(&Schedule::default(), &Constraints::default(), &events).len(),
             3
         );
+    }
+}
+
+#[cfg(test)]
+mod mode_tests {
+    use super::*;
+    use crate::model::RecommendationMode;
+    #[test]
+    fn discovery_allows_alternatives_but_both_modes_respect_chosen_commitments() {
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let mut state = Schedule::default();
+        let mut c = Constraints {
+            days: Some(vec![1]),
+            after: Some(900),
+            before: Some(1020),
+            limit: Some(5),
+            mode: Some(RecommendationMode::Discovery),
+            ..Default::default()
+        };
+        let found = recommend(&state, &c, &events);
+        assert!(found.iter().any(|e| e.id == "e1") && found.iter().any(|e| e.id == "e17"));
+        c.mode = Some(RecommendationMode::PlanBuilding);
+        let plan = recommend(&state, &c, &events);
+        assert!(!(plan.iter().any(|e| e.id == "e1") && plan.iter().any(|e| e.id == "e17")));
+        for mode in [
+            RecommendationMode::Discovery,
+            RecommendationMode::PlanBuilding,
+        ] {
+            c.mode = Some(mode);
+            state.plan = vec!["e1".into()];
+            assert!(
+                recommend(&state, &c, &events)
+                    .iter()
+                    .all(|e| e.id != "e1" && e.id != "e17")
+            );
+        }
     }
 }

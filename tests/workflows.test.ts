@@ -260,7 +260,11 @@ test("replacement preserves every filter and asks the student before changing th
   }));
   await conversation.chat("find a replacement");
   assert.equal(bodies.length, 1);
-  assert.deepEqual(bodies[0].previous, { ...previous, limit: 1 });
+  assert.deepEqual(bodies[0].previous, {
+    ...previous,
+    limit: 1,
+    mode: "discovery",
+  });
   assert.deepEqual(demo.read().plan, ["e2"]);
   assert.deepEqual(demo.read().rsvps, []);
   assert.deepEqual(demo.read().draft, []);

@@ -1,3 +1,4 @@
+import { EVENTS } from "./data.ts";
 import {
   activeTopics,
   GUIDANCE,
@@ -11,9 +12,11 @@ import type { CampusEvent, DemoState } from "./types.ts";
 export function UsingPreferences({
   state,
   onEdit,
+  mode = "discovery",
 }: {
   state: DemoState;
   onEdit: () => void;
+  mode?: import("./types.ts").RecommendationMode;
 }) {
   const p = wirePreferences(state);
   return (
@@ -34,6 +37,11 @@ export function UsingPreferences({
         . {p.free_only ? "Free admission only. " : ""}
         {p.windows.length ? `${p.windows.length} available-only windows. ` : ""}
         Entered commitments and {state.buffer}-minute travel buffer apply.
+      </p>
+      <p className="fineprint">
+        {mode === "discovery"
+          ? "Discovery alternatives may overlap; overlapping choices cannot both be attended."
+          : "Plan-building keeps suggestions mutually compatible."}
       </p>
       <button className="btn" type="button" onClick={onEdit}>
         Edit preferences
@@ -113,11 +121,13 @@ export function RecommendationInfo({
   state,
   matches,
   previousSettings = false,
+  alternativeIds = [],
 }: {
   event: CampusEvent;
   state: DemoState;
   matches?: RecommendationMatch[];
   previousSettings?: boolean;
+  alternativeIds?: string[];
 }) {
   const problem = issue(event, state),
     guidance = wirePreferences(state).guidance;
@@ -134,6 +144,16 @@ export function RecommendationInfo({
     .slice(0, limit);
   return (
     <div className="recommendation-info">
+      {alternativeIds.length > 0 && (
+        <p className="notice alternative-warning">
+          Alternative to{" "}
+          {alternativeIds
+            .map((id) => EVENTS.find((e) => e.id === id)?.title || id)
+            .join(" / ")}
+          : these options overlap or leave insufficient travel time and cannot
+          both fit your schedule.
+        </p>
+      )}
       <div className="reason">
         <strong>
           {previousSettings ? "Why it was suggested" : "Why this fits"}

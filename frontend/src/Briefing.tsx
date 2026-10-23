@@ -14,7 +14,7 @@ import {
   UsingPreferences,
   RecommendationInfo,
 } from "./RecommendationPresentation.tsx";
-import { issue } from "./planner.ts";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import { Button } from "./components.tsx";
 import type { DemoState } from "./types.ts";
 export function Welcome({
@@ -143,6 +143,11 @@ export function Briefing({
             <RecommendationInfo
               event={EVENTS.find((e) => e.id === id)!}
               state={state}
+              alternativeIds={overlappingAlternatives(
+                EVENTS.find((e) => e.id === id)!,
+                [...result.ids, ...cross.ids],
+                state,
+              )}
               matches={matches.find((r) => r.event_id === id)?.matches}
             />
           )}

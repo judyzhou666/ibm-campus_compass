@@ -9,7 +9,11 @@ export function useRecommendations(
   state: DemoState,
   constraints: Constraints = {},
 ) {
-  const key = planningKey(state) + JSON.stringify(constraints);
+  const requestConstraints: Constraints = {
+    ...constraints,
+    mode: constraints.mode ?? "discovery",
+  };
+  const key = planningKey(state) + JSON.stringify(requestConstraints);
   const [result, setResult] = useState<{
     key: string;
     ids: string[];
@@ -19,7 +23,7 @@ export function useRecommendations(
   } | null>(null);
   useEffect(() => {
     let active = true;
-    void requestPlan("Find events", constraints, state)
+    void requestPlan("Find events", requestConstraints, state)
       .then((r) => {
         if (active)
           setResult({

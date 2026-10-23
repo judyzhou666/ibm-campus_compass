@@ -66,7 +66,9 @@ export interface Schedule {
   preferred_time?: string;
   preferences?: Preferences;
 }
+export type RecommendationMode = "discovery" | "plan-building";
 export interface Constraints {
+  mode?: RecommendationMode;
   topics?: string[];
   excluded?: string[];
   days?: number[];
@@ -88,6 +90,7 @@ export interface Message {
   eventIds?: string[];
   evidence?: RecommendationEvidence[];
   settingsKey?: string;
+  recommendationMode?: RecommendationMode;
   matchReasons?: RecommendationMatchResult[];
 }
 export interface Post {

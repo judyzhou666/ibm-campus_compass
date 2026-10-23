@@ -23,7 +23,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { EVENTS, when } from "./data.ts";
-import { issue } from "./planner.ts";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import { createEnrollment, type EnrollmentOutcome } from "./enrollment.ts";
 import { createConversation } from "./conversation.ts";
 import { createStore, fresh, restore, STORAGE_KEY } from "./state.ts";
@@ -314,6 +314,11 @@ export default function App() {
         <EventCard
           key={e.id}
           event={e}
+          alternativeIds={
+            page === "dashboard"
+              ? overlappingAlternatives(e, recommendationResult.ids, state)
+              : []
+          }
           matchReasons={
             page === "dashboard"
               ? recommendationResult.matchReasons.find(
@@ -741,7 +746,35 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
-              <UsingPreferences state={state} onEdit={() => nav("profile")} />
+              <UsingPreferences
+                state={state}
+                onEdit={() => nav("profile")}
+                mode={state.constraints.mode ?? "discovery"}
+              />
+              <div className="row">
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void chat("Find events", {
+                      ...demo.read().constraints,
+                      mode: "discovery",
+                    })
+                  }
+                >
+                  Discover alternatives
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void chat("Build a weekly plan", {
+                      ...demo.read().constraints,
+                      mode: "plan-building",
+                    })
+                  }
+                >
+                  Build weekly plan
+                </Button>
+              </div>
               {proposal && (
                 <PreferenceProposal
                   topics={proposal.topics}
@@ -917,7 +950,9 @@ export default function App() {
                                   disabled={busy}
                                   onClick={() => {
                                     setProposal(null);
-                                    void conversation.refresh();
+                                    void conversation.refresh(
+                                      m.recommendationMode,
+                                    );
                                   }}
                                 >
                                   Refresh suggestions
@@ -930,6 +965,7 @@ export default function App() {
                               evidence={m.evidence}
                               matchReasons={m.matchReasons}
                               previousSettings={m.settingsKey !== settingsKey}
+                              recommendationMode={m.recommendationMode}
                               state={state}
                               onDecline={(id) => {
                                 update((s) => ({
@@ -1024,7 +1060,11 @@ export default function App() {
                   <aside className="stack">
                     <section className="panel">
                       <div className="section-bar">
-                        <h2>Your draft plan</h2>
+                        <h2>
+                          {state.constraints.mode === "discovery"
+                            ? "Your alternatives"
+                            : "Your draft plan"}
+                        </h2>
                         <span className="tag">
                           {draft.length} {draft.length === 1 ? "idea" : "ideas"}
                         </span>
@@ -1046,6 +1086,15 @@ export default function App() {
                             <RecommendationInfo
                               event={e!}
                               state={state}
+                              alternativeIds={
+                                state.constraints.mode === "discovery"
+                                  ? overlappingAlternatives(
+                                      e!,
+                                      state.draft,
+                                      state,
+                                    )
+                                  : []
+                              }
                               matches={
                                 [...state.messages]
                                   .reverse()

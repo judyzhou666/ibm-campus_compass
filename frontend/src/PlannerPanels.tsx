@@ -4,7 +4,7 @@ import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
-import { issue } from "./planner.ts";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
 export function ChatEvents({
@@ -15,12 +15,14 @@ export function ChatEvents({
   evidence = [],
   matchReasons = [],
   previousSettings = false,
+  recommendationMode = "plan-building",
   onDecline,
   onAnother,
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
   matchReasons?: import("./types.ts").RecommendationMatchResult[];
   previousSettings?: boolean;
+  recommendationMode?: import("./types.ts").RecommendationMode;
   onDecline?: (id: string) => void;
   onAnother?: (id: string) => void;
   ids: string[];
@@ -84,6 +86,11 @@ export function ChatEvents({
               state={state}
               matches={matchReasons.find((r) => r.event_id === id)?.matches}
               previousSettings={previousSettings}
+              alternativeIds={
+                recommendationMode === "discovery"
+                  ? overlappingAlternatives(event, ids, state)
+                  : []
+              }
             />
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">

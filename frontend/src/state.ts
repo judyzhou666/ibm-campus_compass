@@ -114,6 +114,11 @@ export function restore(): DemoState {
             .map((m: DemoState["messages"][number]) => ({
               role: m.role,
               text: m.text,
+              ...(["discovery", "plan-building"].includes(
+                m.recommendationMode || "",
+              )
+                ? { recommendationMode: m.recommendationMode }
+                : {}),
               ...(Array.isArray(m.eventIds)
                 ? { eventIds: ids(m.eventIds) }
                 : {}),

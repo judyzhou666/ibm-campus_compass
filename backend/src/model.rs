@@ -86,9 +86,18 @@ pub struct Schedule {
     pub preferences: Option<PreferenceInput>,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum RecommendationMode {
+    Discovery,
+    PlanBuilding,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, Default, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct Constraints {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mode: Option<RecommendationMode>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub topics: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]

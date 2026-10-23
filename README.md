@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Discovery alternatives and compatible plans
+
+The optional shared selection mode is now `discovery` or `plan-building`; omitted mode preserves the old compatible-plan behavior. Dashboard/briefing and ordinary Planner discovery can show mutually overlapping alternatives, clearly labelled by conflicting event title. Build weekly plan keeps suggestions mutually compatible; Discover alternatives switches modes without dropping filters. Both modes still respect commitments, existing plans, eligibility and hard constraints. Adding one alternative rechecks the current schedule and RSVP, so a conflicting partner cannot also be added. Historical chat retains its selection mode.
+
+Verification: 13 Rust tests, fmt/Clippy/build, frontend build/type checking, 70 focused overlap/API/workflow/presentation tests, 22 shared comparisons and a mobile browser mode-switch check passed. The two planners agree on overlapping discovery versus compatible plan selection. All application callers were reviewed; no caller work remains. No push, merge, deployment, LLM or Python backend was introduced.
+
 ## Preferences across Dashboard, briefing and Planner
 
 All recommendation surfaces now use the shared request path and show “Using your preferences” with Edit preferences. Cards, briefing, chat and draft suggestions render grounded matching explanations and selected guidance depth. Optional decision/preparation guidance is distinguished from the fictional catalog’s recorded requirements; no real registration workflow or missing event facts are invented.
