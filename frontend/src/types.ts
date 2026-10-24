@@ -77,6 +77,8 @@ export interface DemoState extends Schedule {
 export interface PlanResponse {
   mode: "simulated";
   understood: boolean;
+  clarification?: string | null;
+  diagnostic?: string | null;
   provider: string;
   constraints: Constraints;
   event_ids: string[];
@@ -94,4 +96,6 @@ export interface RecommendationEvidence {
   schedule_fit: string;
   practical: string;
   trade_offs: string;
+  comparison?: string;
+  discovery_context?: string;
 }

@@ -36,3 +36,16 @@ Official starting point for the Bob distinction: https://bob.ibm.com/docs/ide
 - Model or network failure falls back with a visible mode label.
 - User edits during generation are validated against the newest schedule before adding.
 - No secret appears in client source, requests to the browser, or logs.
+
+## Minimal safe adapter plan after the deterministic evaluation
+
+The smallest boundary remains Rust `Interpreter::interpret`: validated prior constraints and a bounded message in; structured `constraints`, `understood` and optional `clarification` out. Recognition alone never authorizes event selection. Rust matching/evidence and add-time validation remain downstream and authoritative. Do not move backend logic into Python or call IBM from the browser.
+
+1. Verify the actual IBM region/HTTPS endpoint, project/deployment, allowed model and authentication contract using current official documentation and account settings. Supply credentials only through server-side environment/secret settings. Do not paste values in chat or commit them. IAM token acquisition/refresh belongs to the Rust server; redact authorization headers, prompts containing personal data, token responses and secrets from logs.
+2. Send only the current bounded synthetic message and necessary structured prior constraints. Do not send names, RSVP names, posts, browser history or the full profile. Include only the allowed topic/time/cost/food schema, not fabricated event IDs.
+3. Deserialize with Serde `deny_unknown_fields`, validate ranges/enums and maximum output size, and reject model-selected IDs, unsupported fields, impossible times and contradictory instructions. Clarify missing AM/PM, location or unsupported filters; never silently guess eligibility.
+4. Use an explicit network timeout (within the client request budget), bounded retries for retryable errors only, and typed distinctions for authentication, service/network timeout and malformed output. Test each with controlled fake responses before any authorized live smoke test. Fail closed on authorization/validation errors.
+5. On timeout/service failure offer a clearly labelled deterministic simulation. Never label a fallback as watsonx-generated. Expose actual provider/mode and preserve consent and latest-schedule validation across asynchronous replies. A future live provider needs a deliberate API mode change; current code rejects live mode.
+6. Run `npm run evaluate` as the frozen deterministic comparison, then run live-model cases separately with model/version, parameters, latency, token/cost measurements and failures. Add unseen held-out language and human explanation ratings before making AI-value claims. Current model-dependent results are **Not yet evaluated**.
+
+This is an implementation plan, not evidence of a working IBM connection. IBM Bob development evidence remains separate: record real team prompts, reviews and tests only after that work occurs.

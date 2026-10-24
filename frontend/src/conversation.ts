@@ -1,3 +1,4 @@
+import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
@@ -12,8 +13,10 @@ export function createConversation(
 ) {
   const status = createStore({ busy: false, mode: "Simulated planner" });
   let version = 0;
+  let pending: PlanningClarification | undefined;
   function invalidate() {
     version++;
+    pending = undefined;
     status.update((s) => ({ ...s, busy: false }));
   }
   function assistant(text: string) {
@@ -44,6 +47,7 @@ export function createConversation(
     try {
       const plan = await task(snapshot);
       if (stale()) return;
+      pending = undefined;
       const matches: CampusEvent[] = [];
       for (const id of plan.ids) {
         const event = EVENTS.find((e) => e.id === id);
@@ -68,7 +72,7 @@ export function createConversation(
         ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${retained}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and it fits your schedule. ${alternative.rsvp}. It’s a suggestion only. Add it if it works for you.` : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`}`
         : matches.length
           ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-          : "I couldn’t find a verified, conflict-free match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
+          : "I couldn’t find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
         ...s,
@@ -94,12 +98,14 @@ export function createConversation(
         ],
       }));
     } catch (error) {
-      if (!stale())
+      if (!stale()) {
+        pending = error instanceof PlanningClarification ? error : undefined;
         assistant(
           error instanceof Error
             ? error.message
             : "The planner could not finish. Try again.",
         );
+      }
     } finally {
       if (token === version) status.update((s) => ({ ...s, busy: false }));
     }
@@ -115,6 +121,7 @@ export function createConversation(
       assistant("There are no cancelled events in your plan.");
       return;
     }
+    pending = undefined;
     remove(old.id);
     await run((snapshot) => {
       const constraints = replacementConstraints(snapshot.constraints, old);
@@ -137,6 +144,86 @@ export function createConversation(
     async chat(text: string, previous?: Constraints) {
       if (status.read().busy || !text.trim()) return;
       text = text.trim();
+      if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
+        pending = undefined;
+      let resolvedText = text;
+      let context = pending?.constraints;
+      if (
+        pending &&
+        !(
+          pending.clocks.length === 1 &&
+          !pending.restatement &&
+          /^(am|pm)[.!]?$/i.test(text)
+        )
+      ) {
+        try {
+          const reply = interpretRequest(text, {});
+          const bounds = pending.clocks.map((clock) =>
+            clock.startsWith("after")
+              ? ("after" as const)
+              : ("before" as const),
+          );
+          if (
+            reply.clarification ||
+            !reply.understood ||
+            bounds.some((bound) => reply.constraints[bound] === undefined) ||
+            (pending.restatement &&
+              (!reply.constraints.topics?.length ||
+                !reply.constraints.days?.length))
+          ) {
+            const clocks = [...pending.clocks];
+            for (const match of text.matchAll(
+              /\b(after|before)\s+\d+(?::\d+)?\s*(?:am|pm)?\b/gi,
+            )) {
+              const bound = match[1].toLowerCase() as "after" | "before";
+              if (!clocks.some((clock) => clock.startsWith(bound)))
+                clocks.push(match[0].toLowerCase());
+            }
+            const constraints = {
+              ...pending.constraints,
+              ...reply.constraints,
+            };
+            for (const clock of reply.clocks || [])
+              delete constraints[
+                clock.startsWith("after") ? "after" : "before"
+              ];
+            const restatement = pending.restatement || reply.restatement;
+            if (restatement) delete constraints.days;
+            pending = new PlanningClarification(
+              pending.message,
+              constraints,
+              clocks,
+              restatement,
+            );
+            demo.update((s) => ({
+              ...s,
+              messages: [...s.messages, { role: "user", text }],
+            }));
+            assistant(
+              "Please restate the complete request with the topic, weekdays you CAN attend, and AM/PM for every time. No suggestions will be generated until every requirement is resolved.",
+            );
+            return;
+          }
+          if (pending.restatement) context = {};
+        } catch (error) {
+          assistant(
+            error instanceof Error
+              ? error.message
+              : "Please restate the complete request.",
+          );
+          return;
+        }
+      }
+      if (pending && /^(am|pm)[.!]?$/i.test(text)) {
+        if (pending.clocks.length !== 1) {
+          assistant(
+            "Please restate the complete request with AM/PM for each time.",
+          );
+          return;
+        }
+        resolvedText = `${pending.clocks[0]} ${text.replace(/[.!]/g, "")}`;
+      }
+
       if (
         /\b(cancelled|canceled|replacement|replan|re-plan)\b/i.test(text) &&
         demo.read().cancelled.some((id) => demo.read().plan.includes(id))
@@ -148,7 +235,12 @@ export function createConversation(
         messages: [...s.messages, { role: "user", text }],
       }));
       await run((snapshot) =>
-        requestPlan(text, snapshot.constraints, snapshot, fetcher),
+        requestPlan(
+          resolvedText,
+          context ?? snapshot.constraints,
+          snapshot,
+          fetcher,
+        ),
       );
     },
   };

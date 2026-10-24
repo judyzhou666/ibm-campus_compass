@@ -1859,3 +1859,7 @@ dialog .source {
 .search:focus-within,.composer:focus-within { outline:3px solid #57a77a; outline-offset:3px; }
 dialog { max-height:90dvh; overflow-y:auto; }
 @media(max-width:700px) { .briefing-grid { grid-template-columns:minmax(0,1fr); } .row { flex-wrap:wrap; } .text-btn { white-space:normal; text-align:left; } }
+.demo-launcher { margin-bottom:20px; }
+.demo-launcher ol { padding-left:20px; line-height:1.7; }
+.review-record { border-top:1px solid #e1e7de; padding:12px 0; overflow-wrap:anywhere; }
+.demo-launcher .row { display:flex; flex-wrap:wrap; gap:8px; }

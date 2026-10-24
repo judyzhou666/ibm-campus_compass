@@ -16,6 +16,8 @@ pub struct Event {
     pub start: u16,
     pub end: u16,
     pub topic: String,
+    #[serde(default)]
+    pub category: String,
     pub food: String,
     pub cost: u16,
     pub access: String,

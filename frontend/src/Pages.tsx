@@ -1,3 +1,4 @@
+import { dayLabel } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
@@ -177,7 +178,7 @@ export function Profile({ state, update, notify }: Props) {
               <select name="day">
                 {DAYS.map((d, i) => (
                   <option key={d} value={i}>
-                    {d}, Oct {19 + i}
+                    {d}, {dayLabel(i)}
                   </option>
                 ))}
               </select>

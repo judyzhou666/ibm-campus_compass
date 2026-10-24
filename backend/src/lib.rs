@@ -15,6 +15,10 @@ use serde_json::{Value, json};
 use std::{path::PathBuf, sync::Arc};
 use tower_http::services::ServeDir;
 
+pub fn demo_config() -> Value {
+    serde_json::from_str(include_str!("../../data/demo.json")).expect("demo configuration")
+}
+
 type ApiError = (StatusCode, Json<Value>);
 fn bad_request(message: &str) -> ApiError {
     (StatusCode::BAD_REQUEST, Json(json!({"error":message})))
@@ -51,18 +55,30 @@ async fn plan(
     let constraints = interpretation.constraints;
     // This validation is also required for any future watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let selected = if interpretation.understood {
+    let selected = if interpretation.understood && interpretation.clarification.is_none() {
         planner::recommend(&request.state, &constraints, &events)
     } else {
         Vec::new()
     };
     let evidence: Vec<_> = selected
         .iter()
-        .map(|e| planner::evidence(e, &request.state, &constraints))
+        .map(|e| planner::evidence(e, &request.state, &constraints, &events))
         .collect();
     let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
+    let diagnostic = if interpretation.understood
+        && interpretation.clarification.is_none()
+        && selected.is_empty()
+    {
+        Some(planner::no_match_reason(
+            &request.state,
+            &constraints,
+            &events,
+        ))
+    } else {
+        None
+    };
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "event_ids":ids, "recommendations":evidence}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "clarification":interpretation.clarification, "event_ids":ids, "recommendations":evidence, "diagnostic":diagnostic}),
     ))
 }
 
@@ -128,6 +144,7 @@ pub fn app() -> Router {
         .expect("valid embedded demo events");
     Router::new()
         .route("/api/health",get(|| async { Json(json!({"status":"ok","mode":"simulated","provider":"rust-rules","watsonx_connected":false})) }))
+        .route("/api/config",get(|| async { Json(demo_config()) }))
         .route("/api/plan",post(plan))
         .route("/api/validate",post(validate))
         .route("/api/enroll",post(enroll))

@@ -17,6 +17,7 @@ pub struct SimulatedInterpreter;
 pub struct Interpretation {
     pub constraints: Constraints,
     pub understood: bool,
+    pub clarification: Option<String>,
 }
 
 fn matches(pattern: &str, text: &str) -> bool {
@@ -28,6 +29,17 @@ fn matches(pattern: &str, text: &str) -> bool {
 impl Interpreter for SimulatedInterpreter {
     async fn interpret(&self, message: &str, mut c: Constraints) -> Interpretation {
         let q = message.to_lowercase();
+        let budget_text =
+            Regex::new(r"\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b")
+                .unwrap()
+                .replace_all(&q, "");
+        if self::matches(
+            r"\$|\b(?:under|less than|at most|up to|no more than|budget(?: of)?)\s*-?\d|\b\d+(?:\.\d+)?\s*(?:dollars?|usd|euros?)\b",
+            &budget_text,
+        ) {
+            return Interpretation { constraints: c, understood: true, clarification: Some("Numeric budgets are not supported. Please restate your complete request with ‘free admission’ if required, or omit the budget. No budget-filtered plan was generated.".into()) };
+        }
+
         let mut understood = matches(r"\b(plan|events?|week|options|choices)\b", &q);
         let mut matches = |pattern: &str, text: &str| {
             let found = matches(pattern, text);
@@ -158,9 +170,46 @@ impl Interpreter for SimulatedInterpreter {
             understood = true;
             c.limit = Some(m[1].parse().unwrap());
         }
+        let clock_pattern =
+            Regex::new(r"\b(after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b").unwrap();
+        let ambiguous: Vec<_> = clock_pattern
+            .captures_iter(&q)
+            .filter(|m| {
+                m.get(4).is_none() && m[2].parse::<u16>().is_ok_and(|h| (1..=12).contains(&h))
+            })
+            .collect();
+        let ambiguous_clock = !ambiguous.is_empty();
+        for m in ambiguous {
+            let bound = if &m[1] == "after" {
+                &mut c.after
+            } else {
+                &mut c.before
+            };
+            if bound.is_some_and(|t| t <= 1440) {
+                *bound = None;
+            }
+        }
+        let restatement = self::matches(
+            r"\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b",
+            &q,
+        );
+        if restatement {
+            c.days = None;
+        }
+        let clarification = if restatement {
+            Some("Please restate your complete request with the topic, weekdays you CAN attend, and AM/PM for every time. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported.".into())
+        } else if ambiguous_clock {
+            Some(
+                "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
+                    .into(),
+            )
+        } else {
+            None
+        };
         Interpretation {
             constraints: c,
             understood,
+            clarification,
         }
     }
 }
