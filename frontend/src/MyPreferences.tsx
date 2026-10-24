@@ -275,6 +275,15 @@ export function MyPreferences({
       "Setup skipped. Your existing preferences are unchanged; open My Preferences anytime.",
     );
   }
+  const sections = (
+    <>
+      <DirectionSection editor={editor} brief={brief} />
+      {!brief && <LearningSection editor={editor} />}
+      <ParticipationSection editor={editor} brief={brief} />
+      {!brief && <PracticalSection editor={editor} />}
+      {!brief && <ControlsSection editor={editor} />}
+    </>
+  );
   const content = (
     <>
       <Heading
@@ -356,11 +365,7 @@ export function MyPreferences({
             );
           }}
         >
-          <DirectionSection editor={editor} brief={brief} />
-          {!brief && <LearningSection editor={editor} />}
-          <ParticipationSection editor={editor} brief={brief} />
-          {!brief && <PracticalSection editor={editor} />}
-          {!brief && <ControlsSection editor={editor} />}
+          {brief ? <div className="quick-setup-fields">{sections}</div> : sections}
           {conflicts.length > 0 && (
             <div
               className="notice"
@@ -493,6 +498,7 @@ export function MyPreferences({
   );
   return brief ? (
     <dialog
+      className="quick-preference-dialog"
       ref={dialogRef}
       aria-label="Quick preference setup"
       aria-describedby="quick-setup-help"

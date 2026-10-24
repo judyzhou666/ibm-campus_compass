@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## First-time setup popup — October 23, 2026
+
+The first-visit **Quick preference setup** popup now uses the browser's proportions instead of the shared 530px dialog width: 92% of the viewport width (up to 1440px) and 88% of its height on desktop. Direction/interests and participation/guidance appear side by side. Only the questions scroll; the early Skip action and bottom Save/open-full-preferences actions stay visible. Below 760px the questions stack, with 12px clearance around the popup. Existing selection, draft, Save and Skip behavior is retained.
+
+This adjustment is scoped to the first-time dialog in `frontend/src/MyPreferences.tsx` and its `.quick-preference-dialog` CSS. The full **My Preferences** page (`#profile`), other dialogs, recommendation logic and Rust backend are unchanged. To inspect setup without resetting an existing demo session, use a fresh browser profile/private window with the normal local run instructions below.
+
+Verified for this layout change: `npm run build`, `npm test` (127 TypeScript tests, 5 Wiki tests and planner assertions), and `git diff --check`. Browser inspection at 1280×900 and 390×844 confirmed the two-column/single-column layouts, no horizontal dialog overflow, and visible footer actions; changing and saving a setup choice persisted into the full preferences page. The full browser regression matrix was not rerun. The separate PR #5 behavioral review findings remain unresolved by this layout-only change.
+
 ## Doris branch integration
 
 Integrated the remote clarification-context fix while preserving the preference features and draft-entry repairs. Fresh merge verification passed: frontend build/type checking, planner assertions, 127 TypeScript tests, 5 Wiki tests, and Rust API integration. No new browser journey or Rust unit/Clippy run was performed for this merge. Run with the existing build/start instructions below; multi-part clarification must retain every unresolved requirement before returning suggestions. Existing fictional-demo and integration limitations remain unchanged.
