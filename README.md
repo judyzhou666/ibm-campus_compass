@@ -2,6 +2,10 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Doris branch integration
+
+Integrated the remote clarification-context fix while preserving the preference features and draft-entry repairs. Fresh merge verification passed: frontend build/type checking, planner assertions, 127 TypeScript tests, 5 Wiki tests, and Rust API integration. No new browser journey or Rust unit/Clippy run was performed for this merge. Run with the existing build/start instructions below; multi-part clarification must retain every unresolved requirement before returning suggestions. Existing fictional-demo and integration limitations remain unchanged.
+
 ## Draft-entry and navigation repairs
 
 Unadded busy commitments and availability windows now count as unsaved edits. Save rejects incomplete entries with an accessible message and focuses the relevant field; Add stages an entry, Clear entry discards it, and Cancel resets both staged controls and the preference draft. Navigation warns before losing typed entries. The brand link prevents duplicate default navigation, so declining produces one discard prompt; modified clicks retain normal browser link behavior. The API integration expectation now includes the intentional discovery mode.
@@ -175,6 +179,14 @@ The implementation keeps React/TypeScript and Rust/Axum/Tokio/Serde, with no Pyt
 Run from the repository root: `npm ci`, `npm run build`, `cargo run --locked`; optionally `npm run dev` alongside Rust. Open My Preferences to test Save/Cancel, confirmed learning, disabled topics, guidance/count and narrow practical constraints. See [design, theory rationale and data flow](docs/preferences-design.md) for SDT/BPNT mapping and the five-step poster walkthrough. These are design hypotheses, not proven theory outcomes or a validated psychological scale.
 
 Historical verification: planner/catalog assertions, 84 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust tests and API integration passed. Chromium exercised the preferences flows at 1280px online and 390px with the API unavailable, including Save/Cancel/reload, consent, temporary searches, RSVP approval, hard constraints and note-payload exclusion. The existing guided demo journey also passed at both widths. The 20-scenario evaluation retains its metrics; raw evidence was refreshed for the new metadata and wording. Personalized behavior is covered separately by the new tests. No live watsonx or real enrollment was tested.
+
+## PR #4 final clarification review — October 22, 2026
+
+Verified Doris’s multi-part clarification revision, then fixed one remaining partial-reply merge gap. Pending context now keeps every newly introduced clock bound, including ambiguous ones, carries forward safe topic changes, and promotes newly introduced weekday/location ambiguity to a full-restatement requirement. Unsupported day conditions never become a positive day filter. Partial answers generate no suggestions or calendar/RSVP changes until all pending requirements are resolved.
+
+The fix is in `frontend/src/conversation.ts`. Shared `tests/clarification-fixtures.ts` cases run through workflow tests and the real Rust integration suite, online and offline. Examples include “career on Thursday after 3” → “before 5” → “PM”, and the same original request → “not Thursday after 3 PM” → “PM”: both remain blocked until a complete supported answer. A partial reply changing Career to Social also retains that topic change.
+
+Validation: planner assertions, 83 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust formatting/Clippy/build, 6 Rust tests, real API integration and unchanged frozen evaluation results all pass. The independent targeted review found no further blockers. No visual interface or browser journey changes were made in this follow-up. Run the usual commands in `docs/backend.md`; use AI Planner to reproduce the sequences above, then supply a complete supported request or choose New chat.
 
 ## PR #4 multi-part clarification fixes — October 22, 2026
 
