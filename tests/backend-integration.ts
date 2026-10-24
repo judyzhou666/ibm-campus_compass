@@ -1,3 +1,4 @@
+import { discoveryState } from "../frontend/src/discovery.ts";
 import { evolvingClarifications } from "./clarification-fixtures.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
@@ -53,9 +54,60 @@ async function post(path: string, body: unknown) {
   });
 }
 try {
+  for (const offline of [false, true]) {
+    const fetcher: typeof fetch = async (path, options) => {
+      if (offline) throw Error("offline");
+      return fetch(base + String(path), options);
+    };
+    const academic = await (
+      await import("../frontend/src/api.ts")
+    ).requestPlan(
+      "Find events",
+      { mode: "discovery" },
+      discoveryState(fresh(), [], "Academic"),
+      fetcher,
+    );
+    assert.deepEqual(academic.ids.slice().sort(), ["e1", "e14", "e26"].sort());
+    const demo = createStore(fresh());
+    const conversation = createConversation(demo, () => {}, fetcher);
+    await conversation.chat("AI events on Tuesday after 1 PM");
+    assert.ok(demo.read().draft.includes("e1"));
+    await conversation.another("e1");
+    await conversation.chat("after 2 PM");
+    assert.ok(!demo.read().draft.includes("e1"));
+    assert.deepEqual(demo.read().preferences!.dismissed, []);
+    await conversation.chat("AI events on Tuesday after 1 PM", {});
+    assert.ok(demo.read().draft.includes("e1"));
+  }
   const health = await (await fetch(base + "/api/health")).json();
   assert.equal(health.watsonx_connected, false);
   const state = fresh();
+  // Old callers may omit preferences and still send block titles; new ones omit labels.
+  const modern = schedulePayload(state);
+  const { preferences: _preferences, ...legacy } = modern;
+  const legacyResponse = await post("/api/plan", {
+    message: "Find events",
+    state: {
+      ...legacy,
+      blocks: state.blocks.map(({ title, day, start, end }) => ({
+        title,
+        day,
+        start,
+        end,
+      })),
+    },
+  });
+  const modernResponse = await post("/api/plan", {
+    message: "Find events",
+    state: modern,
+  });
+  assert.equal(legacyResponse.status, 200);
+  assert.equal(modernResponse.status, 200);
+  assert.deepEqual(
+    (await legacyResponse.json()).event_ids,
+    (await modernResponse.json()).event_ids,
+  );
+  assert.ok(modern.blocks.every((block) => !("title" in block)));
   for (const query of [
     "AI and education on Tuesday or Thursday afternoons",
     "social with free food",
@@ -104,7 +156,10 @@ try {
       assert.ok(evidence.practical.includes(event.location));
       assert.ok(evidence.practical.includes(event.rsvp));
       assert.match(evidence.trade_offs, /not externally verified/);
-      assert.match(evidence.schedule_fit, /no current conflicts/);
+      assert.match(
+        evidence.schedule_fit,
+        /No conflict with the commitments you entered/,
+      );
     }
 
     assert.deepEqual(
@@ -278,6 +333,7 @@ try {
         days: [3],
         after: 900,
         before: 1020,
+        mode: "discovery",
       });
       assert.deepEqual(demo.read().plan, []);
     }
@@ -301,6 +357,134 @@ try {
       assert.deepEqual(demo.read().plan, []);
     }
   }
+
+  const { defaultPreferences } = await import("../frontend/src/preferences.ts");
+  for (const participation of [
+    [],
+    ["independent"],
+    ["small-group"],
+    ["one-to-one"],
+  ]) {
+    for (const learning of [true, false]) {
+      const s = {
+        ...fresh(),
+        interests: ["AI & education"],
+        preferences: {
+          ...defaultPreferences(),
+          count: 1 as const,
+          participation,
+          use_learning: learning,
+          learning_topics: [
+            { topic: "Career", source: "Added by you" as const },
+          ],
+        },
+      };
+      const result = await (
+        await post("/api/plan", {
+          message: "Find events",
+          state: schedulePayload(s),
+        })
+      ).json();
+      assert.deepEqual(
+        result.event_ids,
+        recommend(s).map((e) => e.id),
+      );
+      assert.equal(result.event_ids.length, 1);
+    }
+  }
+  const strict = {
+    ...fresh(),
+    preferences: {
+      ...defaultPreferences(),
+      free_only: true,
+      windows: [{ day: 2, start: 1020, end: 1200 }],
+    },
+  };
+  assert.deepEqual(
+    (
+      await (
+        await post("/api/plan", {
+          message: "arts on Wednesday evening",
+          state: schedulePayload(strict),
+        })
+      ).json()
+    ).event_ids,
+    [],
+  );
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e29",
+        state: schedulePayload(strict),
+      })
+    ).status,
+    409,
+  );
+  for (const preferences of [
+    { version: 2 },
+    { primary_topics: ["Career"], goal_topics: [] },
+    { count: 9 },
+    { count: "3" },
+    { count: true },
+    { participation: Array(5).fill("open") },
+    { goal_topics: Array(6).fill("Career") },
+    { learning_topics: Array(6).fill("Career") },
+    { windows: Array(21).fill({ day: 0, start: 600, end: 660 }) },
+    { dismissed: Array(EVENTS.length + 1).fill("e1") },
+    { guidance: "infer-ability" },
+    { participation: ["unknown"] },
+    { learning_topics: ["fake"] },
+    { windows: [{ day: 9, start: 1, end: 5 }] },
+    { why: "MUST_NOT_TRANSMIT" },
+  ]) {
+    assert.ok(
+      [400, 422].includes(
+        (
+          await post("/api/plan", {
+            message: "Find events",
+            state: { ...schedulePayload(fresh()), preferences },
+          })
+        ).status,
+      ),
+    );
+  }
+
+  for (const count of [1, 3, 5] as const)
+    for (const useGoals of [false, true]) {
+      const s = {
+        ...fresh(),
+        interests: [],
+        preferences: {
+          ...defaultPreferences(),
+          count,
+          use_goals: useGoals,
+          goals: ["career"],
+          primary_goal: "career",
+          use_learning: true,
+          learning_topics: [
+            { topic: "Arts & culture", source: "Added by you" as const },
+          ],
+        },
+      };
+      for (const previous of [
+        {},
+        { explore: true },
+        { topics: ["AI & education"] },
+      ]) {
+        const r = await (
+          await post("/api/plan", {
+            message: "Find events",
+            previous,
+            state: schedulePayload(s),
+          })
+        ).json();
+        assert.deepEqual(
+          r.event_ids,
+          recommend(s, previous).map((e) => e.id),
+        );
+        assert.ok(r.event_ids.length <= count);
+      }
+    }
   for (const offline of [false, true]) {
     for (const scenario of evolvingClarifications) {
       const demo = createStore(fresh());
@@ -355,7 +539,11 @@ try {
         state: schedulePayload(state),
       })
     ).json();
-    assert.equal(r.issue, issue(event, state));
+    const redacted = {
+      ...state,
+      blocks: state.blocks.map((b) => ({ ...b, title: "Busy commitment" })),
+    };
+    assert.equal(r.issue, issue(event, redacted));
   }
   const confirmed = { display_name: "Demo student", attending: true };
   for (const rsvp of [

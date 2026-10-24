@@ -1,0 +1,150 @@
+[
+  {
+    "name": "enabled goals, primary and confirmed learning",
+    "interests": ["AI & education"],
+    "preferences": {
+      "goals": ["career", "research"],
+      "primary_goal": "career",
+      "use_goals": true,
+      "learning_topics": [
+        {
+          "topic": "Career",
+          "source": "Confirmed from a conversation"
+        }
+      ],
+      "use_learning": true,
+      "count": 3
+    }
+  },
+  {
+    "name": "disabled goals and learning retained but inactive",
+    "interests": [],
+    "preferences": {
+      "goals": ["career"],
+      "primary_goal": "career",
+      "use_goals": false,
+      "learning_topics": [
+        {
+          "topic": "Career",
+          "source": "Added by you"
+        }
+      ],
+      "use_learning": false
+    }
+  },
+  {
+    "name": "known independent format",
+    "interests": ["AI & education"],
+    "preferences": {
+      "participation": ["independent"],
+      "count": 1
+    }
+  },
+  {
+    "name": "known small group format",
+    "interests": ["AI & education"],
+    "preferences": {
+      "participation": ["small-group"],
+      "count": 1
+    }
+  },
+  {
+    "name": "unknown format has no bonus",
+    "preferences": {
+      "participation": ["open"]
+    },
+    "constraints": {
+      "topics": ["Social"],
+      "days": [3],
+      "after": 1000
+    }
+  },
+  {
+    "name": "current topic cannot relax saved free/window constraints",
+    "interests": ["Career"],
+    "preferences": {
+      "free_only": true,
+      "windows": [
+        {
+          "day": 2,
+          "start": 1020,
+          "end": 1200
+        }
+      ]
+    },
+    "constraints": {
+      "topics": ["Arts & culture"],
+      "days": [2],
+      "after": 1020
+    }
+  },
+  {
+    "name": "paid event allowed only without a free constraint",
+    "interests": ["Career"],
+    "preferences": {
+      "windows": [
+        {
+          "day": 2,
+          "start": 1020,
+          "end": 1200
+        }
+      ]
+    },
+    "constraints": {
+      "topics": ["Arts & culture"],
+      "days": [2],
+      "after": 1020
+    }
+  },
+  {
+    "name": "current limit replaces saved count",
+    "preferences": {
+      "count": 5
+    },
+    "constraints": {
+      "limit": 2
+    }
+  },
+  {
+    "name": "preferred evening, cancellations, travel buffer and exploration",
+    "interests": ["AI & education"],
+    "preferred_time": "evening",
+    "cancelled": ["e6"],
+    "preferences": {
+      "count": 5
+    },
+    "constraints": {
+      "explore": true
+    }
+  },
+  {
+    "name": "legacy schedule without preferences",
+    "legacy": true
+  },
+  {
+    "name": "discovery overlap e1/e17",
+    "interests": [],
+    "preferences": {
+      "count": 5
+    },
+    "constraints": {
+      "mode": "discovery",
+      "days": [1],
+      "after": 900,
+      "before": 1020
+    }
+  },
+  {
+    "name": "plan-building overlap e1/e17",
+    "interests": [],
+    "preferences": {
+      "count": 5
+    },
+    "constraints": {
+      "mode": "plan-building",
+      "days": [1],
+      "after": 900,
+      "before": 1020
+    }
+  }
+]

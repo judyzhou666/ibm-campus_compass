@@ -64,6 +64,15 @@ async fn plan(
         .iter()
         .map(|e| planner::evidence(e, &request.state, &constraints, &events))
         .collect();
+    let match_reasons: Vec<_> = selected
+        .iter()
+        .enumerate()
+        .map(|(index, e)| {
+            let details =
+                planner::ranking_details(e, &request.state, &constraints, &selected[..index]);
+            json!({ "event_id": e.id, "score": details.score, "matches": details.matches })
+        })
+        .collect();
     let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
     let diagnostic = if interpretation.understood
         && interpretation.clarification.is_none()
@@ -78,7 +87,7 @@ async fn plan(
         None
     };
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "clarification":interpretation.clarification, "event_ids":ids, "recommendations":evidence, "diagnostic":diagnostic}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "clarification":interpretation.clarification, "event_ids":ids, "recommendations":evidence, "matchReasons":match_reasons, "diagnostic":diagnostic}),
     ))
 }
 

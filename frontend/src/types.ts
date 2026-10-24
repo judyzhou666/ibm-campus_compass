@@ -1,3 +1,4 @@
+import type { Preferences, Guidance, ResultCount } from "./preferences.ts";
 export interface TimeSlot {
   day: number;
   start: number;
@@ -6,6 +7,31 @@ export interface TimeSlot {
 export interface Block extends TimeSlot {
   id: string;
   title: string;
+}
+export type ParticipationChoice =
+  "independent" | "one-to-one" | "small-group" | "open";
+export type ParticipationFormat = ParticipationChoice | "unknown";
+/** Minimal v1 API projection: local notes, provenance and consent flags stay local. */
+export interface RecommendationPreferences {
+  version: 1;
+  goal_topics: string[];
+  primary_topics: string[];
+  learning_topics: string[];
+  participation: ParticipationChoice[];
+  guidance: Guidance;
+  count: ResultCount;
+  free_only: boolean;
+  windows: TimeSlot[];
+  dismissed: string[];
+}
+export interface RecommendationSchedule {
+  plan: string[];
+  cancelled: string[];
+  interests: string[];
+  blocks: TimeSlot[];
+  buffer: number;
+  preferred_time: string;
+  preferences?: Omit<RecommendationPreferences, "guidance">;
 }
 export interface CampusEvent extends TimeSlot {
   id: string;
@@ -18,6 +44,7 @@ export interface CampusEvent extends TimeSlot {
   access: string;
   description: string;
   poster: string;
+  participation?: ParticipationFormat;
   source: string;
   checked: string;
   rsvp: string;
@@ -37,8 +64,11 @@ export interface Schedule {
   blocks: Block[];
   buffer: number;
   preferred_time?: string;
+  preferences?: Preferences;
 }
+export type RecommendationMode = "discovery" | "plan-building";
 export interface Constraints {
+  mode?: RecommendationMode;
   topics?: string[];
   excluded?: string[];
   days?: number[];
@@ -47,12 +77,21 @@ export interface Constraints {
   food?: string;
   free?: boolean;
   limit?: number;
+  explore?: boolean;
+}
+export interface RecommendationMatchResult {
+  event_id: string;
+  score: number;
+  matches: import("./planner.ts").RecommendationMatch[];
 }
 export interface Message {
   role: "user" | "assistant";
   text: string;
   eventIds?: string[];
   evidence?: RecommendationEvidence[];
+  settingsKey?: string;
+  recommendationMode?: RecommendationMode;
+  matchReasons?: RecommendationMatchResult[];
 }
 export interface Post {
   name: string;
@@ -83,6 +122,7 @@ export interface PlanResponse {
   constraints: Constraints;
   event_ids: string[];
   recommendations?: RecommendationEvidence[];
+  matchReasons?: RecommendationMatchResult[];
 }
 
 export interface Rsvp {
@@ -98,4 +138,7 @@ export interface RecommendationEvidence {
   trade_offs: string;
   comparison?: string;
   discovery_context?: string;
+  learning_connection?: string;
+  participation_fit?: string;
+  constraints_satisfied?: Constraints;
 }

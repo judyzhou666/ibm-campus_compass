@@ -1,26 +1,38 @@
+import {
+  readMatchReasons,
+  readCatalogEvidence,
+} from "./recommendationReasons.ts";
+import { wirePreferences } from "./preferences.ts";
 import type {
   Schedule,
+  RecommendationSchedule,
   Constraints,
   DemoState,
   PlanResponse,
   Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { recommend, issue } from "./planner.ts";
+import { recommendWithReasons, issue } from "./planner.ts";
 import {
   PlanningClarification,
   interpretRequest,
   validateConstraints,
 } from "./interpretation.ts";
 
-export const schedulePayload = (state: Schedule) => ({
+// Guidance only changes browser presentation; it is not needed by the server.
+function requestPreferences(state: Schedule) {
+  const { guidance: _guidance, ...preferences } = wirePreferences(state);
+  return preferences;
+}
+
+export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
   plan: [...state.plan],
   cancelled: [...state.cancelled],
   interests: [...state.interests],
   buffer: state.buffer,
   preferred_time: state.preferred_time || "any",
-  blocks: state.blocks.map(({ title, day, start, end }) => ({
-    title,
+  preferences: state.preferences ? requestPreferences(state) : undefined,
+  blocks: state.blocks.map(({ day, start, end }) => ({
     day,
     start,
     end,
@@ -28,7 +40,11 @@ export const schedulePayload = (state: Schedule) => ({
 });
 
 export const planningKey = (state: DemoState) =>
-  JSON.stringify([schedulePayload(state), state.constraints]);
+  JSON.stringify([
+    schedulePayload(state),
+    state.constraints,
+    state.preferences,
+  ]);
 
 class InputError extends Error {}
 
@@ -57,8 +73,18 @@ export async function requestPlan(
   previous: Constraints,
   state: Schedule,
   fetcher = globalThis.fetch,
+  exactTopics?: readonly string[],
 ) {
   const interpreted = interpretRequest(message, previous);
+  // Proposal topics are already reviewed mappings. Parse all safeguards first,
+  // then keep those exact topics instead of reinterpreting intent-prefix words.
+  if (exactTopics) {
+    interpreted.constraints = {
+      ...interpreted.constraints,
+      topics: [...exactTopics],
+    };
+    validateConstraints(interpreted.constraints);
+  }
   if (interpreted.clarification)
     throw new PlanningClarification(
       interpreted.clarification,
@@ -73,7 +99,11 @@ export async function requestPlan(
   try {
     const result = (await post(
       "/api/plan",
-      { message, previous, state: schedulePayload(state) },
+      {
+        message: exactTopics ? "Find events" : message,
+        previous: exactTopics ? interpreted.constraints : previous,
+        state: schedulePayload(state),
+      },
       fetcher,
     )) as PlanResponse;
     if (
@@ -87,6 +117,11 @@ export async function requestPlan(
       throw new Error("Invalid planner response");
     }
     validateConstraints(result.constraints);
+    const matchReasons = readMatchReasons(
+      result.matchReasons,
+      result.event_ids,
+    );
+    if (!matchReasons) throw new Error("Invalid structured match reasons");
     if (result.clarification) throw new InputError(result.clarification);
     if (!result.understood)
       throw new InputError(
@@ -95,13 +130,8 @@ export async function requestPlan(
     return {
       constraints: result.constraints,
       ids: result.event_ids,
-      evidence: (result.recommendations || []).filter(
-        (e) =>
-          result.event_ids.includes(e.event_id) &&
-          [e.interest_match, e.schedule_fit, e.practical, e.trade_offs].every(
-            (v) => typeof v === "string",
-          ),
-      ),
+      matchReasons,
+      evidence: readCatalogEvidence(result.recommendations, result.event_ids),
       source: "rust",
       notice:
         !result.event_ids.length && typeof result.diagnostic === "string"
@@ -111,9 +141,15 @@ export async function requestPlan(
   } catch (error) {
     if (error instanceof InputError) throw error;
     const { constraints } = interpreted;
+    const selected = recommendWithReasons(state, constraints);
     return {
       constraints,
-      ids: recommend(state, constraints).map((e) => e.id),
+      ids: selected.map(({ event }) => event.id),
+      matchReasons: selected.map(({ event, score, matches }) => ({
+        event_id: event.id,
+        score,
+        matches,
+      })),
       evidence: [],
       source: "browser-fallback",
       notice:

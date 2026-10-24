@@ -1,8 +1,10 @@
+import { RecommendationInfo } from "./RecommendationPresentation.tsx";
+import { wirePreferences } from "./preferences.ts";
 import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
-import { issue } from "./planner.ts";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
 export function ChatEvents({
@@ -11,8 +13,20 @@ export function ChatEvents({
   onDetails,
   onAdd,
   evidence = [],
+  matchReasons = [],
+  previousSettings = false,
+  recommendationMode = "plan-building",
+  busy = false,
+  onDecline,
+  onAnother,
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
+  matchReasons?: import("./types.ts").RecommendationMatchResult[];
+  previousSettings?: boolean;
+  busy?: boolean;
+  recommendationMode?: import("./types.ts").RecommendationMode;
+  onDecline?: (id: string) => void;
+  onAnother?: (id: string) => void;
   ids: string[];
   state: DemoState;
   onDetails: (id: string) => void;
@@ -33,32 +47,70 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
+            <p className="fineprint">
+              Earlier evidence describes the suggestion-time snapshot. Current
+              conflicts and choices are checked again before adding.
+            </p>
             {evidence.find((item) => item.event_id === id) ? (
-              <dl
-                className="evidence"
-                aria-label="Evidence at recommendation time; current availability is checked again before adding"
+              <details
+                className="evidence-details"
+                open={wirePreferences(state).guidance === "information"}
               >
-                {Object.entries(evidence.find((item) => item.event_id === id)!)
-                  .filter(
-                    ([key]) =>
-                      key !== "event_id" && key !== "constraints_satisfied",
+                <summary>Recommendation evidence</summary>
+                <dl
+                  className="evidence"
+                  aria-label="Evidence at recommendation time; current availability is checked again before adding"
+                >
+                  {Object.entries(
+                    evidence.find((item) => item.event_id === id)!,
                   )
-                  .map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{key.replaceAll("_", " ")}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
-              </dl>
+                    .filter(
+                      ([key]) =>
+                        key !== "event_id" && key !== "constraints_satisfied",
+                    )
+                    .map(([key, value]) => (
+                      <div key={key}>
+                        <dt>{key.replaceAll("_", " ")}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                </dl>
+              </details>
             ) : (
               <p className="fineprint">
-                No current Rust evidence available. Review the fictional record
-                and current availability in details; browser suggestions are
-                simulated.
+                No stored Rust evidence is available for this suggestion. Review
+                the fictional record and current availability in details;
+                browser suggestions are simulated.
               </p>
             )}
+            <RecommendationInfo
+              event={event}
+              state={state}
+              matches={matchReasons.find((r) => r.event_id === id)?.matches}
+              previousSettings={previousSettings}
+              alternativeIds={
+                recommendationMode === "discovery"
+                  ? overlappingAlternatives(event, ids, state)
+                  : []
+              }
+            />
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">
+              {onDecline && !added && (
+                <Button disabled={busy} onClick={() => onDecline(id)}>
+                  Not for me
+                </Button>
+              )}
+              {onAnother && (
+                <Button
+                  disabled={busy}
+                  onClick={() => {
+                    onAnother(id);
+                  }}
+                >
+                  Show another
+                </Button>
+              )}
               <Button className="small" onClick={() => onDetails(id)}>
                 View details
               </Button>
@@ -155,6 +207,12 @@ export function PlannerCalendar({
                             ? "Demo RSVP confirmed"
                             : "Added to calendar"}
                       </small>
+                      {!state.cancelled.includes(entry.id) &&
+                        issue(entry.event, state) && (
+                          <small className="event-problem">
+                            Conflict: {issue(entry.event, state)}
+                          </small>
+                        )}
                     </button>
                   ) : (
                     <div

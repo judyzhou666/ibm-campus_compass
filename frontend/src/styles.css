@@ -1863,3 +1863,91 @@ dialog { max-height:90dvh; overflow-y:auto; }
 .demo-launcher ol { padding-left:20px; line-height:1.7; }
 .review-record { border-top:1px solid #e1e7de; padding:12px 0; overflow-wrap:anywhere; }
 .demo-launcher .row { display:flex; flex-wrap:wrap; gap:8px; }
+.preferences-layout { display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start; }
+.preference-section { margin-bottom:20px; }
+.preference-section .field { margin:16px 0; }
+.preference-section fieldset { margin:16px 0;padding:12px;border:1px solid #e1e7de;border-radius:8px; }
+.preference-summary { position:sticky;top:100px;overflow-wrap:anywhere; }
+.preference-actions { display:flex;gap:12px;padding:18px 0; }
+.preference-section .rsvp-check { margin:15px 0; }
+.preferences-layout > *, .preferences-layout form { min-width:0; }
+@media(max-width:960px){.preferences-layout{grid-template-columns:minmax(0,1fr);}.preference-summary{position:static;grid-row:1;}.preference-section .block-row{flex-wrap:wrap;gap:8px;}}
+.quick-choice { display:block;padding:6px 0; }
+.preference-section .btn { margin:4px; }
+.preference-section input,.preference-section textarea { max-width:100%; }
+
+.using-preferences { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 12px 0; background: var(--white); }
+.using-preferences p { margin: 6px 0; overflow-wrap: anywhere; }
+.event-guidance ol { padding-left: 22px; }
+.recommendation-info p { margin: 6px 0; }
+.previous-settings { margin: 10px 0; }
+.briefing .recommendation-info { font-size: .88rem; margin: 6px 0 16px; }
+.calendar-item .event-problem { display: block; color: var(--amber); white-space: normal; overflow-wrap: anywhere; }
+.preference-setup-layout { display:block; }
+.preference-actions { flex-wrap:wrap; }
+
+/* First-time setup uses the screen's width; the full preferences page is unchanged. */
+.quick-preference-dialog {
+  width: 92vw;
+  max-width: 1440px;
+  height: 88dvh;
+  max-height: 88dvh;
+  padding: clamp(20px, 3vw, 36px);
+  overflow: hidden;
+}
+.quick-preference-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.quick-preference-dialog > :not(.preference-setup-layout) {
+  flex-shrink: 0;
+}
+.quick-preference-dialog > p {
+  margin: 6px 0;
+}
+.quick-preference-dialog > .page-head {
+  margin-bottom: 12px;
+}
+.quick-preference-dialog > .btn {
+  align-self: flex-start;
+}
+.quick-preference-dialog .preference-setup-layout {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+}
+.quick-preference-dialog .preference-setup-layout > form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.quick-preference-dialog .quick-setup-fields {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  padding: 4px;
+}
+.quick-preference-dialog .preference-section {
+  margin-bottom: 0;
+}
+.quick-preference-dialog .preference-actions {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px 0 0;
+}
+@media (max-width: 760px) {
+  .quick-preference-dialog {
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .quick-preference-dialog .quick-setup-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}

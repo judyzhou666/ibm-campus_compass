@@ -1,101 +1,61 @@
+import { activeTopics, wirePreferences } from "./preferences.ts";
 import { WEEK_LABEL } from "./config.ts";
-import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
-import { requestPlan, planningKey } from "./api.ts";
-import { issue } from "./planner.ts";
+import { useRecommendations } from "./useRecommendations.ts";
+import {
+  UsingPreferences,
+  RecommendationInfo,
+} from "./RecommendationPresentation.tsx";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import { Button } from "./components.tsx";
 import type { DemoState } from "./types.ts";
-export function Welcome({
-  onStart,
-  onSkip,
-}: {
-  onStart: () => void;
-  onSkip: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current!;
-    d.showModal();
-    return () => d.close();
-  }, []);
-  return (
-    <dialog ref={ref} aria-labelledby="welcome-title" onCancel={onSkip}>
-      <h2 id="welcome-title">Make campus feel more familiar.</h2>
-      <p>
-        Personalize academic, research, career, social and cultural interests
-        and preferred times. No career goal is required. Your fictional profile
-        stays in this browser.
-      </p>
-      <div className="row">
-        <Button onClick={onStart}>Personalize my demo</Button>
-        <Button onClick={onSkip}>Use sample preferences</Button>
-      </div>
-    </dialog>
-  );
-}
 export function Briefing({
   state,
   onDetail,
   onPlanner,
   onCalendar,
+  onPreferences,
 }: {
   state: DemoState;
   onDetail: (id: string) => void;
   onPlanner: () => void;
   onCalendar: () => void;
+  onPreferences: () => void;
 }) {
-  const [result, setResult] = useState<{
-    key: string;
-    ids: string[];
-    cross: string[];
-    notice: string;
-  } | null>(null);
-  const key = planningKey(state);
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      requestPlan("Find events", {}, state),
-      requestPlan(
-        "Find events",
-        { excluded: state.interests, limit: 2 },
-        state,
-      ),
-    ])
-      .then(([r, c]) => {
-        if (active)
-          setResult({
-            key,
-            ids: r.ids,
-            cross: c.ids,
-            notice: r.notice || c.notice,
-          });
-      })
-      .catch(() => {
-        if (active)
-          setResult({
-            key,
-            ids: [],
-            cross: [],
-            notice: "Briefing unavailable. Review your schedule and retry.",
-          });
-      });
-    return () => {
-      active = false;
-    };
-  }, [key]);
-  const links = (ids: string[]) =>
+  const result = useRecommendations(state);
+  const cross = useRecommendations(state, {
+    explore: true,
+    limit: Math.min(2, wirePreferences(state).count),
+  });
+  const links = (
+    ids: string[],
+    explain = false,
+    matches = result.matchReasons,
+  ) =>
     ids.length ? (
       ids.map((id) => (
         <li key={id}>
           <button className="text-btn" onClick={() => onDetail(id)}>
             {EVENTS.find((e) => e.id === id)?.title}
           </button>
+          {explain && (
+            <RecommendationInfo
+              event={EVENTS.find((e) => e.id === id)!}
+              state={state}
+              alternativeIds={overlappingAlternatives(
+                EVENTS.find((e) => e.id === id)!,
+                [...result.ids, ...cross.ids],
+                state,
+              )}
+              matches={matches.find((r) => r.event_id === id)?.matches}
+            />
+          )}
         </li>
       ))
     ) : (
       <li>No items this demo week.</li>
     );
-  const ready = result?.key === key,
+  const ready = !result.loading && !cross.loading,
     ids = ready ? result.ids : [];
   return (
     <section className="panel briefing">
@@ -103,21 +63,39 @@ export function Briefing({
       <p className="fineprint">
         {WEEK_LABEL} · Deterministic simulation · No live updates
       </p>
+      <UsingPreferences state={state} onEdit={onPreferences} />
       {!ready ? (
         <p role="status">Checking availability…</p>
       ) : (
         <>
-          <p role="status">{result.notice}</p>
+          <p role="status">
+            {[...new Set([result.notice, cross.notice].filter(Boolean))].join(
+              " ",
+            )}
+          </p>
+          {(result.source === "error" || cross.source === "error") && (
+            <Button
+              onClick={() => {
+                result.retry();
+                cross.retry();
+              }}
+            >
+              Retry briefing
+            </Button>
+          )}
           <div className="briefing-grid">
             <div>
               <h3>Matching your interests</h3>
               <ul>
                 {links(
-                  ids.filter((id) =>
-                    state.interests.includes(
-                      EVENTS.find((e) => e.id === id)!.topic,
-                    ),
+                  ids.filter(
+                    (id) =>
+                      !activeTopics(state).length ||
+                      activeTopics(state).includes(
+                        EVENTS.find((e) => e.id === id)!.topic,
+                      ),
                   ),
+                  true,
                 )}
               </ul>
             </div>
@@ -127,7 +105,7 @@ export function Briefing({
                 Explore topics beyond your selections; departments are not
                 verified.
               </p>
-              <ul>{links(result.cross)}</ul>
+              <ul>{links(cross.ids, true, cross.matchReasons)}</ul>
             </div>
             <div>
               <h3>Saved, not yet added</h3>
