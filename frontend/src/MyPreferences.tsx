@@ -16,6 +16,7 @@ import {
   PARTICIPATION,
   migratePreferences,
   activeTopics,
+  clearPersonalization,
 } from "./preferences.ts";
 import type { DemoState } from "./types.ts";
 const EMPTY_BLOCK = { title: "", day: 0, start: "14:00", end: "15:00" };
@@ -44,6 +45,7 @@ export interface PreferenceEditor {
   setConfirm: (value: boolean) => void;
   update: (change: (s: DemoState) => DemoState) => void;
   notify: (message: string) => void;
+  onClearPersonalization: () => void;
   onClearChat: () => void;
 }
 export function MyPreferences({
@@ -82,6 +84,7 @@ export function MyPreferences({
   const savedKey = JSON.stringify(editable(state));
   useEffect(() => {
     setDraft(editable(state));
+    resetEntries();
   }, [savedKey]);
   const [confirm, setConfirm] = useState(false),
     [error, setError] = useState("");
@@ -104,6 +107,11 @@ export function MyPreferences({
       setWindow({ ...EMPTY_WINDOW });
       setWindowBaseline({ ...EMPTY_WINDOW });
     }
+  }
+  function resetEntries() {
+    clearEntry("block");
+    clearEntry("window");
+    setError("");
   }
   const [topic, setTopic] = useState(TOPICS[0]);
   const p = draft.preferences,
@@ -261,6 +269,11 @@ export function MyPreferences({
     update,
     notify,
     onClearChat,
+    onClearPersonalization: () => {
+      update(clearPersonalization);
+      setDraft(editable(clearPersonalization(state)));
+      resetEntries();
+    },
   };
   function skipSetup() {
     if (

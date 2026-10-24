@@ -1,3 +1,4 @@
+import { discoveryState } from "../frontend/src/discovery.ts";
 import { evolvingClarifications } from "./clarification-fixtures.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
@@ -53,6 +54,31 @@ async function post(path: string, body: unknown) {
   });
 }
 try {
+  for (const offline of [false, true]) {
+    const fetcher: typeof fetch = async (path, options) => {
+      if (offline) throw Error("offline");
+      return fetch(base + String(path), options);
+    };
+    const academic = await (
+      await import("../frontend/src/api.ts")
+    ).requestPlan(
+      "Find events",
+      { mode: "discovery" },
+      discoveryState(fresh(), [], "Academic"),
+      fetcher,
+    );
+    assert.deepEqual(academic.ids.slice().sort(), ["e1", "e14", "e26"].sort());
+    const demo = createStore(fresh());
+    const conversation = createConversation(demo, () => {}, fetcher);
+    await conversation.chat("AI events on Tuesday after 1 PM");
+    assert.ok(demo.read().draft.includes("e1"));
+    await conversation.another("e1");
+    await conversation.chat("after 2 PM");
+    assert.ok(!demo.read().draft.includes("e1"));
+    assert.deepEqual(demo.read().preferences!.dismissed, []);
+    await conversation.chat("AI events on Tuesday after 1 PM", {});
+    assert.ok(demo.read().draft.includes("e1"));
+  }
   const health = await (await fetch(base + "/api/health")).json();
   assert.equal(health.watsonx_connected, false);
   const state = fresh();

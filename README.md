@@ -2,6 +2,16 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Review behavior repairs
+
+Dashboard category and text filters now exclude nonmatching candidates before either planner applies the saved result count. Academic on fresh sample state returns e1/e14/e26 rather than filtering an already truncated list. The existing bounded dismissed-ID request field carries transient candidate exclusions; no new backend contract, ranking weights or persistent preferences were introduced.
+
+Explore and Saved consume current-view skips for both Not for me and Show another. Hiding a Saved card leaves its bookmark intact. These view skips reset on navigation or saved-preference changes. Planner skips apply to every request in the current conversation search, including ordinary follow-ups and replacements. Explicit new searches (a supplied initial constraint set), start over/reset, refresh, new chat and preference-reset boundaries clear them. Follow-up time/topic refinements do not clear them. They are never saved as long-term interests or hidden-event choices.
+
+Confirmed Clear personalization resets the entire editor draft, unfinished busy/window controls, baselines and validation errors, including when saved personalization was already empty. Saved busy commitments, hard requirements, plans and RSVP records remain.
+
+Fresh verification for this repair: frontend typecheck/build, planner assertions, 130 TypeScript tests, 5 Wiki tests, and API integration (including Academic and retained chat exclusions through Rust and fallback) passed. Focused browser checks cover desktop Rust/mobile fallback discovery controls and desktop/mobile editor clear, repeat-clear, draft/error reset and preservation. Run the optional scripts with the existing Playwright environment: scripts/browser-discovery-fixes.mjs and scripts/browser-preference-drafts.mjs after npm run build and starting the Rust service. No fresh Rust unit/Clippy, frozen evaluation, or full browser matrix was run; Rust implementation and ranking are unchanged. Earlier verification below is historical.
+
 ## Doris branch integration
 
 Integrated the remote clarification-context fix while preserving the preference features and draft-entry repairs. Fresh merge verification passed: frontend build/type checking, planner assertions, 127 TypeScript tests, 5 Wiki tests, and Rust API integration. No new browser journey or Rust unit/Clippy run was performed for this merge. Run with the existing build/start instructions below; multi-part clarification must retain every unresolved requirement before returning suggestions. Existing fictional-demo and integration limitations remain unchanged.

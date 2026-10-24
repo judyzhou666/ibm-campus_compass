@@ -6,7 +6,6 @@ import {
   GOALS,
   GUIDANCE,
   PARTICIPATION,
-  clearPersonalization,
   suggestedTopics,
 } from "./preferences.ts";
 import type { Block, TimeSlot } from "./types.ts";
@@ -460,8 +459,7 @@ export function PracticalSection({ editor }: { editor: PreferenceEditor }) {
 }
 
 export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
-  const { draft, pref, confirm, setConfirm, update, notify, onClearChat } =
-    editor;
+  const { draft, pref, confirm, setConfirm, notify, onClearChat } = editor;
   const p = draft.preferences;
   return (
     <section className="panel preference-section">
@@ -542,7 +540,7 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
           <Button onClick={() => setConfirm(false)}>Keep preferences</Button>
           <Button
             onClick={() => {
-              update(clearPersonalization);
+              editor.onClearPersonalization();
               setConfirm(false);
               notify(
                 "Personalization cleared. Planned events and hard scheduling requirements were preserved.",
