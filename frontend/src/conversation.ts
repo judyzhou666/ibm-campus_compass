@@ -1,5 +1,4 @@
-import { discoveryState } from "./discovery.ts";
-import { preferenceSettingsKey } from "./preferences.ts";
+import { migratePreferences, preferenceSettingsKey } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
@@ -54,7 +53,7 @@ export function createConversation(
       return true;
     }
     try {
-      const plan = await task(discoveryState(snapshot, [...sessionSkipped]));
+      const plan = await task(snapshot);
       if (stale()) return;
       pending = undefined;
       const matches: CampusEvent[] = [];
@@ -178,7 +177,18 @@ export function createConversation(
         requestPlan(
           "Find events",
           { mode: "discovery", ...snapshot.constraints },
-          snapshot,
+          {
+            ...snapshot,
+            preferences: {
+              ...migratePreferences(snapshot.preferences),
+              dismissed: [
+                ...new Set([
+                  ...migratePreferences(snapshot.preferences).dismissed,
+                  ...sessionSkipped,
+                ]),
+              ],
+            },
+          },
           fetcher,
         ),
       );
@@ -198,10 +208,8 @@ export function createConversation(
     ) {
       if (status.read().busy || !text.trim()) return;
       text = text.trim();
-      if (previous !== undefined || /\b(reset|start over)\b/i.test(text)) {
+      if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
         pending = undefined;
-        sessionSkipped.clear();
-      }
       let resolvedText = text;
       let context = pending?.constraints;
       if (

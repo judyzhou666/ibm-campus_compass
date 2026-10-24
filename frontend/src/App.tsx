@@ -1,8 +1,4 @@
 import {
-  discoveryState as withDiscoveryFilters,
-  matchesDiscoveryFilter,
-} from "./discovery.ts";
-import {
   createPreferenceProposals,
   proposalChanges,
   proposalRevision,
@@ -11,7 +7,11 @@ import {
   UsingPreferences,
   RecommendationInfo,
 } from "./RecommendationPresentation.tsx";
-import { activeTopics, preferenceSettingsKey } from "./preferences.ts";
+import {
+  activeTopics,
+  preferenceSettingsKey,
+  migratePreferences,
+} from "./preferences.ts";
 import { PreferenceProposal } from "./PreferenceProposal.tsx";
 import { useRecommendations } from "./useRecommendations.ts";
 import { DataReview } from "./DataReview.tsx";
@@ -112,10 +112,19 @@ export default function App() {
   const [proposals] = useState(() => createPreferenceProposals(demo));
   const proposal = useSyncExternalStore(proposals.subscribe, proposals.read);
   const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
-  const discoveryState = withDiscoveryFilters(state, sessionSkipped);
-  const recommendationResult = useRecommendations(
-    withDiscoveryFilters(state, sessionSkipped, filter, query),
-  );
+  const discoveryState = {
+    ...state,
+    preferences: {
+      ...migratePreferences(state.preferences),
+      dismissed: [
+        ...new Set([
+          ...migratePreferences(state.preferences).dismissed,
+          ...sessionSkipped,
+        ]),
+      ],
+    },
+  };
+  const recommendationResult = useRecommendations(discoveryState);
   const settingsKey = preferenceSettingsKey(state);
   const preferenceRevision = proposalRevision(state);
   useEffect(() => {
@@ -288,8 +297,14 @@ export default function App() {
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        !sessionSkipped.includes(e.id) &&
-        matchesDiscoveryFilter(e, filter, query),
+        (filter === "All" ||
+          (filter === "Free Food"
+            ? e.food === "Free meal"
+            : e.category === filter)) &&
+        (!query ||
+          `${e.title} ${e.description} ${e.topic} ${e.food}`
+            .toLowerCase()
+            .includes(query.toLowerCase())),
     );
   const cards = (list: typeof EVENTS) => (
     <div className="event-grid">
