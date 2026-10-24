@@ -8,7 +8,17 @@ The first-visit **Quick preference setup** popup now uses the browser's proporti
 
 This adjustment is scoped to the first-time dialog in `frontend/src/MyPreferences.tsx` and its `.quick-preference-dialog` CSS. The full **My Preferences** page (`#profile`), other dialogs, recommendation logic and Rust backend are unchanged. To inspect setup without resetting an existing demo session, use a fresh browser profile/private window with the normal local run instructions below.
 
-Verified for this layout change: `npm run build`, `npm test` (127 TypeScript tests, 5 Wiki tests and planner assertions), and `git diff --check`. Browser inspection at 1280×900 and 390×844 confirmed the two-column/single-column layouts, no horizontal dialog overflow, and visible footer actions; changing and saving a setup choice persisted into the full preferences page. The full browser regression matrix was not rerun. The separate PR #5 behavioral review findings remain unresolved by this layout-only change.
+Verified for this layout change: `npm run build`, `npm test` (127 TypeScript tests, 5 Wiki tests and planner assertions), and `git diff --check`. Browser inspection at 1280×900 and 390×844 confirmed the two-column/single-column layouts, no horizontal dialog overflow, and visible footer actions; changing and saving a setup choice persisted into the full preferences page. The full browser regression matrix was not rerun. That layout-only commit did not address the behavioral findings; the repair described below does.
+
+## Review behavior repairs
+
+Dashboard category and text filters now exclude nonmatching candidates before either planner applies the saved result count. Academic on fresh sample state returns e1/e14/e26 rather than filtering an already truncated list. The existing bounded dismissed-ID request field carries transient candidate exclusions; no new backend contract, ranking weights or persistent preferences were introduced.
+
+Explore and Saved consume current-view skips for both Not for me and Show another. Hiding a Saved card leaves its bookmark intact. These view skips reset on navigation or saved-preference changes. Planner skips apply to every request in the current conversation search, including ordinary follow-ups and replacements. Explicit new searches (a supplied initial constraint set), start over/reset, refresh, new chat and preference-reset boundaries clear them. Follow-up time/topic refinements do not clear them. They are never saved as long-term interests or hidden-event choices.
+
+Confirmed Clear personalization resets the entire editor draft, unfinished busy/window controls, baselines and validation errors, including when saved personalization was already empty. Saved busy commitments, hard requirements, plans and RSVP records remain.
+
+Fresh verification for this repair: frontend typecheck/build, planner assertions, 130 TypeScript tests, 5 Wiki tests, and API integration (including Academic and retained chat exclusions through Rust and fallback) passed. Fresh focused browser checks on top of setup-layout commit ce7f756 cover desktop Rust/mobile fallback discovery controls, desktop/mobile editor clear, repeat-clear, draft/error reset and preservation, plus brief-setup keyboard/focus, Save/Skip and loading/error/retry. The setup layout/CSS is preserved. Run the optional scripts with the existing Playwright environment: scripts/browser-discovery-fixes.mjs and scripts/browser-preference-drafts.mjs after npm run build and starting the Rust service. No fresh Rust unit/Clippy, frozen evaluation, or full browser matrix was run; Rust implementation and ranking are unchanged. Earlier verification below is historical.
 
 ## Doris branch integration
 

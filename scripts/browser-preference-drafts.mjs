@@ -123,6 +123,69 @@ try {
     );
     assert.deepEqual((await state()).plan, before.plan);
     assert.deepEqual((await state()).rsvps, before.rsvps);
+    await page.getByLabel("Commitment title").fill("Discard on clear");
+    await page.getByLabel("Available-only from", { exact: true }).fill("12:00");
+    await page
+      .getByRole("button", { name: "Save changes", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Clear personalization…", exact: true })
+      .click();
+    await page
+      .getByRole("button", {
+        name: "Confirm clear personalization",
+        exact: true,
+      })
+      .click();
+    assert.equal(await page.getByLabel("Commitment title").inputValue(), "");
+    assert.equal(
+      await page
+        .getByLabel("Available-only from", { exact: true })
+        .inputValue(),
+      "13:00",
+    );
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Save changes", exact: true })
+        .isDisabled(),
+      true,
+    );
+    assert.equal(
+      await page.getByRole("alert").filter({ hasText: "unfinished" }).count(),
+      0,
+    );
+    assert.ok(
+      (await state()).blocks.some((b) => b.title === "Added actual class"),
+    );
+    assert.deepEqual((await state()).plan, before.plan);
+    assert.deepEqual((await state()).rsvps, before.rsvps);
+    // Repeated clear still resets auxiliary fields when persisted settings are already empty.
+    await page.getByLabel("Commitment title").fill("Discard again");
+    await page
+      .getByRole("checkbox", { name: "Join a small group", exact: true })
+      .check();
+    await page
+      .getByRole("button", { name: "Clear personalization…", exact: true })
+      .click();
+    await page
+      .getByRole("button", {
+        name: "Confirm clear personalization",
+        exact: true,
+      })
+      .click();
+    assert.equal(await page.getByLabel("Commitment title").inputValue(), "");
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Save changes", exact: true })
+        .isDisabled(),
+      true,
+    );
+    assert.equal(
+      await page
+        .getByRole("checkbox", { name: "Join a small group", exact: true })
+        .isChecked(),
+      false,
+    );
     await page.close();
     console.log(
       `PASS ${width}px: staged busy/window dirty tracking, blocked partial Save, focus, one declined brand prompt, clearing/Cancel and successful added-entry Save.`,
