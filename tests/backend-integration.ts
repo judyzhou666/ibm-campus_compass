@@ -306,6 +306,7 @@ try {
         days: [3],
         after: 900,
         before: 1020,
+        mode: "discovery",
       });
       assert.deepEqual(demo.read().plan, []);
     }

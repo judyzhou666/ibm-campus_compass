@@ -2,6 +2,12 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Draft-entry and navigation repairs
+
+Unadded busy commitments and availability windows now count as unsaved edits. Save rejects incomplete entries with an accessible message and focuses the relevant field; Add stages an entry, Clear entry discards it, and Cancel resets both staged controls and the preference draft. Navigation warns before losing typed entries. The brand link prevents duplicate default navigation, so declining produces one discard prompt; modified clicks retain normal browser link behavior. The API integration expectation now includes the intentional discovery mode.
+
+Fresh repair verification: frontend build/type checking, full `npm test` (117 TypeScript tests, 5 Wiki tests and planner assertions), `npm run test:api`, desktop/mobile draft-entry regressions and desktop-online/mobile-offline busy-conflict journeys passed. Browser regression: `scripts/browser-preference-drafts.mjs` with the existing optional Playwright environment. Rust unit/Clippy and frozen evaluation were not rerun in this repair; prior results below remain historical.
+
 ## Current preference flow
 
 First-time setup is optional: **Save quick setup**, **Skip for now**, or open full preferences. It uses the same editor, draft and section components as **My Preferences** (`#profile`), not another preference store. Skipping preserves existing saved/sample choices. Dirty skipping/navigation requires confirmation. Full preferences remain available from navigation and **Using your preferences → Edit preferences**.
@@ -63,11 +69,11 @@ For frontend development, run `npm run dev` alongside Rust. Use a separate priva
 
 More precise prerequisites and expected results: [demo script](docs/preferences-design.md#short-reproducible-demo).
 
-## Verification performed in this documentation task
+## Earlier documentation-pass verification
 
 Application revision inspected: `2dd93ae` on `Doris`; application code was not edited in this task. **Newly run:** `npm run build` (including type checking); 60 focused TypeScript tests; `cargo fmt --check`; 13 Rust tests; Clippy with warnings denied; Rust build; 22 exact shared comparisons plus six server validation/RSVP/conflict checks. All passed. The exact focused command is recorded in [verification and remaining work](docs/preferences-design.md#verification-and-remaining-work).
 
-**Not rerun here:** the full npm/Wiki suite, broad API integration suite, frozen evaluation reproduction, and browser journeys. Earlier browser/check reports below are historical, not fresh results. Separate verification commands:
+**Not rerun in that earlier documentation pass:** the full npm/Wiki suite, broad API integration suite, frozen evaluation reproduction, and browser journeys. The subsequent repair reran npm/API and the specific browser journeys listed above. Earlier browser/check reports below are historical, not fresh results. Separate verification commands:
 
 ```sh
 npm test

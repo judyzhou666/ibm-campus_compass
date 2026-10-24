@@ -397,7 +397,21 @@ export default function App() {
         />
       ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
-        <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
+        <a
+          className="brand"
+          href="#dashboard"
+          onClick={(event) => {
+            if (
+              event.ctrlKey ||
+              event.metaKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            event.preventDefault();
+            nav("dashboard");
+          }}
+        >
           <span className="logo">
             <Icon name="compass" />
           </span>

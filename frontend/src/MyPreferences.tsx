@@ -18,6 +18,8 @@ import {
   activeTopics,
 } from "./preferences.ts";
 import type { DemoState } from "./types.ts";
+const EMPTY_BLOCK = { title: "", day: 0, start: "14:00", end: "15:00" };
+const EMPTY_WINDOW = { day: 0, start: "13:00", end: "17:00" };
 function editable(s: DemoState) {
   return {
     name: s.name,
@@ -83,20 +85,29 @@ export function MyPreferences({
   }, [savedKey]);
   const [confirm, setConfirm] = useState(false),
     [error, setError] = useState("");
-  const [block, setBlock] = useState({
-    title: "",
-    day: 0,
-    start: "14:00",
-    end: "15:00",
-  });
-  const [window, setWindow] = useState({
-    day: 0,
-    start: "13:00",
-    end: "17:00",
-  });
+  const [block, setBlock] = useState(() => ({ ...EMPTY_BLOCK }));
+  const [window, setWindow] = useState(() => ({ ...EMPTY_WINDOW }));
+  const [blockBaseline, setBlockBaseline] = useState(() => ({
+    ...EMPTY_BLOCK,
+  }));
+  const [windowBaseline, setWindowBaseline] = useState(() => ({
+    ...EMPTY_WINDOW,
+  }));
+  const pendingBlock = JSON.stringify(block) !== JSON.stringify(blockBaseline);
+  const pendingWindow =
+    JSON.stringify(window) !== JSON.stringify(windowBaseline);
+  function clearEntry(kind: "block" | "window") {
+    if (kind === "block") {
+      setBlock({ ...EMPTY_BLOCK });
+      setBlockBaseline({ ...EMPTY_BLOCK });
+    } else {
+      setWindow({ ...EMPTY_WINDOW });
+      setWindowBaseline({ ...EMPTY_WINDOW });
+    }
+  }
   const [topic, setTopic] = useState(TOPICS[0]);
   const p = draft.preferences,
-    dirty = JSON.stringify(draft) !== savedKey;
+    dirty = JSON.stringify(draft) !== savedKey || pendingBlock || pendingWindow;
   useEffect(() => {
     onDirtyChange?.(dirty);
     const beforeUnload = (event: BeforeUnloadEvent) => {
@@ -160,13 +171,16 @@ export function MyPreferences({
           { ...entry, id: crypto.randomUUID(), title: block.title.trim() },
         ],
       });
-      setBlock({ ...block, title: "" });
+      const nextBlock = { ...block, title: "" };
+      setBlock(nextBlock);
+      setBlockBaseline(nextBlock);
     } else {
       if (p.windows.length >= 20) {
         setError("Remove a window before adding another.");
         return;
       }
       pref({ windows: [...p.windows, entry] });
+      setWindowBaseline({ ...window });
     }
     setError("");
   }
@@ -182,6 +196,7 @@ export function MyPreferences({
           <label className="field full">
             Commitment title
             <input
+              id="busy-commitment-title"
               maxLength={60}
               value={block.title}
               onChange={(e) => setBlock({ ...block, title: e.target.value })}
@@ -191,6 +206,7 @@ export function MyPreferences({
         <label className="field">
           {kind === "block" ? "Busy" : "Available-only"} day
           <select
+            id={kind === "window" ? "available-window-day" : undefined}
             value={value.day}
             onChange={(e) => set({ day: +e.target.value })}
           >
@@ -219,6 +235,14 @@ export function MyPreferences({
         </label>
         <Button onClick={() => addTime(kind)}>
           Add {kind === "block" ? "busy commitment" : "available-only window"}
+        </Button>
+        <Button
+          onClick={() => {
+            clearEntry(kind);
+            setError("");
+          }}
+        >
+          Clear {kind === "block" ? "busy" : "available-only"} entry
         </Button>
       </div>
     );
@@ -283,6 +307,19 @@ export function MyPreferences({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (pendingBlock || pendingWindow) {
+              setError(
+                "Add or clear the unfinished busy commitment or available-only window before saving.",
+              );
+              document
+                .getElementById(
+                  pendingBlock
+                    ? "busy-commitment-title"
+                    : "available-window-day",
+                )
+                ?.focus();
+              return;
+            }
             let saved = false;
             update((s) => {
               const latestConflicts = newBusyConflicts(
@@ -367,6 +404,8 @@ export function MyPreferences({
                   )
                     return;
                   setDraft(editable(state));
+                  clearEntry("block");
+                  clearEntry("window");
                   setError("");
                   notify("Unsaved changes discarded.");
                 }}

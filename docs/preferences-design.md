@@ -1,6 +1,6 @@
 # My Preferences: implementation and design
 
-This document describes the actual `Doris` checkout inspected at application commit `2dd93ae`, not an unimplemented proposal. This task edits documentation only. The original proposal attachment is not in this checkout; the supplied requirements and executable source define this implementation. Current fresh checks and deferred verification are separated below.
+The original documentation pass inspected application commit `2dd93ae` on `Doris`. Subsequent draft-entry/navigation repairs and their fresh checks are recorded below; they do not change ranking or API privacy projections. The original proposal attachment is not in this checkout; the supplied requirements and executable source define this implementation. Current fresh checks and deferred verification are separated below.
 
 ## Implemented preference flow
 
@@ -157,9 +157,9 @@ Use a **separate private browser context**, default fictional configuration and 
 
 ## Verification and remaining work
 
-### Newly run during this documentation task
+### Earlier documentation-pass checks
 
-Application code was unchanged from `2dd93ae`. The following actually ran now and passed:
+During that documentation-only pass, application code was unchanged from `2dd93ae`. The following checks ran then and passed (not fresh repair results):
 
 | Command/check | Result |
 |---|---|
@@ -182,9 +182,9 @@ node --import tsx --test \
 
 In this cloud checkout the successful Rust commands used `CARGO_HOME=/workspace/.cargo`, `RUSTUP_HOME=/workspace/.rustup`, `RUSTUP_TOOLCHAIN=1.99.1`, `/workspace/.cargo/bin` on `PATH`, and `CARGO_BUILD_JOBS=4`. These are environment-specific, not new project requirements.
 
-### Not newly verified; separate verification task
+### Broader verification and remaining checks
 
-No command timed out. Broader checks were deliberately left outside this focused documentation pass. Historical README/browser results must not be presented as fresh results. Exact commands for the remaining full suite, broad API suite and frozen evaluation reproduction:
+No command timed out during the documentation pass. The repair below subsequently ran the full npm/Wiki and broad API suites; frozen evaluation and the full browser matrix remain separate verification work. Exact rerun commands:
 
 ```sh
 npm test
@@ -206,4 +206,10 @@ node scripts/browser-preference-surfaces.mjs
 node scripts/browser-journey.mjs
 ```
 
-Adjust optional-tool paths/URL to the actual environment; Playwright is not an application dependency. Those journeys were **not rerun in this task**. Nor were live watsonx, real enrollment, external integrations, production privacy, a full accessibility audit, alternate browsers or real-student outcomes tested. Functional implementation requested for this preference iteration is present; remaining verification and deferred production capabilities above remain separate work.
+Adjust optional-tool paths/URL to the actual environment; Playwright is not an application dependency. That complete browser matrix was **not rerun during the documentation pass or subsequent repair**; the repair ran the specific draft-entry and busy-conflict journeys listed below. Nor were live watsonx, real enrollment, external integrations, production privacy, a full accessibility audit, alternate browsers or real-student outcomes tested. Functional implementation requested for this preference iteration is present; remaining verification and deferred production capabilities above remain separate work.
+
+### Draft-entry and navigation repair verification
+
+Unadded commitment/window fields now participate in dirty tracking and unload/navigation warnings. Their baselines advance only after Add. Save refuses unfinished entries, announces the error and focuses the entry; Clear entry or confirmed Cancel resets the controls. No busy time is silently saved or discarded. Ordinary brand-link navigation prevents its anchor default and uses the guarded route once, preserving modified-click browser behavior. The API regression expectation includes `mode:discovery`.
+
+Freshly run for this repair: `npm run build`; `npm test` (117 TypeScript tests, 5 Wiki tests and planner assertions); `npm run test:api`; `scripts/browser-preference-drafts.mjs` at 1280/390px; and `scripts/browser-busy-commitments.mjs` desktop online/mobile fallback. All passed. Draft regressions cover blocked partial Save, focus, one declined brand prompt, preserved fields, clearing/Cancel and successful added-entry Save. Busy regressions retain actual demo RSVP approval, conflict confirmation, preserved plan/RSVP and future blocked-time checks. Rust unit/Clippy and frozen evaluation were not newly run in this repair.
