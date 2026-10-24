@@ -16,12 +16,14 @@ export function ChatEvents({
   matchReasons = [],
   previousSettings = false,
   recommendationMode = "plan-building",
+  busy = false,
   onDecline,
   onAnother,
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
   matchReasons?: import("./types.ts").RecommendationMatchResult[];
   previousSettings?: boolean;
+  busy?: boolean;
   recommendationMode?: import("./types.ts").RecommendationMode;
   onDecline?: (id: string) => void;
   onAnother?: (id: string) => void;
@@ -95,10 +97,13 @@ export function ChatEvents({
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">
               {onDecline && !added && (
-                <Button onClick={() => onDecline(id)}>Not for me</Button>
+                <Button disabled={busy} onClick={() => onDecline(id)}>
+                  Not for me
+                </Button>
               )}
               {onAnother && (
                 <Button
+                  disabled={busy}
                   onClick={() => {
                     onAnother(id);
                   }}

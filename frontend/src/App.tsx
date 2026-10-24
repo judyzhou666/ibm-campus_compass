@@ -43,7 +43,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
-import { Briefing, Welcome } from "./Briefing.tsx";
+import { Briefing } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 
@@ -112,7 +112,7 @@ export default function App() {
   const [proposals] = useState(() => createPreferenceProposals(demo));
   const proposal = useSyncExternalStore(proposals.subscribe, proposals.read);
   const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
-  const recommendationResult = useRecommendations({
+  const discoveryState = {
     ...state,
     preferences: {
       ...migratePreferences(state.preferences),
@@ -123,7 +123,8 @@ export default function App() {
         ]),
       ],
     },
-  });
+  };
+  const recommendationResult = useRecommendations(discoveryState);
   const settingsKey = preferenceSettingsKey(state);
   const preferenceRevision = proposalRevision(state);
   useEffect(() => {
@@ -173,6 +174,7 @@ export default function App() {
     location.hash =
       next === "forum" && communityId ? communityHash(communityId) : next;
     window.scrollTo(0, 0);
+    requestAnimationFrame(() => document.getElementById("main")?.focus());
     return true;
   }
   useEffect(() => {
@@ -198,6 +200,7 @@ export default function App() {
       }
       if (next !== "planner") proposals.dismiss();
       setPage(next);
+      requestAnimationFrame(() => document.getElementById("main")?.focus());
       setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
     };
@@ -330,19 +333,10 @@ export default function App() {
             setSessionSkipped((ids) => [...new Set([...ids, id])])
           }
           onDecline={(id) => {
-            update((s) => ({
-              ...s,
-              preferences: {
-                ...migratePreferences(s.preferences),
-                dismissed: [
-                  ...new Set([
-                    ...migratePreferences(s.preferences).dismissed,
-                    id,
-                  ]),
-                ],
-              },
-              draft: s.draft.filter((x) => x !== id),
-            }));
+            setSessionSkipped((ids) => [...new Set([...ids, id])]);
+            notify(
+              "Skipped in this discovery view. Saved preferences are unchanged.",
+            );
           }}
         />
       ))}
@@ -389,27 +383,17 @@ export default function App() {
   return (
     <>
       {!state.onboarded ? (
-        <Welcome
-          onStart={() => {
+        <Profile
+          brief
+          state={state}
+          update={update}
+          notify={notify}
+          onClearChat={clearChat}
+          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
+          onFull={() => {
             update((s) => ({ ...s, onboarded: true }));
             nav("profile");
           }}
-          onFinish={(interests, participation, guidance) => {
-            update((s) => ({
-              ...s,
-              interests,
-              onboarded: true,
-              preferences: {
-                ...migratePreferences(s.preferences),
-                participation,
-                guidance,
-              },
-            }));
-          }}
-          onBrowse={() =>
-            update((s) => ({ ...s, interests: [], onboarded: true }))
-          }
-          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
         />
       ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
@@ -514,7 +498,7 @@ export default function App() {
             </button>
           </div>
         </header>
-        <main id="main">
+        <main id="main" tabIndex={-1}>
           {page === "dashboard" ? (
             <>
               <Heading
@@ -575,7 +559,7 @@ export default function App() {
                       </button>
                     </div>
                     <Briefing
-                      state={state}
+                      state={discoveryState}
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
                       onCalendar={() => nav("calendar")}
@@ -584,9 +568,21 @@ export default function App() {
                     <Filters value={filter} onChange={setFilter} />
                     <p role="status">{recommendationResult.notice}</p>
                     {cards(recommended)}
-                    {!recommended.length ? (
-                      <Empty title="Try another category">
-                        There are no available matches in this category.
+                    {!recommendationResult.loading && !recommended.length ? (
+                      <Empty
+                        title={
+                          recommendationResult.source === "error"
+                            ? "Suggestions unavailable"
+                            : "Try another category"
+                        }
+                      >
+                        {recommendationResult.source === "error" ? (
+                          <Button onClick={recommendationResult.retry}>
+                            Retry suggestions
+                          </Button>
+                        ) : (
+                          "There are no available matches in this category."
+                        )}
                       </Empty>
                     ) : null}
                   </section>
@@ -947,21 +943,14 @@ export default function App() {
                               previousSettings={m.settingsKey !== settingsKey}
                               recommendationMode={m.recommendationMode}
                               state={state}
+                              busy={busy}
                               onDecline={(id) => {
-                                update((s) => ({
-                                  ...s,
-                                  preferences: {
-                                    ...migratePreferences(s.preferences),
-                                    dismissed: [
-                                      ...new Set([
-                                        ...migratePreferences(s.preferences)
-                                          .dismissed,
-                                        id,
-                                      ]),
-                                    ],
-                                  },
-                                  draft: s.draft.filter((x) => x !== id),
-                                }));
+                                if (conversation.read().busy) return;
+                                proposals.dismiss();
+                                void conversation.another(id);
+                                notify(
+                                  "Skipped in this search. Saved preferences are unchanged.",
+                                );
                               }}
                               onAnother={(id) => {
                                 proposals.dismiss();
@@ -1270,7 +1259,7 @@ export default function App() {
               </section>
             </>
           ) : null}
-          {page === "profile" ? (
+          {page === "profile" && state.onboarded ? (
             <Profile
               state={state}
               update={update}

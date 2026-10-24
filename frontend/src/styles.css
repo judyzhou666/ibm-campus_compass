@@ -1883,3 +1883,5 @@ dialog { max-height:90dvh; overflow-y:auto; }
 .previous-settings { margin: 10px 0; }
 .briefing .recommendation-info { font-size: .88rem; margin: 6px 0 16px; }
 .calendar-item .event-problem { display: block; color: var(--amber); white-space: normal; overflow-wrap: anywhere; }
+.preference-setup-layout { display:block; }
+.preference-actions { flex-wrap:wrap; }

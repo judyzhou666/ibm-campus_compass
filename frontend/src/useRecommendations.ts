@@ -9,11 +9,13 @@ export function useRecommendations(
   state: DemoState,
   constraints: Constraints = {},
 ) {
+  const [attempt, setAttempt] = useState(0);
   const requestConstraints: Constraints = {
     ...constraints,
     mode: constraints.mode ?? "discovery",
   };
-  const key = planningKey(state) + JSON.stringify(requestConstraints);
+  const key =
+    planningKey(state) + JSON.stringify(requestConstraints) + `:${attempt}`;
   const [result, setResult] = useState<{
     key: string;
     ids: string[];
@@ -49,13 +51,15 @@ export function useRecommendations(
       active = false;
     };
   }, [key]);
-  return result?.key === key
-    ? { ...result, loading: false }
-    : {
-        ids: [],
-        matchReasons: [],
-        notice: "Checking your saved preferences…",
-        source: "loading",
-        loading: true,
-      };
+  const current =
+    result?.key === key
+      ? { ...result, loading: false }
+      : {
+          ids: [],
+          matchReasons: [],
+          notice: "Checking your saved preferences…",
+          source: "loading",
+          loading: true,
+        };
+  return { ...current, retry: () => setAttempt((value) => value + 1) };
 }

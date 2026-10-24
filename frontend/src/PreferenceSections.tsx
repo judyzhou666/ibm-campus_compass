@@ -11,12 +11,18 @@ import {
 } from "./preferences.ts";
 import type { Block, TimeSlot } from "./types.ts";
 
-export function DirectionSection({ editor }: { editor: PreferenceEditor }) {
+export function DirectionSection({
+  editor,
+  brief = false,
+}: {
+  editor: PreferenceEditor;
+  brief?: boolean;
+}) {
   const { draft, change, pref } = editor;
   const p = draft.preferences;
   return (
     <section className="panel preference-section">
-      <h2>A. My Direction</h2>
+      <h2>{brief ? "Direction & interests" : "A. My Direction"}</h2>
       <h3>What would you like to explore right now?</h3>
       <p>
         Select more than one goal, or choose Not sure yet on its own. A primary
@@ -94,55 +100,59 @@ export function DirectionSection({ editor }: { editor: PreferenceEditor }) {
           wellbeing interests are equally welcome.
         </p>
       </fieldset>
-      <label className="field">
-        Something else / custom interest (optional)
-        <input
-          maxLength={240}
-          value={p.custom_interest}
-          onChange={(e) => pref({ custom_interest: e.target.value })}
-        />
-      </label>
-      <label className="field">
-        Why does this matter to you right now?
-        <textarea
-          aria-describedby="reflection-help"
-          maxLength={240}
-          value={p.why}
-          onChange={(e) => pref({ why: e.target.value })}
-        />
-      </label>
-      <p className="fineprint" id="reflection-help">
-        Optional. Reflection and custom text remain local notes. They are not
-        interpreted or sent for recommendations.
-      </p>
-      <label className="field">
-        Demo display name
-        <input
-          maxLength={30}
-          value={draft.name}
-          onChange={(e) => change({ name: e.target.value })}
-        />
-      </label>
-      <label className="field">
-        Major or interdisciplinary interests (optional)
-        <input
-          maxLength={120}
-          value={draft.major}
-          onChange={(e) => change({ major: e.target.value })}
-        />
-      </label>
-      <label className="field">
-        Research / career exploration goals (optional)
-        <input
-          maxLength={240}
-          value={draft.goals}
-          onChange={(e) => change({ goals: e.target.value })}
-        />
-      </label>
-      <p className="fineprint">
-        Existing major/goals notes are retained locally; no career goal is
-        required and raw notes do not affect matching.
-      </p>
+      {!brief && (
+        <>
+          <label className="field">
+            Something else / custom interest (optional)
+            <input
+              maxLength={240}
+              value={p.custom_interest}
+              onChange={(e) => pref({ custom_interest: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Why does this matter to you right now?
+            <textarea
+              aria-describedby="reflection-help"
+              maxLength={240}
+              value={p.why}
+              onChange={(e) => pref({ why: e.target.value })}
+            />
+          </label>
+          <p className="fineprint" id="reflection-help">
+            Optional. Reflection and custom text remain local notes. They are
+            not interpreted or sent for recommendations.
+          </p>
+          <label className="field">
+            Demo display name
+            <input
+              maxLength={30}
+              value={draft.name}
+              onChange={(e) => change({ name: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Major or interdisciplinary interests (optional)
+            <input
+              maxLength={120}
+              value={draft.major}
+              onChange={(e) => change({ major: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Research / career exploration goals (optional)
+            <input
+              maxLength={240}
+              value={draft.goals}
+              onChange={(e) => change({ goals: e.target.value })}
+            />
+          </label>
+          <p className="fineprint">
+            Existing major/goals notes are retained locally; no career goal is
+            required and raw notes do not affect matching.
+          </p>
+        </>
+      )}
     </section>
   );
 }
@@ -255,12 +265,20 @@ export function LearningSection({ editor }: { editor: PreferenceEditor }) {
   );
 }
 
-export function ParticipationSection({ editor }: { editor: PreferenceEditor }) {
+export function ParticipationSection({
+  editor,
+  brief = false,
+}: {
+  editor: PreferenceEditor;
+  brief?: boolean;
+}) {
   const { draft, pref } = editor;
   const p = draft.preferences;
   return (
     <section className="panel preference-section">
-      <h2>C. My Participation &amp; Support</h2>
+      <h2>
+        {brief ? "Participation & guidance" : "C. My Participation & Support"}
+      </h2>
       <p>
         Optional. Choose any formats that suit you, or select No preference on
         its own. You can change these choices anytime.
@@ -313,22 +331,26 @@ export function ParticipationSection({ editor }: { editor: PreferenceEditor }) {
           ))}
         </select>
       </label>
-      <label className="field">
-        How many suggestions would you like to consider at a time?
-        <select
-          value={p.count}
-          aria-describedby="result-count-help"
-          onChange={(e) => pref({ count: +e.target.value as 1 | 3 | 5 })}
-        >
-          {[1, 3, 5].map((n) => (
-            <option key={n}>{n}</option>
-          ))}
-        </select>
-      </label>
-      <p id="result-count-help">
-        This limits suggestions shown, not attendance. You can decline every
-        suggestion; there is no weekly quota or workload estimate.
-      </p>
+      {!brief && (
+        <>
+          <label className="field">
+            How many suggestions would you like to consider at a time?
+            <select
+              value={p.count}
+              aria-describedby="result-count-help"
+              onChange={(e) => pref({ count: +e.target.value as 1 | 3 | 5 })}
+            >
+              {[1, 3, 5].map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <p id="result-count-help">
+            This limits suggestions shown, not attendance. You can decline every
+            suggestion; there is no weekly quota or workload estimate.
+          </p>
+        </>
+      )}
     </section>
   );
 }
@@ -445,9 +467,9 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
     <section className="panel preference-section">
       <h2>E. My Personalization Controls</h2>
       <p>
-        Not for me hides an event from future suggestions in this browser.
-        Restore hidden events below. Show another skips only for the current
-        search session.
+        Not for me and Show another skip only for the current search; they do
+        not change saved preferences. Older saved hidden-event choices remain
+        until you explicitly restore them below.
       </p>
       <p>
         Saved interests, enabled structured goals, enabled confirmed learning
@@ -505,7 +527,7 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
       </Button>
       <Button onClick={onClearChat}>Clear local planner conversation</Button>
       <Button onClick={() => pref({ dismissed: [] })}>
-        Restore events marked Not for me ({p.dismissed.length})
+        Restore previously hidden events ({p.dismissed.length})
       </Button>
       {confirm && (
         <div className="notice" role="alert">

@@ -1,13 +1,5 @@
-import {
-  activeTopics,
-  wirePreferences,
-  PARTICIPATION,
-  GUIDANCE,
-  type Guidance,
-} from "./preferences.ts";
-import { TOPICS } from "./data.ts";
+import { activeTopics, wirePreferences } from "./preferences.ts";
 import { WEEK_LABEL } from "./config.ts";
-import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
 import { useRecommendations } from "./useRecommendations.ts";
 import {
@@ -17,99 +9,6 @@ import {
 import { issue, overlappingAlternatives } from "./planner.ts";
 import { Button } from "./components.tsx";
 import type { DemoState } from "./types.ts";
-export function Welcome({
-  onStart,
-  onSkip,
-  onFinish,
-  onBrowse,
-}: {
-  onStart: () => void;
-  onSkip: () => void;
-  onBrowse: () => void;
-  onFinish: (
-    topics: string[],
-    participation: string[],
-    guidance: Guidance,
-  ) => void;
-}) {
-  const [topics, setTopics] = useState<string[]>([]),
-    [participation, setParticipation] = useState<string[]>([]),
-    [guidance, setGuidance] = useState<Guidance>("few");
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current!;
-    d.showModal();
-    return () => d.close();
-  }, []);
-  return (
-    <dialog ref={ref} aria-labelledby="welcome-title" onCancel={onSkip}>
-      <h2 id="welcome-title">Make campus feel more familiar.</h2>
-      <p>
-        Personalize academic, research, career, social and cultural interests
-        and preferred times. No career goal is required. Preferences are saved
-        in this browser. Recommendation requests are processed by the app’s Rust
-        service when available.
-      </p>
-      <fieldset>
-        <legend>1. What would you like to explore?</legend>
-        {TOPICS.map((t) => (
-          <label className="quick-choice" key={t}>
-            <input
-              type="checkbox"
-              checked={topics.includes(t)}
-              onChange={() =>
-                setTopics(
-                  topics.includes(t)
-                    ? topics.filter((x) => x !== t)
-                    : [...topics, t],
-                )
-              }
-            />
-            {t}
-          </label>
-        ))}
-        <p>No choices? Browse generally — you can decide later.</p>
-      </fieldset>
-      <label className="field">
-        2. Preferred participation
-        <select
-          value={participation[0] || ""}
-          onChange={(e) =>
-            setParticipation(e.target.value ? [e.target.value] : [])
-          }
-        >
-          <option value="">No preference</option>
-          {Object.entries(PARTICIPATION).map(([id, label]) => (
-            <option key={id} value={id}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="field">
-        3. Preferred guidance
-        <select
-          value={guidance}
-          onChange={(e) => setGuidance(e.target.value as Guidance)}
-        >
-          {Object.entries(GUIDANCE).map(([id, label]) => (
-            <option key={id} value={id}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <Button onClick={() => onFinish(topics, participation, guidance)}>
-        Save quick setup
-      </Button>
-      <div className="row">
-        <Button onClick={onStart}>Personalize my demo</Button>
-        <Button onClick={onSkip}>Use sample preferences</Button>
-        <Button onClick={onBrowse}>Skip and browse generally</Button>
-      </div>
-    </dialog>
-  );
-}
 export function Briefing({
   state,
   onDetail,
@@ -169,7 +68,21 @@ export function Briefing({
         <p role="status">Checking availability…</p>
       ) : (
         <>
-          <p role="status">{result.notice}</p>
+          <p role="status">
+            {[...new Set([result.notice, cross.notice].filter(Boolean))].join(
+              " ",
+            )}
+          </p>
+          {(result.source === "error" || cross.source === "error") && (
+            <Button
+              onClick={() => {
+                result.retry();
+                cross.retry();
+              }}
+            >
+              Retry briefing
+            </Button>
+          )}
           <div className="briefing-grid">
             <div>
               <h3>Matching your interests</h3>

@@ -8,7 +8,7 @@ import {
 } from "./PreferenceSections.tsx";
 import type { ReactNode } from "react";
 import type { Preferences } from "./preferences.ts";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DAYS, TOPICS } from "./data.ts";
 import { Button, Heading } from "./components.tsx";
 import {
@@ -50,13 +50,32 @@ export function MyPreferences({
   notify,
   onClearChat,
   onDirtyChange,
+  brief = false,
+  onSkip,
+  onFull,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   notify: (s: string) => void;
   onClearChat: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  brief?: boolean;
+  onSkip?: () => void;
+  onFull?: () => void;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (!brief) return;
+    const d = dialogRef.current!;
+    d.showModal();
+    const heading = d.querySelector("h1");
+    heading?.setAttribute("tabindex", "-1");
+    heading?.focus();
+    return () => {
+      d.close();
+      queueMicrotask(() => document.getElementById("main")?.focus());
+    };
+  }, [brief]);
   const [draft, setDraft] = useState(() => editable(state));
   const savedKey = JSON.stringify(editable(state));
   useEffect(() => {
@@ -219,14 +238,48 @@ export function MyPreferences({
     notify,
     onClearChat,
   };
-  return (
+  function skipSetup() {
+    if (
+      dirty &&
+      !globalThis.confirm(
+        "Skip setup and discard unsaved changes? Your saved preferences will stay unchanged.",
+      )
+    )
+      return;
+    onSkip?.();
+    notify(
+      "Setup skipped. Your existing preferences are unchanged; open My Preferences anytime.",
+    );
+  }
+  const content = (
     <>
       <Heading
-        title="My Preferences"
-        description="Shape your campus experience around what matters to you."
+        title={brief ? "Quick preference setup" : "My Preferences"}
+        description={
+          brief
+            ? "Choose what helps, or skip for now."
+            : "Shape your campus experience around what matters to you."
+        }
       />
       <p>Skip any question and change your preferences anytime.</p>
-      <div className="preferences-layout">
+      {brief && (
+        <p id="quick-setup-help">
+          These are your current saved or sample choices. Save applies edits;
+          Skip for now keeps existing preferences. Full preferences are
+          available later.
+        </p>
+      )}
+      {brief && <Button onClick={skipSetup}>Skip for now</Button>}
+      {brief && (
+        <p role="status">
+          {dirty
+            ? "Unsaved choices — recommendations still use saved preferences."
+            : "Current choices — nothing changed."}
+        </p>
+      )}
+      <div
+        className={`preferences-layout ${brief ? "preference-setup-layout" : ""}`}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -260,15 +313,17 @@ export function MyPreferences({
             }
             setError("");
             notify(
-              "Preferences saved. Suggestions will use these choices; your planned events are preserved.",
+              brief
+                ? "Quick setup saved. You can edit My Preferences anytime."
+                : "Preferences saved. Suggestions will use these choices; your planned events are preserved.",
             );
           }}
         >
-          <DirectionSection editor={editor} />
-          <LearningSection editor={editor} />
-          <ParticipationSection editor={editor} />
-          <PracticalSection editor={editor} />
-          <ControlsSection editor={editor} />
+          <DirectionSection editor={editor} brief={brief} />
+          {!brief && <LearningSection editor={editor} />}
+          <ParticipationSection editor={editor} brief={brief} />
+          {!brief && <PracticalSection editor={editor} />}
+          {!brief && <ControlsSection editor={editor} />}
           {conflicts.length > 0 && (
             <div
               className="notice"
@@ -294,75 +349,122 @@ export function MyPreferences({
           )}
           <div role="alert">{error}</div>
           <div className="preference-actions">
-            <button className="btn primary" type="submit" disabled={!dirty}>
-              Save changes
-            </button>
-            <Button
-              onClick={() => {
-                if (
-                  dirty &&
-                  !globalThis.confirm(
-                    "Discard unsaved preference changes? Recommendations still use your saved choices.",
-                  )
-                )
-                  return;
-                setDraft(editable(state));
-                setError("");
-                notify("Unsaved changes discarded.");
-              }}
+            <button
+              className="btn primary"
+              type="submit"
+              disabled={!dirty && !brief}
             >
-              Cancel
-            </Button>
+              {brief ? "Save quick setup" : "Save changes"}
+            </button>
+            {!brief && (
+              <Button
+                onClick={() => {
+                  if (
+                    dirty &&
+                    !globalThis.confirm(
+                      "Discard unsaved preference changes? Recommendations still use your saved choices.",
+                    )
+                  )
+                    return;
+                  setDraft(editable(state));
+                  setError("");
+                  notify("Unsaved changes discarded.");
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            {brief && (
+              <>
+                <Button
+                  onClick={() => {
+                    if (
+                      dirty &&
+                      !globalThis.confirm(
+                        "Discard unsaved setup choices and open full preferences?",
+                      )
+                    )
+                      return;
+                    onFull?.();
+                    notify(
+                      dirty
+                        ? "Full preferences opened. Unsaved setup choices were not saved."
+                        : "Full preferences opened. Nothing was changed.",
+                    );
+                  }}
+                >
+                  Open full preferences
+                </Button>
+                <Button onClick={skipSetup}>Use sample preferences</Button>
+              </>
+            )}
           </div>
         </form>
-        <aside
-          className="panel preference-summary"
-          aria-label="Preference summary"
-        >
-          <h2>Your choices</h2>
-          <p role="status">
-            {dirty ? "Unsaved changes — preview only" : "Saved preferences"}
-          </p>
-          <p>
-            Recommendations keep using your saved preferences until you select
-            Save changes.
-          </p>
-          <h3>Topics</h3>
-          <p>
-            {activeTopics({ ...state, ...draft }).join(" · ") ||
-              "General browsing"}
-          </p>
-          <p>
-            {p.learning_topics.length} confirmed learning topics;{" "}
-            {p.use_learning ? "enabled" : "disabled"}.
-          </p>
-          <p>
-            {GUIDANCE[p.guidance]} · Up to {p.count} suggestions
-          </p>
-          <p className="fineprint">
-            Suggestion count is a display limit, not an attendance target.
-          </p>
-          <p>
-            {p.participation
-              .map((t) => PARTICIPATION[t as keyof typeof PARTICIPATION])
-              .join(" · ") || "No participation preference"}
-          </p>
-          <p>
-            {p.free_only
-              ? "Free admission only"
-              : "No saved admission-cost filter"}{" "}
-            · {p.windows.length} available-only windows
-          </p>
-          <p>
-            {draft.blocks.length} entered commitments · {draft.buffer}-minute
-            travel buffer
-          </p>
-          <p>
-            Saving may change future suggestions. Existing chosen events stay in
-            your calendar; review any new conflicts there.
-          </p>
-        </aside>
+        {!brief && (
+          <aside
+            className="panel preference-summary"
+            aria-label="Preference summary"
+          >
+            <h2>Your choices</h2>
+            <p role="status">
+              {dirty ? "Unsaved changes — preview only" : "Saved preferences"}
+            </p>
+            <p>
+              Recommendations keep using your saved preferences until you select
+              Save changes.
+            </p>
+            <h3>Topics</h3>
+            <p>
+              {activeTopics({ ...state, ...draft }).join(" · ") ||
+                "General browsing"}
+            </p>
+            <p>
+              {p.learning_topics.length} confirmed learning topics;{" "}
+              {p.use_learning ? "enabled" : "disabled"}.
+            </p>
+            <p>
+              {GUIDANCE[p.guidance]} · Up to {p.count} suggestions
+            </p>
+            <p className="fineprint">
+              Suggestion count is a display limit, not an attendance target.
+            </p>
+            <p>
+              {p.participation
+                .map((t) => PARTICIPATION[t as keyof typeof PARTICIPATION])
+                .join(" · ") || "No participation preference"}
+            </p>
+            <p>
+              {p.free_only
+                ? "Free admission only"
+                : "No saved admission-cost filter"}{" "}
+              · {p.windows.length} available-only windows
+            </p>
+            <p>
+              {draft.blocks.length} entered commitments · {draft.buffer}-minute
+              travel buffer
+            </p>
+            <p>
+              Saving may change future suggestions. Existing chosen events stay
+              in your calendar; review any new conflicts there.
+            </p>
+          </aside>
+        )}
       </div>
     </>
+  );
+  return brief ? (
+    <dialog
+      ref={dialogRef}
+      aria-label="Quick preference setup"
+      aria-describedby="quick-setup-help"
+      onCancel={(event) => {
+        event.preventDefault();
+        skipSetup();
+      }}
+    >
+      {content}
+    </dialog>
+  ) : (
+    content
   );
 }

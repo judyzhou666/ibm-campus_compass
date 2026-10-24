@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Brief, skippable setup using the existing editor
+
+First-time setup now renders the existing My Preferences editor and shared direction/interests, participation and guidance components in brief mode. There is no second form or preference store. Skip for now is prominent; Escape works, unsaved changes require discard confirmation, Save gives feedback, and full preferences remain available later. Keyboard focus starts at the dialog heading and returns to main content; mobile actions wrap within the existing styling.
+
+Not for me now skips only the current discovery view/search and never silently changes long-term preferences. Existing saved hidden IDs are preserved until explicitly restored. Recommendation loading no longer shows false empty results, and Dashboard/briefing errors offer retry. Verification: frontend build/type checking, 35 focused tests, desktop-online/mobile-offline setup/action checks, injected loading/error/retry checks and both guided browser journeys passed. Existing RSVP approval, cancellation/replacement, archive/restore and export actions remain usable. Optional regression: `scripts/browser-brief-setup.mjs` using tooling from `docs/backend.md`. No decorative features or backend changes were added.
+
 ## Saving busy commitments that conflict with chosen events
 
 My Preferences now previews newly introduced busy-time conflicts and requires browser-native confirmation on Save, checked against the latest planned events. Declining retains the unsaved draft. Confirming records the commitment while preserving the chosen events and RSVP records; nothing is automatically removed, replaced or cancelled. Calendar tiles, the Planner calendar and the plan list mark current conflicts. Existing details/Remove actions remain explicit student choices.
