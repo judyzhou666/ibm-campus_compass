@@ -1240,6 +1240,14 @@ export default function App() {
                         <small>
                           {when(e)} · {e.location}
                         </small>
+                        {state.rsvps.includes(e.id) && (
+                          <small>Demo RSVP confirmed — retained</small>
+                        )}
+                        {!state.cancelled.includes(e.id) && issue(e, state) && (
+                          <small className="event-problem" role="status">
+                            Conflict: {issue(e, state)}
+                          </small>
+                        )}
                       </div>
                       <Button className="small" onClick={() => remove(e.id)}>
                         Remove

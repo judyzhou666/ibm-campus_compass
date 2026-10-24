@@ -228,6 +228,14 @@ export function Week({
                 <strong>{dayLabel(i)}</strong>
               </div>
               {items.map((e) => {
+                const plannedEvent =
+                  e.kind === "event"
+                    ? EVENTS.find((event) => event.id === e.id)
+                    : undefined;
+                const conflict =
+                  plannedEvent && !state.cancelled.includes(e.id)
+                    ? issue(plannedEvent, state)
+                    : null;
                 const cancelled = state.cancelled.includes(e.id),
                   content = (
                     <>
@@ -237,6 +245,11 @@ export function Week({
                           ? "Cancelled"
                           : `${time(e.start)}${full ? " – " + time(e.end) : ""}`}
                       </span>
+                      {conflict && (
+                        <span className="event-problem">
+                          Conflict: {conflict}
+                        </span>
+                      )}
                     </>
                   );
                 return e.kind === "event" ? (

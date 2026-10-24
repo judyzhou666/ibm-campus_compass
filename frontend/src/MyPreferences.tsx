@@ -1,3 +1,4 @@
+import { newBusyConflicts, busyConflictWarning } from "./busyCommitments.ts";
 import {
   DirectionSection,
   LearningSection,
@@ -203,6 +204,7 @@ export function MyPreferences({
       </div>
     );
   }
+  const conflicts = newBusyConflicts(state, draft.blocks, draft.buffer);
   const editor: PreferenceEditor = {
     draft,
     change,
@@ -228,14 +230,34 @@ export function MyPreferences({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            update((s) => ({
-              ...s,
-              ...draft,
-              preferences: migratePreferences(p),
-              onboarded: true,
-              draft: [],
-              constraints: {},
-            }));
+            let saved = false;
+            update((s) => {
+              const latestConflicts = newBusyConflicts(
+                s,
+                draft.blocks,
+                draft.buffer,
+              );
+              if (
+                latestConflicts.length &&
+                !globalThis.confirm(busyConflictWarning(latestConflicts))
+              )
+                return s;
+              saved = true;
+              return {
+                ...s,
+                ...draft,
+                preferences: migratePreferences(p),
+                onboarded: true,
+                draft: [],
+                constraints: {},
+              };
+            });
+            if (!saved) {
+              notify(
+                "Busy commitment not saved. Your draft is still available; planned events and RSVP records are unchanged.",
+              );
+              return;
+            }
             setError("");
             notify(
               "Preferences saved. Suggestions will use these choices; your planned events are preserved.",
@@ -247,6 +269,29 @@ export function MyPreferences({
           <ParticipationSection editor={editor} />
           <PracticalSection editor={editor} />
           <ControlsSection editor={editor} />
+          {conflicts.length > 0 && (
+            <div
+              className="notice"
+              role="status"
+              aria-label="Unsaved busy-time conflicts"
+            >
+              <strong>
+                Your busy commitment conflicts with planned events.
+              </strong>
+              <ul>
+                {conflicts.map(({ event, blocks }) => (
+                  <li key={event.id}>
+                    {event.title} — {blocks.map((b) => b.title).join(", ")}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Save changes will ask for confirmation. Planned events and RSVP
+                records will remain; you can review or explicitly remove an
+                event in your calendar.
+              </p>
+            </div>
+          )}
           <div role="alert">{error}</div>
           <div className="preference-actions">
             <button className="btn primary" type="submit" disabled={!dirty}>

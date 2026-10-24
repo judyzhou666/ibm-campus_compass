@@ -202,6 +202,12 @@ export function PlannerCalendar({
                             ? "Demo RSVP confirmed"
                             : "Added to calendar"}
                       </small>
+                      {!state.cancelled.includes(entry.id) &&
+                        issue(entry.event, state) && (
+                          <small className="event-problem">
+                            Conflict: {issue(entry.event, state)}
+                          </small>
+                        )}
                     </button>
                   ) : (
                     <div

@@ -2,6 +2,12 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Saving busy commitments that conflict with chosen events
+
+My Preferences now previews newly introduced busy-time conflicts and requires browser-native confirmation on Save, checked against the latest planned events. Declining retains the unsaved draft. Confirming records the commitment while preserving the chosen events and RSVP records; nothing is automatically removed, replaced or cancelled. Calendar tiles, the Planner calendar and the plan list mark current conflicts. Existing details/Remove actions remain explicit student choices.
+
+Both recommendation modes exclude the new busy time, and adding/confirming RSVP still validates the latest schedule. Busy titles remain local under the existing payload projection. Verification: frontend build/type checking, 59 focused busy/preference/workflow tests, diff checks and desktop-online/mobile-offline browser journeys passed. The browser check uses the actual demo RSVP flow, decline/confirm Save, conflict markers, explicit removal availability and reload preservation. Run `scripts/browser-busy-commitments.mjs` with optional tooling from `docs/backend.md`.
+
 ## Explicit pending preference proposals
 
 Interest proposals now use a separate transient, one-shot controller. This search only preserves current filters and saved preferences; Review and save displays exact additions, preserved provenance and all topics that will be enabled; Dismiss saves nothing. Only confirmation updates saved topics. Confirmed changes preserve current search/hard constraints, plans, RSVP and conversations. Unsupported/negated statements offer manual selection rather than guessed understanding.
