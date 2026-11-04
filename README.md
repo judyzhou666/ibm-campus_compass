@@ -23,7 +23,7 @@ npm run build
 cargo run --locked
 ```
 
-The startup line says which planner is active. `WATSONX_URL` defaults to `https://us-south.ml.cloud.ibm.com` and `WATSONX_MODEL_ID` to `ibm/granite-3-3-8b-instruct`; check that model is available in your watsonx project and set another Granite instruct ID if not. Leave `PLANNER_PROVIDER` unset (or `simulated`) for the credential-free classroom demo. Details: [docs/backend.md](docs/backend.md#ibm-watsonx-interpreter).
+The startup line says which planner is active. `WATSONX_URL` defaults to `https://us-south.ml.cloud.ibm.com` and `WATSONX_MODEL_ID` to `ibm/granite-4-h-small`, the Granite chat model offered in the lab's watsonx Challenge Sandbox. If your project lists a different Granite chat model, set its ID instead. Leave `PLANNER_PROVIDER` unset (or `simulated`) for the credential-free classroom demo. Details: [docs/backend.md](docs/backend.md#ibm-watsonx-interpreter).
 
 ### Implementation notes
 
@@ -37,7 +37,12 @@ The startup line says which planner is active. `WATSONX_URL` defaults to `https:
 
 All checks listed under [Verification](#verification) passed on November 4, 2026 (Rust: 12 unit tests; npm: 10 API/fallback tests and 5 Wiki publisher tests; API integration suite passed). Rust tests run against a local mock IAM and watsonx.ai server and cover: valid output, fenced JSON, token reuse, IAM and chat authentication failures, upstream errors, timeouts, non-object or unknown-field output (such as `event_ids`), out-of-range constraints, key redaction, and the labelled fallback through `/api/plan`.
 
-**Not yet verified against a real IBM account.** The request format follows IBM's watsonx.ai API reference and common client libraries; the first live run may reveal model-ID, API-version or parameter differences. Run the acceptance prompts in `WATSONX-NEXT-STEPS.md` with real credentials before demoing live mode. This change was written with Claude Code, not IBM Bob.
+**First live run (November 4, 2026, team sandbox, Dallas).** The API key and project ID authenticated. Two problems surfaced and were fixed:
+
+- `ibm/granite-3-3-8b-instruct` is not offered in the sandbox (HTTP 404). The default is now `ibm/granite-4-h-small`, the Granite chat model listed there.
+- Granite numbered weekdays from Monday = 1, so "Tuesday or Thursday" became Wednesday and Friday. The model now returns weekday **names** and Rust converts them; numeric days from the model are rejected and the request falls back to the labelled simulated planner. Two new Rust tests cover all seven names and name-based follow-ups (14 tests in total).
+
+After the fix, live answers were correct for "AI and a social event, Tuesday or Thursday only", "career events on Monday", "something on Wednesday or Friday afternoon", "weekend events" (no weekend events exist in the catalog) and "arts on Thursday" (none exist). Known differences from the simulated planner: Granite read "afternoon" as noon–midnight rather than noon–5 PM, and the follow-up "actually only Thursday" kept Thursday but dropped the earlier Social topic. The remaining prompts in `WATSONX-NEXT-STEPS.md` have not been run live. This change was written with Claude Code, not IBM Bob.
 
 ### IBM Bob lab requirements (added November 4, 2026)
 

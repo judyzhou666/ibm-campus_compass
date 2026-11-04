@@ -20,7 +20,7 @@ use std::{
 
 pub const DEFAULT_URL: &str = "https://us-south.ml.cloud.ibm.com";
 pub const DEFAULT_IAM_URL: &str = "https://iam.cloud.ibm.com/identity/token";
-pub const DEFAULT_MODEL_ID: &str = "ibm/granite-3-3-8b-instruct";
+pub const DEFAULT_MODEL_ID: &str = "ibm/granite-4-h-small";
 pub const DEFAULT_API_VERSION: &str = "2024-03-14";
 /// Below the browser's 8-second request timeout, so a slow model still leaves time for
 /// the labelled simulated fallback to answer.
@@ -114,7 +114,7 @@ fn system_prompt() -> String {
 Reply with exactly one JSON object and nothing else. Allowed keys (omit any that do not apply):
 - "topics": array of interests to include, chosen only from {topics}
 - "excluded": array of interests to avoid, chosen only from the same list
-- "days": array of weekday numbers, 0 = Monday ... 6 = Sunday
+- "days": array of full English weekday names, e.g. ["Tuesday", "Thursday"]
 - "after": earliest start, minutes after midnight (0-1440)
 - "before": latest end, minutes after midnight (0-1440)
 - "food": "Free meal" or "Coffee & snacks"
@@ -127,7 +127,33 @@ student did not change, and remove a key when the student lifts that preference.
     )
 }
 
-/// Accepts a bare JSON object, optionally wrapped in a Markdown code fence.
+/// Weekday names exchanged with the model. The app numbers days Monday = 0 ... Sunday = 6;
+/// models reliably mis-count that scheme (Tuesday became 2), so only names cross the boundary.
+const DAY_NAMES: [&str; 7] = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+];
+
+/// Previous constraints as the model sees them, with day numbers written as names.
+fn previous_for_model(previous: &Constraints) -> serde_json::Value {
+    let mut value = serde_json::to_value(previous).unwrap_or_else(|_| json!({}));
+    if let Some(days) = &previous.days {
+        let names: Vec<_> = days
+            .iter()
+            .filter_map(|d| DAY_NAMES.get(usize::from(*d)))
+            .collect();
+        value["days"] = json!(names);
+    }
+    value
+}
+
+/// Accepts a bare JSON object, optionally wrapped in a Markdown code fence, whose "days"
+/// are weekday names. Names are converted to the app's numbering before validation.
 fn parse_constraints(content: &str) -> Result<Constraints, InterpretError> {
     let text = content.trim();
     let text = text
@@ -136,10 +162,24 @@ fn parse_constraints(content: &str) -> Result<Constraints, InterpretError> {
         .and_then(|t| t.strip_suffix("```"))
         .unwrap_or(text)
         .trim();
-    let value: serde_json::Value =
+    let mut value: serde_json::Value =
         serde_json::from_str(text).map_err(|_| InterpretError::Malformed)?;
     if !value.is_object() {
         return Err(InterpretError::Malformed);
+    }
+    if let Some(days) = value.get("days") {
+        let names = days.as_array().ok_or(InterpretError::Malformed)?;
+        let mut numbers = Vec::with_capacity(names.len());
+        for name in names {
+            // Numbers are refused rather than guessed: their meaning is exactly what models get wrong.
+            let name = name.as_str().ok_or(InterpretError::Malformed)?.trim();
+            let day = DAY_NAMES
+                .iter()
+                .position(|d| d.eq_ignore_ascii_case(name))
+                .ok_or(InterpretError::Invalid("Unknown weekday"))?;
+            numbers.push(day);
+        }
+        value["days"] = json!(numbers);
     }
     let constraints: Constraints =
         serde_json::from_value(value).map_err(|_| InterpretError::Malformed)?;
@@ -219,7 +259,8 @@ impl WatsonxInterpreter {
         previous: &Constraints,
     ) -> Result<Constraints, InterpretError> {
         let token = self.token().await?;
-        let user = json!({"previous": previous, "message": message}).to_string();
+        let user =
+            json!({"previous": previous_for_model(previous), "message": message}).to_string();
         let response = self
             .client
             .post(format!("{}/ml/v1/text/chat", self.config.url))
@@ -386,14 +427,14 @@ pub(crate) mod tests {
     #[tokio::test]
     async fn valid_model_output_becomes_constraints() {
         let (result, mock) = run(Behavior::Reply(
-            r#"{"topics":["Career"],"days":[1],"food":"Free meal"}"#,
+            r#"{"topics":["Career"],"days":["tuesday"," Thursday "],"food":"Free meal"}"#,
         ))
         .await;
         assert_eq!(
             result.unwrap(),
             Constraints {
                 topics: Some(vec!["Career".into()]),
-                days: Some(vec![1]),
+                days: Some(vec![1, 3]),
                 food: Some("Free meal".into()),
                 ..Default::default()
             }
@@ -440,6 +481,9 @@ pub(crate) mod tests {
             r#"{"event_ids":["e1"]}"#,
             r#"{"topics":["Career"],"reason":"x"}"#,
             "[]",
+            // Day numbers are refused: Granite returned [2,4] for "Tuesday or Thursday".
+            r#"{"days":[1,3]}"#,
+            r#"{"days":"Tuesday"}"#,
         ] {
             assert_eq!(
                 run(Behavior::Reply(content)).await.0,
@@ -453,7 +497,7 @@ pub(crate) mod tests {
         for content in [
             r#"{"limit":99}"#,
             r#"{"topics":["Gaming"]}"#,
-            r#"{"days":[9]}"#,
+            r#"{"days":["Funday"]}"#,
             r#"{"food":"Pizza"}"#,
         ] {
             assert!(matches!(
@@ -461,6 +505,31 @@ pub(crate) mod tests {
                 Err(InterpretError::Invalid(_))
             ));
         }
+    }
+
+    #[tokio::test]
+    async fn every_weekday_name_maps_to_the_app_numbering() {
+        let (result, _) = run(Behavior::Reply(
+            r#"{"days":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]}"#,
+        ))
+        .await;
+        assert_eq!(result.unwrap().days, Some(vec![0, 1, 2, 3, 4, 5, 6]));
+    }
+
+    #[tokio::test]
+    async fn previous_days_are_sent_to_the_model_as_names() {
+        let (config, mock) = mock(Behavior::Reply(r#"{"days":["Thursday"]}"#)).await;
+        let interpreter = WatsonxInterpreter::new(config).unwrap();
+        let previous = Constraints {
+            days: Some(vec![1, 3]),
+            ..Default::default()
+        };
+        let result = interpreter.interpret("only Thursday", previous).await;
+        assert_eq!(result.unwrap().days, Some(vec![3]));
+        let bodies = mock.chat_bodies.lock().unwrap();
+        let user = bodies[0]["messages"][1]["content"].as_str().unwrap();
+        let sent: Value = serde_json::from_str(user).unwrap();
+        assert_eq!(sent["previous"]["days"], json!(["Tuesday", "Thursday"]));
     }
 
     #[tokio::test]

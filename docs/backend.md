@@ -63,15 +63,15 @@ Closing the form before submission changes nothing. Submitting locks enrollment 
 | `WATSONX_API_KEY` | yes | — (IBM Cloud API key) |
 | `WATSONX_PROJECT_ID` | yes | — (watsonx.ai project) |
 | `WATSONX_URL` | no | `https://us-south.ml.cloud.ibm.com` |
-| `WATSONX_MODEL_ID` | no | `ibm/granite-3-3-8b-instruct` |
+| `WATSONX_MODEL_ID` | no | `ibm/granite-4-h-small` |
 | `WATSONX_API_VERSION` | no | `2024-03-14` |
 | `WATSONX_IAM_URL` | no | `https://iam.cloud.ibm.com/identity/token` |
 
 Request flow for each `/api/plan` call:
 
 1. Exchange the API key for an IAM bearer token (`grant_type=urn:ibm:params:oauth:grant-type:apikey`), cached until a minute before expiry and cleared after a 401/403 from watsonx.
-2. `POST {WATSONX_URL}/ml/v1/text/chat?version=…` with `model_id`, `project_id`, a system prompt listing the allowed constraint keys and topics, and a user message `{"previous": <constraints>, "message": <text>}`. Parameters: `temperature: 0`, `max_tokens: 300`, `response_format: {"type":"json_object"}`, `time_limit`. Schedule, profile, names and chat history are not sent.
-3. Read `choices[0].message.content`, strip an optional Markdown code fence, require a JSON object, deserialize into `Constraints` (`deny_unknown_fields`) and run `Constraints::validate`. The handler validates again before deterministic matching.
+2. `POST {WATSONX_URL}/ml/v1/text/chat?version=…` with `model_id`, `project_id`, a system prompt listing the allowed constraint keys and topics, and a user message `{"previous": <constraints>, "message": <text>}` in which days are written as English weekday names. Parameters: `temperature: 0`, `max_tokens: 300`, `response_format: {"type":"json_object"}`, `time_limit`. Schedule, profile, names and chat history are not sent.
+3. Read `choices[0].message.content`, strip an optional Markdown code fence, require a JSON object, convert weekday names (case-insensitive) to Monday = 0 … Sunday = 6, deserialize into `Constraints` (`deny_unknown_fields`) and run `Constraints::validate`. The handler validates again before deterministic matching.
 4. The whole call is bounded at 6 s, below the browser's 8 s request timeout.
 
 Any failure (timeout, network, IAM or chat authentication, other HTTP status, malformed or invalid output) is logged as its kind only. That request is then answered by `SimulatedInterpreter` with `mode: "simulated"`, `provider: "rust-rules"` and `notice: "IBM watsonx was unavailable, so this answer used the simulated demo planner."`. The frontend shows the notice and labels the reply by the mode that answered. Logs, responses and `Debug` output never contain the API key, token, student message or upstream bodies.

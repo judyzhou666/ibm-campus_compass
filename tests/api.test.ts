@@ -32,7 +32,7 @@ test("watsonx and server-fallback modes are labelled honestly", async () => {
   const live: typeof fetch = async () =>
     Response.json({
       mode: "watsonx",
-      provider: "watsonx:ibm/granite-3-3-8b-instruct",
+      provider: "watsonx:ibm/granite-4-h-small",
       constraints: { topics: ["Career"] },
       event_ids: ["e1"],
     });
