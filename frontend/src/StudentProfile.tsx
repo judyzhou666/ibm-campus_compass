@@ -213,9 +213,9 @@ export function StudentProfilePage({
               <dt>Display name</dt>
               <dd>{state.name}</dd>
               <dt>Student status</dt>
-              <dd>{profile.status || "Not added"}</dd>
+              <dd>{profile.status || "Status not added"}</dd>
               <dt>University</dt>
-              <dd>{profile.university || "Not added"}</dd>
+              <dd>{profile.university || "University not added"}</dd>
               <dt>Major / interdisciplinary interests</dt>
               <dd>{state.major || "Not added"}</dd>
             </dl>

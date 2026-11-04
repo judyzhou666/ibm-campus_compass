@@ -64,6 +64,14 @@ try {
         .evaluate((el) => el === document.activeElement),
       true,
     );
+    assert.equal(
+      await page.getByLabel("Student status", { exact: true }).inputValue(),
+      "",
+    );
+    assert.equal(
+      await page.getByLabel("University", { exact: true }).inputValue(),
+      "",
+    );
     await page.getByLabel("Display name", { exact: true }).fill("Demo Student");
     await page.getByLabel("Student status", { exact: true }).fill("Student");
     await page
@@ -138,9 +146,35 @@ try {
     await page
       .getByLabel("Display name", { exact: true })
       .fill("Discarded draft");
+    await page.getByLabel("Student status", { exact: true }).fill("");
+    await page.getByLabel("University", { exact: true }).fill("");
     accepted = true;
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
     assert.equal((await stored()).name, "Demo Student");
+    assert.equal((await stored()).studentProfile.status, "Student");
+    assert.equal(
+      (await stored()).studentProfile.university,
+      "Campus Compass fictional university",
+    );
+    await page
+      .getByRole("button", { name: "Edit Profile", exact: true })
+      .click();
+    await page.getByLabel("Student status", { exact: true }).fill("");
+    await page.getByLabel("University", { exact: true }).fill("");
+    await page
+      .getByRole("button", { name: "Save Profile", exact: true })
+      .click();
+    await page.reload();
+    await page
+      .getByRole("heading", { name: "My Profile", exact: true })
+      .waitFor();
+    assert.equal((await stored()).studentProfile.status, "");
+    assert.equal((await stored()).studentProfile.university, "");
+    const basic = page
+      .getByRole("heading", { name: "Basic Information", exact: true })
+      .locator("..");
+    await basic.getByText("Status not added", { exact: true }).waitFor();
+    await basic.getByText("University not added", { exact: true }).waitFor();
     await page
       .getByRole("button", {
         name: "Edit interests in My Preferences",
@@ -167,7 +201,7 @@ try {
     assert.deepEqual(errors, []);
     await page.close();
     console.log(
-      `PASS ${width}px: card keyboard navigation, five sections, draft isolation, discard warnings, Save/Cancel, focus, reload, Preferences route and no horizontal overflow.`,
+      `PASS ${width}px: empty defaults, saved values, blank-value persistence, card keyboard navigation, five sections, draft isolation, discard warnings, Save/Cancel, focus, reload, Preferences route and no horizontal overflow.`,
     );
   }
 } finally {

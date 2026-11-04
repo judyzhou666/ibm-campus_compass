@@ -1,4 +1,3 @@
-import { DEMO } from "./config.ts";
 import type { DemoState } from "./types.ts";
 
 export interface StudentProfile {
@@ -19,8 +18,8 @@ export function readStudentProfile(value: unknown): StudentProfile {
       ? input[key].trim().slice(0, limit)
       : fallback;
   return {
-    status: text("status", 60, "Graduate student"),
-    university: text("university", 120, DEMO.campus_name),
+    status: text("status", 60, ""),
+    university: text("university", 120, ""),
     bio: text("bio", 280, ""),
   };
 }

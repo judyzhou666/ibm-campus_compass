@@ -2,6 +2,12 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Honest profile defaults
+
+Missing student status and university now default to empty strings, including older stored data without these fields. The card, overview and Basic Information show **Status not added** and **University not added**. Existing saved values (including explicitly supplied fictional demo values) are retained; the configured campus identity is no longer a silent personal-profile default. With no reliable provenance on older saved strings, the app does not guess whether they were entered by a user. Blank values remain blank when saved and reloaded. Profile editing, Save/Cancel and persistence reuse the same state flow; preferences and recommendations are unchanged.
+
+Fresh verification: frontend build/typecheck, 7 focused profile tests and desktop/mobile profile browser checks passed for new/legacy data, saved values, blank/whitespace fields, missing-value labels, Save/Cancel and reload. Run `node --import tsx --test tests/student-profile.test.ts` and the optional `scripts/browser-student-profile.mjs` against the running site. No Rust or full application/browser suites were rerun for this profile-only change.
+
 ## Recommendation preferences versus explicit choices
 
 Saved `free_only` and preferred availability windows filter recommendations in both Rust and TypeScript, but no longer veto explicit Add/RSVP or mark an already-planned event invalid. Recommendation scoring and filters are unchanged. Incoming recommendation responses also retain the preference check. The shared eligibility validator now checks only genuine validity, access/full/membership, cancellation, actual busy/planned conflicts and travel time; RSVP confirmation is still required when applicable.
@@ -34,7 +40,7 @@ Fresh verification for this scoped fix: frontend build/typecheck and all 138 Typ
 
 The sidebar student card and header avatar open **My Profile** at `#my-profile`. The existing **My Preferences** route remains `#profile`. Profile uses the existing palette, typography, panels, buttons and initials avatar; no image upload or new app dependencies were added. On small screens, open the navigation menu for the card. Navigation can scroll above the card to keep **View Profile** accessible.
 
-The profile page groups Basic Information, About Me, My Interests, Campus Involvement and My Activity. **Edit Profile** updates the shared demo display name and optional student status, university and short bio; Save persists through the existing browser demo state, while Cancel/navigation warn before discarding edits. The default name/status and fictional university reuse existing demo values; there is no invented biography or real student record. Interests remain editable only through My Preferences. Joined communities, saved/planned events and demo RSVP counts reflect existing local state, not verified membership or attendance.
+The profile page groups Basic Information, About Me, My Interests, Campus Involvement and My Activity. **Edit Profile** updates the shared demo display name and optional student status, university and short bio; Save persists through the existing browser demo state, while Cancel/navigation warn before discarding edits. The demo display name is reused, but missing status and university remain blank with explicit not-added labels. Saved and intentionally loaded fictional profile fields are preserved; no personal facts are silently inferred. Interests remain editable only through My Preferences. Joined communities, saved/planned events and demo RSVP counts reflect existing local state, not verified membership or attendance.
 
 New optional `studentProfile` fields restore safely for older sessions. They are local browser data, not a public profile or backend account. Profile notes are excluded from existing recommendation payloads. Existing storage-unavailable feedback remains applicable; no cloud profile sync is implemented. Planners, recommendations, discussions and the My Preferences implementation are unchanged.
 

@@ -15,11 +15,18 @@ import {
 } from "../frontend/src/StudentProfile.tsx";
 import { schedulePayload } from "../frontend/src/api.ts";
 
-test("legacy profiles reuse existing fictional defaults without inventing a bio", () => {
-  for (const input of [undefined, null, [], "invalid"])
+test("new and incomplete profiles never invent status, university or bio", () => {
+  for (const input of [
+    undefined,
+    null,
+    [],
+    "invalid",
+    {},
+    { status: 42, university: null },
+  ])
     assert.deepEqual(readStudentProfile(input), {
-      status: "Graduate student",
-      university: DEMO.campus_name,
+      status: "",
+      university: "",
       bio: "",
     });
   assert.equal(
@@ -119,4 +126,89 @@ test("profile sections show real demo state and escape biography text", () => {
   );
   assert.match(card, /View Profile/);
   assert.match(card, /Demo Student/);
+});
+
+test("explicit saved values, including intentionally supplied fictional details, are preserved", () => {
+  for (const profile of [
+    {
+      status: "Undergraduate student",
+      university: "User-entered university",
+      bio: "Saved introduction",
+    },
+    {
+      status: "Graduate student",
+      university: DEMO.campus_name,
+      bio: "Explicit fictional demo introduction",
+    },
+    { status: "", university: "", bio: "" },
+  ]) {
+    assert.deepEqual(readStudentProfile(profile), profile);
+    assert.deepEqual(
+      saveStudentProfile(fresh(), "Demo", profile).studentProfile,
+      profile,
+    );
+  }
+  assert.deepEqual(
+    readStudentProfile({ status: "  ", university: "\n", bio: " " }),
+    { status: "", university: "", bio: "" },
+  );
+});
+test("older stored data without profile details restores blanks without losing existing data", () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  try {
+    for (const studentProfile of [
+      undefined,
+      { bio: "Legacy bio" },
+      { status: "Student" },
+      { university: "Saved university" },
+      { status: "", university: "" },
+    ]) {
+      const stored = {
+        ...fresh(),
+        name: "Saved name",
+        plan: ["e1"],
+        rsvps: ["e1"],
+        studentProfile,
+      };
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        value: { getItem: () => JSON.stringify(stored) },
+      });
+      const result = restore();
+      assert.deepEqual(result.studentProfile, {
+        status: studentProfile?.status || "",
+        university: studentProfile?.university || "",
+        bio: studentProfile?.bio || "",
+      });
+      assert.equal(result.name, "Saved name");
+      assert.deepEqual(result.plan, ["e1"]);
+      assert.deepEqual(result.rsvps, ["e1"]);
+      assert.deepEqual(result.interests, stored.interests);
+    }
+  } finally {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+test("missing values use honest placeholder labels in card, overview and Basic Information", () => {
+  const state = fresh();
+  const card = renderToStaticMarkup(
+    createElement(StudentProfileCard, { state, onView: () => {} }),
+  );
+  const page = renderToStaticMarkup(
+    createElement(StudentProfilePage, {
+      state,
+      update: () => {},
+      notify: () => {},
+      onPreferences: () => {},
+      onActivity: () => {},
+      onDirtyChange: () => {},
+    }),
+  );
+  for (const html of [card, page]) {
+    assert.match(html, /Status not added/);
+    assert.match(html, /University not added/);
+    assert.doesNotMatch(html, /Graduate student/);
+    assert.ok(!html.includes(DEMO.campus_name));
+  }
 });
