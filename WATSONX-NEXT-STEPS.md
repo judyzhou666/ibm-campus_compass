@@ -1,6 +1,8 @@
-# Connecting IBM watsonx later
+# Connecting IBM watsonx
 
-The user has watsonx access but chose to complete the website demonstration before integrating it. No credentials are required by the current demo, and no IBM connection is claimed.
+## Status — November 4, 2026
+
+A Rust watsonx.ai interpreter now exists (`backend/src/watsonx.rs`, enabled with `PLANNER_PROVIDER=watsonx`; configuration in `docs/backend.md`). The team chose Dallas (`us-south`), IBM Cloud API key + project ID authentication, and a Granite instruct model. It has been tested only against a local mock server. The default demo still needs no credentials, and no live IBM connection is claimed until the acceptance tests below pass with a real account. Step 5 below (model-written explanations) and clarification questions for ambiguous intent are not implemented; replies remain templates.
 
 ## Recommended boundary
 
@@ -16,11 +18,11 @@ Proposed flow:
 6. Keep Add to calendar as an explicit student action; validate again at add time.
 7. Preserve the current simulation as a fallback if the live service is unavailable, and display the actual mode honestly.
 
-The React chat controller in `frontend/src/App.tsx` calls the Rust `/api/plan` endpoint through `frontend/src/api.ts`. The asynchronous `Interpreter` interface in `backend/src/interpreter.rs` is the future watsonx boundary. Its current implementation is simulated; retain constraint validation, deterministic matching and `/api/validate` when adding the live adapter. See `docs/backend.md`.
+The React chat controller in `frontend/src/App.tsx` calls the Rust `/api/plan` endpoint through `frontend/src/api.ts`. The asynchronous `Interpreter` interface in `backend/src/interpreter.rs` is the watsonx boundary, implemented by `SimulatedInterpreter` and `WatsonxInterpreter`; retain constraint validation, deterministic matching and `/api/validate` when adding the live adapter. See `docs/backend.md`.
 
-## Before implementation
+## Before the first live run
 
-Determine the IBM region/service URL, project or deployment, permitted model, authentication method, and account restrictions with the team's IBM console and current official documentation. Do not infer these from product names alone. Then supply secrets through the chosen host's secret settings and test with only fictional data.
+Confirm the IBM region/service URL, project or deployment, permitted model, authentication method, and account restrictions with the team's IBM console and current official documentation. Do not infer these from product names alone; in particular confirm `WATSONX_MODEL_ID` is offered in your project. Then supply secrets through the chosen host's secret settings and test with only fictional data.
 
 IBM Bob can help the team implement that server endpoint and extend tests. Keep a short evidence log of actual prompts, generated changes, reviews, tests, and team decisions. Do not claim this code was built with Bob before that work happens.
 

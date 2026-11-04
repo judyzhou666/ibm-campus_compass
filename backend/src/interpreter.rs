@@ -1,14 +1,42 @@
-//! Replace this interpreter with a Rust watsonx adapter when live access is configured.
-//! Interpreters return constraints only; trusted event matching always runs afterwards.
+//! Interpreters turn a student message into constraints only; trusted event matching,
+//! validation and conflict checks always run afterwards. `SimulatedInterpreter` is the
+//! deterministic demo parser; `crate::watsonx::WatsonxInterpreter` is the live adapter.
 use crate::model::{Constraints, TOPICS};
 use regex::Regex;
+
+/// Why a live interpreter could not produce constraints. Messages never contain secrets
+/// or upstream response bodies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InterpretError {
+    Timeout,
+    Auth,
+    Upstream(u16),
+    Network,
+    Malformed,
+    Invalid(&'static str),
+}
+
+impl std::fmt::Display for InterpretError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Timeout => write!(f, "request timed out"),
+            Self::Auth => write!(f, "authentication failed"),
+            Self::Upstream(code) => write!(f, "upstream returned HTTP {code}"),
+            Self::Network => write!(f, "network error"),
+            Self::Malformed => write!(f, "model output was not a constraints object"),
+            Self::Invalid(reason) => write!(f, "model constraints rejected: {reason}"),
+        }
+    }
+}
+
+impl std::error::Error for InterpretError {}
 
 pub trait Interpreter {
     fn interpret(
         &self,
         message: &str,
         previous: Constraints,
-    ) -> impl std::future::Future<Output = Constraints> + Send;
+    ) -> impl std::future::Future<Output = Result<Constraints, InterpretError>> + Send;
 }
 
 pub struct SimulatedInterpreter;
@@ -20,7 +48,18 @@ fn matches(pattern: &str, text: &str) -> bool {
 }
 
 impl Interpreter for SimulatedInterpreter {
-    async fn interpret(&self, message: &str, mut c: Constraints) -> Constraints {
+    async fn interpret(
+        &self,
+        message: &str,
+        previous: Constraints,
+    ) -> Result<Constraints, InterpretError> {
+        Ok(self.parse(message, previous))
+    }
+}
+
+impl SimulatedInterpreter {
+    /// Deterministic rules shared in spirit with `frontend/src/planner.ts`.
+    pub fn parse(&self, message: &str, mut c: Constraints) -> Constraints {
         let q = message.to_lowercase();
         if matches(r"\b(reset|start over)\b", &q) {
             c = Constraints::default();

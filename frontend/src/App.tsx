@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
-import { planningKey, requestPlan, enrollEvent } from "./api.ts";
+import { planningKey, planModeLabel, requestPlan, enrollEvent } from "./api.ts";
 import { fresh, restore, STORAGE_KEY } from "./state.ts";
 import { calendarText } from "./calendar.ts";
 import {
@@ -267,11 +267,7 @@ export default function App() {
         }));
         return;
       }
-      setMode(
-        result.source === "rust"
-          ? "Rust planner · Simulated"
-          : "Browser fallback · Simulated",
-      );
+      setMode(planModeLabel(result));
       const matches = result.ids
         .map((id) => EVENTS.find((e) => e.id === id))
         .filter((e) => e && !issue(e, current.current));
@@ -368,11 +364,7 @@ export default function App() {
         return;
       }
       const alternative = EVENTS.find((e) => e.id === result.ids[0]);
-      setMode(
-        result.source === "rust"
-          ? "Rust planner · Simulated"
-          : "Browser fallback · Simulated",
-      );
+      setMode(planModeLabel(result));
       const response = `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. It shares the ${old.topic.toLowerCase()} topic and fits your schedule. ${trade}\n\nIt’s a suggestion only. Add it if it works for you.` : "No eligible alternative in the same topic fits your current schedule. Try changing your availability or choosing another interest."}${result.notice ? "\n\n" + result.notice : ""}`;
       update((s) => ({
         ...s,

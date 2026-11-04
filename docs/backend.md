@@ -16,13 +16,14 @@ Open http://127.0.0.1:4173. Rust serves both the compiled frontend and the API. 
 
 For frontend development, leave Rust running and run `npm run dev` in another terminal. Vite serves the frontend at its printed URL and proxies `/api` to port 4173. If you change the Rust address, update the Vite proxy too.
 
-`CAMPUS_ADDR` defaults to `127.0.0.1:4173`. `PLANNER_PROVIDER` defaults to `simulated`. Selecting any other provider stops startup with an explicit error; live watsonx is not implemented yet. No credentials are needed for this demonstration.
+`CAMPUS_ADDR` defaults to `127.0.0.1:4173`. `PLANNER_PROVIDER` defaults to `simulated`, which needs no credentials. `PLANNER_PROVIDER=watsonx` enables the live IBM interpreter described below; any other value stops startup with an explicit error.
 
 ## Source layout
 
 - `backend/src/main.rs`: listener, local address, provider selection, graceful shutdown.
 - `backend/src/lib.rs`: API routes, JSON input boundaries, static serving.
-- `backend/src/interpreter.rs`: asynchronous interpretation interface and Rust simulated parser; future watsonx adapter boundary.
+- `backend/src/interpreter.rs`: fallible asynchronous `Interpreter` trait, `InterpretError`, and the Rust simulated parser.
+- `backend/src/watsonx.rs`: live IBM watsonx.ai interpreter and its mock-server tests.
 - `backend/src/planner.rs`: trusted event selection, access checks, conflicts and travel buffers.
 - `backend/src/model.rs`: typed request models and validation.
 - `frontend/src/`: React components, TypeScript API client, local state, calendar export and browser simulation fallback.
@@ -33,8 +34,8 @@ For frontend development, leave Rust running and run `npm run dev` in another te
 
 | Route | Purpose |
 | --- | --- |
-| `GET /api/health` | Reports simulated mode and `watsonx_connected: false`. |
-| `POST /api/plan` | Accepts `message`, `previous` constraints and `state`; returns validated constraints, trusted `event_ids`, mode and provider. |
+| `GET /api/health` | Reports the configured `mode` and `provider`, `watsonx_configured`, and `watsonx_connected` (true only after the latest live call succeeded). |
+| `POST /api/plan` | Accepts `message`, `previous` constraints and `state`; returns validated constraints, trusted `event_ids`, the `mode` (`simulated` or `watsonx`) and `provider` that actually answered, and an optional fallback `notice`. |
 | `POST /api/validate` | Accepts `event_id` and latest schedule `state`; returns `allowed` and `issue`. |
 | `POST /api/enroll` | Accepts `event_id`, latest `state`, and optional `rsvp`; checks access/conflicts and mandatory RSVP, then returns a simulated enrollment confirmation. |
 
@@ -52,9 +53,30 @@ This endpoint does not persist registrations or send messages. The browser adds 
 
 Closing the form before submission changes nothing. Submitting locks enrollment controls until the request completes. If the backend is unavailable, the same mandatory fields and schedule rules are enforced locally and a visible notice identifies the local demo. Input/authorization/conflict rejections are surfaced instead of falling back. This is intentionally a single-browser simulation, not a secure enrollment or capacity management system.
 
-## Future watsonx integration
+## IBM watsonx interpreter
 
-Implement the interpreter interface in Rust using the verified IBM region, project/model, authentication and API contract. Keep credentials in server-side environment/secret storage. The adapter must return structured constraints, never unvalidated event IDs; keep `Constraints::validate`, deterministic matching, and add-time validation after model output. Add timeout, authentication failure and malformed-output tests before enabling a live provider. See `WATSONX-NEXT-STEPS.md` for the integration checklist.
+`backend/src/watsonx.rs` implements `Interpreter` against IBM watsonx.ai. Enable it with server-side environment variables (template: `.env.example`; the server does not load `.env` itself):
+
+| Variable | Required | Default |
+| --- | --- | --- |
+| `PLANNER_PROVIDER` | yes, `watsonx` | `simulated` |
+| `WATSONX_API_KEY` | yes | — (IBM Cloud API key) |
+| `WATSONX_PROJECT_ID` | yes | — (watsonx.ai project) |
+| `WATSONX_URL` | no | `https://us-south.ml.cloud.ibm.com` |
+| `WATSONX_MODEL_ID` | no | `ibm/granite-3-3-8b-instruct` |
+| `WATSONX_API_VERSION` | no | `2024-03-14` |
+| `WATSONX_IAM_URL` | no | `https://iam.cloud.ibm.com/identity/token` |
+
+Request flow for each `/api/plan` call:
+
+1. Exchange the API key for an IAM bearer token (`grant_type=urn:ibm:params:oauth:grant-type:apikey`), cached until a minute before expiry and cleared after a 401/403 from watsonx.
+2. `POST {WATSONX_URL}/ml/v1/text/chat?version=…` with `model_id`, `project_id`, a system prompt listing the allowed constraint keys and topics, and a user message `{"previous": <constraints>, "message": <text>}`. Parameters: `temperature: 0`, `max_tokens: 300`, `response_format: {"type":"json_object"}`, `time_limit`. Schedule, profile, names and chat history are not sent.
+3. Read `choices[0].message.content`, strip an optional Markdown code fence, require a JSON object, deserialize into `Constraints` (`deny_unknown_fields`) and run `Constraints::validate`. The handler validates again before deterministic matching.
+4. The whole call is bounded at 6 s, below the browser's 8 s request timeout.
+
+Any failure (timeout, network, IAM or chat authentication, other HTTP status, malformed or invalid output) is logged as its kind only. That request is then answered by `SimulatedInterpreter` with `mode: "simulated"`, `provider: "rust-rules"` and `notice: "IBM watsonx was unavailable, so this answer used the simulated demo planner."`. The frontend shows the notice and labels the reply by the mode that answered. Logs, responses and `Debug` output never contain the API key, token, student message or upstream bodies.
+
+Rust tests in `watsonx.rs` and `lib.rs` use a local mock IAM and watsonx.ai server, so no IBM credentials are needed to run them. The live contract has not yet been exercised against a real account; see `WATSONX-NEXT-STEPS.md` for the live acceptance checklist.
 
 PostgreSQL/SQLx and authentication are future production work, not demo dependencies. If introduced, the backend must own authorization and persisted state rather than trusting the browser's schedule snapshot. The current server binds to localhost by default; it is not a production multi-user service.
 

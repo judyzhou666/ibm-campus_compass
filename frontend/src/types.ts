@@ -61,10 +61,11 @@ export interface DemoState extends Schedule {
   messages: Message[];
 }
 export interface PlanResponse {
-  mode: "simulated";
+  mode: "simulated" | "watsonx";
   provider: string;
   constraints: Constraints;
   event_ids: string[];
+  notice?: string;
 }
 
 export interface Rsvp {

@@ -2,7 +2,44 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
-## Latest update — October 15, 2026
+## Latest update — November 4, 2026: optional IBM watsonx interpreter
+
+The AI Planner can now use IBM watsonx.ai (Granite, Dallas `us-south`) to understand chat messages. It is **off by default**: without configuration the app runs the simulated planner exactly as before, and no credentials are needed.
+
+| Change | What teammates should expect |
+| --- | --- |
+| Live interpreter option | Starting Rust with `PLANNER_PROVIDER=watsonx` makes `/api/plan` send the student's message and the previous filters to watsonx.ai. The model returns only search filters (topics, days, times, food, cost, number of options). The schedule, profile, names and chat history are not sent. |
+| Trusted matching unchanged | Model output must be a JSON object with only known fields and must pass `Constraints::validate`. Rust's deterministic planner still picks every event, so the model cannot invent event IDs, eligibility or food. Adding an event still needs the student's click and a fresh validation. |
+| Honest labels | The chat status shows **Rust planner · IBM watsonx** only when watsonx actually answered. If watsonx times out (6 s), rejects authentication, errors or returns invalid output, that request uses the simulated planner, the label reads **Rust planner · Simulated**, and the reply starts with "IBM watsonx was unavailable…". The offline browser fallback is unchanged. |
+| Secrets stay on the server | The API key is read from the server environment, is exchanged for an IBM IAM token server-side, and never appears in API responses, logs or browser code. `.env` files are git-ignored. |
+| Health endpoint | `GET /api/health` now also reports `watsonx_configured`. `watsonx_connected` is true only after the most recent live call succeeded. |
+
+### Run with watsonx
+
+```sh
+cp .env.example .env    # then fill in WATSONX_API_KEY and WATSONX_PROJECT_ID
+set -a; source .env; set +a
+npm run build
+cargo run --locked
+```
+
+The startup line says which planner is active. `WATSONX_URL` defaults to `https://us-south.ml.cloud.ibm.com` and `WATSONX_MODEL_ID` to `ibm/granite-3-3-8b-instruct`; check that model is available in your watsonx project and set another Granite instruct ID if not. Leave `PLANNER_PROVIDER` unset (or `simulated`) for the credential-free classroom demo. Details: [docs/backend.md](docs/backend.md#ibm-watsonx-interpreter).
+
+### Implementation notes
+
+- `backend/src/watsonx.rs`: `WatsonxInterpreter` (IAM token caching, `POST /ml/v1/text/chat`, JSON-only parsing, validation, timeout) and its mock-server tests.
+- `backend/src/interpreter.rs`: the `Interpreter` trait now returns `Result<Constraints, InterpretError>`; `SimulatedInterpreter::parse` is the deterministic rules.
+- `backend/src/lib.rs`: `Provider` selection, per-request labelled fallback, and `app_with(provider)`. `backend/src/main.rs` reads `PLANNER_PROVIDER` and refuses to start watsonx mode without `WATSONX_API_KEY` and `WATSONX_PROJECT_ID`.
+- `frontend/src/api.ts`: accepts `mode: "watsonx"` and the server's fallback `notice`; `planModeLabel` drives the chat status label.
+- New dependency: `reqwest` 0.13 (rustls, no OpenSSL). The local dev machine also needed a Rust toolchain installed via rustup for this work.
+
+### Verification and limitations for this update
+
+All checks listed under [Verification](#verification) passed on November 4, 2026 (Rust: 12 unit tests; npm: 10 API/fallback tests and 5 Wiki publisher tests; API integration suite passed). Rust tests run against a local mock IAM and watsonx.ai server and cover: valid output, fenced JSON, token reuse, IAM and chat authentication failures, upstream errors, timeouts, non-object or unknown-field output (such as `event_ids`), out-of-range constraints, key redaction, and the labelled fallback through `/api/plan`.
+
+**Not yet verified against a real IBM account.** The request format follows IBM's watsonx.ai API reference and common client libraries; the first live run may reveal model-ID, API-version or parameter differences. Run the acceptance prompts in `WATSONX-NEXT-STEPS.md` with real credentials before demoing live mode. This change was written with Claude Code, not IBM Bob.
+
+## Previous update — October 15, 2026
 
 The AI Planner now supports choosing events while keeping your schedule visible. This update builds on the Rust backend and React/TypeScript migration.
 
@@ -59,23 +96,24 @@ See [backend architecture and test commands](docs/backend.md) and [IBM Bob setup
 5. Close the calendar panel to return to the draft sidebar. Select Simulate event cancellation → Find a replacement. The Thursday open studio is offered; other confirmed choices are retained.
 6. Add the replacement (a drop-in event, so no RSVP form). The side calendar opens automatically. Open My Calendar from the main navigation to export the calendar. Cancelled records are excluded and exported titles are marked [DEMO].
 7. Select “A social event with free food.” Example prompt buttons begin a fresh request; typed follow-ups retain prior filters. Show that free meals and coffee/snacks are distinct.
-8. Close by stating the limitations: fictional data, simulated chat, no external calendar connections, watsonx to be integrated later.
+8. Close by stating the limitations: fictional data, simulated chat by default (watsonx optional and not yet verified live), no external calendar connections.
 
 ## Current boundaries
 
-This version uses a Rust deterministic parser and template responses, with a labelled TypeScript fallback when the backend is unavailable. It is not a general-purpose language model or a live IBM-powered chatbot. Ambiguous natural language and unsupported constraints may not be understood; use the example prompts for the demo. “Start over” clears prior chat filters. It does not create real RSVPs, send messages, or sync calendars. Local discussion posts are not shared. Data is fixed, not live or fetched daily. The institution and business outcomes in the proposal remain hypotheses.
+By default this version uses a Rust deterministic parser and template responses, with a labelled TypeScript fallback when the backend is unavailable. An optional watsonx.ai interpreter can replace the parser for understanding requests (see the latest update), but replies are still templates and events are still chosen by deterministic rules; it is not a general-purpose chatbot. Ambiguous natural language and unsupported constraints may not be understood; use the example prompts for the demo. “Start over” clears prior chat filters. It does not create real RSVPs, send messages, or sync calendars. Local discussion posts are not shared. Data is fixed, not live or fetched daily. The institution and business outcomes in the proposal remain hypotheses.
 
-IBM Bob is a development assistant. This implementation was created in Codex and is not evidence of IBM Bob use. Your team should perform and document genuine Bob-assisted development/testing before describing the course's Bob component as fulfilled. The user has IBM watsonx access and chose to integrate it later.
+IBM Bob is a development assistant. This implementation was created in Codex and is not evidence of IBM Bob use. Your team should perform and document genuine Bob-assisted development/testing before describing the course's Bob component as fulfilled. The watsonx interpreter was added with Claude Code on November 4, 2026; it is not evidence of Bob use either.
 
 ## Files and extension point
 
-- `backend/src/`: Rust Axum API, simulated interpreter, schedule validation and event matching.
+- `backend/src/`: Rust Axum API, simulated and optional watsonx interpreters, schedule validation and event matching.
+- `.env.example`: server-side watsonx settings template (copy to git-ignored `.env`).
 - `frontend/src/`: React/TypeScript UI, typed API calls, local persistence, calendar export and explicit browser simulation fallback.
 - `data/events.json`: shared catalog of 30 fictional events.
 - `frontend/public/assets/mascot.png`: unchanged supplied mascot.
 - `dist/`: generated build output, ignored by Git.
 - `tests/` and `test.mjs`: API, fallback, scheduling and Wiki publisher checks.
-- `WATSONX-NEXT-STEPS.md`: future Rust integration checklist.
+- `WATSONX-NEXT-STEPS.md`: live watsonx verification checklist.
 
 ## Data and assets register
 
