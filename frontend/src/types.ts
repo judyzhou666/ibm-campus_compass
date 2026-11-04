@@ -126,6 +126,8 @@ export interface PlanResponse {
   constraints: Constraints;
   event_ids: string[];
   recommendations?: RecommendationEvidence[];
+  match_reasons?: RecommendationMatchResult[];
+  /** @deprecated Read-only compatibility with older Rust responses. Not emitted by current servers. */
   matchReasons?: RecommendationMatchResult[];
 }
 

@@ -90,7 +90,7 @@ async fn plan(
         None
     };
     Ok(Json(
-        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "clarification":interpretation.clarification, "event_ids":ids, "recommendations":evidence, "matchReasons":match_reasons, "diagnostic":diagnostic}),
+        json!({"mode":"simulated", "provider":"rust-rules", "constraints":constraints, "understood":interpretation.understood, "clarification":interpretation.clarification, "event_ids":ids, "recommendations":evidence, "match_reasons":match_reasons, "diagnostic":diagnostic}),
     ))
 }
 

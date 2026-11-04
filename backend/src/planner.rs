@@ -771,7 +771,7 @@ mod ranking_optimization_tests {
             let reasons: Vec<_> = batch.recommendations.iter().map(|r|json!({"event_id":r.event.id,"score":r.details.score,"matches":r.details.matches})).collect();
             assert_eq!(
                 json!(reasons),
-                case["response"]["matchReasons"],
+                case["response"]["match_reasons"],
                 "{}",
                 case["name"]
             );

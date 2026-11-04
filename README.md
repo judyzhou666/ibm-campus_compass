@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Recommendation API field consistency
+
+Rust `/api/plan` now emits `match_reasons`, with the same event IDs, scores and ordered explanation entries. It no longer emits the camel-case wire key. Response types, API reads, shared comparisons and captured response fixtures use the canonical name. React props, adapter results and stored chat `matchReasons` are intentionally unchanged.
+
+Compatibility was checked against the in-repo optional-field contract: older frontend bundles can still plan, but may omit explanations until upgraded. The new adapter reads an older server’s `matchReasons` only when the canonical key is absent, and still accepts responses without explanations. Canonical data takes precedence and is validated even when a legacy alias is present. No scoring logic changed. See `docs/backend.md` for the contract and migration details.
+
+Fresh verification: frontend typecheck/build, 174 TypeScript tests, Rust formatting/check/build/Clippy and 17 Rust tests, API integration with 20 response fixtures, and 25 exact Rust/TypeScript comparisons passed. The API tests cover both spellings, omission, canonical precedence and malformed canonical data; shared comparisons assert the server does not emit the old key. Browser journeys and frozen evaluation were not rerun for this field-only change.
+
 ## Rust ranking calculation optimization
 
 Rust now returns an operation-local recommendation batch with the normalized active topics and each selected event’s computed score/matches. Feasible candidates are scored once per selection round, and tie comparisons borrow event IDs instead of cloning them. The HTTP response reuses winning details and the same active-topic snapshot for evidence; it does not rerun ranking for selected events. Existing event-only `recommend`, standalone `ranking_details` and `evidence` callers remain compatible. No state is cached across requests, and eligibility, scheduling, weights, diversity and tie-breaking are unchanged.
@@ -208,7 +216,7 @@ Historical verification: frontend build/type checking, 78 focused tests, desktop
 
 ## Rust structured preference parity
 
-Rust selection now uses its structured scoring explanation function and returns the same ordered `matchReasons` as TypeScript: topic/diversity, enabled mapped goals/primary/confirmed learning, known participation, preferred time and free admission. Current-topic/limit behavior and hard constraints are preserved. The typed client validates reason codes, exact weights, totals and bounded collections, while accepting older responses without reasons. Goal IDs are projected once to validated topic arrays before requests; no title/note inference or duplicate mapping is introduced.
+Rust selection now uses its structured scoring explanation function and returns ordered wire `match_reasons` (adapted to local `matchReasons` in TypeScript): topic/diversity, enabled mapped goals/primary/confirmed learning, known participation, preferred time and free admission. Current-topic/limit behavior and hard constraints are preserved. The typed client validates reason codes, exact weights, totals and bounded collections, while accepting older responses without reasons. Goal IDs are projected once to validated topic arrays before requests; no title/note inference or duplicate mapping is introduced.
 
 Historical verification: 12 Rust tests, formatting/Clippy/build, TypeScript type checking, 23 focused API/fallback tests and 18 exact shared-fixture/goal comparisons passed. Six server validation/RSVP/conflict checks also passed. Run `cargo build --locked` then `node --import tsx tests/preference-parity.ts`. No ranking/reason differences appeared in those canonical fixtures. Intentional differences remain in offline notices, Rust-only catalog evidence, local-vs-generic busy labels and malformed-input handling; see `docs/preferences-design.md`. No LLM, Python backend, push or deployment was introduced.
 

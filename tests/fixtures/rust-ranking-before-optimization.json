@@ -66,7 +66,7 @@
         "e7",
         "e28"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e20",
           "matches": [
@@ -267,7 +267,7 @@
         "e18",
         "e14"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e10",
           "matches": [
@@ -405,7 +405,7 @@
       "event_ids": [
         "e18"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e18",
           "matches": [
@@ -512,7 +512,7 @@
       "event_ids": [
         "e1"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -633,7 +633,7 @@
       "event_ids": [
         "e2"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e2",
           "matches": [
@@ -761,7 +761,7 @@
       },
       "diagnostic": "No synthetic catalog records satisfy these topic/day/time/cost/food filters and saved recommendation preferences. State which filter you want to change; none will be relaxed automatically.",
       "event_ids": [],
-      "matchReasons": [],
+      "match_reasons": [],
       "mode": "simulated",
       "provider": "rust-rules",
       "recommendations": [],
@@ -848,7 +848,7 @@
       "event_ids": [
         "e29"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e29",
           "matches": [
@@ -954,7 +954,7 @@
         "e10",
         "e18"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e10",
           "matches": [
@@ -1081,7 +1081,7 @@
         "e27",
         "e29"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e20",
           "matches": [
@@ -1282,7 +1282,7 @@
         "e18",
         "e14"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e10",
           "matches": [
@@ -1431,7 +1431,7 @@
         "e1",
         "e17"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -1570,7 +1570,7 @@
       "event_ids": [
         "e1"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -1683,7 +1683,7 @@
       "event_ids": [
         "e1"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -1808,7 +1808,7 @@
       "event_ids": [
         "e1"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -1935,7 +1935,7 @@
         "e1",
         "e17"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e1",
           "matches": [
@@ -2063,7 +2063,7 @@
         "e4",
         "e24"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e18",
           "matches": [
@@ -2278,7 +2278,7 @@
         "e20",
         "e6"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e18",
           "matches": [
@@ -2460,7 +2460,7 @@
         "e14",
         "e7"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e18",
           "matches": [
@@ -2715,7 +2715,7 @@
         "e1",
         "e23"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e20",
           "matches": [
@@ -2912,7 +2912,7 @@
       "event_ids": [
         "e29"
       ],
-      "matchReasons": [
+      "match_reasons": [
         {
           "event_id": "e29",
           "matches": [

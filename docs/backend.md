@@ -154,7 +154,7 @@ Contract-only refinement: `RecommendationPreferences` and `RecommendationSchedul
 
 ## Structured scoring parity
 
-`planner::ranking_details` is shared by Rust selection and the new optional `/api/plan` response field `matchReasons`: `{event_id, score, matches:[{kind,points,explanation}]}` for every selected event in order. Diversity is calculated against earlier suggestions only. The exact table, mappings, count/tie rules and documented boundary differences are in `docs/preferences-design.md`. The frontend validates these bounded explanations without changing approval or fallback safeguards; older responses omitting them remain compatible.
+`planner::ranking_details` is shared by Rust selection and the new optional `/api/plan` response field `match_reasons`: `{event_id, score, matches:[{kind,points,explanation}]}` for every selected event in order. Diversity is calculated against earlier suggestions only. The exact table, mappings, count/tie rules and documented boundary differences are in `docs/preferences-design.md`. The frontend validates these bounded explanations without changing approval or fallback safeguards; older responses omitting them remain compatible.
 
 Focused verification: `cargo test --locked` (12 tests), `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo build --locked`, `npm run typecheck`, `node --import tsx --test tests/api.test.ts tests/fallback-preferences.test.ts` (23 tests), and `node --import tsx tests/preference-parity.ts` (18 shared comparisons plus 6 server safeguards). No LLM or Python backend was added.
 
@@ -176,3 +176,9 @@ Partial clarification replies merge safe interpreted context into the existing p
 ## Rust ranking reuse
 
 `recommend_with_details` builds one active-topic snapshot per operation and returns borrowed event references paired with their winning `RankingDetails`. Each feasible candidate is scored once per selection round; comparisons borrow IDs and retain the existing score/day/start/ordinal-ID/original-index order. `plan` serializes these retained details and calls `evidence_with_topics` with the same snapshot. Public `recommend`, `ranking_details` and `evidence` remain backward-compatible wrappers, with no persistent cache or API schema change. Twenty pre-refactor complete API fixtures lock selection, scoring, explanations and evidence; integration tests compare complete response bodies.
+
+## Match-reason field naming and compatibility
+
+`POST /api/plan` emits only the snake-case `match_reasons` field (an array, including `[]` for no recommendations). Each entry retains `{event_id, score, matches:[{kind,points,explanation}]}`, with unchanged order and content. The camel-case wire field is no longer emitted. In-repo clients previously treated explanations as optional, so missing explanations did not prevent planning. Older frontend bundles can continue planning against the new service but may omit explanations until upgraded.
+
+For mixed-version deployments, the TypeScript API adapter accepts the legacy server field `matchReasons` only when `match_reasons` is absent. The canonical field wins when both exist; invalid canonical content fails validation rather than falling back to the legacy alias. Responses omitting both still produce an empty explanation list. Local API-adapter results, React props and stored chat snapshots retain `matchReasons`; this wire migration does not rename local state. All existing bounds, weights and reason validation remain in effect. The pre-optimization API fixture changes only this response key, retaining the original payload arrays.

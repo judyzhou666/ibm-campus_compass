@@ -74,7 +74,8 @@ try {
     assert.equal(response.status, 200, name);
     const actual = await response.json();
     assert.deepEqual(actual.constraints, interpreted.constraints, name);
-    assert.deepEqual(actual.matchReasons, expected, name);
+    assert.deepEqual(actual.match_reasons, expected, name);
+    assert.equal(Object.hasOwn(actual, "matchReasons"), false, name);
     assert.deepEqual(
       actual.event_ids,
       expected.map((r) => r.event_id),

@@ -118,7 +118,9 @@ export async function requestPlan(
     }
     validateConstraints(result.constraints);
     const matchReasons = readMatchReasons(
-      result.matchReasons,
+      result.match_reasons !== undefined
+        ? result.match_reasons
+        : result.matchReasons,
       result.event_ids,
     );
     if (!matchReasons) throw new Error("Invalid structured match reasons");
