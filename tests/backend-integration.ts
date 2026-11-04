@@ -1,5 +1,6 @@
 import { discoveryState } from "../frontend/src/discovery.ts";
 import { evolvingClarifications } from "./clarification-fixtures.ts";
+import rankingBaseline from "./fixtures/rust-ranking-before-optimization.json";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -54,6 +55,15 @@ async function post(path: string, body: unknown) {
   });
 }
 try {
+  for (const fixture of rankingBaseline) {
+    const response = await post("/api/plan", {
+      message: fixture.message,
+      previous: fixture.previous,
+      state: fixture.state,
+    });
+    assert.equal(response.status, 200, fixture.name);
+    assert.deepEqual(await response.json(), fixture.response, fixture.name);
+  }
   for (const offline of [false, true]) {
     const fetcher: typeof fetch = async (path, options) => {
       if (offline) throw Error("offline");

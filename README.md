@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Rust ranking calculation optimization
+
+Rust now returns an operation-local recommendation batch with the normalized active topics and each selected event’s computed score/matches. Feasible candidates are scored once per selection round, and tie comparisons borrow event IDs instead of cloning them. The HTTP response reuses winning details and the same active-topic snapshot for evidence; it does not rerun ranking for selected events. Existing event-only `recommend`, standalone `ranking_details` and `evidence` callers remain compatible. No state is cached across requests, and eligibility, scheduling, weights, diversity and tie-breaking are unchanged.
+
+Before refactoring, 20 complete API responses were captured in `tests/fixtures/rust-ranking-before-optimization.json`. Rust tests check their order, scores, ordered explanations and evidence, plus standalone-helper equivalence, fresh preferences between calls and ordinal-ID/first-index ties. API integration compares the complete response bodies, preserving the public JSON contract.
+
+Fresh verification: `cargo fmt`/`cargo fmt --check`, `cargo check --locked`, `cargo test --locked` (17 tests), Clippy with warnings denied, Rust build, frontend typecheck, API integration with the 20 baseline responses, and 25 exact Rust/TypeScript shared comparisons passed. Run `cargo test --locked ranking_optimization_tests`, `npm run test:api` and `node --import tsx tests/preference-parity.ts` after building. Browser journeys, full frontend tests and frozen evaluation were not rerun for this Rust-only refactor.
+
 ## Frontend ranking calculation optimization
 
 Each recommendation operation now builds one normalized preference projection and one snapshot of planned/cancelled event IDs. Candidate validation reuses that context, and each feasible candidate is scored once per greedy selection round. Sorting compares stored scores; `recommendWithReasons` reuses the winning score and explanations instead of recomputing them. Active-topic and practical-preference helpers accept an optional projection while existing callers retain fresh normalization. Standalone validation still applies the same real eligibility and scheduling checks. Nothing is cached across user actions.

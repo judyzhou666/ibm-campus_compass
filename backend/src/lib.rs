@@ -55,28 +55,31 @@ async fn plan(
     let constraints = interpretation.constraints;
     // This validation is also required for any future watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let selected = if interpretation.understood && interpretation.clarification.is_none() {
-        planner::recommend(&request.state, &constraints, &events)
+    let batch = if interpretation.understood && interpretation.clarification.is_none() {
+        planner::recommend_with_details(&request.state, &constraints, &events)
     } else {
-        Vec::new()
+        planner::RecommendationBatch::default()
     };
-    let evidence: Vec<_> = selected
+    let evidence: Vec<_> = batch
+        .recommendations
         .iter()
-        .map(|e| planner::evidence(e, &request.state, &constraints, &events))
-        .collect();
-    let match_reasons: Vec<_> = selected
-        .iter()
-        .enumerate()
-        .map(|(index, e)| {
-            let details =
-                planner::ranking_details(e, &request.state, &constraints, &selected[..index]);
-            json!({ "event_id": e.id, "score": details.score, "matches": details.matches })
+        .map(|r| {
+            planner::evidence_with_topics(
+                r.event,
+                &request.state,
+                &constraints,
+                &events,
+                &batch.active_topics,
+            )
         })
         .collect();
-    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
+    let match_reasons: Vec<_> = batch.recommendations.iter()
+        .map(|r| json!({ "event_id": r.event.id, "score": r.details.score, "matches": r.details.matches }))
+        .collect();
+    let ids: Vec<_> = batch.recommendations.iter().map(|r| &r.event.id).collect();
     let diagnostic = if interpretation.understood
         && interpretation.clarification.is_none()
-        && selected.is_empty()
+        && batch.recommendations.is_empty()
     {
         Some(planner::no_match_reason(
             &request.state,

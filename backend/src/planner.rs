@@ -52,9 +52,18 @@ pub fn ranking_details(
     c: &Constraints,
     selected: &[&Event],
 ) -> RankingDetails {
-    let active = active_topics(state);
-    let current = c.topics.as_ref().filter(|t| !t.is_empty());
-    let topics = current.unwrap_or(&active);
+    ranking_with_topics(e, state, c, selected, &active_topics(state))
+}
+
+fn ranking_with_topics(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    selected: &[&Event],
+    active: &[String],
+) -> RankingDetails {
+    let current = c.topics.as_deref().filter(|t| !t.is_empty());
+    let topics = current.unwrap_or(active);
     let topic_match = topics.contains(&e.topic);
     let mut matches = Vec::new();
     let mut add = |kind: &'static str, condition: bool, explanation: String| {
@@ -210,7 +219,31 @@ fn matches_constraints(e: &Event, c: &Constraints) -> bool {
         && c.excluded.as_ref().is_none_or(|t| !t.contains(&e.topic))
 }
 
+pub struct RankedRecommendation<'a> {
+    pub event: &'a Event,
+    pub details: RankingDetails,
+}
+
+#[derive(Default)]
+pub struct RecommendationBatch<'a> {
+    pub recommendations: Vec<RankedRecommendation<'a>>,
+    pub active_topics: Vec<String>,
+}
+
+/// Preserve the event-only API for existing callers.
 pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> Vec<&'a Event> {
+    recommend_with_details(state, c, events)
+        .recommendations
+        .into_iter()
+        .map(|r| r.event)
+        .collect()
+}
+
+pub fn recommend_with_details<'a>(
+    state: &Schedule,
+    c: &Constraints,
+    events: &'a [Event],
+) -> RecommendationBatch<'a> {
     let active = active_topics(state);
     let mut candidates: Vec<_> = events
         .iter()
@@ -227,6 +260,7 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         })
         .collect();
     let mut selected: Vec<&Event> = Vec::new();
+    let mut recommendations = Vec::new();
     while !candidates.is_empty()
         && selected.len()
             < c.limit
@@ -249,22 +283,34 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
                         )
                     })
             })
-            .max_by_key(|(index, e)| {
+            .map(|(index, event)| {
                 (
-                    ranking_details(e, state, c, &selected).score,
-                    std::cmp::Reverse(e.day),
-                    std::cmp::Reverse(e.start),
-                    std::cmp::Reverse(e.id.clone()),
-                    std::cmp::Reverse(*index),
+                    index,
+                    RankedRecommendation {
+                        event,
+                        details: ranking_with_topics(event, state, c, &selected, &active),
+                    },
                 )
             })
-            .map(|(index, _)| index);
-        let Some(index) = best else {
+            .max_by(|(left_index, left), (right_index, right)| {
+                left.details
+                    .score
+                    .cmp(&right.details.score)
+                    .then_with(|| right.event.day.cmp(&left.event.day))
+                    .then_with(|| right.event.start.cmp(&left.event.start))
+                    .then_with(|| right.event.id.cmp(&left.event.id))
+                    .then_with(|| right_index.cmp(left_index))
+            });
+        let Some((index, winner)) = best else {
             break;
         };
         selected.push(candidates.remove(index));
+        recommendations.push(winner);
     }
-    selected
+    RecommendationBatch {
+        recommendations,
+        active_topics: active,
+    }
 }
 
 fn preferred(e: &Event, state: &Schedule) -> bool {
@@ -286,12 +332,21 @@ pub fn evidence(
     c: &Constraints,
     events: &[Event],
 ) -> serde_json::Value {
-    let active = active_topics(state);
+    evidence_with_topics(e, state, c, events, &active_topics(state))
+}
+
+pub fn evidence_with_topics(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    events: &[Event],
+    active: &[String],
+) -> serde_json::Value {
     let topics = c
         .topics
-        .as_ref()
+        .as_deref()
         .filter(|t| !t.is_empty())
-        .unwrap_or(&active);
+        .unwrap_or(active);
     let comparison = events_comparison(e, state, c, events);
     let mut filters = Vec::new();
     if let Some(days) = &c.days {
@@ -683,5 +738,127 @@ mod soft_preference_tests {
         {
             assert!(issue(event, &state, &events).is_some());
         }
+    }
+}
+
+#[cfg(test)]
+mod ranking_optimization_tests {
+    use super::*;
+    use crate::model::PreferenceInput;
+    use serde_json::{Value, json};
+
+    #[test]
+    fn cached_ranking_matches_original_api_responses_and_standalone_helpers() {
+        // Captured from the original Rust binary at 89a405f before optimization.
+        let cases: Vec<Value> = serde_json::from_str(include_str!(
+            "../../tests/fixtures/rust-ranking-before-optimization.json"
+        ))
+        .unwrap();
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        for case in cases {
+            let state: Schedule = serde_json::from_value(case["state"].clone()).unwrap();
+            let constraints: Constraints =
+                serde_json::from_value(case["response"]["constraints"].clone()).unwrap();
+            let batch = recommend_with_details(&state, &constraints, &events);
+            let ids: Vec<_> = batch.recommendations.iter().map(|r| &r.event.id).collect();
+            assert_eq!(
+                json!(ids),
+                case["response"]["event_ids"],
+                "{}",
+                case["name"]
+            );
+            let reasons: Vec<_> = batch.recommendations.iter().map(|r|json!({"event_id":r.event.id,"score":r.details.score,"matches":r.details.matches})).collect();
+            assert_eq!(
+                json!(reasons),
+                case["response"]["matchReasons"],
+                "{}",
+                case["name"]
+            );
+            let evidence: Vec<_> = batch
+                .recommendations
+                .iter()
+                .map(|r| {
+                    evidence_with_topics(
+                        r.event,
+                        &state,
+                        &constraints,
+                        &events,
+                        &batch.active_topics,
+                    )
+                })
+                .collect();
+            assert_eq!(
+                json!(evidence),
+                case["response"]["recommendations"],
+                "{}",
+                case["name"]
+            );
+            let selected = recommend(&state, &constraints, &events);
+            assert_eq!(
+                json!(selected.iter().map(|e| &e.id).collect::<Vec<_>>()),
+                json!(ids)
+            );
+            for (index, item) in batch.recommendations.iter().enumerate() {
+                assert_eq!(
+                    item.details,
+                    ranking_details(item.event, &state, &constraints, &selected[..index])
+                );
+                assert_eq!(
+                    evidence[index],
+                    super::evidence(item.event, &state, &constraints, &events)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn snapshots_do_not_cache_preferences_across_calls() {
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let mut state = Schedule {
+            preferences: Some(PreferenceInput {
+                count: 1,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let c = Constraints::default();
+        let before = recommend_with_details(&state, &c, &events);
+        state.preferences.as_mut().unwrap().learning_topics = vec!["Career".into()];
+        let after = recommend_with_details(&state, &c, &events);
+        assert_ne!(
+            before.recommendations[0].event.id,
+            after.recommendations[0].event.id
+        );
+        assert_eq!(after.recommendations[0].event.id, "e20");
+        assert!(
+            after.recommendations[0]
+                .details
+                .matches
+                .iter()
+                .any(|r| r.kind == "learning")
+        );
+        state.plan = vec!["e20".into()];
+        assert!(recommend(&state, &c, &events).iter().all(|e| e.id != "e20"));
+    }
+
+    #[test]
+    fn borrowed_id_tie_breaks_preserve_ordinal_order_and_first_duplicate() {
+        let mut events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let mut first = events.remove(0);
+        first.id = "tie-b".into();
+        let mut second = first.clone();
+        second.id = "tie-a".into();
+        let mut duplicate = second.clone();
+        duplicate.title = "Later duplicate".into();
+        let catalog = [first, second, duplicate];
+        let c = Constraints {
+            limit: Some(1),
+            ..Default::default()
+        };
+        let batch = recommend_with_details(&Schedule::default(), &c, &catalog);
+        assert!(std::ptr::eq(batch.recommendations[0].event, &catalog[1]));
     }
 }
