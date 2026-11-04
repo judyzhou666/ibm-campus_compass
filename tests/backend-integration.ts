@@ -54,6 +54,8 @@ async function post(path: string, body: unknown) {
 }
 try {
   const health = await (await fetch(base + "/api/health")).json();
+  assert.equal(health.mode, "simulated");
+  assert.equal(health.watsonx_configured, false);
   assert.equal(health.watsonx_connected, false);
   const state = fresh();
   for (const query of [

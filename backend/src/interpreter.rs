@@ -1,19 +1,48 @@
-//! Replace this interpreter with a Rust watsonx adapter when live access is configured.
-//! Interpreters return constraints and recognition status, never event IDs.
-//! Trusted event matching always runs after constraint validation.
+//! Interpreters turn a student message into constraints and recognition status, never
+//! event IDs. Trusted event matching always runs after constraint validation.
+//! `SimulatedInterpreter` is the deterministic demo parser;
+//! `crate::watsonx::WatsonxInterpreter` is the live IBM watsonx.ai adapter.
 use crate::model::{Constraints, TOPICS};
 use regex::Regex;
+
+/// Why a live interpreter could not produce constraints. Messages never contain secrets
+/// or upstream response bodies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InterpretError {
+    Timeout,
+    Auth,
+    Upstream(u16),
+    Network,
+    Malformed,
+    Invalid(&'static str),
+}
+
+impl std::fmt::Display for InterpretError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Timeout => write!(f, "request timed out"),
+            Self::Auth => write!(f, "authentication failed"),
+            Self::Upstream(code) => write!(f, "upstream returned HTTP {code}"),
+            Self::Network => write!(f, "network error"),
+            Self::Malformed => write!(f, "model output was not a constraints object"),
+            Self::Invalid(reason) => write!(f, "model constraints rejected: {reason}"),
+        }
+    }
+}
+
+impl std::error::Error for InterpretError {}
 
 pub trait Interpreter {
     fn interpret(
         &self,
         message: &str,
         previous: Constraints,
-    ) -> impl std::future::Future<Output = Interpretation> + Send;
+    ) -> impl std::future::Future<Output = Result<Interpretation, InterpretError>> + Send;
 }
 
 pub struct SimulatedInterpreter;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Interpretation {
     pub constraints: Constraints,
     pub understood: bool,
@@ -27,7 +56,18 @@ fn matches(pattern: &str, text: &str) -> bool {
 }
 
 impl Interpreter for SimulatedInterpreter {
-    async fn interpret(&self, message: &str, mut c: Constraints) -> Interpretation {
+    async fn interpret(
+        &self,
+        message: &str,
+        previous: Constraints,
+    ) -> Result<Interpretation, InterpretError> {
+        Ok(self.parse(message, previous))
+    }
+}
+
+impl SimulatedInterpreter {
+    /// Deterministic rules shared in spirit with `frontend/src/planner.ts`.
+    pub fn parse(&self, message: &str, mut c: Constraints) -> Interpretation {
         let q = message.to_lowercase();
         let budget_text =
             Regex::new(r"\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b")

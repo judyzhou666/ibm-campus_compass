@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  planModeLabel,
   requestPlan,
   enrollEvent,
   validateEvent,
@@ -26,6 +27,48 @@ test("server input rejection is surfaced, not bypassed", async () => {
   const bad: typeof fetch = async () => new Response("{}", { status: 400 });
   await assert.rejects(requestPlan("AI", {}, fresh(), bad), /could not accept/);
   await assert.rejects(validateEvent("e1", fresh(), bad), /could not accept/);
+});
+test("watsonx and server-fallback modes are labelled honestly", async () => {
+  const live: typeof fetch = async () =>
+    Response.json({
+      mode: "watsonx",
+      provider: "watsonx:ibm/granite-4-h-small",
+      understood: true,
+      constraints: { topics: ["Career"] },
+      event_ids: ["e1"],
+    });
+  const r = await requestPlan("career events", {}, fresh(), live);
+  assert.equal(r.mode, "watsonx");
+  assert.equal(planModeLabel(r), "Rust planner · IBM watsonx");
+  const fellBack: typeof fetch = async () =>
+    Response.json({
+      mode: "simulated",
+      provider: "rust-rules",
+      understood: true,
+      constraints: {},
+      event_ids: [],
+      notice:
+        "IBM watsonx was unavailable, so this answer used the simulated demo planner.",
+    });
+  const f = await requestPlan("career events", {}, fresh(), fellBack);
+  assert.equal(planModeLabel(f), "Rust planner · Simulated");
+  assert.match(f.notice, /watsonx was unavailable/);
+  const offlineResult = await requestPlan(
+    "career events",
+    {},
+    fresh(),
+    offline,
+  );
+  assert.equal(planModeLabel(offlineResult), "Browser fallback · Simulated");
+  const unknownMode: typeof fetch = async () =>
+    Response.json({
+      mode: "live",
+      understood: true,
+      constraints: {},
+      event_ids: [],
+    });
+  const u = await requestPlan("career events", {}, fresh(), unknownMode);
+  assert.equal(u.source, "browser-fallback");
 });
 test("unknown model event IDs cannot enter a draft", async () => {
   const fake: typeof fetch = async () =>
