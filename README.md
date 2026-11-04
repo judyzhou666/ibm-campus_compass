@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Frontend ranking calculation optimization
+
+Each recommendation operation now builds one normalized preference projection and one snapshot of planned/cancelled event IDs. Candidate validation reuses that context, and each feasible candidate is scored once per greedy selection round. Sorting compares stored scores; `recommendWithReasons` reuses the winning score and explanations instead of recomputing them. Active-topic and practical-preference helpers accept an optional projection while existing callers retain fresh normalization. Standalone validation still applies the same real eligibility and scheduling checks. Nothing is cached across user actions.
+
+Behavior is locked against 20 cases captured from pre-refactor commit `bcfb173`: event order, scores, ordered explanation fingerprints, all-event scoring/validation diagnostics and the evaluation-only free-admission baseline match exactly. Additional instrumented tests check one migration/planned-ID scan per operation, one score per candidate per discovery round, and fresh results after in-place preference/schedule changes. No weights, tie-breaking, filtering or wording were changed.
+
+Fresh verification: build/typecheck, planner assertions, all 171 TypeScript tests (including 23 optimization checks), API integration and 25 exact Rust/shared-fixture comparisons passed. Run `node --import tsx --test tests/planner-optimization.test.ts` for focused regression checks. Rust source is unchanged; Rust unit checks, browser journeys and frozen evaluation output were not rerun for this refactor.
+
 ## Honest profile defaults
 
 Missing student status and university now default to empty strings, including older stored data without these fields. The card, overview and Basic Information show **Status not added** and **University not added**. Existing saved values (including explicitly supplied fictional demo values) are retained; the configured campus identity is no longer a silent personal-profile default. With no reliable provenance on older saved strings, the app does not guess whether they were entered by a user. Blank values remain blank when saved and reloaded. Profile editing, Save/Cancel and persistence reuse the same state flow; preferences and recommendations are unchanged.

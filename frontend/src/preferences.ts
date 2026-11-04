@@ -204,14 +204,16 @@ export function wirePreferences(state: Schedule): RecommendationPreferences {
     dismissed: p.dismissed,
   };
 }
-export function activeTopics(state: Schedule) {
-  const p = wirePreferences(state);
+export function activeTopics(state: Schedule, p = wirePreferences(state)) {
   return [
     ...new Set([...state.interests, ...p.goal_topics, ...p.learning_topics]),
   ];
 }
-export function practicalIssue(e: CampusEvent, state: Schedule) {
-  const p = wirePreferences(state);
+export function practicalIssue(
+  e: CampusEvent,
+  state: Schedule,
+  p = wirePreferences(state),
+) {
   if (p.free_only && e.cost !== 0)
     return "Outside your saved free-admission recommendation preference";
   if (

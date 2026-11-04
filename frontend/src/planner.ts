@@ -7,29 +7,48 @@ import type { CampusEvent, Schedule, Constraints, TimeSlot } from "./types.ts";
 import { EVENTS } from "./data.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
   a.day === b.day && a.start < b.end + buffer && b.start < a.end + buffer;
-export function issue(e: CampusEvent, state: Schedule) {
+function validationSnapshot(state: Schedule) {
+  const plannedIds = new Set(state.plan);
+  const cancelled = new Set(state.cancelled);
+  return {
+    plannedIds,
+    cancelled,
+    planned: EVENTS.filter(
+      (event) => plannedIds.has(event.id) && !cancelled.has(event.id),
+    ),
+  };
+}
+function issueWithSnapshot(
+  e: CampusEvent,
+  state: Schedule,
+  snapshot?: ReturnType<typeof validationSnapshot>,
+) {
   if (e.day > 4 || e.day < 0 || e.start >= e.end || e.end > 1440)
     return "Invalid event metadata; team review required";
   if (!["RSVP required", "Drop-in welcome"].includes(e.rsvp))
     return "RSVP requirements unknown; team review required";
-  if (state.cancelled.includes(e.id)) return "Cancelled in demo";
+  if (snapshot ? snapshot.cancelled.has(e.id) : state.cancelled.includes(e.id))
+    return "Cancelled in demo";
   if (e.access === "full") return "Event is full";
   if (e.access === "members") return "Membership not verified";
   if (!["open", "members", "full"].includes(e.access))
     return "Eligibility not confirmed";
-  const conflict = [
-    ...state.blocks,
-    ...EVENTS.filter(
-      (x) =>
-        state.plan.includes(x.id) &&
-        x.id !== e.id &&
-        !state.cancelled.includes(x.id),
-    ),
-  ].find((x) => overlap(e, x, state.buffer));
+  const conflict =
+    state.blocks.find((x) => overlap(e, x, state.buffer)) ??
+    (
+      snapshot?.planned ??
+      EVENTS.filter(
+        (x) => state.plan.includes(x.id) && !state.cancelled.includes(x.id),
+      )
+    ).find((x) => x.id !== e.id && overlap(e, x, state.buffer));
   return conflict
     ? `Conflicts with ${conflict.title}${state.buffer ? " (including travel time)" : ""}`
     : null;
 }
+export function issue(e: CampusEvent, state: Schedule) {
+  return issueWithSnapshot(e, state);
+}
+
 export const RANKING_WEIGHTS = {
   topic: 10,
   diversity: 4,
@@ -46,6 +65,17 @@ export interface RecommendationMatch {
   points: number;
   explanation: string;
 }
+function rankingSnapshot(state: Schedule, constraints: Constraints) {
+  const prefs = wirePreferences(state);
+  const active = activeTopics(state, prefs);
+  const current = !!constraints.topics?.length;
+  return {
+    prefs,
+    active,
+    current,
+    topics: current ? constraints.topics! : active,
+  };
+}
 /** Describes ranking only; callers must still apply eligibility and hard filters. */
 export function rankingDetails(
   e: CampusEvent,
@@ -53,9 +83,20 @@ export function rankingDetails(
   constraints: Constraints = {},
   selected: readonly CampusEvent[] = [],
 ) {
-  const p = wirePreferences(state);
-  const current = !!constraints.topics?.length;
-  const topics = current ? constraints.topics! : activeTopics(state);
+  return rankingWithSnapshot(
+    e,
+    state,
+    rankingSnapshot(state, constraints),
+    new Set(selected.map((event) => event.topic)),
+  );
+}
+function rankingWithSnapshot(
+  e: CampusEvent,
+  state: Schedule,
+  snapshot: ReturnType<typeof rankingSnapshot>,
+  selectedTopics: ReadonlySet<string>,
+) {
+  const { prefs: p, current, topics } = snapshot;
   const topicMatch = topics.includes(e.topic);
   const matches: RecommendationMatch[] = [];
   const add = (kind: MatchKind, matchesInput: boolean, explanation: string) => {
@@ -71,7 +112,7 @@ export function rankingDetails(
   );
   add(
     "diversity",
-    topicMatch && !selected.some((x) => x.topic === e.topic),
+    topicMatch && !selectedTopics.has(e.topic),
     "Adds a requested or saved topic not yet represented in these suggestions",
   );
   add(
@@ -108,19 +149,22 @@ export function rankingDetails(
   };
 }
 
-export function recommend(
+function selectRecommendations(
   state: Schedule,
   constraints: Constraints = {},
   limit = 3,
   contextual = true,
 ) {
-  const prefs = wirePreferences(state);
-  const active = activeTopics(state);
+  // All snapshots are local to this synchronous operation; never cached across actions.
+  const ranking = rankingSnapshot(state, constraints);
+  const { prefs, active } = ranking;
+  const validation = validationSnapshot(state);
+  const count = constraints.limit || (state.preferences ? prefs.count : limit);
   let candidates = EVENTS.filter(
     (e) =>
-      !state.plan.includes(e.id) &&
-      !issue(e, state) &&
-      !practicalIssue(e, state) &&
+      !validation.plannedIds.has(e.id) &&
+      !issueWithSnapshot(e, state, validation) &&
+      !practicalIssue(e, state, prefs) &&
       (!constraints.days || constraints.days.includes(e.day)) &&
       (constraints.after == null || e.start >= constraints.after) &&
       (constraints.before == null || e.end <= constraints.before) &&
@@ -134,43 +178,55 @@ export function recommend(
     candidates = candidates.filter((e) =>
       constraints.topics?.includes(e.topic),
     );
-  const selected: CampusEvent[] = [];
-  while (
-    candidates.length &&
-    selected.length <
-      (constraints.limit || (state.preferences ? prefs.count : limit))
-  ) {
-    const feasible = candidates.filter(
-      (e) =>
-        constraints.mode === "discovery" ||
-        !selected.some((x) => overlap(e, x, state.buffer)),
-    );
-    const score = (e: CampusEvent) =>
-      contextual
-        ? rankingDetails(e, state, constraints, selected).score
-        : Number(e.cost === 0);
-    feasible.sort(
+  const selected: ({ event: CampusEvent } & ReturnType<
+    typeof rankingWithSnapshot
+  >)[] = [];
+  const selectedTopics = new Set<string>();
+  while (candidates.length && selected.length < count) {
+    const scored = candidates
+      .filter(
+        (event) =>
+          constraints.mode === "discovery" ||
+          !selected.some((previous) =>
+            overlap(event, previous.event, state.buffer),
+          ),
+      )
+      .map((event) => ({
+        event,
+        ...(contextual
+          ? rankingWithSnapshot(event, state, ranking, selectedTopics)
+          : { score: Number(event.cost === 0), matches: [] }),
+      }));
+    scored.sort(
       (a, b) =>
-        score(b) - score(a) ||
-        a.day - b.day ||
-        a.start - b.start ||
-        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+        b.score - a.score ||
+        a.event.day - b.event.day ||
+        a.event.start - b.event.start ||
+        (a.event.id < b.event.id ? -1 : a.event.id > b.event.id ? 1 : 0),
     );
-    if (!feasible.length) break;
-    selected.push(feasible[0]);
-    candidates = candidates.filter((e) => e.id !== feasible[0].id);
+    if (!scored.length) break;
+    const winner = scored[0];
+    selected.push(winner);
+    selectedTopics.add(winner.event.topic);
+    candidates = candidates.filter((event) => event.id !== winner.event.id);
   }
   return selected;
+}
+export function recommend(
+  state: Schedule,
+  constraints: Constraints = {},
+  limit = 3,
+  contextual = true,
+) {
+  return selectRecommendations(state, constraints, limit, contextual).map(
+    (result) => result.event,
+  );
 }
 export function recommendWithReasons(
   state: Schedule,
   constraints: Constraints = {},
 ) {
-  const selected = recommend(state, constraints);
-  return selected.map((event, index) => ({
-    event,
-    ...rankingDetails(event, state, constraints, selected.slice(0, index)),
-  }));
+  return selectRecommendations(state, constraints);
 }
 
 export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
