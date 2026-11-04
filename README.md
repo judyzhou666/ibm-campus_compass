@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## Final verification of eight review fixes
+
+Verified on Doris: original per-message refresh filters (55f9950), supported-topic proposal interception (3c35dec), compatible default recommendation modes (4df2964), recommendation-only soft preferences (62bb746), honest missing profile facts (bcfb173), TypeScript ranking reuse (89a405f), Rust ranking reuse (00d2c18), and canonical `match_reasons` with legacy read compatibility (005e086). Main’s watsonx integration is retained through merge 8a2d021; no new application changes were needed for final verification.
+
+Fresh pre-push checks passed: `npm run typecheck`, `npm run build`, full `npm test` (planner assertions, 175 TypeScript tests and 5 Wiki fixtures; rsync is a test prerequisite), `cargo fmt --check`, `cargo check --locked`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (29 tests including local watsonx mocks), `cargo build --locked`, `npm run test:api` (including 20 complete response snapshots), and `node --import tsx tests/preference-parity.ts` (25 exact comparisons). No conflict markers or uncommitted application changes remained. Live IBM calls, the full browser matrix and frozen evaluation were not rerun in this final pass.
+
+Run/demo remains `npm ci`, `npm run build`, `cargo run --locked`, then http://localhost:4173. Simulated mode needs no IBM credentials; optional watsonx configuration and visible fallback behavior remain documented in `docs/backend.md`. The existing review-specific sections below describe each fix and its demo/regression commands.
+
 ## Doris synchronization with main 6a2ab4b
 
 The conflict in `backend/src/lib.rs` was resolved by combining main’s provider-aware `AppState`, live watsonx dispatch and deterministic safety precheck with Doris’s operation-local ranking batch. The response keeps main’s actual interpreter `mode`, `provider` and optional fallback `notice`, and adds exactly one canonical `match_reasons` field from the cached ranking details. Evidence reuses the batch topics. Health/config/plan/validate/enroll routes, body limits, static serving and explicit RSVP gates remain intact. Root `mode` identifies the interpreter (`simulated` or `watsonx`); `constraints.mode` independently controls compatible plans versus discovery.
