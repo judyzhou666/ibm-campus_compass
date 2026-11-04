@@ -1,0 +1,14 @@
+# Keep secrets and credentials out of IBM Bob's context (see the lab guide's security guidelines).
+.env
+.env.*
+!.env.example
+secrets/
+*.key
+*.pem
+config/credentials.json
+apikey.json
+
+# Generated or bulky files Bob does not need to read.
+node_modules/
+target/
+dist/

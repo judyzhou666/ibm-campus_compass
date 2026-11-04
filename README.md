@@ -39,6 +39,16 @@ All checks listed under [Verification](#verification) passed on November 4, 2026
 
 **Not yet verified against a real IBM account.** The request format follows IBM's watsonx.ai API reference and common client libraries; the first live run may reveal model-ID, API-version or parameter differences. Run the acceptance prompts in `WATSONX-NEXT-STEPS.md` with real credentials before demoing live mode. This change was written with Claude Code, not IBM Bob.
 
+### IBM Bob lab requirements (added November 4, 2026)
+
+A check against the lab guide found that the project does not yet meet the guide's mandatory Bob IDE requirement. To prepare:
+
+- `.bobignore` keeps `.env`, keys and credential files (plus `node_modules/`, `target/`, `dist/`) out of Bob's context.
+- `bob_sessions/README.md` explains how **each teammate** exports Bob task histories and consumption-summary screenshots into `bob_sessions/<name>/`. The folder contains no reports yet; only real Bob IDE exports belong there.
+- `docs/ibm-bob-setup.md` now lists this evidence requirement and no longer says watsonx is deferred.
+
+Still to do by the team: real Bob IDE work and its exported sessions, the 3-minute video, problem/solution and technology statements, and naming Campus Compass as your own challenge statement (education is not one of the listed themes).
+
 ## Previous update — October 15, 2026
 
 The AI Planner now supports choosing events while keeping your schedule visible. This update builds on the Rust backend and React/TypeScript migration.
@@ -108,6 +118,7 @@ IBM Bob is a development assistant. This implementation was created in Codex and
 
 - `backend/src/`: Rust Axum API, simulated and optional watsonx interpreters, schedule validation and event matching.
 - `.env.example`: server-side watsonx settings template (copy to git-ignored `.env`).
+- `.bobignore`: files IBM Bob must not read. `bob_sessions/`: exported Bob task reports required for judging.
 - `frontend/src/`: React/TypeScript UI, typed API calls, local persistence, calendar export and explicit browser simulation fallback.
 - `data/events.json`: shared catalog of 30 fictional events.
 - `frontend/public/assets/mascot.png`: unchanged supplied mascot.
