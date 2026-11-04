@@ -390,11 +390,12 @@ export function PracticalSection({ editor }: { editor: PreferenceEditor }) {
           checked={p.free_only}
           onChange={(e) => pref({ free_only: e.target.checked })}
         />
-        Only free admission (hard requirement)
+        Recommend only free admission
       </label>
       <p>
-        Numeric budgets are not supported. Current chat requests cannot override
-        saved hard requirements.
+        Free admission and available-only windows filter recommendations. You
+        can still explicitly add eligible, conflict-free events outside these
+        preferences. Numeric budgets are not supported.
       </p>
       <h3>Busy commitments</h3>
       {draft.blocks.map((b: Block) => (
@@ -414,10 +415,11 @@ export function PracticalSection({ editor }: { editor: PreferenceEditor }) {
         </div>
       ))}
       {timeFields("block")}
-      <h3>Available-only windows (optional hard requirement)</h3>
+      <h3>Preferred availability windows (recommendations only)</h3>
       <p>
-        If any windows are saved, an event must fit entirely within at least
-        one. An empty calendar alone does not verify availability.
+        If any windows are saved, recommended events must fit entirely within at
+        least one. Explicit additions still check your real commitments. An
+        empty calendar alone does not verify availability.
       </p>
       {p.windows.map((w: TimeSlot, i) => (
         <div className="block-row" key={i}>

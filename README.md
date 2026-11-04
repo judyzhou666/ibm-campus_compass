@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Recommendation preferences versus explicit choices
+
+Saved `free_only` and preferred availability windows filter recommendations in both Rust and TypeScript, but no longer veto explicit Add/RSVP or mark an already-planned event invalid. Recommendation scoring and filters are unchanged. Incoming recommendation responses also retain the preference check. The shared eligibility validator now checks only genuine validity, access/full/membership, cancellation, actual busy/planned conflicts and travel time; RSVP confirmation is still required when applicable.
+
+To demo, enable **Recommend only free admission** and set a preferred window that does not include Wednesday evening. Recommendations omit the paid Ceramics beginner workshop (e29), but you may explicitly choose it from Explore if it passes real scheduling/access checks. Changing preferences after planning does not invalidate it. Adding an overlapping real busy commitment still creates a conflict, and adding another incompatible event remains blocked. Nothing is added automatically.
+
+Fresh verification: frontend build/typecheck, planner assertions, 145 TypeScript tests, 14 Rust tests, Rust formatting/Clippy/build, API integration, and 25 exact shared comparisons passed. New checks cover explicit paid additions, outside-window RSVP, already-planned validity, true busy/plan conflicts, eligibility, and unchanged ranking/filtering. Rust API checks separately cover validation/enrollment and required RSVP. Run `node --import tsx --test tests/soft-preferences.test.ts tests/preferences.test.ts`, `cargo test --locked`, `npm run test:api` and `node --import tsx tests/preference-parity.ts` after building. The full browser matrix and frozen evaluation were not rerun. Older hard-preference descriptions below are historical and superseded here.
+
 ## Consistent recommendation modes
 
 Ordinary Planner chat, Dashboard and the main briefing default to overlap-free plan-building, matching both planners when mode is omitted. Follow-ups and Show another retain an explicitly selected mode. Discover alternatives and explicit discover/browse/explore wording select discovery; the Across disciplines briefing and Explore outside my interests control also explicitly request discovery. Weekly-plan wording and Build weekly plan select plan-building. Schedule replacement uses plan-building with its existing one-result limit. Refresh preserves the selected message’s original mode (or an explicit override) and resolved filters with current preferences. Discovery options are labelled as alternatives, with named overlap warnings; they are never presented as a combined compatible schedule.

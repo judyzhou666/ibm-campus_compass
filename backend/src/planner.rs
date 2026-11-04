@@ -153,19 +153,6 @@ pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String
         "open" => {}
         _ => return Some("Eligibility not confirmed".into()),
     }
-    if let Some(p) = &state.preferences {
-        if p.free_only && event.cost != 0 {
-            return Some("Outside your saved free-admission requirement".into());
-        }
-        if !p.windows.is_empty()
-            && !p
-                .windows
-                .iter()
-                .any(|w| w.day == event.day && event.start >= w.start && event.end <= w.end)
-        {
-            return Some("Outside your saved available-only windows".into());
-        }
-    }
     let conflict = state
         .blocks
         .iter()
@@ -193,6 +180,24 @@ pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String
     })
 }
 
+// Recommendation-only filters never determine eligibility for an explicit Add/RSVP.
+fn preference_issue(event: &Event, state: &Schedule) -> Option<String> {
+    if let Some(p) = &state.preferences {
+        if p.free_only && event.cost != 0 {
+            return Some("Outside your saved free-admission recommendation preference".into());
+        }
+        if !p.windows.is_empty()
+            && !p
+                .windows
+                .iter()
+                .any(|w| w.day == event.day && event.start >= w.start && event.end <= w.end)
+        {
+            return Some("Outside your saved available-only windows".into());
+        }
+    }
+    None
+}
+
 fn matches_constraints(e: &Event, c: &Constraints) -> bool {
     c.topics
         .as_ref()
@@ -212,6 +217,7 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         .filter(|e| {
             !state.plan.contains(&e.id)
                 && issue(e, state, events).is_none()
+                && preference_issue(e, state).is_none()
                 && matches_constraints(e, c)
                 && (c.explore != Some(true) || !active.contains(&e.topic))
                 && state
@@ -341,6 +347,7 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
         other.id != e.id
             && other.topic == e.topic
             && issue(other, state, events).is_none()
+            && preference_issue(other, state).is_none()
             && matches_constraints(other, c)
             && !state.plan.contains(&other.id)
     });
@@ -353,10 +360,10 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
 pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> String {
     let within: Vec<_> = events
         .iter()
-        .filter(|e| matches_constraints(e, c))
+        .filter(|e| matches_constraints(e, c) && preference_issue(e, state).is_none())
         .collect();
     if within.is_empty() {
-        return "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically.".into();
+        return "No synthetic catalog records satisfy these topic/day/time/cost/food filters and saved recommendation preferences. State which filter you want to change; none will be relaxed automatically.".into();
     }
     let mut conflicts = 0;
     let mut restrictions = 0;
@@ -623,6 +630,58 @@ mod mode_tests {
                     .iter()
                     .all(|e| e.id != "e1" && e.id != "e17")
             );
+        }
+    }
+}
+
+#[cfg(test)]
+mod soft_preference_tests {
+    use super::*;
+    use crate::model::{PreferenceInput, Window};
+
+    #[test]
+    fn saved_preferences_filter_suggestions_not_explicit_eligibility() {
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let paid = events.iter().find(|e| e.id == "e29").unwrap();
+        let rsvp = events.iter().find(|e| e.id == "e1").unwrap();
+        let mut state = Schedule {
+            preferences: Some(PreferenceInput {
+                free_only: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert_eq!(issue(paid, &state, &events), None);
+        assert!(preference_issue(paid, &state).is_some());
+        assert!(
+            recommend(&state, &Constraints::default(), &events)
+                .iter()
+                .all(|e| e.cost == 0)
+        );
+        state.plan.push(paid.id.clone());
+        assert_eq!(issue(paid, &state, &events), None);
+        state.plan.clear();
+        state.preferences.as_mut().unwrap().windows = vec![Window {
+            day: 0,
+            start: 480,
+            end: 540,
+        }];
+        assert_eq!(issue(rsvp, &state, &events), None);
+        assert!(preference_issue(rsvp, &state).is_some());
+        assert!(recommend(&state, &Constraints::default(), &events).is_empty());
+        state.plan.push(rsvp.id.clone());
+        let overlapping = events.iter().find(|e| e.id == "e17").unwrap();
+        assert!(
+            issue(overlapping, &state, &events)
+                .unwrap()
+                .starts_with("Conflicts")
+        );
+        for event in events
+            .iter()
+            .filter(|e| e.access == "members" || e.access == "full")
+        {
+            assert!(issue(event, &state, &events).is_some());
         }
     }
 }

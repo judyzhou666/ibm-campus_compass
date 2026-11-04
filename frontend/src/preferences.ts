@@ -213,7 +213,7 @@ export function activeTopics(state: Schedule) {
 export function practicalIssue(e: CampusEvent, state: Schedule) {
   const p = wirePreferences(state);
   if (p.free_only && e.cost !== 0)
-    return "Outside your saved free-admission requirement";
+    return "Outside your saved free-admission recommendation preference";
   if (
     p.windows.length &&
     !p.windows.some(

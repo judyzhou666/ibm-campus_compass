@@ -17,8 +17,6 @@ export function issue(e: CampusEvent, state: Schedule) {
   if (e.access === "members") return "Membership not verified";
   if (!["open", "members", "full"].includes(e.access))
     return "Eligibility not confirmed";
-  const practical = practicalIssue(e, state);
-  if (practical) return practical;
   const conflict = [
     ...state.blocks,
     ...EVENTS.filter(
@@ -122,6 +120,7 @@ export function recommend(
     (e) =>
       !state.plan.includes(e.id) &&
       !issue(e, state) &&
+      !practicalIssue(e, state) &&
       (!constraints.days || constraints.days.includes(e.day)) &&
       (constraints.after == null || e.start >= constraints.after) &&
       (constraints.before == null || e.end <= constraints.before) &&

@@ -1,6 +1,6 @@
 import { discoveryState } from "./discovery.ts";
 import { readResolvedConstraints } from "./recommendationReasons.ts";
-import { preferenceSettingsKey } from "./preferences.ts";
+import { preferenceSettingsKey, practicalIssue } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
@@ -67,6 +67,7 @@ export function createConversation(
           event &&
           !latest.plan.includes(id) &&
           !matches.some((e) => e.id === id) &&
+          !practicalIssue(event, latest) &&
           !issue(event, {
             ...latest,
             plan:

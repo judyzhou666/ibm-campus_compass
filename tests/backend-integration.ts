@@ -418,6 +418,85 @@ try {
         state: schedulePayload(strict),
       })
     ).status,
+    200,
+  );
+  // Saved recommendation preferences do not veto explicit choices.
+  const outsideWindow = {
+    ...strict,
+    blocks: [],
+    preferences: {
+      ...strict.preferences,
+      windows: [{ day: 0, start: 480, end: 540 }],
+    },
+  };
+  for (const id of ["e29", "e1"]) {
+    const validation = await (
+      await post("/api/validate", {
+        event_id: id,
+        state: schedulePayload(outsideWindow),
+      })
+    ).json();
+    assert.equal(validation.allowed, true);
+    const enrollment = await post("/api/enroll", {
+      event_id: id,
+      state: schedulePayload(outsideWindow),
+      ...(id === "e1"
+        ? { rsvp: { display_name: "Demo", attending: true } }
+        : {}),
+    });
+    assert.equal(enrollment.status, 200);
+  }
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e1",
+        state: schedulePayload(outsideWindow),
+      })
+    ).status,
+    422,
+  );
+  const plannedPaid = { ...outsideWindow, plan: ["e29"] };
+  assert.equal(
+    (
+      await (
+        await post("/api/validate", {
+          event_id: "e29",
+          state: schedulePayload(plannedPaid),
+        })
+      ).json()
+    ).allowed,
+    true,
+  );
+  const paid = EVENTS.find((e) => e.id === "e29")!;
+  const genuinelyBusy = {
+    ...outsideWindow,
+    blocks: [
+      {
+        id: "real-class",
+        title: "Real class",
+        day: paid.day,
+        start: paid.start,
+        end: paid.end,
+      },
+    ],
+  };
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e29",
+        state: schedulePayload(genuinelyBusy),
+      })
+    ).status,
+    409,
+  );
+  const incompatiblePlan = { ...outsideWindow, plan: ["e1"], rsvps: ["e1"] };
+  assert.equal(
+    (
+      await post("/api/enroll", {
+        event_id: "e17",
+        state: schedulePayload(incompatiblePlan),
+      })
+    ).status,
     409,
   );
   for (const preferences of [

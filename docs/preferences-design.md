@@ -30,7 +30,7 @@ Use once consumes its token, parses time/food/cost/clarification safeguards, the
 
 Relevant source: [TypeScript planner](../frontend/src/planner.ts), [Rust planner](../backend/src/planner.rs), [goal/proposal mappings](../frontend/src/preferences.ts), [contracts](../backend/src/model.rs).
 
-Both planners first reject invalid metadata, unsupported RSVP/access, cancellation, already-chosen records, conflicts with entered commitments/actual plans and saved hard requirements. They apply explicit current topic/day/start/end/food/free/exclusion filters and discovery/legacy-hidden exclusions. Ranking cannot override those checks. Saved topic defaults are soft bonuses; a nonempty current topic set is a strict filter replacing them for the topic/diversity components.
+Both planners first reject invalid metadata, unsupported RSVP/access, cancellation, already-chosen records and conflicts with entered commitments/actual plans. Free-only and preferred availability windows filter recommendations only: explicit Add/RSVP and planned-event validation do not reject an otherwise eligible, conflict-free choice on those grounds. They apply explicit current topic/day/start/end/food/free/exclusion filters and discovery/legacy-hidden exclusions. Ranking cannot override those checks. Saved topic defaults are soft bonuses; a nonempty current topic set is a strict filter replacing them for the topic/diversity components.
 
 For each remaining candidate, add each true component **once**:
 

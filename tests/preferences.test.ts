@@ -195,7 +195,7 @@ test("same topic with different participation and guidance produces distinct sup
   const unknown = EVENTS.find((e) => e.participation === "unknown")!;
   assert.match(fitReasons(unknown, a).join(" "), /Unknown/);
 });
-test("saved count controls quantity and explicit topics cannot relax hard practical requirements", async () => {
+test("saved count and practical filters constrain recommendations, not explicit additions", async () => {
   const s = {
     ...fresh(),
     preferences: {
@@ -208,12 +208,12 @@ test("saved count controls quantity and explicit topics cannot relax hard practi
   assert.deepEqual(recommend(s, { topics: ["Arts & culture"] }), []);
   const r = await requestPlan("arts on Wednesday evening", {}, s, offline);
   assert.deepEqual(r.ids, []);
-  assert.match(
+  assert.equal(
     issue(
       EVENTS.find((e) => e.id === "e29")!,
       s,
-    )!,
-    /free-admission/,
+    ),
+    null,
   );
   s.preferences.free_only = false;
   assert.deepEqual(
@@ -300,7 +300,7 @@ test("preference changes invalidate pending results without restoring deleted in
   assert.deepEqual(demo.read().constraints, {});
   assert.deepEqual(demo.read().draft, []);
 });
-test("saved practical preferences preserve enrollment approval and reject stale additions", async () => {
+test("recommendation-only preferences do not override explicit RSVP approval", async () => {
   const demo = createStore(fresh()),
     enrollment = createEnrollment(demo, offline);
   assert.equal((await enrollment.choose("e1")).kind, "rsvp");
@@ -314,9 +314,10 @@ test("saved practical preferences preserve enrollment approval and reject stale 
   }));
   assert.equal(
     (await enrollment.confirm({ display_name: "Demo", attending: true })).kind,
-    "rejected",
+    "added",
   );
-  assert.deepEqual(demo.read().plan, []);
+  assert.deepEqual(demo.read().plan, ["e1"]);
+  assert.deepEqual(demo.read().rsvps, ["e1"]);
 });
 
 test("exploration is explicit and a newly stated topic overrides that search mode, not hard preferences", async () => {

@@ -239,7 +239,7 @@ for (const { width, offline } of [
   assert.deepEqual((await state()).rsvps, ["e1"]);
   assert.deepEqual((await state()).interests, []);
   assert.deepEqual((await state()).preferences.learning_topics, []);
-  await page.getByLabel("Only free admission (hard requirement)").check();
+  await page.getByLabel("Recommend only free admission").check();
   await page.getByLabel("Available-only day").selectOption("2");
   await page.getByLabel("Available-only from").fill("17:00");
   await page.getByLabel("Available-only until").fill("20:00");
@@ -249,7 +249,10 @@ for (const { width, offline } of [
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   assert.deepEqual((await state()).plan, ["e1"]);
   await go("calendar");
-  await page.getByText(/Some existing choices no longer fit/).waitFor();
+  assert.equal(
+    await page.getByText(/Some existing choices no longer fit/).count(),
+    0,
+  );
   await go("planner");
   await send("arts on Wednesday evening");
   await page.getByText(/couldn’t find an eligible/).waitFor();
