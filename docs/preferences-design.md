@@ -75,7 +75,7 @@ Unsupported statements offer manual topic selection. Numeric budgets remain reje
 
 ## Discovery versus plan-building
 
-The selection mode is optional `constraints.mode = discovery | plan-building`; root API `mode` remains the separate simulated-provider label. Omission preserves legacy plan-building compatibility.
+The selection mode is optional `constraints.mode = discovery | plan-building`; root API `mode` separately reports the answering interpreter (`simulated` or `watsonx`). Omission preserves legacy plan-building compatibility.
 
 | Mode | Mutual compatibility among unplanned suggestions | Checks against actual saved commitments/plans and hard constraints |
 |---|---|---|

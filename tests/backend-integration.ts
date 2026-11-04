@@ -90,6 +90,8 @@ try {
     assert.ok(demo.read().draft.includes("e1"));
   }
   const health = await (await fetch(base + "/api/health")).json();
+  assert.equal(health.mode, "simulated");
+  assert.equal(health.watsonx_configured, false);
   assert.equal(health.watsonx_connected, false);
   const state = fresh();
   // Old callers may omit preferences and still send block titles; new ones omit labels.

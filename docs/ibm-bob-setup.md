@@ -16,4 +16,8 @@ Re-run `/init` after major directory, framework, or service changes, and review 
 
 Ask Bob to trace an AI Planner request from `frontend/src/api.ts` through `backend/src/lib.rs`, explain where the fictional event catalog is validated, and run the commands in `docs/backend.md`. Then ask it to add a small regression case for a scheduling constraint your team chooses. Review its changes and record the prompt, relevant diff, test results and reviewer in `docs/`.
 
-This guide is a handoff for future Bob work. It is not evidence that Bob has already implemented or tested this project. Live IBM watsonx integration remains deferred until the account configuration and API contract are verified.
+## Required lab evidence
+
+The lab requires Bob IDE as a core component. Each team member must export the Bob task sessions they used for the project into `bob_sessions/`; the steps are in [`bob_sessions/README.md`](../bob_sessions/README.md). `.bobignore` keeps `.env` and other credential files out of Bob's context. Before exporting or committing, check that no API keys or tokens appear in the reports.
+
+This guide is a handoff for future Bob work. It is not evidence that Bob has already implemented or tested this project. An optional Rust watsonx.ai interpreter now exists (`PLANNER_PROVIDER=watsonx`, see `docs/backend.md`), but it was written with Claude Code and has not yet been verified against the team's IBM account. Asking Bob to run its live acceptance tests from `WATSONX-NEXT-STEPS.md` would be a good first Bob task.

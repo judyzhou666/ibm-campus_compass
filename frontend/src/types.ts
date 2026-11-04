@@ -118,13 +118,14 @@ export interface DemoState extends Schedule {
   messages: Message[];
 }
 export interface PlanResponse {
-  mode: "simulated";
+  mode: "simulated" | "watsonx";
   understood: boolean;
   clarification?: string | null;
   diagnostic?: string | null;
   provider: string;
   constraints: Constraints;
   event_ids: string[];
+  notice?: string;
   recommendations?: RecommendationEvidence[];
   match_reasons?: RecommendationMatchResult[];
   /** @deprecated Read-only compatibility with older Rust responses. Not emitted by current servers. */

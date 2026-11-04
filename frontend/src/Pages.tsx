@@ -267,8 +267,9 @@ export function Settings({
           <div>
             <h3>AI connection</h3>
             <p>
-              Rust simulated planner. IBM watsonx integration is planned for a
-              later step.
+              Simulated planner by default. The server can run a live IBM
+              watsonx interpreter when configured; each chat reply is labelled
+              with the mode that answered.
             </p>
           </div>
           <span className="tag">Demo mode</span>
@@ -309,8 +310,8 @@ export function Settings({
         <p className="sub">
           All events, student stories, and schedules are fictional. This is a
           student project, not an official university or IBM product. IBM Bob
-          development work and live watsonx integration must be completed and
-          documented separately.
+          development work must be documented separately, and the optional
+          watsonx interpreter has not yet been verified with a live IBM account.
         </p>
       </section>
     </>

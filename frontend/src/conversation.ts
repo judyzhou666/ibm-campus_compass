@@ -2,7 +2,7 @@ import { discoveryState } from "./discovery.ts";
 import { readResolvedConstraints } from "./recommendationReasons.ts";
 import { preferenceSettingsKey, practicalIssue } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
-import { requestPlan, planningKey } from "./api.ts";
+import { requestPlan, planningKey, planModeLabel } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
@@ -96,10 +96,7 @@ export function createConversation(
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
         ...s,
-        mode:
-          plan.source === "rust"
-            ? "Rust planner · Simulated"
-            : "Browser fallback · Simulated",
+        mode: planModeLabel(plan),
       }));
       demo.update((s) => ({
         ...s,

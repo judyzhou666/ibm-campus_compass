@@ -92,6 +92,7 @@ export async function requestPlan(
       interpreted.clocks || [],
       interpreted.restatement,
     );
+  // Unrecognised messages never reach the server, in either simulated or watsonx mode.
   if (!interpreted.understood)
     throw new InputError(
       "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
@@ -107,7 +108,8 @@ export async function requestPlan(
       fetcher,
     )) as PlanResponse;
     if (
-      result.mode !== "simulated" ||
+      (result.mode !== "simulated" && result.mode !== "watsonx") ||
+      (result.notice !== undefined && typeof result.notice !== "string") ||
       typeof result.understood !== "boolean" ||
       !Array.isArray(result.event_ids) ||
       !result.constraints ||
@@ -135,10 +137,17 @@ export async function requestPlan(
       matchReasons,
       evidence: readCatalogEvidence(result.recommendations, result.event_ids),
       source: "rust",
-      notice:
+      // Which interpreter actually answered; a failed watsonx call is reported as simulated.
+      mode: result.mode,
+      // A watsonx fallback notice comes first, then any explanation of why nothing matched.
+      notice: [
+        result.notice ?? "",
         !result.event_ids.length && typeof result.diagnostic === "string"
           ? result.diagnostic
           : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
     };
   } catch (error) {
     if (error instanceof InputError) throw error;
@@ -154,6 +163,7 @@ export async function requestPlan(
       })),
       evidence: [],
       source: "browser-fallback",
+      mode: "simulated" as const,
       notice:
         "The Rust planner is unavailable. These suggestions use the browser’s simulated demo planner.",
     };
@@ -239,3 +249,14 @@ export async function enrollEvent(
     };
   }
 }
+
+/** Honest label for the interpreter that produced a planning result. */
+export const planModeLabel = (result: {
+  source: string;
+  mode: "simulated" | "watsonx";
+}) =>
+  result.source !== "rust"
+    ? "Browser fallback · Simulated"
+    : result.mode === "watsonx"
+      ? "Rust planner · IBM watsonx"
+      : "Rust planner · Simulated";
