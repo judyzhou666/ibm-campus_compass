@@ -2,6 +2,12 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Recommendation refresh snapshots
+
+Each new recommendation message stores a validated copy of its resolved search filters. **Refresh suggestions** reuses the selected message’s snapshot with current saved preferences and schedule, changing only an explicitly requested mode. It appends a new response and preserves other messages and their snapshots. Topic/day/time bounds, food/free-admission filters, exclusions, exploration and explicit result limits are retained. Historical filters survive browser reload even though global chat filters reset. Older messages without a valid snapshot ask for a complete restatement; refresh does not substitute current global defaults or guess missing requirements.
+
+Fresh verification for this scoped fix: frontend build/typecheck and all 138 TypeScript tests passed, including Career on Tuesday after 3 PM → preference change → refresh, independent message refreshes, all supported filters, reload and legacy/invalid fallback. A focused browser check verified the selected historical Refresh suggestions button after reload and changed preferences, preserving the other message. Rust checks, API integration and the full browser matrix were not rerun. Run `node --import tsx --test tests/recommendation-refresh.test.ts tests/recommendation-presentation.test.ts tests/workflows.test.ts tests/api.test.ts` for the 80 relevant checks. No backend ranking or contract change is required.
+
 ## My Profile
 
 The sidebar student card and header avatar open **My Profile** at `#my-profile`. The existing **My Preferences** route remains `#profile`. Profile uses the existing palette, typography, panels, buttons and initials avatar; no image upload or new app dependencies were added. On small screens, open the navigation menu for the card. Navigation can scroll above the card to keep **View Profile** accessible.

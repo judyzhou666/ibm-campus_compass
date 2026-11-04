@@ -1,4 +1,5 @@
 import { discoveryState } from "./discovery.ts";
+import { readResolvedConstraints } from "./recommendationReasons.ts";
 import { preferenceSettingsKey } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey } from "./api.ts";
@@ -10,6 +11,7 @@ import type {
   Constraints,
   DemoState,
   RecommendationMode,
+  Message,
 } from "./types.ts";
 import { replacementConstraints, constraintSummary } from "./replanning.ts";
 
@@ -110,6 +112,7 @@ export function createConversation(
             eventIds: matches.map((e) => e.id),
             settingsKey: preferenceSettingsKey(snapshot),
             recommendationMode: plan.constraints.mode ?? "plan-building",
+            resolvedConstraints: structuredClone(plan.constraints),
             matchReasons: plan.matchReasons.filter((r) =>
               matches.some((e) => e.id === r.event_id),
             ),
@@ -160,14 +163,36 @@ export function createConversation(
     read: status.read,
     subscribe: status.subscribe,
     replace,
-    async refresh(
-      mode: RecommendationMode = demo.read().constraints.mode ?? "discovery",
-    ) {
+    async refresh(mode?: RecommendationMode, message?: Message) {
       if (status.read().busy) return;
+      const source =
+        message ??
+        [...demo.read().messages]
+          .reverse()
+          .find((m) => m.role === "assistant" && Array.isArray(m.eventIds));
+      const constraints = readResolvedConstraints(source?.resolvedConstraints);
+      if (!constraints) {
+        assistant(
+          "This older recommendation has no saved search filters. Please restate the complete search, including topic, days, times and practical requirements, so I can refresh it safely.",
+        );
+        return;
+      }
       pending = undefined;
       sessionSkipped.clear();
       await run((snapshot) =>
-        requestPlan("Find events", { mode }, snapshot, fetcher),
+        requestPlan(
+          "Find events",
+          {
+            ...constraints,
+            mode:
+              mode ??
+              source?.recommendationMode ??
+              constraints.mode ??
+              "discovery",
+          },
+          snapshot,
+          fetcher,
+        ),
       );
     },
     async another(id: string) {

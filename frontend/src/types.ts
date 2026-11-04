@@ -92,6 +92,7 @@ export interface Message {
   evidence?: RecommendationEvidence[];
   settingsKey?: string;
   recommendationMode?: RecommendationMode;
+  resolvedConstraints?: Constraints;
   matchReasons?: RecommendationMatchResult[];
 }
 export interface Post {

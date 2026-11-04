@@ -2,6 +2,7 @@ import { readStudentProfile } from "./studentProfile.ts";
 import {
   readMatchReasons,
   readCatalogEvidence,
+  readResolvedConstraints,
 } from "./recommendationReasons.ts";
 import { defaultPreferences, migratePreferences } from "./preferences.ts";
 import { storageKey } from "./config.ts";
@@ -116,6 +117,9 @@ export function restore(): DemoState {
             .map((m: DemoState["messages"][number]) => ({
               role: m.role,
               text: m.text,
+              resolvedConstraints: readResolvedConstraints(
+                m.resolvedConstraints,
+              ),
               ...(["discovery", "plan-building"].includes(
                 m.recommendationMode || "",
               )

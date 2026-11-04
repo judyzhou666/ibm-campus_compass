@@ -935,6 +935,7 @@ export default function App() {
                                     proposals.dismiss();
                                     void conversation.refresh(
                                       m.recommendationMode,
+                                      m,
                                     );
                                   }}
                                 >

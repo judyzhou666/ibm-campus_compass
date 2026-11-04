@@ -1,6 +1,17 @@
 import { validateConstraints } from "./interpretation.ts";
 import { RANKING_WEIGHTS } from "./planner.ts";
-import type { RecommendationMatchResult } from "./types.ts";
+import type { Constraints, RecommendationMatchResult } from "./types.ts";
+
+export function readResolvedConstraints(
+  value: unknown,
+): Constraints | undefined {
+  try {
+    validateConstraints(value);
+    return structuredClone(value);
+  } catch {
+    return undefined;
+  }
+}
 /** Validate both server results and persisted local snapshots; never reconstruct old reasons. */
 export function readMatchReasons(
   value: unknown,
