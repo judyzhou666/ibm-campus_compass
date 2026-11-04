@@ -2,7 +2,42 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
-## Latest update — November 4, 2026: optional IBM watsonx interpreter
+## Start here (teammates)
+
+**New to coding? Use the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki).** It has copy-and-paste, step-by-step guides:
+
+| Wiki page | Use it to |
+| --- | --- |
+| [Getting started](https://github.com/judyzhou666/ibm-campus_compass/wiki/Getting-Started) | Install the tools, download the project and run the website on your own computer. No IBM key needed. |
+| [Using watsonx](https://github.com/judyzhou666/ibm-campus_compass/wiki/Using-watsonx) | Optionally connect the AI Planner to IBM watsonx (Granite) with your own API key. |
+| [IBM Bob](https://github.com/judyzhou666/ibm-campus_compass/wiki/IBM-Bob) | Set up Bob IDE and export your Bob sessions, which the lab requires from every teammate. |
+| [Team workflow](https://github.com/judyzhou666/ibm-campus_compass/wiki/Team-Workflow) | Update your branch, save your work and open a pull request. |
+
+Quick start, once Node.js 22.12+ and Rust are installed:
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
+
+## Update — November 4, 2026: Doris's PR #4 merged with watsonx; teammate guides
+
+`main` (Doris's PR #4: clarifications, recommendation evidence, demo configuration and evaluation) was merged into `Judy` together with the watsonx interpreter, then into `main`.
+
+| Area | What changed |
+| --- | --- |
+| Planner API | `/api/plan` keeps Doris's `understood`, `clarification`, `recommendations` and `diagnostic` fields and adds `mode`, `provider` and the watsonx fallback `notice`. `/api/health` reports watsonx status; `/api/config` is unchanged. |
+| Order of checks | The deterministic rules run first. Clarifications such as "Numeric budgets are not supported" never depend on the model. Only then is watsonx asked (in watsonx mode). |
+| Unrecognised messages | As in Doris's design, a message the rules do not recognise at all (no interest, day, time, "event", "plan" or "week") is answered "I'm a limited demo planner…" in the browser and is **not** sent to watsonx. Most real requests contain one of these words. |
+| Chat label | Doris moved chat logic into `frontend/src/conversation.ts`; it now shows the watsonx label too. |
+| Teammate guides | The Wiki was rewritten for teammates without a coding background: new **Using watsonx** and **IBM Bob** pages, a step-by-step **Getting started**, and a simpler **Team workflow**. |
+
+Verification on the merged code: Rust fmt, Clippy, build and 18 tests (including a new one confirming a numeric-budget request is answered by the rules without calling watsonx); 84 TypeScript tests and 5 Wiki tests; frontend type check and build; API integration. A live check with the team sandbox (`ibm/granite-4-h-small`) returned watsonx-mode suggestions on the requested Tuesday/Thursday with Doris's recommendation evidence, and the rules-based budget clarification. The Chromium browser journey from PR #4 was not rerun. The frozen evaluation results were not regenerated and do not cover watsonx.
+
+## Update — November 4, 2026: optional IBM watsonx interpreter
 
 The AI Planner can now use IBM watsonx.ai (Granite, Dallas `us-south`) to understand chat messages. It is **off by default**: without configuration the app runs the simulated planner exactly as before, and no credentials are needed.
 
@@ -207,7 +242,7 @@ cargo run --locked
 
 Open http://127.0.0.1:4173. Rust serves the React/TypeScript frontend and planning API. For frontend development, run `npm run dev` alongside Rust. Python is not required.
 
-See [backend architecture and test commands](docs/backend.md) and [IBM Bob setup](docs/ibm-bob-setup.md).
+See [backend architecture and test commands](docs/backend.md) and [IBM Bob setup](docs/ibm-bob-setup.md). Step-by-step guides for teammates, including optional watsonx setup, are in the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki).
 
 ## What works
 

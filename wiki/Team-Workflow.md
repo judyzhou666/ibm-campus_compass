@@ -1,34 +1,68 @@
 # Team workflow
 
-`main` is the shared project branch. Work in your own branch and use a pull request for team review:
+`main` is the shared, reviewed version of the project. Each of us works on our **own branch** and asks the team to review it with a **pull request** before it joins `main`.
 
-| Team branch |
-| --- |
-| `Judy` |
-| `Doris` |
-| `Bella` |
-| `Tingting` |
+| Teammate | Branch |
+| --- | --- |
+| Judy | `Judy` |
+| Doris | `Doris` |
+| Bella | `Bella` |
+| Tingting | `Tingting` |
 
-For example:
+Branch names are case-sensitive: `Judy`, not `judy`.
+
+## Daily routine (copy and paste)
+
+Replace `Judy` with **your** branch name in every command.
+
+**1. Start from the latest team version.** Run these in Terminal:
 
 ```sh
-git fetch origin
+cd ~/ibm-campus_compass
 git switch Judy
+git pull
 git merge origin/main
 ```
 
-Replace `Judy` with your own branch name. Resolve any conflicts before pushing your work.
+If `git merge` prints "CONFLICT", stop and ask in the team chat before going further.
 
-## Documentation locations
+**2. Make your changes** (in Bob IDE or any editor), then run the website and tests to check nothing broke:
 
-- `docs/`: new project documentation, implementation notes, and setup instructions.
-- `wiki/`: source pages intended for the GitHub Wiki.
-- Existing root documents remain in place unless the team chooses to reorganize them.
+```sh
+npm test
+npm run build
+cargo test --locked
+```
 
-Only changes merged into `main` publish automatically. Pull requests validate the publisher without using the publishing secret or modifying the Wiki. The workflow can also be run manually from `main`.
+**3. Save your work to GitHub:**
 
-## Updating pages
+```sh
+git add -A
+git status
+```
 
-Edit pages in `wiki/`, including `Home.md` and `_Sidebar.md`. Matching Wiki pages are updated automatically; pages that exist only on the Wiki are preserved. Removing or renaming a source file does not delete its old Wiki page. Review and remove obsolete pages explicitly on GitHub when needed.
+Read the list `git status` prints. **If you see `.env` in it, stop**: that file holds your secret key and must never be uploaded. (It is normally hidden by `.gitignore`.)
 
-Setup instructions are in [docs/github-wiki.md](https://github.com/judyzhou666/ibm-campus_compass/blob/main/docs/github-wiki.md).
+```sh
+git commit -m "Describe what you changed in one sentence"
+git push origin Judy
+```
+
+**4. Ask for review:** open https://github.com/judyzhou666/ibm-campus_compass, click **Compare & pull request** for your branch, set the base to `main`, describe your change, and click **Create pull request**. After a teammate approves, click **Merge**.
+
+## Where things go
+
+- `README.md`: what changed, how to run it, test results and limits. Update it with every pull request.
+- `docs/`: longer project notes and setup instructions.
+- `wiki/`: the pages of this Wiki.
+- `bob_sessions/<your name>/`: your exported IBM Bob sessions (see [IBM Bob](IBM-Bob)).
+
+## Editing this Wiki
+
+The Wiki is published automatically from the `wiki/` folder:
+
+1. Edit or add a Markdown page in `wiki/` on your branch (for example `wiki/Getting-Started.md`). Add new pages to `wiki/_Sidebar.md`.
+2. Open a pull request into `main`. GitHub checks the publisher.
+3. After the pull request is merged, the **Publish GitHub Wiki** action updates the Wiki within a few minutes.
+
+Do not edit pages directly on the Wiki website: the next publish will overwrite your change. Removing or renaming a file in `wiki/` does not delete the old Wiki page; delete it on GitHub by hand. Setup details: [docs/github-wiki.md](https://github.com/judyzhou666/ibm-campus_compass/blob/main/docs/github-wiki.md).
