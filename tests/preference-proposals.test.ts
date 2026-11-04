@@ -22,6 +22,11 @@ test("only recognized positive content maps; intent words and negated/unsupporte
     "Arts & culture",
   ]);
   assert.deepEqual(proposalTopic("I'm learning about quantum gardening"), []);
+  assert.deepEqual(
+    proposalTopic("Show me Friday events I'm interested in"),
+    [],
+  );
+  assert.deepEqual(proposalTopic("I want to explore next semester"), []);
   assert.deepEqual(proposalTopic("I'm not interested in UX research"), []);
   assert.deepEqual(
     proposalTopic("I'm interested in research but not career"),

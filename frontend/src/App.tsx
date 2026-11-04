@@ -12,7 +12,11 @@ import {
   UsingPreferences,
   RecommendationInfo,
 } from "./RecommendationPresentation.tsx";
-import { activeTopics, preferenceSettingsKey } from "./preferences.ts";
+import {
+  activeTopics,
+  preferenceSettingsKey,
+  proposalTopic,
+} from "./preferences.ts";
 import { PreferenceProposal } from "./PreferenceProposal.tsx";
 import { useRecommendations } from "./useRecommendations.ts";
 import { DataReview } from "./DataReview.tsx";
@@ -275,14 +279,15 @@ export default function App() {
   }
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
-    setMessage("");
-    if (
-      previous === undefined &&
-      /\b(interested in|learning about|explore next)\b/i.test(text)
-    ) {
+    if (previous === undefined && proposalTopic(text).length > 0) {
+      setMessage("");
       proposals.propose(text);
       return;
     }
+    // Unrecognized interest wording remains editable while the normal planner
+    // responds; phrase presence alone must never create an empty proposal.
+    if (!/\b(interested in|learning about|explore next)\b/i.test(text))
+      setMessage("");
     proposals.dismiss();
     await conversation.chat(text, previous);
   }

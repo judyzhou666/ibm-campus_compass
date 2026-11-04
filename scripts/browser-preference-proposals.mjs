@@ -82,20 +82,33 @@ try {
       0,
     );
     assert.deepEqual((await state()).preferences, before);
-    await send("I'm learning about quantum gardening");
-    assert.equal(
-      await page
-        .getByRole("button", { name: "This search only", exact: true })
-        .count(),
-      0,
-    );
-    await page
-      .getByRole("button", {
-        name: "Choose a topic in My Preferences",
-        exact: true,
-      })
-      .waitFor();
-    await page.getByRole("button", { name: "Dismiss", exact: true }).click();
+    for (const text of [
+      "I'm learning about quantum gardening",
+      "Show me Friday events I'm interested in",
+    ]) {
+      const count = (await state()).messages.length;
+      await send(text);
+      await page.waitForFunction((n) => {
+        const messages = JSON.parse(
+          localStorage.getItem("campus-compass-demo-v1"),
+        ).messages;
+        return messages.length > n && messages.at(-1)?.role === "assistant";
+      }, count);
+      assert.equal(
+        await page
+          .getByRole("region", { name: "Proposed preference change" })
+          .count(),
+        0,
+      );
+      assert.equal(
+        await page.getByLabel("Message your AI planner").inputValue(),
+        text,
+      );
+      assert.ok((await state()).messages.at(-1).text.trim().length > 0);
+      assert.equal((await state()).messages.at(-2).text, text);
+      assert.deepEqual((await state()).preferences, before);
+    }
+    assert.deepEqual((await state()).constraints.days, [4]);
     await send("I'm interested in UX research now");
     await send("Find social events");
     await page
@@ -159,7 +172,7 @@ try {
     );
     await page.close();
     console.log(
-      `PASS ${width}px offline=${offline}: use-once filters/hard constraints, exact review, cancel/dismiss, unsupported manual, supersession, confirmed provenance and deletion/navigation invalidation.`,
+      `PASS ${width}px offline=${offline}: use-once filters/hard constraints, exact review, cancel/dismiss, unsupported/ordinary phrasing reaches planner without empty proposals or lost input, supersession, confirmed provenance and deletion/navigation invalidation.`,
     );
   }
 } finally {

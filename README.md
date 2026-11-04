@@ -2,6 +2,12 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Chat proposal interception
+
+Only explicit interest statements that `proposalTopic()` maps to supported topics open the preference proposal. Ordinary requests such as “Show me Friday events I'm interested in” and unsupported subjects continue to the normal planner; unrecognized interest wording stays in the input for correction and never opens an empty proposal. Supported use-once, review, explicit confirmation, dismiss and stale-proposal safeguards are unchanged.
+
+Fresh checks: frontend build/typecheck; 73 proposal/preference/workflow tests; desktop/mobile proposal browser regression covering Friday search, unsupported input with a nonblank planner reply, unchanged preferences before confirmation, and the existing review/confirm/use-once/dismiss flows. Run `node --import tsx --test tests/preference-proposals.test.ts tests/preferences.test.ts tests/workflows.test.ts` or the optional `scripts/browser-preference-proposals.mjs` against the running site. No Rust/API integration or full browser matrix was rerun for this App-only behavior change.
+
 ## Recommendation refresh snapshots
 
 Each new recommendation message stores a validated copy of its resolved search filters. **Refresh suggestions** reuses the selected message’s snapshot with current saved preferences and schedule, changing only an explicitly requested mode. It appends a new response and preserves other messages and their snapshots. Topic/day/time bounds, food/free-admission filters, exclusions, exploration and explicit result limits are retained. Historical filters survive browser reload even though global chat filters reset. Older messages without a valid snapshot ask for a complete restatement; refresh does not substitute current global defaults or guess missing requirements.
