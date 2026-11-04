@@ -12,7 +12,7 @@ export function useRecommendations(
   const [attempt, setAttempt] = useState(0);
   const requestConstraints: Constraints = {
     ...constraints,
-    mode: constraints.mode ?? "discovery",
+    mode: constraints.mode ?? "plan-building",
   };
   const key =
     planningKey(state) + JSON.stringify(requestConstraints) + `:${attempt}`;

@@ -25,6 +25,7 @@ export function Briefing({
   const result = useRecommendations(state);
   const cross = useRecommendations(state, {
     explore: true,
+    mode: "discovery",
     limit: Math.min(2, wirePreferences(state).count),
   });
   const links = (
@@ -102,8 +103,8 @@ export function Briefing({
             <div>
               <h3>Across disciplines</h3>
               <p>
-                Explore topics beyond your selections; departments are not
-                verified.
+                Discovery alternatives may overlap. Explore topics beyond your
+                selections; departments are not verified.
               </p>
               <ul>{links(cross.ids, true, cross.matchReasons)}</ul>
             </div>

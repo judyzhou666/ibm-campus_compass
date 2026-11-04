@@ -12,7 +12,7 @@ import type { CampusEvent, DemoState } from "./types.ts";
 export function UsingPreferences({
   state,
   onEdit,
-  mode = "discovery",
+  mode = "plan-building",
 }: {
   state: DemoState;
   onEdit: () => void;

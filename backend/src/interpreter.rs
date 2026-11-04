@@ -72,7 +72,10 @@ impl Interpreter for SimulatedInterpreter {
             &q,
         ) {
             c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
-        } else if matches(r"\b(discover|browse)\b|\bshow\b.*\balternatives\b", &q) {
+        } else if matches(
+            r"\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b",
+            &q,
+        ) {
             c.mode = Some(crate::model::RecommendationMode::Discovery);
         }
         let mut topics = Vec::new();

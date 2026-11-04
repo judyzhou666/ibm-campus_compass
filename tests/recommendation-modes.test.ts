@@ -108,3 +108,62 @@ test("explicit weekly planning and discovery requests select modes without dropp
     /mode/,
   );
 });
+
+test("ordinary chat, another and refresh default to compatible plan-building", async () => {
+  const demo = createStore(fresh());
+  const c = createConversation(demo, () => {}, offline);
+  await c.chat("events on Tuesday after 3 PM before 5 PM");
+  function compatible() {
+    const state = demo.read();
+    assert.equal(state.messages.at(-1)?.recommendationMode, "plan-building");
+    const events = state.draft.map((id) => EVENTS.find((e) => e.id === id)!);
+    assert.ok(events.length > 0);
+    for (let i = 0; i < events.length; i++)
+      for (const other of events.slice(i + 1))
+        assert.equal(overlap(events[i], other, state.buffer), false);
+    assert.match(state.messages.at(-1)!.text, /mutually compatible/);
+  }
+  compatible();
+  const original = structuredClone(demo.read().messages.at(-1)!);
+  await c.another(demo.read().draft[0]);
+  compatible();
+  demo.update((s) => ({
+    ...s,
+    preferences: { ...defaultPreferences(), count: 5 },
+    constraints: {},
+  }));
+  c.reset();
+  await c.refresh(undefined, original);
+  compatible();
+  assert.deepEqual(
+    demo.read().messages.at(-1)?.resolvedConstraints,
+    original.resolvedConstraints,
+  );
+});
+
+test("explicit exploration allows labelled overlap and refresh retains the selected discovery mode", async () => {
+  const demo = createStore(fresh());
+  const c = createConversation(demo, () => {}, offline);
+  await c.chat("Explore events on Tuesday after 3 PM before 5 PM");
+  assert.ok(
+    demo.read().draft.includes("e1") && demo.read().draft.includes("e17"),
+  );
+  assert.match(demo.read().messages.at(-1)!.text, /not a combined plan/);
+  const message = structuredClone(demo.read().messages.at(-1)!);
+  demo.update((s) => ({
+    ...s,
+    constraints: { mode: "plan-building" },
+    preferences: { ...defaultPreferences(), count: 5 },
+  }));
+  c.reset();
+  await c.refresh(undefined, message);
+  assert.equal(demo.read().constraints.mode, "discovery");
+  assert.ok(
+    demo.read().draft.includes("e1") && demo.read().draft.includes("e17"),
+  );
+  await c.refresh("plan-building", message);
+  assert.equal(demo.read().constraints.mode, "plan-building");
+  assert.ok(
+    !(demo.read().draft.includes("e1") && demo.read().draft.includes("e17")),
+  );
+});

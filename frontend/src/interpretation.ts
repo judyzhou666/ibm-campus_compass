@@ -127,7 +127,7 @@ export function interpretRequest(
     )
   )
     c.mode = "plan-building";
-  else if (test(/\b(discover|browse)\b|\bshow\b.*\balternatives\b/))
+  else if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
     c.mode = "discovery";
   const topics = Object.entries(keywords)
     .filter(([k, re]) => test(re))

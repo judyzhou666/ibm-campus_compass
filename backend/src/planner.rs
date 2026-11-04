@@ -593,6 +593,25 @@ mod mode_tests {
         c.mode = Some(RecommendationMode::PlanBuilding);
         let plan = recommend(&state, &c, &events);
         assert!(!(plan.iter().any(|e| e.id == "e1") && plan.iter().any(|e| e.id == "e17")));
+        c.mode = None;
+        let legacy = recommend(&state, &c, &events);
+        assert_eq!(
+            legacy.iter().map(|e| &e.id).collect::<Vec<_>>(),
+            plan.iter().map(|e| &e.id).collect::<Vec<_>>()
+        );
+        for (index, event) in legacy.iter().enumerate() {
+            for other in legacy.iter().skip(index + 1) {
+                assert!(!overlap(
+                    event.day,
+                    event.start,
+                    event.end,
+                    other.day,
+                    other.start,
+                    other.end,
+                    state.buffer
+                ));
+            }
+        }
         for mode in [
             RecommendationMode::Discovery,
             RecommendationMode::PlanBuilding,

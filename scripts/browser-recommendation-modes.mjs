@@ -19,6 +19,25 @@ try {
     .getByLabel("Message your AI planner")
     .fill("events on Tuesday after 3 PM before 5 PM");
   await page.getByLabel("Message your AI planner").press("Enter");
+  await page.waitForFunction(
+    () =>
+      JSON.parse(localStorage.getItem("campus-compass-demo-v1")).messages.at(-1)
+        ?.recommendationMode === "plan-building",
+  );
+  const ordinary = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campus-compass-demo-v1")),
+  );
+  assert.ok(!(ordinary.draft.includes("e1") && ordinary.draft.includes("e17")));
+  assert.match(ordinary.messages.at(-1).text, /mutually compatible/);
+  await page
+    .getByLabel("Message your AI planner")
+    .fill("Discover events on Tuesday after 3 PM before 5 PM");
+  await page.getByLabel("Message your AI planner").press("Enter");
+  await page.waitForFunction(
+    () =>
+      JSON.parse(localStorage.getItem("campus-compass-demo-v1")).messages.at(-1)
+        ?.recommendationMode === "discovery",
+  );
   await page.locator(".chat-event").nth(1).waitFor();
   assert.equal((await page.locator(".alternative-warning").count()) >= 2, true);
   assert.match(
@@ -78,7 +97,7 @@ try {
     true,
   );
   console.log(
-    "PASS mobile: actual overlap labels, explicit compatible weekly plan, discovery switch, no automatic calendar changes.",
+    "PASS mobile: ordinary compatible default, actual overlap labels, explicit compatible weekly plan, discovery switch, no automatic calendar changes.",
   );
 } finally {
   await browser.close();

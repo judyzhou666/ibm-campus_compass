@@ -152,7 +152,7 @@ export function createConversation(
       const constraints = replacementConstraints(snapshot.constraints, old);
       return requestPlan(
         "Find events",
-        { ...constraints, mode: "discovery" },
+        { ...constraints, mode: "plan-building" },
         snapshot,
         fetcher,
       );
@@ -188,7 +188,7 @@ export function createConversation(
               mode ??
               source?.recommendationMode ??
               constraints.mode ??
-              "discovery",
+              "plan-building",
           },
           snapshot,
           fetcher,
@@ -202,7 +202,7 @@ export function createConversation(
       await run((snapshot) =>
         requestPlan(
           "Find events",
-          { mode: "discovery", ...snapshot.constraints },
+          { mode: "plan-building", ...snapshot.constraints },
           snapshot,
           fetcher,
         ),
@@ -318,7 +318,7 @@ export function createConversation(
       await run((snapshot) =>
         requestPlan(
           resolvedText,
-          { mode: "discovery", ...(context ?? snapshot.constraints) },
+          { mode: "plan-building", ...(context ?? snapshot.constraints) },
           snapshot,
           fetcher,
           exactTopics,

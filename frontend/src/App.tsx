@@ -752,7 +752,7 @@ export default function App() {
               <UsingPreferences
                 state={state}
                 onEdit={() => nav("profile")}
-                mode={state.constraints.mode ?? "discovery"}
+                mode={state.constraints.mode ?? "plan-building"}
               />
               <div className="row">
                 <Button
@@ -820,7 +820,10 @@ export default function App() {
                 <Button
                   onClick={() => {
                     proposals.dismiss();
-                    void conversation.chat("Find events", { explore: true });
+                    void conversation.chat("Find events", {
+                      explore: true,
+                      mode: "discovery",
+                    });
                   }}
                 >
                   Explore beyond my interests

@@ -28,7 +28,7 @@ test("refresh uses the selected message's original career/day/time with current 
   await c.chat("career events on Tuesday after 3 PM");
   const first = structuredClone(demo.read().messages.at(-1)!);
   assert.deepEqual(first.resolvedConstraints, {
-    mode: "discovery",
+    mode: "plan-building",
     topics: ["Career"],
     days: [1],
     after: 900,

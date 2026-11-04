@@ -1,8 +1,11 @@
+import { createConversation } from "../frontend/src/conversation.ts";
+import { EVENTS } from "../frontend/src/data.ts";
+import { overlap } from "../frontend/src/planner.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fixtures from "./fixtures/preference-parity.json";
-import { fresh } from "../frontend/src/state.ts";
+import { fresh, createStore } from "../frontend/src/state.ts";
 import {
   defaultPreferences,
   migratePreferences,
@@ -116,6 +119,64 @@ try {
     { mode: "plan-building" },
     "Discover events",
   );
+  const overlapWindow: Constraints = {
+    days: [1],
+    after: 900,
+    before: 1020,
+    limit: 5,
+  };
+  await compare("omitted mode is compatible", fresh(), overlapWindow);
+  await compare("explicit compatible window", fresh(), {
+    ...overlapWindow,
+    mode: "plan-building",
+  });
+  await compare(
+    "explicit overlapping exploration",
+    fresh(),
+    overlapWindow,
+    "Explore events",
+  );
+  const fetcher: typeof fetch = (path, options) =>
+    fetch(base + String(path), options);
+  for (const [text, expectedMode] of [
+    ["events on Tuesday after 3 PM before 5 PM", "plan-building"],
+    ["Build a weekly plan on Tuesday after 3 PM before 5 PM", "plan-building"],
+    ["Explore events on Tuesday after 3 PM before 5 PM", "discovery"],
+  ] as const) {
+    const demo = createStore(fresh());
+    const conversation = createConversation(demo, () => {}, fetcher);
+    await conversation.chat(text);
+    const state = demo.read();
+    assert.equal(state.messages.at(-1)?.recommendationMode, expectedMode);
+    assert.deepEqual(
+      state.draft,
+      recommendWithReasons(state, {
+        ...overlapWindow,
+        limit: 3,
+        mode: expectedMode,
+      }).map((r) => r.event.id),
+    );
+    const found = state.draft.map((id) => EVENTS.find((e) => e.id === id)!);
+    if (expectedMode === "discovery")
+      assert.ok(state.draft.includes("e1") && state.draft.includes("e17"));
+    else
+      for (let i = 0; i < found.length; i++)
+        for (const other of found.slice(i + 1))
+          assert.equal(overlap(found[i], other, state.buffer), false);
+    const message = structuredClone(state.messages.at(-1)!);
+    demo.update((s) => ({
+      ...s,
+      constraints: {},
+      preferences: { ...defaultPreferences(), count: 5 },
+    }));
+    conversation.reset();
+    await conversation.refresh(undefined, message);
+    assert.equal(demo.read().constraints.mode, expectedMode);
+    assert.deepEqual(
+      demo.read().messages.at(-1)?.resolvedConstraints,
+      message.resolvedConstraints,
+    );
+  }
   for (const goal of Object.keys(GOAL_TOPICS)) {
     const state = {
       ...fresh(),

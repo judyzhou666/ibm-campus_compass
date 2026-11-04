@@ -67,6 +67,7 @@ export interface Schedule {
   preferred_time?: string;
   preferences?: Preferences;
 }
+/** Omitted mode means overlap-free plan-building in both planners. Discovery is explicit. */
 export type RecommendationMode = "discovery" | "plan-building";
 export interface Constraints {
   mode?: RecommendationMode;

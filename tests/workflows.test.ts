@@ -264,7 +264,7 @@ test("replacement preserves every filter and asks the student before changing th
   assert.deepEqual(bodies[0].previous, {
     ...previous,
     limit: 1,
-    mode: "discovery",
+    mode: "plan-building",
   });
   assert.deepEqual(demo.read().plan, ["e2"]);
   assert.deepEqual(demo.read().rsvps, []);

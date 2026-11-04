@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## Consistent recommendation modes
+
+Ordinary Planner chat, Dashboard and the main briefing default to overlap-free plan-building, matching both planners when mode is omitted. Follow-ups and Show another retain an explicitly selected mode. Discover alternatives and explicit discover/browse/explore wording select discovery; the Across disciplines briefing and Explore outside my interests control also explicitly request discovery. Weekly-plan wording and Build weekly plan select plan-building. Schedule replacement uses plan-building with its existing one-result limit. Refresh preserves the selected message’s original mode (or an explicit override) and resolved filters with current preferences. Discovery options are labelled as alternatives, with named overlap warnings; they are never presented as a combined compatible schedule.
+
+Both Rust and TypeScript retain the backward-compatible omitted-mode contract: mutually compatible recommendations. Only explicit discovery bypasses compatibility among the unplanned suggestions; existing commitments, plans, eligibility, travel buffers, budget/free-admission and other hard filters remain enforced. Scores, ranking and RSVP/latest-schedule gates are unchanged.
+
+Fresh verification: build/typecheck; 140 TypeScript tests; 13 Rust tests; Rust formatting, Clippy and build; API integration; 25 shared-fixture/goal/mode comparisons plus Rust-backed ordinary-chat/weekly-plan/discovery and refresh checks; and the focused mobile mode-switch browser journey passed. The browser check covers an ordinary compatible search, named overlapping discovery alternatives, a compatible weekly plan and switching back. Run `node --import tsx --test tests/recommendation-modes.test.ts tests/recommendation-refresh.test.ts`, `cargo test --locked`, `node --import tsx tests/preference-parity.ts` and `npm run test:api` after building. Full browser matrix and frozen evaluation were not rerun.
+
 ## Chat proposal interception
 
 Only explicit interest statements that `proposalTopic()` maps to supported topics open the preference proposal. Ordinary requests such as “Show me Friday events I'm interested in” and unsupported subjects continue to the normal planner; unrecognized interest wording stays in the input for correction and never opens an empty proposal. Supported use-once, review, explicit confirmation, dismiss and stale-proposal safeguards are unchanged.
@@ -50,7 +58,7 @@ Integrated the remote clarification-context fix while preserving the preference 
 
 ## Draft-entry and navigation repairs
 
-Unadded busy commitments and availability windows now count as unsaved edits. Save rejects incomplete entries with an accessible message and focuses the relevant field; Add stages an entry, Clear entry discards it, and Cancel resets both staged controls and the preference draft. Navigation warns before losing typed entries. The brand link prevents duplicate default navigation, so declining produces one discard prompt; modified clicks retain normal browser link behavior. The API integration expectation now includes the intentional discovery mode.
+Unadded busy commitments and availability windows now count as unsaved edits. Save rejects incomplete entries with an accessible message and focuses the relevant field; Add stages an entry, Clear entry discards it, and Cancel resets both staged controls and the preference draft. Navigation warns before losing typed entries. The brand link prevents duplicate default navigation, so declining produces one discard prompt; modified clicks retain normal browser link behavior. The API integration expectation now uses plan-building for ordinary requests.
 
 Fresh repair verification: frontend build/type checking, full `npm test` (117 TypeScript tests, 5 Wiki tests and planner assertions), `npm run test:api`, desktop/mobile draft-entry regressions and desktop-online/mobile-offline busy-conflict journeys passed. Browser regression: `scripts/browser-preference-drafts.mjs` with the existing optional Playwright environment. Rust unit/Clippy and frozen evaluation were not rerun in this repair; prior results below remain historical.
 
@@ -81,7 +89,7 @@ Goal IDs map exactly: `career → Career`; `practice` and `research → AI & edu
 
 ## Discovery, plans and busy time
 
-`constraints.mode` is `discovery` or `plan-building`. Omission preserves legacy plan-building. Dashboard/briefing and ordinary Planner discovery explicitly use discovery; **Build weekly plan** or explicit weekly-plan wording selects plan-building. Mode switches retain current filters.
+`constraints.mode` is `discovery` or `plan-building`. Omission preserves legacy plan-building. Ordinary chat, Dashboard and main briefing use plan-building. Explicit exploration and the Across disciplines briefing use discovery; **Build weekly plan** selects plan-building. Follow-ups retain the selected mode and filters.
 
 Discovery can return mutually overlapping **unplanned alternatives**. Actual overlaps/insufficient travel time are labelled by event title: these choices cannot both fit the schedule. Plan-building additionally checks mutual compatibility. Both modes enforce existing commitments and planned events, eligibility, cancellations, travel buffer, saved free-only/windows and current request filters. Numeric budgets are unsupported and explicitly rejected. Neither mode adds anything automatically; Add/RSVP always rechecks the latest schedule.
 
