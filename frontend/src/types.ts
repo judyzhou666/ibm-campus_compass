@@ -1,3 +1,4 @@
+import type { StudentProfile } from "./studentProfile.ts";
 import type { Preferences, Guidance, ResultCount } from "./preferences.ts";
 export interface TimeSlot {
   day: number;
@@ -100,6 +101,7 @@ export interface Post {
   tag: string;
 }
 export interface DemoState extends Schedule {
+  studentProfile?: StudentProfile;
   name: string;
   onboarded: boolean;
   major: string;

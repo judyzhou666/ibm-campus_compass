@@ -1951,3 +1951,147 @@ dialog { max-height:90dvh; overflow-y:auto; }
     gap: 20px;
   }
 }
+
+/* Student profile uses the existing palette, avatar, tags, panels and controls. */
+.sidebar:has(.student-profile-card) {
+  overflow-y: auto;
+}
+.sidebar:has(.student-profile-card) > .brand,
+.sidebar:has(.student-profile-card) > .side-bottom {
+  flex-shrink: 0;
+}
+.sidebar:has(.student-profile-card) > .nav {
+  flex: 1;
+  min-height: 100px;
+  overflow-y: auto;
+}
+.sidebar:has(.student-profile-card) > .side-bottom {
+  margin-top: 16px;
+}
+.student-profile-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: #f6f7f1;
+  overflow-wrap: anywhere;
+}
+.student-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.student-identity > div {
+  min-width: 0;
+}
+.student-identity strong {
+  font-size: 14px;
+}
+.student-identity small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+.student-avatar {
+  flex-shrink: 0;
+}
+.student-profile-card p {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+.student-university {
+  color: var(--green-dark);
+}
+.student-card-bio {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+}
+.student-interest-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.student-interest-tags .tag {
+  border-radius: 20px;
+  padding: 5px 9px;
+  background: var(--mint);
+  color: var(--green-dark);
+}
+.student-profile-card .tag {
+  font-size: 10px;
+  padding: 4px 7px;
+  white-space: normal;
+}
+.student-profile-card > .btn {
+  width: 100%;
+  margin-top: 10px;
+}
+.student-profile-card > .fineprint {
+  display: block;
+}
+.student-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #f6f7f1;
+}
+.student-profile-hero .student-avatar {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+}
+.student-profile-hero h2 {
+  margin: 0 0 8px;
+}
+.student-profile-hero p {
+  margin: 0 0 12px;
+}
+.student-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.student-profile-grid > *,
+.student-profile-hero > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.student-profile-wide {
+  grid-column: 1 / -1;
+}
+.student-details {
+  margin: 0;
+}
+.student-details dt {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 14px;
+}
+.student-details dd {
+  margin: 4px 0 0;
+}
+.student-bio {
+  white-space: pre-wrap;
+}
+.student-profile-grid .row {
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .student-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .student-profile-hero {
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .student-profile-hero .student-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+}

@@ -1,3 +1,4 @@
+import { readStudentProfile } from "./studentProfile.ts";
 import {
   readMatchReasons,
   readCatalogEvidence,
@@ -62,6 +63,7 @@ export function restore(): DemoState {
         : [];
     return {
       ...base,
+      studentProfile: readStudentProfile(value.studentProfile),
       preferences: migratePreferences(value.preferences),
       onboarded: value.onboarded === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",

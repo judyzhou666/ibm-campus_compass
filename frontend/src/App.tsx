@@ -1,3 +1,4 @@
+import { StudentProfileCard, StudentProfilePage } from "./StudentProfile.tsx";
 import {
   discoveryState as withDiscoveryFilters,
   matchesDiscoveryFilter,
@@ -55,6 +56,7 @@ const labels = {
   forum: "Discussion Forum",
   planner: "AI Planner",
   saved: "Saved Events",
+  "my-profile": "My Profile",
   profile: "My Preferences",
   settings: "Settings",
 };
@@ -67,6 +69,7 @@ const navIcons: Record<Page, string> = {
   forum: "chat",
   planner: "spark",
   saved: "bookmark",
+  "my-profile": "user",
   profile: "user",
   settings: "settings",
 };
@@ -137,6 +140,19 @@ export default function App() {
   function notify(text: string) {
     setToast(text);
   }
+  const studentProfileDirty = useRef(false);
+  const setStudentProfileDirty = useCallback((dirty: boolean) => {
+    studentProfileDirty.current = dirty;
+  }, []);
+  function allowStudentProfileDeparture() {
+    if (!studentProfileDirty.current) return true;
+    if (
+      !window.confirm("Discard unsaved profile changes and leave My Profile?")
+    )
+      return false;
+    studentProfileDirty.current = false;
+    return true;
+  }
   const preferenceDirty = useRef(false);
   const setPreferenceDirty = useCallback((dirty: boolean) => {
     preferenceDirty.current = dirty;
@@ -153,6 +169,7 @@ export default function App() {
     return true;
   }
   function nav(next: Page, communityId?: string) {
+    if (next !== "my-profile" && !allowStudentProfileDeparture()) return false;
     if (next !== "profile" && !allowPreferenceDeparture()) return false;
     if (next !== "planner") proposals.dismiss();
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
@@ -185,6 +202,10 @@ export default function App() {
   useEffect(() => {
     const handle = () => {
       const next = validPage(location.hash.slice(1));
+      if (next !== "my-profile" && !allowStudentProfileDeparture()) {
+        history.replaceState(null, "", "#my-profile");
+        return;
+      }
       if (next !== "profile" && !allowPreferenceDeparture()) {
         history.replaceState(null, "", "#profile");
         return;
@@ -425,20 +446,7 @@ export default function App() {
           ))}
         </nav>
         <div className="side-bottom">
-          <div className="demo-note">
-            <strong>A campus of possibilities.</strong>Your interests. Your
-            time. Your next great discovery.
-          </div>
-          <div className="user">
-            <span className="avatar">{state.name[0] || "J"}</span>
-            <div>
-              <strong>{state.name}’s campus</strong>
-              <small>Graduate student · Demo profile</small>
-              <button className="text-btn" onClick={() => nav("profile")}>
-                My Preferences
-              </button>
-            </div>
-          </div>
+          <StudentProfileCard state={state} onView={() => nav("my-profile")} />
         </div>
       </aside>
       <div className="shell">
@@ -489,9 +497,9 @@ export default function App() {
             </button>
             <button
               className="avatar"
-              aria-label="Open profile"
+              aria-label="View My Profile"
               style={{ border: 0 }}
-              onClick={() => nav("profile")}
+              onClick={() => nav("my-profile")}
             >
               {state.name[0] || "J"}
             </button>
@@ -1257,6 +1265,16 @@ export default function App() {
                 )}
               </section>
             </>
+          ) : null}
+          {page === "my-profile" ? (
+            <StudentProfilePage
+              state={state}
+              update={update}
+              notify={notify}
+              onPreferences={() => nav("profile")}
+              onActivity={nav}
+              onDirtyChange={setStudentProfileDirty}
+            />
           ) : null}
           {page === "profile" && state.onboarded ? (
             <Profile

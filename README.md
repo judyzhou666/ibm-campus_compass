@@ -2,6 +2,18 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved and no live watsonx connection is implemented.
 
+## My Profile
+
+The sidebar student card and header avatar open **My Profile** at `#my-profile`. The existing **My Preferences** route remains `#profile`. Profile uses the existing palette, typography, panels, buttons and initials avatar; no image upload or new app dependencies were added. On small screens, open the navigation menu for the card. Navigation can scroll above the card to keep **View Profile** accessible.
+
+The profile page groups Basic Information, About Me, My Interests, Campus Involvement and My Activity. **Edit Profile** updates the shared demo display name and optional student status, university and short bio; Save persists through the existing browser demo state, while Cancel/navigation warn before discarding edits. The default name/status and fictional university reuse existing demo values; there is no invented biography or real student record. Interests remain editable only through My Preferences. Joined communities, saved/planned events and demo RSVP counts reflect existing local state, not verified membership or attendance.
+
+New optional `studentProfile` fields restore safely for older sessions. They are local browser data, not a public profile or backend account. Profile notes are excluded from existing recommendation payloads. Existing storage-unavailable feedback remains applicable; no cloud profile sync is implemented. Planners, recommendations, discussions and the My Preferences implementation are unchanged.
+
+To test locally, run `npm ci`, then `npm run dev` and open http://localhost:5173/#my-profile. Choose **Use sample preferences** or **Skip for now** if first-time setup opens. Test Edit Profile → Save, reload, Cancel, declined navigation and the interests link. Vite can use the existing Rust service on port 4173; without it the existing labelled browser recommendation fallback applies. Alternatively run `npm run build` and `cargo run --locked`, then open http://localhost:4173/#my-profile.
+
+Fresh verification for this frontend change: build/typecheck, planner assertions and 134 TypeScript tests passed. The focused browser regression at 1280px/390px verified card keyboard navigation, five sections, draft isolation, Save/Cancel, focus, reload persistence, discard warnings, the unchanged preferences route and no horizontal overflow. Run `node --import tsx --test tests/student-profile.test.ts`; optional Playwright check: `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs CAMPUS_TEST_URL=http://127.0.0.1:5173 node scripts/browser-student-profile.mjs`. No Rust checks, live integration or full browser matrix were rerun for this profile-only change. Prior verification below is historical.
+
 ## First-time setup popup — October 23, 2026
 
 The first-visit **Quick preference setup** popup now uses the browser's proportions instead of the shared 530px dialog width: 92% of the viewport width (up to 1440px) and 88% of its height on desktop. Direction/interests and participation/guidance appear side by side. Only the questions scroll; the early Skip action and bottom Save/open-full-preferences actions stay visible. Below 760px the questions stack, with 12px clearance around the popup. Existing selection, draft, Save and Skip behavior is retained.
