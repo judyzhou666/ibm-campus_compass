@@ -6,13 +6,19 @@ import type {
   Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { parseRequest, recommend, issue } from "./planner.ts";
+import { recommend, issue } from "./planner.ts";
+import {
+  PlanningClarification,
+  interpretRequest,
+  validateConstraints,
+} from "./interpretation.ts";
 
 export const schedulePayload = (state: Schedule) => ({
   plan: [...state.plan],
   cancelled: [...state.cancelled],
   interests: [...state.interests],
   buffer: state.buffer,
+  preferred_time: state.preferred_time || "any",
   blocks: state.blocks.map(({ title, day, start, end }) => ({
     title,
     day,
@@ -52,6 +58,19 @@ export async function requestPlan(
   state: Schedule,
   fetcher = globalThis.fetch,
 ) {
+  const interpreted = interpretRequest(message, previous);
+  if (interpreted.clarification)
+    throw new PlanningClarification(
+      interpreted.clarification,
+      interpreted.constraints,
+      interpreted.clocks || [],
+      interpreted.restatement,
+    );
+  // Unrecognised messages never reach the server, in either simulated or watsonx mode.
+  if (!interpreted.understood)
+    throw new InputError(
+      "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
+    );
   try {
     const result = (await post(
       "/api/plan",
@@ -61,6 +80,7 @@ export async function requestPlan(
     if (
       (result.mode !== "simulated" && result.mode !== "watsonx") ||
       (result.notice !== undefined && typeof result.notice !== "string") ||
+      typeof result.understood !== "boolean" ||
       !Array.isArray(result.event_ids) ||
       !result.constraints ||
       typeof result.constraints !== "object" ||
@@ -68,20 +88,42 @@ export async function requestPlan(
     ) {
       throw new Error("Invalid planner response");
     }
+    validateConstraints(result.constraints);
+    if (result.clarification) throw new InputError(result.clarification);
+    if (!result.understood)
+      throw new InputError(
+        "The simulated planner did not understand this request. Try an interest, day or time.",
+      );
     return {
       constraints: result.constraints,
       ids: result.event_ids,
+      evidence: (result.recommendations || []).filter(
+        (e) =>
+          result.event_ids.includes(e.event_id) &&
+          [e.interest_match, e.schedule_fit, e.practical, e.trade_offs].every(
+            (v) => typeof v === "string",
+          ),
+      ),
       source: "rust",
       // Which interpreter actually answered; a failed watsonx call is reported as simulated.
       mode: result.mode,
-      notice: result.notice ?? "",
+      // A watsonx fallback notice comes first, then any explanation of why nothing matched.
+      notice: [
+        result.notice ?? "",
+        !result.event_ids.length && typeof result.diagnostic === "string"
+          ? result.diagnostic
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
     };
   } catch (error) {
     if (error instanceof InputError) throw error;
-    const constraints = parseRequest(message, previous);
+    const { constraints } = interpreted;
     return {
       constraints,
       ids: recommend(state, constraints).map((e) => e.id),
+      evidence: [],
       source: "browser-fallback",
       mode: "simulated" as const,
       notice:

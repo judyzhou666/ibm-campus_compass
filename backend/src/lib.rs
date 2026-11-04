@@ -17,6 +17,10 @@ use std::{path::PathBuf, sync::Arc};
 use tower_http::services::ServeDir;
 use watsonx::WatsonxInterpreter;
 
+pub fn demo_config() -> Value {
+    serde_json::from_str(include_str!("../../data/demo.json")).expect("demo configuration")
+}
+
 type ApiError = (StatusCode, Json<Value>);
 fn bad_request(message: &str) -> ApiError {
     (StatusCode::BAD_REQUEST, Json(json!({"error":message})))
@@ -64,34 +68,58 @@ async fn plan(
     }
     request.state.validate(events).map_err(bad_request)?;
     request.previous.validate().map_err(bad_request)?;
-    let simulated = || SimulatedInterpreter.parse(&request.message, request.previous.clone());
-    let (constraints, mode, provider, notice) = match &app.provider {
-        Provider::Simulated => (simulated(), "simulated", "rust-rules".to_string(), None),
-        Provider::Watsonx(live) => match live
+    // Deterministic safety rules (such as refusing unsupported numeric budgets) run before any
+    // live model call, so a clarification never depends on the model.
+    let simulated = SimulatedInterpreter.parse(&request.message, request.previous.clone());
+    let (interpretation, mode, provider, notice) = match &app.provider {
+        Provider::Watsonx(live) if simulated.clarification.is_none() => match live
             .interpret(&request.message, request.previous.clone())
             .await
         {
-            Ok(c) => (c, "watsonx", format!("watsonx:{}", live.model_id()), None),
+            Ok(i) => (i, "watsonx", format!("watsonx:{}", live.model_id()), None),
             Err(error) => {
                 // Log the failure kind only: never the message, key, token or upstream body.
                 eprintln!("watsonx interpreter unavailable ({error}); using simulated planner");
                 (
-                    simulated(),
+                    simulated,
                     "simulated",
                     "rust-rules".to_string(),
                     Some(WATSONX_FALLBACK_NOTICE),
                 )
             }
         },
+        _ => (simulated, "simulated", "rust-rules".to_string(), None),
     };
+    let constraints = interpretation.constraints;
     // Required for every interpreter, including watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let ids: Vec<_> = planner::recommend(&request.state, &constraints, events)
+    let selected = if interpretation.understood && interpretation.clarification.is_none() {
+        planner::recommend(&request.state, &constraints, events)
+    } else {
+        Vec::new()
+    };
+    let evidence: Vec<_> = selected
         .iter()
-        .map(|e| &e.id)
+        .map(|e| planner::evidence(e, &request.state, &constraints, events))
         .collect();
-    let mut body =
-        json!({"mode":mode, "provider":provider, "constraints":constraints, "event_ids":ids});
+    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
+    let diagnostic = if interpretation.understood
+        && interpretation.clarification.is_none()
+        && selected.is_empty()
+    {
+        Some(planner::no_match_reason(
+            &request.state,
+            &constraints,
+            events,
+        ))
+    } else {
+        None
+    };
+    let mut body = json!({
+        "mode":mode, "provider":provider, "constraints":constraints,
+        "understood":interpretation.understood, "clarification":interpretation.clarification,
+        "event_ids":ids, "recommendations":evidence, "diagnostic":diagnostic
+    });
     if let Some(notice) = notice {
         body["notice"] = json!(notice);
     }
@@ -180,6 +208,7 @@ pub fn app_with(provider: Provider) -> Router {
         .expect("valid embedded demo events");
     Router::new()
         .route("/api/health", get(health))
+        .route("/api/config", get(|| async { Json(demo_config()) }))
         .route("/api/plan", post(plan))
         .route("/api/validate", post(validate))
         .route("/api/enroll", post(enroll))
@@ -203,7 +232,9 @@ mod tests {
             ..Default::default()
         };
         let actual = SimulatedInterpreter.interpret("start over", previous).await;
-        assert_eq!(actual, Ok(Constraints::default()));
+        let actual = actual.unwrap();
+        assert_eq!(actual.constraints, Constraints::default());
+        assert!(actual.understood);
     }
 
     /// Serves `app_with` a watsonx provider backed by a local mock and posts one plan request.
@@ -270,6 +301,26 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn numeric_budget_clarification_does_not_depend_on_the_model() {
+        // The mock would answer with a valid plan; the rules must stop the request first.
+        let (body, health) = plan_with_watsonx(
+            Behavior::Reply(r#"{"topics":["Arts & culture"]}"#),
+            "arts on Wednesday evening under $5",
+        )
+        .await;
+        assert_eq!(body["mode"], "simulated");
+        assert!(
+            body["clarification"]
+                .as_str()
+                .unwrap()
+                .contains("Numeric budgets")
+        );
+        assert_eq!(body["event_ids"], json!([]));
+        assert!(body.get("notice").is_none());
+        assert_eq!(health["watsonx_connected"], false, "model was not called");
+    }
+
+    #[tokio::test]
     async fn watsonx_failures_fall_back_with_a_visible_label() {
         for behavior in [
             Behavior::IamRejects,
@@ -282,7 +333,9 @@ mod tests {
             assert_eq!(body["mode"], "simulated");
             assert_eq!(body["provider"], "rust-rules");
             assert_eq!(body["notice"], WATSONX_FALLBACK_NOTICE);
-            let simulated = SimulatedInterpreter.parse("AI on Tuesday", Constraints::default());
+            let simulated = SimulatedInterpreter
+                .parse("AI on Tuesday", Constraints::default())
+                .constraints;
             assert_eq!(body["constraints"], json!(simulated));
             assert_eq!(health["mode"], "watsonx");
             assert_eq!(health["watsonx_connected"], false);

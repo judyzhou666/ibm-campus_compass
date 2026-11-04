@@ -54,12 +54,128 @@ A check against the lab guide found that the project does not yet meet the guide
 
 Still to do by the team: real Bob IDE work and its exported sessions, the 3-minute video, problem/solution and technology statements, and naming Campus Compass as your own challenge statement (education is not one of the listed themes).
 
-## Previous update — October 15, 2026
+## PR #4 final clarification review — October 22, 2026
 
-The AI Planner now supports choosing events while keeping your schedule visible. This update builds on the Rust backend and React/TypeScript migration.
+Verified Doris’s multi-part clarification revision, then fixed one remaining partial-reply merge gap. Pending context now keeps every newly introduced clock bound, including ambiguous ones, carries forward safe topic changes, and promotes newly introduced weekday/location ambiguity to a full-restatement requirement. Unsupported day conditions never become a positive day filter. Partial answers generate no suggestions or calendar/RSVP changes until all pending requirements are resolved.
+
+The fix is in `frontend/src/conversation.ts`. Shared `tests/clarification-fixtures.ts` cases run through workflow tests and the real Rust integration suite, online and offline. Examples include “career on Thursday after 3” → “before 5” → “PM”, and the same original request → “not Thursday after 3 PM” → “PM”: both remain blocked until a complete supported answer. A partial reply changing Career to Social also retains that topic change.
+
+Validation: planner assertions, 83 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust formatting/Clippy/build, 6 Rust tests, real API integration and unchanged frozen evaluation results all pass. The independent targeted review found no further blockers. No visual interface or browser journey changes were made in this follow-up. Run the usual commands in `docs/backend.md`; use AI Planner to reproduce the sequences above, then supply a complete supported request or choose New chat.
+
+## PR #4 multi-part clarification fixes — October 22, 2026
+
+Clock clarification no longer hides an unresolved weekday exclusion or location condition. Mixed requests such as “social but not Tuesday after 3” now require a complete restatement with the topic, days the student CAN attend and explicit times. A reply of “PM” or “after 3 PM” cannot turn the excluded Tuesday into an allowed day. Rust and TypeScript mirror this policy and omit unsafe positively parsed days from mixed-ambiguity output.
+
+For “career on Thursday after 3 before 5”, answering only “after 3 PM” or only “before 5 PM” keeps planning blocked and retains pending requirements. A complete answer such as “after 3 PM before 5 PM” resolves both bounds while preserving Career/Thursday. Even a new bound introduced by a partial reply must appear in the final restatement. Existing single-clock AM/PM resolution, new-chat/reset cancellation and explicit RSVP/calendar approval are retained.
+
+The reviewer's `1544cc3` result-count fix and `9e52a88` invalid-date inspection fix are preserved. Validation: catalog/planner assertions, 73 TypeScript tests, 5 Wiki tests, frontend type check/build, Rust fmt/Clippy/build, 6 Rust tests and API integration passed. Actual online/offline conversation integration covers both partial-clock orderings, exclusions and proximity. Chromium passed eight online/offline mobile clarification journeys plus the complete 1280px/390px guided demo journey. The frozen 20-scenario report/results are unchanged; they are not a substitute for these multi-turn regressions. Run `npm ci`, `npm run build`, `cargo run --locked` and reproduce the quoted sequences in AI Planner; no calendar additions occur during clarification.
+
+## PR #4 second review — October 22, 2026
+
+Verified Doris’s original fixes: “career after 3” followed by “PM” or “after 3 PM” keeps Career filters, and explicit numeric budgets return no budget-filtered plan. Fixed a small regression in monetary detection: supported result-count requests such as “career up to 3 events”, “at most 2 options” and “no more than 1 choices” now retain their existing 1–5 result limits in both Rust and TypeScript. A count combined with “under $5” is still rejected as an unsupported budget. Changed the two interpreters and added offline/API parity regressions.
+
+Validation passed: planner assertions, 61 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust fmt/Clippy/build, 6 Rust tests, API integration and reproduction of the unchanged frozen evaluation files. No browser journey was rerun for this parser-only fix. To check it manually, request “career up to 3 events” and then try the same request with “under $5”.
+
+Two conversation revisions remain before merging: combined weekday/location ambiguity must not be lost when AM/PM is resolved, and a partial answer must not discard another unresolved clock bound. The review comments include “social but not Tuesday after 3” → “PM” and “career after 3 before 5” → “after 3 PM” reproductions. The single-request evaluation does not exercise these multi-turn cases.
+
+## PR #4 clarification fixes — October 21, 2026
+
+- AM/PM questions now retain non-ambiguous topic/day filters in pending conversation context. “career after 3” followed by either “PM” or “after 3 PM” produces only Career suggestions after 15:00. The ambiguous time is omitted from constraints until resolved; asking or answering a clarification never adds events or confirms RSVP. New chat/reset discards pending context. With multiple ambiguous times, a bare AM/PM answer requires a complete restatement rather than guessing.
+- Numeric budgets are explicitly unsupported in both Rust and browser interpretation. “arts on Wednesday evening under $5” produces no suggestions and explains the supported free-admission option instead of silently returning the $12 ceramics workshop. Generic clarification no longer asks for a maximum budget; location/weekday questions request a complete restatement.
+- Rust recommendation, comparison and no-match diagnostics now share the same constraint predicate. The reviewer's invalid-weekday detail fix (`9e52a88`) is preserved.
+
+Validation: all required commands passed: catalog/planner assertions, 60 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust fmt/Clippy/build, 6 Rust tests, and API integration. Integration also runs actual online/offline conversation follow-ups. Chromium verified both AM/PM answer forms and numeric-budget rejection online/offline with no calendar additions. The frozen 20-scenario report/results remain unchanged; follow-up regressions are separate from that single-request evaluation. Run with `npm ci`, `npm run build`, `cargo run --locked`; in AI Planner try the quoted requests above. No live watsonx or real enrollment is claimed.
+
+## PR #4 review follow-up — October 19, 2026
+
+Fixed an invalid-date inspection crash: Team Data Review can flag a record with an out-of-range or fractional weekday, and opening it now shows “Unknown day, Date needs review” instead of throwing a date-formatting error. `frontend/src/config.ts` guards weekday formatting, `frontend/src/data.ts` keeps the label readable, and `tests/final-alignment.test.ts` covers invalid weekdays plus an unchanged valid date. No catalog records were modified.
+
+Review verification: planner assertions, 50 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust unit tests and API integration passed. Re-running the 20-scenario evaluation reproduced the committed report and raw results without differences. The date fix was checked through formatting/regression tests; the previously documented Chromium journey was not rerun for this review.
+
+Two clarification revisions remain for Doris before merging: retain the requested topics/day when resolving an AM/PM question, and either implement maximum-budget filtering consistently in Rust/TypeScript or ask only for supported free-admission requirements while rejecting unsupported budgets. Reproductions and suggested acceptance checks are recorded on PR #4. The current synthetic evaluation does not exercise these follow-up conversations.
+
+## Final proposal alignment — October 19, 2026
+
+This iteration refines the existing MVP rather than recreating onboarding, communities, briefing or enrollment. Backend services and future watsonx integration remain Rust/Axum/Tokio/Serde; frontend source remains React/TypeScript built to JavaScript with Vite. No Python backend, real registrations or live university/IBM services were added.
+
+- **More balanced planning:** diversity-aware ranking covers expressed topics when feasible; strict cost/time/access/travel filters remain authoritative. Evidence includes trusted-record comparisons, topic/category discovery context, satisfied filters and remaining trade-offs. Free-text major/goals are explicitly not interpreted.
+- **Clarification and honest empty states:** ambiguous location/cost, weekday exclusions and AM/PM prompt questions. Unsupported requests, no catalog matches, conflicts, participation restrictions and missing requirements have distinct responses.
+- **One demo configuration:** edit `data/demo.json` for fictional campus identity, Monday week start and IANA time zone; rebuild both sides. Dates and ICS UTC timestamps follow the configuration. Another campus/week/zone uses a separate storage namespace, preserving earlier local plans.
+- **Team review:** Settings → Team tools → Open synthetic-data review shows counts/filters for missing sources/URLs, missing/stale verification, unknown access/RSVP/food and invalid metadata. It is read-only and never fabricates a source or verification claim.
+- **Guided journey:** AI Planner → Demo Scenario Launcher prepares a fictional graduate profile and limited availability, then keeps recommendations, cancellation, replacement and export in one workflow. Prior state is archived once; additions and RSVP always require student action. Restore previous demo returns to the archive.
+
+### Measured value and limits
+
+Run `cargo build --locked` then `npm run evaluate` from the repository root. It measures 20 frozen synthetic scenarios (12 development, 8 held-out) across keyword/category search, deterministic rules and the actual Rust context planner. Raw outputs and denominators are saved in `evaluation/results.json`; [the generated report](docs/evaluation-report.md) includes failure cases and [metric definitions](docs/evaluation-methodology.md).
+
+The context planner has zero measured conflict/eligibility violations on this suite and improves development topic coverage over chronological rules. The rule baseline ties it on held-out retrieval/coverage. This is a small visible synthetic benchmark, not proof of live AI value, external source truth, user benefit or generalization. Template explanation checks are not human usefulness ratings. **Live watsonx: Not yet evaluated.**
+
+Verified on this revision: all seven required commands passed, including 49 TypeScript tests, 5 Wiki fixture tests, 6 Rust unit tests, frontend build/type check, Rust formatting/Clippy/build and API integration. The 20-scenario × 3-adapter evaluation reproduced byte-identical report/result files on two runs. The checked-in Chromium journey passed at 1280px and 390px, covering manual RSVP/replacement approval, ICS, archive restore, clarification, review filters and seven-view overflow. No real student or organizer research is claimed.
+
+Run locally with `npm ci`, `npm run build`, `cargo run --locked`; use `npm run dev` alongside Rust for frontend development. Follow [the three-minute demo script](docs/demo-script.md). [The proposal checklist](docs/proposal-alignment.md) maps implemented, partial, missing and out-of-MVP requirements and lists student/organizer research still needed. The original proposal document was unavailable in the workspace, so alignment uses the supplied requirements.
+
+## Integrated update — October 18, 2026
+
+The architecture changes are merged with the latest teammate discovery, evidence, personalization and community work. Conversation ownership retains strict replacement filters and preserves Rust evidence in chat; preferred-time changes invalidate pending suggestions. Weekly briefing and targeted community navigation remain available. Engineering skills now use GitHub Issues, default triage labels and the domain conventions in `docs/agents/`.
+
+### Doris synchronization — October 19, 2026
+
+Doris incorporates main at `cfe617a` without conflicts, preserving the latest community fixes and workflow refactoring. The backend remains Rust/Axum/Tokio/Serde, including the future watsonx interpreter interface; the frontend remains React/TypeScript compiled to JavaScript. No tracked Python files or Python dependency manifests are present, so no additional language migration was needed.
+
+Validation after synchronization: catalog/planner assertions, all 43 TypeScript tests, 5 Wiki fixture tests, frontend type checking/build, Rust formatting, Clippy with warnings denied, 4 Rust unit tests, Rust build and API integration passed. Run with `npm ci`, `npm run build`, and `cargo run --locked`; use `npm run dev` alongside Rust for frontend development. Live watsonx remains deferred and requires a Rust adapter; the current planner and all registrations remain explicitly simulated.
+
+## PR #3 review fixes — October 18, 2026
+
+Two community interaction bugs found during review have been fixed on the PR branch:
+
+- Community memberships now persist in `joinedCommunities`, independently of conversation joins in `joined`. A conversation named `ai` can no longer join or leave the AI community accidentally. Existing conversation joins remain intact. Legacy `joined` values are not inferred as community memberships because post titles can match community IDs; rejoin any groups tested on the earlier PR preview once.
+- Related-community links in event details now carry a validated community ID, such as `#forum?community=ai`. They open the selected group's details, scroll it into view and move keyboard focus there. Reloading or using Back/Forward retains the group in the URL. Unknown IDs safely show the general forum.
+
+Files changed for these fixes: `communities.ts` (membership operations and community links), `state.ts` / `types.ts` (separate persisted membership field), and `App.tsx` / `Pages.tsx` / `components.tsx` (selected-community navigation). `tests/communities.test.ts` covers name collisions, persistence and valid/invalid links.
+
+Verification: `npm test` passes the planner assertions, 18 TypeScript tests and 5 Wiki tests; `npm run build` passes. The reviewed Rust code passes its 4 unit tests and API integration suite. Browser checks verify named event-to-community navigation, independent conversation/community joins and leave actions, reload persistence, and a 390px mobile layout without horizontal page overflow. To reproduce the collision regression check, create a local post titled `ai`, join its conversation, and confirm **AI & learning circle** still offers **Join locally**. Join and leave that community; the conversation must remain joined.
+
+## Proposal-aligned MVP improvements — Doris
+
+The Rust planner now returns structured recommendation evidence: interest relevance using the event description, schedule fit including travel buffer, practical requirements, and trade-offs. Chat cards display backend evidence; unavailable-backend suggestions carry an explicit browser simulation notice and do not invent Rust evidence. Evidence describes the recommendation-time snapshot; add actions always check current availability again. Reloaded chat retains event links but does not restore evidence as fresh verification.
+
+Event details now show campus identity, intended audience, eligibility, capacity/availability, food category, source URL, last-checked timestamp and verification status. All 30 records remain fictional. External source URLs and check timestamps are deliberately absent, displayed as Unknown / Not verified. The existing `checked` date records internal authoring review only. Open access in a fictional record does not establish real university eligibility or available seats.
+
+Dashboard **This Week's Briefing** uses deterministic planning for interest and cross-topic suggestions, lists saved-but-not-added events, highlights uncertainty and current plan conflicts/cancellations, and links to details, Planner and Calendar. Cross-disciplinary means topics beyond selected interests; verified department information is unavailable. The digest updates from local state, never background scraping.
+
+First-time demo users can personalize or use sample preferences. Profile supports optional major/interdisciplinary notes, optional research/career goals, academic/social/cultural topic selections and preferred times. Topic selections and preferred time affect ranking; free-text notes are stored locally but are not semantically interpreted. Busy commitments and travel buffer remain editable. A career goal is never required.
+
+Discussion Forum includes searchable **All Communities**, category filters, individual details, local Join/Leave states, and topic-related events. Event details link to matching fictional communities. Posts and memberships stay in this browser; nothing is sent to other students.
+
+Cancellation replanning identifies the cancelled record, names retained choices, shows a replacement with evidence and RSVP requirements, and never adds it automatically. It preserves all existing filters. If those cannot be satisfied, it lists them and asks the student to change day/time, food or topic explicitly; it does not silently relax constraints.
+
+### Run and manually check this update
+
+From the repository root: `npm ci`, `npm run build`, then `cargo run --locked`. For frontend development, also run `npm run dev`. Rust serves the built frontend and API; see [backend setup](docs/backend.md).
+
+1. In a fresh browser profile (or Settings → Reset demo), select **Personalize my demo**. Choose topics and a preferred time; leave career goals blank. Save and reload to check persistence.
+2. On Dashboard, inspect **This Week's Briefing**, saved events, uncertainty notices and the links to details, Planner and Calendar.
+3. In Planner, choose the AI Tuesday/Thursday afternoon prompt. Inspect interest, schedule, practical and trade-off evidence; open details and verify fictional source labels and Unknown / Not verified fields.
+4. Add the learning lab: cancel RSVP once and confirm nothing is added; then enter a fictional name, approve attendance and complete RSVP. Confirm calendar updates, reload persistence and calendar export.
+5. Hide the planner calendar if needed, simulate cancellation, and select **Find a replacement**. Check that other choices remain, the cancelled record is removed, and the replacement stays a suggestion until explicitly added. For no-match behavior, request AI on Tuesday after 3 PM before 4:30 PM with coffee before finding a replacement.
+6. Open Discussion Forum. Search Global, filter categories, open community details, Join/Leave, and create a local post. Event details also link to related communities.
+7. Check keyboard Tab/Escape, dialogs and navigation, and desktop/tablet/mobile layouts. Disconnect the backend to verify explicitly labelled browser fallback and absence of fabricated backend evidence.
+
+### Verification and limits
+
+All required commands passed: `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, `cargo build --locked`, `npm run test:api`. Node runs catalog/planner assertions, 15 API/preference/replanning tests and 5 Wiki fixture tests; Rust runs 4 unit tests. API integration covers new evidence, preferred-time parity, eligibility, RSVP, validation and static boundaries.
+
+Headless Chromium checks covered onboarding, preferences, briefing, evidence, provenance, RSVP cancel/approve, communities and persistence, plus overflow checks on six pages at 1280/820/390px. These checks are smoke tests, not a full accessibility audit. The app remains a browser-local simulation with fixed October 19–23, 2026 data; no live watsonx, production authentication, real registrations, external calendars or verified university sources are implemented.
+
+## Architecture update — October 18, 2026
+
+Enrollment, planning conversations and request interpretation now own their rules in separate modules. This keeps the calendar beside chat and mandatory demo RSVP flow while making asynchronous behavior testable through the same interfaces the UI uses.
 
 | Change | What teammates should expect |
 | --- | --- |
+| Enrollment ownership | One module owns RSVP gating, pending additions, current-schedule checks and calendar/RSVP updates. Reset discards obsolete confirmations and errors; removing an event clears its RSVP. |
+| Conversation ownership | Chat and replacement share request validity and busy-state handling. New chat/reset discard old results; changed schedules reject outdated suggestions. Replacement preserves every filter until the student explicitly changes it. |
+| Consistent interpretation | “Professional”, “ceramics”, “balance”, “snack” and “refreshment” reach the interpreter. Rust and browser simulation distinguish unsupported requests from understood requests with no matches, and reject invalid clock input such as “before 11:99 am”. |
 | Calendar beside chat | The **My calendar** button at the top right of AI Planner toggles a calendar panel on the right without leaving the conversation. It replaces the draft sidebar while open. On narrow screens it stacks below chat. |
 | Actions in AI responses | New recommendation messages contain event cards with **View details** and **Add to calendar** buttons. Added events show a disabled confirmation button. Unavailable events show the reason. |
 | Mandatory RSVP | Adding an event marked **RSVP required** opens a registration dialog. A demo attendee name and an explicit attendance checkbox are required before **Complete RSVP & add** can succeed. Cancelling or pressing Escape leaves the calendar unchanged. |
@@ -71,10 +187,13 @@ The registration dialog is a **demo RSVP page** inside the app. It does not cont
 ### Implementation notes for the team
 
 - `frontend/src/PlannerPanels.tsx` contains the chat event cards, side calendar, and RSVP form.
-- `frontend/src/App.tsx` coordinates additions, checks the latest schedule after an asynchronous request, and updates shared state only after successful demo enrollment. One enrollment runs at a time; reset invalidates pending results.
+- `frontend/src/enrollment.ts` owns approved additions and removal, including latest-schedule validation and reset invalidation. `frontend/src/conversation.ts` owns chat and replacement lifecycle; suggestions never add events automatically.
+- `frontend/src/App.tsx` renders views and handles navigation, notifications and dialogs. It subscribes to shared demo state and read-only workflow status through `useSyncExternalStore`.
+- `frontend/src/interpretation.ts` owns browser request recognition, parsing and constraint validation. The Rust interpreter returns constraints plus recognition status; `POST /api/plan` now includes `understood`. Rebuild frontend and backend together.
 - `frontend/src/api.ts` sends enrollment requests and supplies the explicitly labelled offline simulation. Backend request rejections are never treated as offline success.
 - `backend/src/lib.rs` exposes `POST /api/enroll`. The Rust event model reads each record’s RSVP requirement from `data/events.json`; the client cannot override it.
 - Browser-local state now records confirmed demo RSVP event IDs and event IDs attached to new chat responses. Existing saved schedules are preserved. Old chat messages remain readable but do not gain buttons retroactively; send a fresh prompt to see the new cards.
+- `tests/workflows.test.ts` exercises complete enrollment and conversation outcomes with controlled request completion. Domain terms are documented in `docs/GLOSSARY.md`.
 
 ## Run locally
 
@@ -153,9 +272,11 @@ cargo build --locked
 npm run test:api
 ```
 
-The API integration suite starts a temporary local Rust server; allow localhost listeners in your environment. Build the Rust binary and frontend before running it. Coverage includes matching parity, restrictions, conflicts, cancellations, required/missing/invalid RSVP, completed RSVP, drop-in enrollment, request validation and static file boundaries. Browser-fallback tests verify that a rejected server request cannot bypass enrollment rules.
+October 18 verification: all seven commands above passed, including 43 TypeScript tests, five Wiki publisher tests, the planner assertions, four Rust tests and the expanded Rust/TypeScript integration suite. Browser checks reported no runtime errors. After merging the teammate update, browser checks also confirmed onboarding, Rust recommendation evidence, event-to-community navigation, and the weekly briefing.
 
-For this update, manual browser checks covered the calendar toggle without navigation, direct response details/add actions, incomplete and cancelled RSVP, successful RSVP, immediate drop-in addition, removal, and a 390px mobile layout without horizontal page overflow. For teammate acceptance, follow the walkthrough above and verify that your added event remains after reloading. Use Settings → Reset demo to restore the original demonstration.
+The API integration suite starts a temporary local Rust server; allow localhost listeners in your environment. Build the Rust binary and frontend before running it. Coverage includes recognition/matching parity, restrictions, conflicts, cancellations, required/missing/invalid RSVP, completed RSVP, drop-in enrollment, invalid clock input, request validation and static file boundaries. Browser-fallback tests verify that a rejected server request cannot bypass enrollment rules. Workflow checks cover reset/new-chat during pending requests, obsolete errors, changed availability/preferences, duplicate submissions, removal/re-add, independent enrollment and planning, and strict-filter replacement searches.
+
+For this update, browser checks covered Rust planning, incomplete and cancelled RSVP, successful RSVP with immediate calendar updates, cancellation/replacement remaining a suggestion, student-approved drop-in addition, “professional” producing career suggestions, invalid-minute feedback, persistence after reload, and reset. For teammate acceptance, follow the walkthrough above, try those last two prompts, and verify that your added event remains after reloading. Use Settings → Reset demo to restore the original demonstration.
 
 ### Documentation convention
 

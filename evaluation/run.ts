@@ -1,0 +1,275 @@
+import { readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { spawn } from "node:child_process";
+import { EVENTS } from "../frontend/src/data.ts";
+import { fresh } from "../frontend/src/state.ts";
+import { recommend } from "../frontend/src/planner.ts";
+import { interpretRequest } from "../frontend/src/interpretation.ts";
+import { schedulePayload } from "../frontend/src/api.ts";
+import { measure, type Output, type Scenario, type Ratio } from "./metrics.ts";
+const raw = await readFile(new URL("./scenarios.json", import.meta.url));
+const expected = (
+  await readFile(new URL("./scenarios.sha256", import.meta.url), "utf8")
+).split(/\s/)[0];
+if (createHash("sha256").update(raw).digest("hex") !== expected)
+  throw Error(
+    "Scenario expectations changed; explicitly review and freeze a new evaluation version.",
+  );
+const scenarios = JSON.parse(raw.toString()) as Scenario[];
+const server = spawn(
+  process.env.CAMPUS_BINARY || "target/debug/campus-compass",
+  [],
+  {
+    env: {
+      ...process.env,
+      CAMPUS_ADDR: "127.0.0.1:0",
+      PLANNER_PROVIDER: "simulated",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  },
+);
+server.stderr.on("data", (b) => process.stderr.write(b));
+let base = "";
+await new Promise<void>((resolve, reject) => {
+  const timer = setTimeout(() => {
+    server.kill();
+    reject(Error("Evaluation server did not start"));
+  }, 15000);
+  server.on("error", (e) => {
+    clearTimeout(timer);
+    reject(e);
+  });
+  server.on("exit", (code) => {
+    clearTimeout(timer);
+    if (!base) reject(Error(`Server exited ${code}`));
+  });
+  server.stdout.on("data", (b) => {
+    const found = String(b).match(/http:\/\/127\.0\.0\.1:\d+/);
+    if (found) {
+      base = found[0];
+      clearTimeout(timer);
+      resolve();
+    }
+  });
+});
+const results: {
+  scenario: Scenario;
+  adapter: string;
+  output: Output;
+  metrics: Record<string, Ratio>;
+}[] = [];
+try {
+  for (const scenario of scenarios) {
+    const state = { ...fresh(), ...scenario.state };
+    const parsed = interpretRequest(scenario.message, scenario.previous || {});
+    const stop = new Set([
+      "on",
+      "or",
+      "and",
+      "the",
+      "with",
+      "at",
+      "a",
+      "an",
+      "events",
+      "event",
+      "find",
+      "free",
+      "after",
+      "before",
+      "pm",
+      "am",
+      "3",
+      "5",
+    ]);
+    const terms = scenario.message
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((w) => w && !stop.has(w));
+    const keyword = EVENTS.map((e) => ({
+      e,
+      score: terms.filter((t) =>
+        `${e.title} ${e.description} ${e.topic} ${e.category}`
+          .toLowerCase()
+          .includes(t),
+      ).length,
+    }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(
+        0,
+        scenario.previous?.limit ||
+          Number(scenario.message.match(/\b([1-5])\s+events/)?.[1]) ||
+          3,
+      )
+      .map((x) => x.e.id);
+    const response = await fetch(base + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: scenario.message,
+        previous: scenario.previous || {},
+        state: schedulePayload(state),
+      }),
+    });
+    if (!response.ok)
+      throw Error(`${scenario.id}: Rust HTTP ${response.status}`);
+    const rust = await response.json();
+    const ids =
+      parsed.clarification || !parsed.understood
+        ? []
+        : recommend(state, parsed.constraints, 3, false).map((e) => e.id);
+    const output = (
+      ids: string[],
+      status: string,
+      evidence: Output["evidence"] = [],
+    ): Output => ({
+      ids,
+      status,
+      evidence,
+      food: Object.fromEntries(
+        ids.map((id) => [id, EVENTS.find((e) => e.id === id)!.food]),
+      ),
+    });
+    const adapters = {
+      "A Keyword/category": output(
+        keyword,
+        keyword.length ? "matched" : "no_matches",
+      ),
+      "B Rules": output(
+        ids,
+        parsed.clarification
+          ? "clarification"
+          : !parsed.understood
+            ? "unsupported"
+            : ids.length
+              ? "matched"
+              : "no_matches",
+      ),
+      "C Context/Rust": output(
+        rust.event_ids,
+        rust.clarification
+          ? "clarification"
+          : !rust.understood
+            ? "unsupported"
+            : rust.event_ids.length
+              ? "matched"
+              : "no_matches",
+        rust.recommendations,
+      ),
+    };
+    for (const [adapter, out] of Object.entries(adapters))
+      results.push({
+        scenario,
+        adapter,
+        output: out,
+        metrics: measure(scenario, state, out),
+      });
+  }
+  const lines = [
+    "# Synthetic recommendation evaluation",
+    "",
+    `Scenario version SHA-256: \`${expected}\`. 20 cases: 12 development / 8 held-out. Results below are generated by \`npm run evaluate\` against the built Rust binary and current synthetic catalog. No live LLM is used.`,
+    "",
+    "## Comparison results",
+    "",
+    "Each cell is numerator/denominator (micro-aggregated across the stated split). N/A means no applicable observations; it is not a perfect score. Lower is better for violation metrics.",
+    "",
+  ];
+  for (const split of ["development", "held-out"]) {
+    lines.push(
+      `### ${split}`,
+      "",
+      "| Metric | A Keyword/category | B Rules | C Context/Rust |",
+      "|---|---|---|---|",
+    );
+    for (const metric of Object.keys(results[0].metrics)) {
+      const cells = ["A Keyword/category", "B Rules", "C Context/Rust"].map(
+        (adapter) => {
+          const rows = results.filter(
+            (r) => r.adapter === adapter && r.scenario.split === split,
+          );
+          const n = rows.reduce(
+              (sum, r) => sum + r.metrics[metric].numerator,
+              0,
+            ),
+            d = rows.reduce((sum, r) => sum + r.metrics[metric].denominator, 0);
+          return d
+            ? `${n}/${d} (${((100 * n) / d).toFixed(1)}%)`
+            : "N/A (0 observations)";
+        },
+      );
+      lines.push(`| ${metric} | ${cells.join(" | ")} |`);
+    }
+    lines.push("");
+  }
+  lines.push(
+    "## Scenario outputs and failure analysis",
+    "",
+    "Outputs are event IDs or a request status. A result can be relevant yet unsafe; consult the separate violation metrics. Blank matches on restricted/full/conflicting-only cases are expected abstentions.",
+    "",
+    "| Case | Split | Scenario | A | B | C |",
+    "|---|---|---|---|---|---|",
+  );
+  for (const s of scenarios) {
+    const rows = results.filter((r) => r.scenario.id === s.id);
+    lines.push(
+      `| ${s.id} | ${s.split} | ${s.description} | ${rows.map((r) => r.output.ids.join(", ") || r.output.status).join(" | ")} |`,
+    );
+  }
+  lines.push("", "## Observed failures", "");
+  const failures = results.filter((r) =>
+    Object.entries(r.metrics).some(
+      ([k, v]) =>
+        v.denominator > 0 &&
+        (k.endsWith("violations")
+          ? v.numerator > 0
+          : [
+              "precision",
+              "recall",
+              "diversity",
+              "request_handling",
+              "explanation_quality",
+              "replanning_validity",
+            ].includes(k) && v.numerator < v.denominator),
+    ),
+  );
+  for (const r of failures)
+    lines.push(
+      `- ${r.scenario.id} / ${r.adapter}: ${Object.entries(r.metrics)
+        .filter(
+          ([k, v]) =>
+            v.denominator > 0 &&
+            (k.endsWith("violations")
+              ? v.numerator > 0
+              : [
+                  "precision",
+                  "recall",
+                  "diversity",
+                  "request_handling",
+                  "explanation_quality",
+                  "replanning_validity",
+                ].includes(k) && v.numerator < v.denominator),
+        )
+        .map(([k, v]) => `${k} ${v.numerator}/${v.denominator}`)
+        .join("; ")}.`,
+    );
+  lines.push(
+    "",
+    "## Methodology, definitions and limits",
+    "",
+    "See [evaluation methodology](evaluation-methodology.md) for definitions, independent expectations, denominators, and limitations. The held-out split was fixed before ranking changes, but developers can read it; it is not a blinded test. Source faithfulness measures consistency with synthetic catalog records, not external truth. Explanation quality is a structural factual checklist, not a human quality score. No real student outcome, organizer feedback or LLM benefit has been measured.",
+    "",
+    "Live IBM watsonx model-dependent evaluation: **Not yet evaluated.**",
+  );
+  await writeFile("docs/evaluation-report.md", lines.join("\n") + "\n");
+  await writeFile(
+    "evaluation/results.json",
+    JSON.stringify(results, null, 2) + "\n",
+  );
+  console.log(
+    "Measured 20 scenarios × 3 adapters; wrote docs/evaluation-report.md and evaluation/results.json.",
+  );
+} finally {
+  server.kill("SIGTERM");
+}

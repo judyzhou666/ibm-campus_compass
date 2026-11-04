@@ -5,7 +5,7 @@
 //!
 //! Credentials come from server-side environment variables and never reach the browser,
 //! API responses or logs.
-use crate::interpreter::{InterpretError, Interpreter};
+use crate::interpreter::{InterpretError, Interpretation, Interpreter};
 use crate::model::{Constraints, TOPICS};
 use serde::Deserialize;
 use serde_json::json;
@@ -306,12 +306,18 @@ impl Interpreter for WatsonxInterpreter {
         &self,
         message: &str,
         previous: Constraints,
-    ) -> Result<Constraints, InterpretError> {
+    ) -> Result<Interpretation, InterpretError> {
         let result = tokio::time::timeout(self.config.timeout, self.call(message, &previous))
             .await
             .unwrap_or(Err(InterpretError::Timeout));
         self.connected.store(result.is_ok(), Ordering::Relaxed);
-        result
+        // The model either produced valid constraints (understood) or the call failed and the
+        // handler falls back; it never asks for clarification itself.
+        result.map(|constraints| Interpretation {
+            constraints,
+            understood: true,
+            clarification: None,
+        })
     }
 }
 
@@ -419,7 +425,10 @@ pub(crate) mod tests {
             ..Default::default()
         };
         (
-            interpreter.interpret("career on Tuesday", previous).await,
+            interpreter
+                .interpret("career on Tuesday", previous)
+                .await
+                .map(|i| i.constraints),
             mock,
         )
     }
@@ -454,7 +463,8 @@ pub(crate) mod tests {
         for _ in 0..2 {
             let c = interpreter
                 .interpret("2 options", Constraints::default())
-                .await;
+                .await
+                .map(|i| i.constraints);
             assert_eq!(c.unwrap().limit, Some(2));
         }
         assert_eq!(mock.iam_calls.load(Ordering::SeqCst), 1);
@@ -524,7 +534,10 @@ pub(crate) mod tests {
             days: Some(vec![1, 3]),
             ..Default::default()
         };
-        let result = interpreter.interpret("only Thursday", previous).await;
+        let result = interpreter
+            .interpret("only Thursday", previous)
+            .await
+            .map(|i| i.constraints);
         assert_eq!(result.unwrap().days, Some(vec![3]));
         let bodies = mock.chat_bodies.lock().unwrap();
         let user = bodies[0]["messages"][1]["content"].as_str().unwrap();
@@ -536,7 +549,10 @@ pub(crate) mod tests {
     async fn slow_model_times_out() {
         let (config, _) = mock(Behavior::Slow).await;
         let interpreter = WatsonxInterpreter::new(config).unwrap();
-        let result = interpreter.interpret("AI", Constraints::default()).await;
+        let result = interpreter
+            .interpret("AI", Constraints::default())
+            .await
+            .map(|i| i.constraints);
         assert_eq!(result, Err(InterpretError::Timeout));
         assert!(!interpreter.connected());
     }

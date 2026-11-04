@@ -1,6 +1,7 @@
-//! Interpreters turn a student message into constraints only; trusted event matching,
-//! validation and conflict checks always run afterwards. `SimulatedInterpreter` is the
-//! deterministic demo parser; `crate::watsonx::WatsonxInterpreter` is the live adapter.
+//! Interpreters turn a student message into constraints and recognition status, never
+//! event IDs. Trusted event matching always runs after constraint validation.
+//! `SimulatedInterpreter` is the deterministic demo parser;
+//! `crate::watsonx::WatsonxInterpreter` is the live IBM watsonx.ai adapter.
 use crate::model::{Constraints, TOPICS};
 use regex::Regex;
 
@@ -36,10 +37,17 @@ pub trait Interpreter {
         &self,
         message: &str,
         previous: Constraints,
-    ) -> impl std::future::Future<Output = Result<Constraints, InterpretError>> + Send;
+    ) -> impl std::future::Future<Output = Result<Interpretation, InterpretError>> + Send;
 }
 
 pub struct SimulatedInterpreter;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Interpretation {
+    pub constraints: Constraints,
+    pub understood: bool,
+    pub clarification: Option<String>,
+}
 
 fn matches(pattern: &str, text: &str) -> bool {
     Regex::new(pattern)
@@ -52,15 +60,32 @@ impl Interpreter for SimulatedInterpreter {
         &self,
         message: &str,
         previous: Constraints,
-    ) -> Result<Constraints, InterpretError> {
+    ) -> Result<Interpretation, InterpretError> {
         Ok(self.parse(message, previous))
     }
 }
 
 impl SimulatedInterpreter {
     /// Deterministic rules shared in spirit with `frontend/src/planner.ts`.
-    pub fn parse(&self, message: &str, mut c: Constraints) -> Constraints {
+    pub fn parse(&self, message: &str, mut c: Constraints) -> Interpretation {
         let q = message.to_lowercase();
+        let budget_text =
+            Regex::new(r"\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b")
+                .unwrap()
+                .replace_all(&q, "");
+        if self::matches(
+            r"\$|\b(?:under|less than|at most|up to|no more than|budget(?: of)?)\s*-?\d|\b\d+(?:\.\d+)?\s*(?:dollars?|usd|euros?)\b",
+            &budget_text,
+        ) {
+            return Interpretation { constraints: c, understood: true, clarification: Some("Numeric budgets are not supported. Please restate your complete request with ‘free admission’ if required, or omit the budget. No budget-filtered plan was generated.".into()) };
+        }
+
+        let mut understood = matches(r"\b(plan|events?|week|options|choices)\b", &q);
+        let mut matches = |pattern: &str, text: &str| {
+            let found = matches(pattern, text);
+            understood |= found;
+            found
+        };
         if matches(r"\b(reset|start over)\b", &q) {
             c = Constraints::default();
         }
@@ -131,13 +156,12 @@ impl SimulatedInterpreter {
             c.after = None;
         }
         for kind in ["after", "before"] {
-            let re = Regex::new(&format!(
-                r"\b{kind}\s+(\d{{1,2}})(?::(\d{{2}}))?\s*(am|pm)?\b"
-            ))
-            .unwrap();
-            if let Some(m) = re.captures(&q) {
-                let mut hour: u16 = m[1].parse().unwrap();
+            let re = Regex::new(&format!(r"\b{kind}\s+(\d+)(?::(\d+))?\s*(am|pm)?\b")).unwrap();
+            let recognized = matches(re.as_str(), &q);
+            if let Some(m) = re.captures(&q).filter(|_| recognized) {
+                let mut hour = m[1].parse::<u32>().unwrap_or(u32::MAX);
                 let suffix = m.get(3).map(|x| x.as_str());
+                let invalid_hour = suffix.is_some() && !(1..=12).contains(&hour);
                 if suffix == Some("pm") && hour < 12 {
                     hour += 12;
                 }
@@ -147,12 +171,18 @@ impl SimulatedInterpreter {
                 if suffix.is_none() && hour < 8 {
                     hour += 12;
                 }
-                let minute = m.get(2).map_or(0, |x| x.as_str().parse::<u16>().unwrap());
+                let minute = m
+                    .get(2)
+                    .map_or(0, |x| x.as_str().parse::<u32>().unwrap_or(u32::MAX));
                 // An invalid time is rejected by constraint validation, not guessed.
-                let value = if minute >= 60 || hour > 23 {
+                let value = if invalid_hour
+                    || minute >= 60
+                    || hour > 23
+                    || m.get(2).is_some_and(|x| x.as_str().len() != 2)
+                {
                     1441
                 } else {
-                    hour * 60 + minute
+                    (hour * 60 + minute) as u16
                 };
                 if kind == "after" {
                     c.after = Some(value);
@@ -177,8 +207,49 @@ impl SimulatedInterpreter {
             .unwrap()
             .captures(&q)
         {
+            understood = true;
             c.limit = Some(m[1].parse().unwrap());
         }
-        c
+        let clock_pattern =
+            Regex::new(r"\b(after|before)\s+(\d+)(?::(\d+))?\s*(am|pm)?\b").unwrap();
+        let ambiguous: Vec<_> = clock_pattern
+            .captures_iter(&q)
+            .filter(|m| {
+                m.get(4).is_none() && m[2].parse::<u16>().is_ok_and(|h| (1..=12).contains(&h))
+            })
+            .collect();
+        let ambiguous_clock = !ambiguous.is_empty();
+        for m in ambiguous {
+            let bound = if &m[1] == "after" {
+                &mut c.after
+            } else {
+                &mut c.before
+            };
+            if bound.is_some_and(|t| t <= 1440) {
+                *bound = None;
+            }
+        }
+        let restatement = self::matches(
+            r"\b(near me|nearby|cheap|sometime|not (?:on )?(?:monday|tuesday|wednesday|thursday|friday)|cannot do|can.t do)\b",
+            &q,
+        );
+        if restatement {
+            c.days = None;
+        }
+        let clarification = if restatement {
+            Some("Please restate your complete request with the topic, weekdays you CAN attend, and AM/PM for every time. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported.".into())
+        } else if ambiguous_clock {
+            Some(
+                "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
+                    .into(),
+            )
+        } else {
+            None
+        };
+        Interpretation {
+            constraints: c,
+            understood,
+            clarification,
+        }
     }
 }

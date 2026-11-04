@@ -1,0 +1,5108 @@
+[
+  {
+    "scenario": {
+      "id": "D01",
+      "split": "development",
+      "description": "Cross-disciplinary AI, career and social interests",
+      "message": "AI career social events",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Social"
+      ]
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e28",
+        "e1",
+        "e2"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e28": "None",
+        "e1": "Coffee & snacks",
+        "e2": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D01",
+      "split": "development",
+      "description": "Cross-disciplinary AI, career and social interests",
+      "message": "AI career social events",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Social"
+      ]
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e18",
+        "e14",
+        "e22"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e18": "None",
+        "e14": "Coffee & snacks",
+        "e22": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D01",
+      "split": "development",
+      "description": "Cross-disciplinary AI, career and social interests",
+      "message": "AI career social events",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Social"
+      ]
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e18",
+        "e20",
+        "e6"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education",
+              "Career",
+              "Social"
+            ]
+          },
+          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e18",
+          "interest_match": "Interest match: AI & education — Experiment with simple visual code; beginners are welcome.",
+          "practical": "$0 admission · Maker Space · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Monday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-018. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education",
+              "Career",
+              "Social"
+            ]
+          },
+          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e20",
+          "interest_match": "Interest match: Career — Try approachable ways to start a professional conversation.",
+          "practical": "$0 admission · Career Studio · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Monday, 17:30–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-020. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education",
+              "Career",
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e6",
+          "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
+          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e18": "None",
+        "e20": "Coffee & snacks",
+        "e6": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 15,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D02",
+      "split": "development",
+      "description": "Restricted Tuesday/Thursday afternoon",
+      "message": "AI on Tuesday or Thursday afternoons",
+      "relevant_ids": [
+        "e1",
+        "e5"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1,
+          3
+        ],
+        "after": 720,
+        "before": 1020
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e1",
+        "e4",
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e4": "Coffee & snacks",
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "conflict_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D02",
+      "split": "development",
+      "description": "Restricted Tuesday/Thursday afternoon",
+      "message": "AI on Tuesday or Thursday afternoons",
+      "relevant_ids": [
+        "e1",
+        "e5"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1,
+          3
+        ],
+        "after": 720,
+        "before": 1020
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e1",
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 10
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D02",
+      "split": "development",
+      "description": "Restricted Tuesday/Thursday afternoon",
+      "message": "AI on Tuesday or Thursday afternoons",
+      "relevant_ids": [
+        "e1",
+        "e5"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1,
+          3
+        ],
+        "after": 720,
+        "before": 1020
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e1",
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 720,
+            "before": 1020,
+            "days": [
+              1,
+              3
+            ],
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e1",
+          "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 720,
+            "before": 1020,
+            "days": [
+              1,
+              3
+            ],
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e5",
+          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "source_faithfulness": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "food_accuracy": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 10,
+        "denominator": 10
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D03",
+      "split": "development",
+      "description": "Full meal, not refreshments",
+      "message": "social free food",
+      "relevant_ids": [
+        "e2",
+        "e6",
+        "e16",
+        "e22"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e2",
+        "e6",
+        "e8"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e2": "Free meal",
+        "e6": "Free meal",
+        "e8": "Unknown"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D03",
+      "split": "development",
+      "description": "Full meal, not refreshments",
+      "message": "social free food",
+      "relevant_ids": [
+        "e2",
+        "e6",
+        "e16",
+        "e22"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e22",
+        "e6",
+        "e2"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e22": "Free meal",
+        "e6": "Free meal",
+        "e2": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D03",
+      "split": "development",
+      "description": "Full meal, not refreshments",
+      "message": "social free food",
+      "relevant_ids": [
+        "e2",
+        "e6",
+        "e16",
+        "e22"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e22",
+        "e6",
+        "e2"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "food": "Free meal",
+            "free": true,
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e22",
+          "interest_match": "Interest match: Social — A relaxed evening of games and a picnic meal.",
+          "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
+          "schedule_fit": "Monday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "food": "Free meal",
+            "free": true,
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e6",
+          "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
+          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Community dinner & story exchange: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "food": "Free meal",
+            "free": true,
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e2",
+          "interest_match": "Interest match: Social — A welcoming shared table for students across schools and cultures.",
+          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
+          "schedule_fit": "Thursday, 17:00–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-002. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e22": "Free meal",
+        "e6": "Free meal",
+        "e2": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 15,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D04",
+      "split": "development",
+      "description": "Refreshments, not meal",
+      "message": "coffee on Thursday",
+      "relevant_ids": [
+        "e11",
+        "e15"
+      ],
+      "constraints": {
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e15"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e15": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D04",
+      "split": "development",
+      "description": "Refreshments, not meal",
+      "message": "coffee on Thursday",
+      "relevant_ids": [
+        "e11",
+        "e15"
+      ],
+      "constraints": {
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e11"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e11": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D04",
+      "split": "development",
+      "description": "Refreshments, not meal",
+      "message": "coffee on Thursday",
+      "relevant_ids": [
+        "e11",
+        "e15"
+      ],
+      "constraints": {
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e11"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "days": [
+              3
+            ],
+            "food": "Coffee & snacks"
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e11",
+          "interest_match": "Interest match: Social — Meet students from different backgrounds over tea.",
+          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Thursday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday; food: Coffee & snacks.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-011. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e11": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D05",
+      "split": "development",
+      "description": "Class conflict excludes research roundtable",
+      "message": "research on Tuesday morning",
+      "relevant_ids": [
+        "e4"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "before": 720
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e4",
+        "e14",
+        "e30"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e4": "Coffee & snacks",
+        "e14": "Coffee & snacks",
+        "e30": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D05",
+      "split": "development",
+      "description": "Class conflict excludes research roundtable",
+      "message": "research on Tuesday morning",
+      "relevant_ids": [
+        "e4"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "before": 720
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D05",
+      "split": "development",
+      "description": "Class conflict excludes research roundtable",
+      "message": "research on Tuesday morning",
+      "relevant_ids": [
+        "e4"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "before": 720
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D06",
+      "split": "development",
+      "description": "Membership cannot be assumed",
+      "message": "data events on Friday",
+      "relevant_ids": [
+        "e12",
+        "e26"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          4
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e12",
+        "e16"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e12": "None",
+        "e16": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "eligibility_violations": {
+        "numerator": 1,
+        "denominator": 2
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 2
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 10
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D06",
+      "split": "development",
+      "description": "Membership cannot be assumed",
+      "message": "data events on Friday",
+      "relevant_ids": [
+        "e12",
+        "e26"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          4
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e26"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e26": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D06",
+      "split": "development",
+      "description": "Membership cannot be assumed",
+      "message": "data events on Friday",
+      "relevant_ids": [
+        "e12",
+        "e26"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          4
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e26"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "days": [
+              4
+            ],
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e26",
+          "interest_match": "Interest match: AI & education — Explore trade-offs in using AI for student support.",
+          "practical": "$0 admission · Seminar Room 2 · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Friday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-026. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e26": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D07",
+      "split": "development",
+      "description": "Cancelled and full records excluded",
+      "message": "AI events",
+      "state": {
+        "cancelled": [
+          "e18",
+          "e14"
+        ]
+      },
+      "expected_topics": [
+        "AI & education"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e1",
+        "e4",
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e4": "Coffee & snacks",
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D07",
+      "split": "development",
+      "description": "Cancelled and full records excluded",
+      "message": "AI events",
+      "state": {
+        "cancelled": [
+          "e18",
+          "e14"
+        ]
+      },
+      "expected_topics": [
+        "AI & education"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e1",
+        "e5",
+        "e26"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e5": "None",
+        "e26": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D07",
+      "split": "development",
+      "description": "Cancelled and full records excluded",
+      "message": "AI events",
+      "state": {
+        "cancelled": [
+          "e18",
+          "e14"
+        ]
+      },
+      "expected_topics": [
+        "AI & education"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e1",
+        "e5",
+        "e26"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e1",
+          "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e5",
+          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e26",
+          "interest_match": "Interest match: AI & education — Explore trade-offs in using AI for student support.",
+          "practical": "$0 admission · Seminar Room 2 · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Friday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-026. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e5": "None",
+        "e26": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 15,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D08",
+      "split": "development",
+      "description": "RSVP is a requirement, not completed enrollment",
+      "message": "career on Tuesday",
+      "relevant_ids": [
+        "e7"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "days": [
+          1
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e3",
+        "e7",
+        "e15"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e3": "None",
+        "e7": "None",
+        "e15": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D08",
+      "split": "development",
+      "description": "RSVP is a requirement, not completed enrollment",
+      "message": "career on Tuesday",
+      "relevant_ids": [
+        "e7"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "days": [
+          1
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e7"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e7": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D08",
+      "split": "development",
+      "description": "RSVP is a requirement, not completed enrollment",
+      "message": "career on Tuesday",
+      "relevant_ids": [
+        "e7"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "days": [
+          1
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e7"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "days": [
+              1
+            ],
+            "topics": [
+              "Career"
+            ]
+          },
+          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e7",
+          "interest_match": "Interest match: Career — Practice introducing your interests in a small peer workshop.",
+          "practical": "$0 admission · Career Studio · RSVP required · Open to demo students · None",
+          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday.",
+          "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-007. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e7": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D09",
+      "split": "development",
+      "description": "Unknown food does not satisfy a meal preference",
+      "message": "social free food on Friday",
+      "relevant_ids": [
+        "e16"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e16",
+        "e2",
+        "e6"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e16": "Free meal",
+        "e2": "Free meal",
+        "e6": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D09",
+      "split": "development",
+      "description": "Unknown food does not satisfy a meal preference",
+      "message": "social free food on Friday",
+      "relevant_ids": [
+        "e16"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e16"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e16": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D09",
+      "split": "development",
+      "description": "Unknown food does not satisfy a meal preference",
+      "message": "social free food on Friday",
+      "relevant_ids": [
+        "e16"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "food": "Free meal",
+        "free": true
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e16"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "days": [
+              4
+            ],
+            "food": "Free meal",
+            "free": true,
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e16",
+          "interest_match": "Interest match: Social — An easy place to meet someone new between classes.",
+          "practical": "$0 admission · Campus Commons · RSVP required · Open to demo students · Free meal",
+          "schedule_fit": "Friday, 12:00–13:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal; free admission.",
+          "trade_offs": "60 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-016. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e16": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D10",
+      "split": "development",
+      "description": "Unsupported request requires guidance",
+      "message": "purple flying giraffes",
+      "expect_status": "unsupported"
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D10",
+      "split": "development",
+      "description": "Unsupported request requires guidance",
+      "message": "purple flying giraffes",
+      "expect_status": "unsupported"
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "unsupported",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D10",
+      "split": "development",
+      "description": "Unsupported request requires guidance",
+      "message": "purple flying giraffes",
+      "expect_status": "unsupported"
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "unsupported",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D11",
+      "split": "development",
+      "description": "Ambiguous proximity needs clarification",
+      "message": "events near me",
+      "expect_status": "clarification"
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e1",
+        "e6",
+        "e8"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e1": "Coffee & snacks",
+        "e6": "Free meal",
+        "e8": "Unknown"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D11",
+      "split": "development",
+      "description": "Ambiguous proximity needs clarification",
+      "message": "events near me",
+      "expect_status": "clarification"
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "clarification",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D11",
+      "split": "development",
+      "description": "Ambiguous proximity needs clarification",
+      "message": "events near me",
+      "expect_status": "clarification"
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "clarification",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D12",
+      "split": "development",
+      "description": "Existing plan replacement with strict time/food filters",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks",
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks"
+      },
+      "relevant_ids": [
+        "e1"
+      ],
+      "replan": true
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D12",
+      "split": "development",
+      "description": "Existing plan replacement with strict time/food filters",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks",
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks"
+      },
+      "relevant_ids": [
+        "e1"
+      ],
+      "replan": true
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D12",
+      "split": "development",
+      "description": "Existing plan replacement with strict time/food filters",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks",
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          1
+        ],
+        "after": 900,
+        "before": 990,
+        "food": "Coffee & snacks"
+      },
+      "relevant_ids": [
+        "e1"
+      ],
+      "replan": true
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H01",
+      "split": "held-out",
+      "description": "Arts/social diversity with free admission",
+      "message": "arts social free events",
+      "expected_topics": [
+        "Arts & culture",
+        "Social"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture",
+          "Social"
+        ],
+        "free": true
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e8",
+        "e13",
+        "e19"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e8": "Unknown",
+        "e13": "Paid food",
+        "e19": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 2
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H01",
+      "split": "held-out",
+      "description": "Arts/social diversity with free admission",
+      "message": "arts social free events",
+      "expected_topics": [
+        "Arts & culture",
+        "Social"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture",
+          "Social"
+        ],
+        "free": true
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e22",
+        "e23",
+        "e19"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e22": "Free meal",
+        "e23": "Coffee & snacks",
+        "e19": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H01",
+      "split": "held-out",
+      "description": "Arts/social diversity with free admission",
+      "message": "arts social free events",
+      "expected_topics": [
+        "Arts & culture",
+        "Social"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture",
+          "Social"
+        ],
+        "free": true
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e22",
+        "e23",
+        "e19"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "free": true,
+            "topics": [
+              "Social",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e22",
+          "interest_match": "Interest match: Social — A relaxed evening of games and a picnic meal.",
+          "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
+          "schedule_fit": "Monday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "free": true,
+            "topics": [
+              "Social",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e23",
+          "interest_match": "Interest match: Arts & culture — Meet student artists and see works in progress.",
+          "practical": "$0 admission · Gallery Foyer · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-023. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "free": true,
+            "topics": [
+              "Social",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e19",
+          "interest_match": "Interest match: Arts & culture — Discuss art and cultural perspectives with a small student group.",
+          "practical": "$0 admission · Gallery Foyer · RSVP required · Open to demo students · None",
+          "schedule_fit": "Wednesday, 16:30–17:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-019. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e22": "Free meal",
+        "e23": "Coffee & snacks",
+        "e19": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 15,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H02",
+      "split": "held-out",
+      "description": "Friday late evening unknown-food social record",
+      "message": "social on Friday after 7 PM",
+      "relevant_ids": [
+        "e27"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "after": 1140
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e16",
+        "e2",
+        "e6"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e16": "Free meal",
+        "e2": "Free meal",
+        "e6": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H02",
+      "split": "held-out",
+      "description": "Friday late evening unknown-food social record",
+      "message": "social on Friday after 7 PM",
+      "relevant_ids": [
+        "e27"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "after": 1140
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e27"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e27": "Unknown"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H02",
+      "split": "held-out",
+      "description": "Friday late evening unknown-food social record",
+      "message": "social on Friday after 7 PM",
+      "relevant_ids": [
+        "e27"
+      ],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          4
+        ],
+        "after": 1140
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e27"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 1140,
+            "days": [
+              4
+            ],
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e27",
+          "interest_match": "Interest match: Social — A casual chance to meet students beyond your department.",
+          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Unknown",
+          "schedule_fit": "Friday, 19:00–20:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; start at/after 19:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: Unknown. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-027. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e27": "Unknown"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H03",
+      "split": "held-out",
+      "description": "Unknown alumni eligibility excludes sole coffee match",
+      "message": "career coffee on Thursday",
+      "relevant_ids": [
+        "e15"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e15",
+        "e3",
+        "e7"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e15": "Coffee & snacks",
+        "e3": "None",
+        "e7": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H03",
+      "split": "held-out",
+      "description": "Unknown alumni eligibility excludes sole coffee match",
+      "message": "career coffee on Thursday",
+      "relevant_ids": [
+        "e15"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H03",
+      "split": "held-out",
+      "description": "Unknown alumni eligibility excludes sole coffee match",
+      "message": "career coffee on Thursday",
+      "relevant_ids": [
+        "e15"
+      ],
+      "constraints": {
+        "topics": [
+          "Career"
+        ],
+        "food": "Coffee & snacks",
+        "days": [
+          3
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H04",
+      "split": "held-out",
+      "description": "Paid ceramics excluded by explicit free admission",
+      "message": "ceramics free on Wednesday evening",
+      "relevant_ids": [
+        "e19",
+        "e29"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture"
+        ],
+        "days": [
+          2
+        ],
+        "after": 1020,
+        "free": true
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e13",
+        "e22",
+        "e29"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e13": "Paid food",
+        "e22": "Free meal",
+        "e29": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H04",
+      "split": "held-out",
+      "description": "Paid ceramics excluded by explicit free admission",
+      "message": "ceramics free on Wednesday evening",
+      "relevant_ids": [
+        "e19",
+        "e29"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture"
+        ],
+        "days": [
+          2
+        ],
+        "after": 1020,
+        "free": true
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H04",
+      "split": "held-out",
+      "description": "Paid ceramics excluded by explicit free admission",
+      "message": "ceramics free on Wednesday evening",
+      "relevant_ids": [
+        "e19",
+        "e29"
+      ],
+      "constraints": {
+        "topics": [
+          "Arts & culture"
+        ],
+        "days": [
+          2
+        ],
+        "after": 1020,
+        "free": true
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H05",
+      "split": "held-out",
+      "description": "Feasible replacement retains another calendar choice",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ],
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ]
+      },
+      "relevant_ids": [
+        "e5"
+      ],
+      "replan": true
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H05",
+      "split": "held-out",
+      "description": "Feasible replacement retains another calendar choice",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ],
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ]
+      },
+      "relevant_ids": [
+        "e5"
+      ],
+      "replan": true
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H05",
+      "split": "held-out",
+      "description": "Feasible replacement retains another calendar choice",
+      "message": "Find events",
+      "previous": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ],
+        "limit": 1
+      },
+      "state": {
+        "plan": [
+          "e3"
+        ],
+        "cancelled": [
+          "e1"
+        ]
+      },
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          3
+        ]
+      },
+      "relevant_ids": [
+        "e5"
+      ],
+      "replan": true
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "days": [
+              3
+            ],
+            "limit": 1,
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e5",
+          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "constraint_satisfaction": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "source_faithfulness": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "food_accuracy": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "diversity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "explanation_quality": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H06",
+      "split": "held-out",
+      "description": "Contradictory day exclusions need clarification",
+      "message": "social but not Tuesday",
+      "expect_status": "clarification"
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e2",
+        "e6",
+        "e8"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e2": "Free meal",
+        "e6": "Free meal",
+        "e8": "Unknown"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H06",
+      "split": "held-out",
+      "description": "Contradictory day exclusions need clarification",
+      "message": "social but not Tuesday",
+      "expect_status": "clarification"
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "clarification",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H06",
+      "split": "held-out",
+      "description": "Contradictory day exclusions need clarification",
+      "message": "social but not Tuesday",
+      "expect_status": "clarification"
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "clarification",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H07",
+      "split": "held-out",
+      "description": "Multiple topics, travel and existing commitments",
+      "message": "AI career arts 5 events after 1 PM",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Arts & culture"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education",
+          "Career",
+          "Arts & culture"
+        ],
+        "after": 780
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e28",
+        "e1",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e28": "None",
+        "e1": "Coffee & snacks",
+        "e3": "None",
+        "e4": "Coffee & snacks",
+        "e5": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 4,
+        "denominator": 5
+      },
+      "recall": {
+        "numerator": 4,
+        "denominator": 5
+      },
+      "conflict_violations": {
+        "numerator": 2,
+        "denominator": 5
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "constraint_satisfaction": {
+        "numerator": 4,
+        "denominator": 5
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "diversity": {
+        "numerator": 2,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 25
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H07",
+      "split": "held-out",
+      "description": "Multiple topics, travel and existing commitments",
+      "message": "AI career arts 5 events after 1 PM",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Arts & culture"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education",
+          "Career",
+          "Arts & culture"
+        ],
+        "after": 780
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e18",
+        "e14",
+        "e7",
+        "e1",
+        "e23"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e18": "None",
+        "e14": "Coffee & snacks",
+        "e7": "None",
+        "e1": "Coffee & snacks",
+        "e23": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "recall": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "constraint_satisfaction": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "diversity": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 25
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H07",
+      "split": "held-out",
+      "description": "Multiple topics, travel and existing commitments",
+      "message": "AI career arts 5 events after 1 PM",
+      "expected_topics": [
+        "AI & education",
+        "Career",
+        "Arts & culture"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education",
+          "Career",
+          "Arts & culture"
+        ],
+        "after": 780
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [
+        "e18",
+        "e20",
+        "e23",
+        "e7",
+        "e1"
+      ],
+      "status": "matched",
+      "evidence": [
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 780,
+            "limit": 5,
+            "topics": [
+              "AI & education",
+              "Career",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e18",
+          "interest_match": "Interest match: AI & education — Experiment with simple visual code; beginners are welcome.",
+          "practical": "$0 admission · Maker Space · Drop-in welcome · Open to demo students · None",
+          "schedule_fit": "Monday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-018. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 780,
+            "limit": 5,
+            "topics": [
+              "AI & education",
+              "Career",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e20",
+          "interest_match": "Interest match: Career — Try approachable ways to start a professional conversation.",
+          "practical": "$0 admission · Career Studio · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Monday, 17:30–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-020. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 780,
+            "limit": 5,
+            "topics": [
+              "AI & education",
+              "Career",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e23",
+          "interest_match": "Interest match: Arts & culture — Meet student artists and see works in progress.",
+          "practical": "$0 admission · Gallery Foyer · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-023. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 780,
+            "limit": 5,
+            "topics": [
+              "AI & education",
+              "Career",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e7",
+          "interest_match": "Interest match: Career — Practice introducing your interests in a small peer workshop.",
+          "practical": "$0 admission · Career Studio · RSVP required · Open to demo students · None",
+          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-007. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "constraints_satisfied": {
+            "after": 780,
+            "limit": 5,
+            "topics": [
+              "AI & education",
+              "Career",
+              "Arts & culture"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e1",
+          "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
+        }
+      ],
+      "food": {
+        "e18": "None",
+        "e20": "Coffee & snacks",
+        "e23": "Coffee & snacks",
+        "e7": "None",
+        "e1": "Coffee & snacks"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "recall": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 5
+      },
+      "constraint_satisfaction": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "source_faithfulness": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "food_accuracy": {
+        "numerator": 5,
+        "denominator": 5
+      },
+      "diversity": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 25,
+        "denominator": 25
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H08",
+      "split": "held-out",
+      "description": "Weekend named event is actually Friday; strict weekend has no match",
+      "message": "social weekend events",
+      "relevant_ids": [],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          5,
+          6
+        ]
+      }
+    },
+    "adapter": "A Keyword/category",
+    "output": {
+      "ids": [
+        "e27",
+        "e2",
+        "e6"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e27": "Unknown",
+        "e2": "Free meal",
+        "e6": "Free meal"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H08",
+      "split": "held-out",
+      "description": "Weekend named event is actually Friday; strict weekend has no match",
+      "message": "social weekend events",
+      "relevant_ids": [],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          5,
+          6
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "H08",
+      "split": "held-out",
+      "description": "Weekend named event is actually Friday; strict weekend has no match",
+      "message": "social weekend events",
+      "relevant_ids": [],
+      "constraints": {
+        "topics": [
+          "Social"
+        ],
+        "days": [
+          5,
+          6
+        ]
+      }
+    },
+    "adapter": "C Context/Rust",
+    "output": {
+      "ids": [],
+      "status": "no_matches",
+      "evidence": [],
+      "food": {}
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "recall": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "constraint_satisfaction": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  }
+]

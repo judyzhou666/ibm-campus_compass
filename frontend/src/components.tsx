@@ -1,3 +1,5 @@
+import { DEMO, dayLabel } from "./config.ts";
+import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -64,7 +66,9 @@ export function Heading({
         <p className="sub">{description}</p>
       </div>
       {children || (
-        <span className="date">Monday, October 19, 2026 · Demo</span>
+        <span className="date">
+          {dayLabel(0)}, {DEMO.week_start.slice(0, 4)} · Demo
+        </span>
       )}
     </div>
   );
@@ -116,7 +120,9 @@ export function EventCard({
   return (
     <article className="event-card">
       <div className={`poster ${category}`}>
-        <small>CAMPUS COMPASS / OCTOBER</small>
+        <small>
+          {DEMO.campus_name} / {dayLabel(e.day)}
+        </small>
         <b>
           {e.poster.split(" / ").map((part, i) => (
             <span key={part}>
@@ -197,7 +203,7 @@ export function Week({
             <div className="week-day" key={day}>
               <div className={`day-head ${i === 0 ? "today" : ""}`}>
                 {day}
-                <strong>{19 + i}</strong>
+                <strong>{dayLabel(i)}</strong>
               </div>
               {items.map((e) => {
                 const cancelled = state.cancelled.includes(e.id),
@@ -277,7 +283,7 @@ export function EventDetails({
       <p>{e.description}</p>
       <div className="meta">
         <Icon name="calendar" />
-        {when(e)} · Eastern Time
+        {when(e)} · {DEMO.time_zone}
       </div>
       <div className="meta">
         <Icon name="pin" />
@@ -307,12 +313,44 @@ export function EventDetails({
           ))}
         </div>
       )}
+      <section>
+        <h3>Related communities</h3>
+        <p className="fineprint">
+          Fictional local groups matching this record’s topic.
+        </p>
+        {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
+          <p key={c.id}>
+            <a href={communityHash(c.id)} onClick={onClose}>
+              {c.name}
+            </a>
+          </p>
+        ))}
+      </section>
       <div className="source">
         <strong>Record & evidence</strong>
         <br />
-        {e.source}
+        <dl className="evidence">
+          {Object.entries({
+            Campus: e.campus_id || "Unknown",
+            Source: e.source || "Unknown",
+            "Original source URL": e.source_url || "Unknown",
+            "Last checked timestamp": e.last_checked_at || "Not verified",
+            "Intended audience": e.intended_audience || "Unknown",
+            Eligibility: e.eligibility || "Unknown",
+            RSVP: e.rsvp || "Unknown",
+            Availability: e.availability || "Unknown",
+            "Food status": e.food_status || "Unknown",
+            Verification: e.verification_status || "Not verified",
+          }).map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
         <br />
-        Authored for this prototype · Last reviewed {e.checked}
+        Authored for this prototype · Internal authoring review (not external
+        verification) {e.checked}
         <br />
         RSVP-required events use a mandatory demo registration step. No
         organizer is contacted and no real place is reserved.

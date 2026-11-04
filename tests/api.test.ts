@@ -33,37 +33,109 @@ test("watsonx and server-fallback modes are labelled honestly", async () => {
     Response.json({
       mode: "watsonx",
       provider: "watsonx:ibm/granite-4-h-small",
+      understood: true,
       constraints: { topics: ["Career"] },
       event_ids: ["e1"],
     });
-  const r = await requestPlan("jobs", {}, fresh(), live);
+  const r = await requestPlan("career events", {}, fresh(), live);
   assert.equal(r.mode, "watsonx");
   assert.equal(planModeLabel(r), "Rust planner · IBM watsonx");
   const fellBack: typeof fetch = async () =>
     Response.json({
       mode: "simulated",
       provider: "rust-rules",
+      understood: true,
       constraints: {},
       event_ids: [],
       notice:
         "IBM watsonx was unavailable, so this answer used the simulated demo planner.",
     });
-  const f = await requestPlan("jobs", {}, fresh(), fellBack);
+  const f = await requestPlan("career events", {}, fresh(), fellBack);
   assert.equal(planModeLabel(f), "Rust planner · Simulated");
   assert.match(f.notice, /watsonx was unavailable/);
-  const offlineResult = await requestPlan("jobs", {}, fresh(), offline);
+  const offlineResult = await requestPlan(
+    "career events",
+    {},
+    fresh(),
+    offline,
+  );
   assert.equal(planModeLabel(offlineResult), "Browser fallback · Simulated");
   const unknownMode: typeof fetch = async () =>
-    Response.json({ mode: "live", constraints: {}, event_ids: [] });
-  const u = await requestPlan("jobs", {}, fresh(), unknownMode);
+    Response.json({
+      mode: "live",
+      understood: true,
+      constraints: {},
+      event_ids: [],
+    });
+  const u = await requestPlan("career events", {}, fresh(), unknownMode);
   assert.equal(u.source, "browser-fallback");
 });
 test("unknown model event IDs cannot enter a draft", async () => {
   const fake: typeof fetch = async () =>
-    Response.json({ mode: "simulated", constraints: {}, event_ids: ["fake"] });
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: {},
+      event_ids: ["fake"],
+    });
   const r = await requestPlan("AI", {}, fresh(), fake);
   assert.equal(r.source, "browser-fallback");
   assert.ok(!r.ids.includes("fake"));
+});
+
+test("invalid clock input is rejected before network or offline matching", async () => {
+  for (const message of [
+    "before 11:99 am",
+    "after 99 pm",
+    "after 13 pm",
+    "before 0 am",
+    "before 11:9",
+    "after 1:999",
+    "after 999999999999999999999999999999",
+  ]) {
+    let called = false;
+    const fetcher: typeof fetch = async () => {
+      called = true;
+      throw new Error("offline");
+    };
+    await assert.rejects(
+      requestPlan(message, {}, fresh(), fetcher),
+      /Invalid day, time/,
+    );
+    assert.equal(called, false);
+  }
+});
+
+test("invalid prior filters and oversized messages cannot bypass validation offline", async () => {
+  for (const constraints of [
+    { limit: 99 },
+    { days: [9] },
+    { after: -1 },
+    { topics: ["invented"] },
+  ]) {
+    await assert.rejects(
+      requestPlan("AI", constraints, fresh(), offline),
+      /Invalid|Unknown/,
+    );
+  }
+  await assert.rejects(
+    requestPlan("AI" + "界".repeat(700), {}, fresh(), offline),
+    /2000 bytes/,
+  );
+});
+
+test("malformed server constraints use a validated labelled simulation", async () => {
+  const fetcher: typeof fetch = async () =>
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: { after: -1 },
+      event_ids: ["e1"],
+    });
+  const result = await requestPlan("AI", {}, fresh(), fetcher);
+  assert.equal(result.source, "browser-fallback");
+  assert.deepEqual(result.constraints, { topics: ["AI & education"] });
+  assert.match(result.notice, /simulated demo planner/);
 });
 test("payload omits history; offline validation checks access", async () => {
   const state = fresh();
@@ -153,5 +225,73 @@ test("enrollment sends only the selected RSVP and schedule, and accepts a verifi
       )
     ).notice,
     "",
+  );
+});
+
+test("offline planning supplies no invented Rust recommendation evidence", async () => {
+  const result = await requestPlan("AI", {}, fresh(), offline);
+  assert.deepEqual(result.evidence, []);
+  assert.equal(result.source, "browser-fallback");
+});
+
+test("Rust recommendation evidence is retained only for selected event IDs", async () => {
+  const evidence = {
+    event_id: "e1",
+    interest_match: "AI",
+    schedule_fit: "Tuesday",
+    practical: "RSVP required",
+    trade_offs: "Fictional record",
+  };
+  const result = await requestPlan("AI", {}, fresh(), async () =>
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: {},
+      event_ids: ["e1"],
+      recommendations: [evidence, { ...evidence, event_id: "fake" }],
+    }),
+  );
+  assert.deepEqual(result.evidence, [evidence]);
+});
+
+test("numeric budgets are explicitly rejected before Rust or fallback can drop them", async () => {
+  for (const message of [
+    "arts on Wednesday evening under $5",
+    "arts budget 5",
+    "arts less than 5 dollars",
+  ]) {
+    let called = false;
+    await assert.rejects(
+      requestPlan(message, {}, fresh(), async () => {
+        called = true;
+        throw Error("offline");
+      }),
+      /Numeric budgets are not supported/,
+    );
+    assert.equal(called, false);
+  }
+  const r = await requestPlan(
+    "arts on Wednesday evening free admission",
+    {},
+    fresh(),
+    offline,
+  );
+  assert.deepEqual(r.ids, []);
+  assert.equal(r.constraints.free, true);
+});
+
+test("result counts remain supported without bypassing numeric budget rejection", async () => {
+  for (const [message, limit] of [
+    ["career up to 3 events", 3],
+    ["career at most 2 options", 2],
+    ["career no more than 1 choices", 1],
+  ] as const) {
+    const result = await requestPlan(message, {}, fresh(), offline);
+    assert.equal(result.constraints.limit, limit);
+    assert.ok(result.ids.length > 0 && result.ids.length <= limit);
+  }
+  await assert.rejects(
+    requestPlan("career up to 3 events under $5", {}, fresh(), offline),
+    /Numeric budgets are not supported/,
   );
 });
