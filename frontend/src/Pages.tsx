@@ -432,9 +432,14 @@ export function Forum({
 
   // ── Main forum layout ─────────────────────────────────────────────────────
   return (
-    <div className="forum-layout">
+    <>
+      <Heading
+        title="Good things start with a hello."
+        description="A sample community board for the Campus Compass demonstration."
+      />
+      <div className="forum-layout">
       {/* Left sidebar: community search + filters */}
-      <aside className="forum-sidebar panel">
+      <aside className="forum-sidebar">
         <h2 className="forum-sidebar-heading">Communities</h2>
         <label className="field">
           Search
@@ -488,7 +493,7 @@ export function Forum({
       </aside>
 
       {/* Center: post feed */}
-      <main className="forum-feed">
+      <main className="forum-feed panel">
         <div className="forum-feed-header">
           <h2 className="forum-feed-title">
             {activeCommunity ? activeCommunity.name : "All Posts"}
@@ -504,7 +509,7 @@ export function Forum({
 
         {/* New post form */}
         <form
-          className="forum-new-post panel"
+          className="forum-new-post"
           onSubmit={(e) => {
             e.preventDefault();
             const form = e.currentTarget,
@@ -554,7 +559,7 @@ export function Forum({
         {filteredPosts.map((p) => {
           const community = COMMUNITIES.find((c) => c.id === p.communityId);
           return (
-            <article key={p.id} className="forum-post-card panel">
+            <article key={p.id} className="forum-post-card">
               <div className="forum-post-card-meta">
                 <span className="forum-post-community">
                   {community?.name ?? p.communityId}
@@ -583,6 +588,7 @@ export function Forum({
         })}
       </main>
     </div>
+    </>
   );
 }
 
