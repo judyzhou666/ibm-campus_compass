@@ -111,8 +111,11 @@ export function interpretRequest(
     return found;
   };
   let c = { ...previous };
-  if (test(/\b(reset|start over)\b/))
-    c = previous.mode ? { mode: previous.mode } : {};
+  if (previous.explore) {
+    delete c.explore;
+    if (c.mode === "discovery") delete c.mode;
+  }
+  if (test(/\b(reset|start over)\b/)) c = {};
   if (test(/\b(reset|start over|any time|any day)\b/)) {
     delete c.days;
     delete c.after;
@@ -129,6 +132,10 @@ export function interpretRequest(
     c.mode = "plan-building";
   else if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
     c.mode = "discovery";
+  if (test(/\b(?:beyond|outside) (?:my|your|saved) interests\b/)) {
+    c.explore = true;
+    c.mode ??= "discovery";
+  }
   const topics = Object.entries(keywords)
     .filter(([k, re]) => test(re))
     .map(([k]) => k);

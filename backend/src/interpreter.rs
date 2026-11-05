@@ -86,11 +86,14 @@ impl SimulatedInterpreter {
             understood |= found;
             found
         };
+        if c.explore == Some(true) {
+            c.explore = None;
+            if c.mode == Some(crate::model::RecommendationMode::Discovery) {
+                c.mode = None;
+            }
+        }
         if matches(r"\b(reset|start over)\b", &q) {
-            c = Constraints {
-                mode: c.mode,
-                ..Constraints::default()
-            };
+            c = Constraints::default();
         }
         if matches(r"\b(reset|start over|any time|any day)\b", &q) {
             c.days = None;
@@ -117,6 +120,11 @@ impl SimulatedInterpreter {
             &q,
         ) {
             c.mode = Some(crate::model::RecommendationMode::Discovery);
+        }
+        if matches(r"\b(?:beyond|outside) (?:my|your|saved) interests\b", &q) {
+            c.explore = Some(true);
+            c.mode
+                .get_or_insert(crate::model::RecommendationMode::Discovery);
         }
         let mut topics = Vec::new();
         let mut excluded = Vec::new();
@@ -266,5 +274,36 @@ impl SimulatedInterpreter {
             understood,
             clarification,
         }
+    }
+}
+
+#[cfg(test)]
+mod exploration_lifecycle_tests {
+    use super::*;
+    use crate::model::RecommendationMode;
+    #[test]
+    fn temporary_exploration_and_reset_do_not_leak() {
+        let previous = Constraints {
+            explore: Some(true),
+            mode: Some(RecommendationMode::Discovery),
+            ..Default::default()
+        };
+        let normal = SimulatedInterpreter
+            .parse("Tuesday afternoon events", previous.clone())
+            .constraints;
+        assert_eq!(normal.explore, None);
+        assert_eq!(normal.mode, None);
+        assert_eq!(normal.days, Some(vec![1]));
+        assert_eq!(
+            SimulatedInterpreter
+                .parse("start over", previous.clone())
+                .constraints,
+            Constraints::default()
+        );
+        let explicit = SimulatedInterpreter
+            .parse("Explore beyond my interests", previous)
+            .constraints;
+        assert_eq!(explicit.explore, Some(true));
+        assert_eq!(explicit.mode, Some(RecommendationMode::Discovery));
     }
 }

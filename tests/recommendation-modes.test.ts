@@ -98,7 +98,7 @@ test("explicit weekly planning and discovery requests select modes without dropp
   assert.deepEqual(
     interpretRequest("start over", { ...previous, mode: "discovery" })
       .constraints,
-    { mode: "discovery" },
+    {},
   );
   assert.throws(
     () =>

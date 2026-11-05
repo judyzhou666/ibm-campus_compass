@@ -820,7 +820,7 @@ export default function App() {
                 <Button
                   onClick={() => {
                     proposals.dismiss();
-                    void conversation.chat("Find events", {
+                    void conversation.chat("Explore beyond my interests", {
                       explore: true,
                       mode: "discovery",
                     });

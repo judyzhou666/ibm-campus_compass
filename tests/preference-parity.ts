@@ -178,6 +178,18 @@ try {
       message.resolvedConstraints,
     );
   }
+  for (const message of [
+    "Tuesday afternoon events",
+    "Explore beyond my interests",
+    "start over",
+  ]) {
+    await compare(
+      "temporary exploration: " + message,
+      fresh(),
+      { explore: true, mode: "discovery" },
+      message,
+    );
+  }
   for (const goal of Object.keys(GOAL_TOPICS)) {
     const state = {
       ...fresh(),

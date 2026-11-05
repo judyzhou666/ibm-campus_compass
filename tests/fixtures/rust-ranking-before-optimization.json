@@ -1015,7 +1015,7 @@
   },
   {
     "name": "preferred evening, cancellations, travel buffer and exploration",
-    "message": "Find events",
+    "message": "Build a weekly plan beyond my interests",
     "previous": {
       "explore": true
     },
@@ -1071,7 +1071,8 @@
     "response": {
       "clarification": null,
       "constraints": {
-        "explore": true
+        "explore": true,
+        "mode": "plan-building"
       },
       "diagnostic": null,
       "event_ids": [
@@ -1164,7 +1165,8 @@
         {
           "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
-            "explore": true
+            "explore": true,
+            "mode": "plan-building"
           },
           "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e20",
@@ -1178,7 +1180,8 @@
         {
           "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
-            "explore": true
+            "explore": true,
+            "mode": "plan-building"
           },
           "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e23",
@@ -1192,7 +1195,8 @@
         {
           "comparison": "Compared with International tea table: $0 vs $0; 90 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
-            "explore": true
+            "explore": true,
+            "mode": "plan-building"
           },
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e2",
@@ -1206,7 +1210,8 @@
         {
           "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
-            "explore": true
+            "explore": true,
+            "mode": "plan-building"
           },
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e27",
@@ -1220,7 +1225,8 @@
         {
           "comparison": "Compared with Autumn sketchbook walk: $12 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
-            "explore": true
+            "explore": true,
+            "mode": "plan-building"
           },
           "discovery_context": "Workshops / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e29",

@@ -260,3 +260,11 @@ export const planModeLabel = (result: {
     : result.mode === "watsonx"
       ? "Rust planner · IBM watsonx"
       : "Rust planner · Simulated";
+
+/** Internal continuation explicitly reapplies a selected temporary exploration. */
+export const continuationMessage = (c: Constraints) =>
+  c.explore
+    ? c.mode === "plan-building"
+      ? "Build a weekly plan beyond my interests"
+      : "Explore beyond my interests"
+    : "Find events";

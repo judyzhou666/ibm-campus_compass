@@ -9,7 +9,7 @@ import { EVENTS } from "../frontend/src/data.ts";
 import { createConversation } from "../frontend/src/conversation.ts";
 import { fresh, createStore } from "../frontend/src/state.ts";
 import { recommend, issue } from "../frontend/src/planner.ts";
-import { schedulePayload } from "../frontend/src/api.ts";
+import { schedulePayload, continuationMessage } from "../frontend/src/api.ts";
 import type { Constraints } from "../frontend/src/types.ts";
 const server = spawn(
   process.env.CAMPUS_BINARY || "target/debug/campus-compass",
@@ -564,14 +564,18 @@ try {
       ]) {
         const r = await (
           await post("/api/plan", {
-            message: "Find events",
+            message: continuationMessage(previous),
             previous,
             state: schedulePayload(s),
           })
         ).json();
         assert.deepEqual(
           r.event_ids,
-          recommend(s, previous).map((e) => e.id),
+          recommend(
+            s,
+            interpretRequest(continuationMessage(previous), previous)
+              .constraints,
+          ).map((e) => e.id),
         );
         assert.ok(r.event_ids.length <= count);
       }

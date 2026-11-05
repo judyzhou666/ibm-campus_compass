@@ -2,7 +2,12 @@ import { discoveryState } from "./discovery.ts";
 import { readResolvedConstraints } from "./recommendationReasons.ts";
 import { preferenceSettingsKey, practicalIssue } from "./preferences.ts";
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
-import { requestPlan, planningKey, planModeLabel } from "./api.ts";
+import {
+  requestPlan,
+  planningKey,
+  planModeLabel,
+  continuationMessage,
+} from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
@@ -179,7 +184,10 @@ export function createConversation(
       sessionSkipped.clear();
       await run((snapshot) =>
         requestPlan(
-          "Find events",
+          continuationMessage({
+            ...constraints,
+            mode: mode ?? source?.recommendationMode ?? constraints.mode,
+          }),
           {
             ...constraints,
             mode:
@@ -199,7 +207,7 @@ export function createConversation(
       pending = undefined;
       await run((snapshot) =>
         requestPlan(
-          "Find events",
+          continuationMessage(snapshot.constraints),
           { mode: "plan-building", ...snapshot.constraints },
           snapshot,
           fetcher,
@@ -225,7 +233,10 @@ export function createConversation(
         pending = undefined;
         sessionSkipped.clear();
       }
-      let resolvedText = text;
+      let resolvedText =
+        previous?.explore && /^find events$/i.test(text)
+          ? continuationMessage(previous)
+          : text;
       let context = pending?.constraints;
       if (
         pending &&
