@@ -133,17 +133,20 @@ export default function App() {
     window.addEventListener("hashchange", handle);
     return () => window.removeEventListener("hashchange", handle);
   }, []);
-  // Push a base guard on every tab change so Mac swipe-back stays within the tab
+  // Keep swipe-back (and Back) from leaving the app: mark the first entry as the
+  // root and stack one guard above it. Back still moves between tabs through
+  // hash history; only a pop that reaches the root is absorbed.
   useEffect(() => {
-    history.pushState({ appTab: page }, "");
+    if (!history.state?.ccGuard && !history.state?.ccRoot) {
+      history.replaceState({ ...history.state, ccRoot: true }, "");
+      history.pushState({ ccGuard: true }, "");
+    }
     function onPop(e: PopStateEvent) {
-      // If the popped entry is our own guard (or anything else), re-push it so
-      // the swipe is absorbed and the user stays on the current tab.
-      history.pushState({ appTab: page }, "");
+      if (e.state?.ccRoot) history.pushState({ ccGuard: true }, "");
     }
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [page]);
+  }, []);
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;

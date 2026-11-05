@@ -1,4 +1,4 @@
-import { storageKey } from "./config.ts";
+import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
@@ -40,6 +40,8 @@ export const fresh = (): DemoState => ({
   joined: [],
   joinedCommunities: [],
   posts: [],
+  comments: [],
+  postDraft: null,
   draft: [],
   constraints: {},
   messages: [],
@@ -60,10 +62,7 @@ export function restore(): DemoState {
       onboarded: value.onboarded === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
-      timezone:
-        typeof value.timezone === "string" && value.timezone.length < 60
-          ? value.timezone
-          : "",
+      timezone: isTimeZone(value.timezone) ? value.timezone : "",
       preferred_time: ["any", "morning", "afternoon", "evening"].includes(
         value.preferred_time,
       )
@@ -125,7 +124,51 @@ export function restore(): DemoState {
                 ),
             )
             .slice(0, 100)
+            .map((p: DemoState["posts"][number], i: number, all: unknown[]) => ({
+              name: p.name,
+              title: p.title,
+              body: p.body,
+              tag: p.tag,
+              // Posts saved before ids existed get a stable id from their age.
+              id:
+                typeof p.id === "string" && p.id.length <= 40
+                  ? p.id
+                  : `legacy-${all.length - i}`,
+              ...(COMMUNITIES.some((c) => c.id === p.communityId)
+                ? { communityId: p.communityId }
+                : {}),
+            }))
         : [],
+      comments: Array.isArray(value.comments)
+        ? value.comments
+            .filter(
+              (c: DemoState["comments"][number]) =>
+                c &&
+                typeof c.postId === "string" &&
+                typeof c.name === "string" &&
+                typeof c.text === "string",
+            )
+            .slice(-200)
+            .map((c: DemoState["comments"][number]) => ({
+              postId: c.postId.slice(0, 40),
+              name: c.name.slice(0, 30),
+              text: c.text.slice(0, 400),
+            }))
+        : [],
+      postDraft:
+        value.postDraft &&
+        typeof value.postDraft.title === "string" &&
+        typeof value.postDraft.body === "string"
+          ? {
+              title: value.postDraft.title.slice(0, 100),
+              body: value.postDraft.body.slice(0, 2000),
+              communityId: COMMUNITIES.some(
+                (c) => c.id === value.postDraft.communityId,
+              )
+                ? value.postDraft.communityId
+                : "",
+            }
+          : null,
       joinedCommunities: Array.isArray(value.joinedCommunities)
         ? value.joinedCommunities.filter((id: unknown) =>
             COMMUNITIES.some((c) => c.id === id),

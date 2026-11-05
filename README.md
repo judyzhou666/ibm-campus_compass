@@ -23,6 +23,21 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## PR #8 review fixes — November 5, 2026
+
+Fixes from the review of the forum redesign, event-detail overlay and time zone setting:
+
+- **Create Post** now uses the community picked in its dropdown. Posts without one show as "Local demo post" instead of being filed under Campus explorers. Each post gets a stable id, so likes no longer move to another post when you add one. Posts saved before this change get ids when they load.
+- **Save Draft** really saves the title, body and community in this browser, and Create Post reopens with the draft. Posting clears it.
+- **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
+- **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
+- **Time zone setting** now says exactly what it changes: the heading date, plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
+- **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app.
+- **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
+- **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
+
+Verification: `npm test` (93 TypeScript tests, including the new `tests/forum-settings.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app in a browser I checked: draft save and reopen, posting to a chosen community, a comment and a conversation join surviving in storage, Back across tabs and at the first page, and event-detail focus, Tab wrapping, Escape and the Tokyo time line. Limitations: forum likes still reset on reload, the editor toolbar and "Add tags" buttons do nothing yet, and the Rust planner is unchanged.
+
 ## CI fix — November 5, 2026: API integration expectation after new events
 
 The "Rust and React checks" workflow failed on the `Judy` branch at `npm run test:api`. The November 2 catalog update added fictional event `e34` (Graduate school info night, Career, Tuesday 6:00–7:30 PM), which correctly matches the "career after 3" → "PM" / "after 3 PM" follow-up. Rust and the browser fallback both returned `e20, e34, e28`; only the test's hardcoded draft (`e20, e28`) was stale. Updated `tests/backend-integration.ts`; no application behavior changed.

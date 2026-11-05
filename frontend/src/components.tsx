@@ -1,6 +1,6 @@
-import { DEMO, dayLabel } from "./config.ts";
+import { DEMO, dayLabel, isTimeZone, timeIn } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
@@ -61,7 +61,7 @@ export function Heading({
   timezone?: string;
   children?: ReactNode;
 }) {
-  const tz = timezone || DEMO.time_zone;
+  const tz = isTimeZone(timezone) ? timezone : DEMO.time_zone;
   const todayLabel = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -275,6 +275,28 @@ export function EventDetails({
     saved = state.saved.includes(e.id);
   const category =
     e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const viewerZone =
+    isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
+      ? state.timezone
+      : "";
+  let viewerTime = "";
+  if (viewerZone) {
+    try {
+      viewerTime = timeIn(e.day, e.start, viewerZone);
+    } catch {
+      viewerTime = "";
+    }
+  }
+
+  // Move focus into the overlay and give it back to the opener on close.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    overlayRef.current
+      ?.querySelector<HTMLElement>(".event-detail-close")
+      ?.focus();
+    return () => opener?.focus?.();
+  }, []);
 
   // Lock body scroll while detail is open
   useEffect(() => {
@@ -284,13 +306,33 @@ export function EventDetails({
 
   // Keyboard close
   useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") return onClose();
+      if (ev.key !== "Tab" || !overlayRef.current) return;
+      // Keep Tab inside the overlay, as the former modal dialog did.
+      const focusable = [
+        ...overlayRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), summary, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0],
+        last = focusable[focusable.length - 1];
+      const inside = overlayRef.current.contains(document.activeElement);
+      if (ev.shiftKey && (document.activeElement === first || !inside)) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && (document.activeElement === last || !inside)) {
+        ev.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   return (
-    <div className="event-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div ref={overlayRef} className="event-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title">
       {/* Sticky close bar */}
       <div className="event-detail-bar">
         <button className="event-detail-close icon-btn" aria-label="Close details" onClick={onClose}>
@@ -321,6 +363,14 @@ export function EventDetails({
                 <Icon name="calendar" />
                 <span>{when(e)} · {DEMO.time_zone}</span>
               </div>
+              {viewerTime && (
+                <div className="event-detail-info-row">
+                  <Icon name="calendar" />
+                  <span>
+                    Starts {viewerTime} in your time zone ({viewerZone})
+                  </span>
+                </div>
+              )}
               <div className="event-detail-info-row">
                 <Icon name="pin" />
                 <span>{e.location}</span>
@@ -412,7 +462,7 @@ export function EventDetails({
                   {planned ? "Remove from calendar" : "Add to calendar"}
                 </Button>
                 <Button onClick={() => onSave(e.id)}>
-                  <Icon name={saved ? "bookmark" : "bookmark"} />
+                  <Icon name="bookmark" />
                   {saved ? "Saved" : "Save event"}
                 </Button>
                 <p className="fineprint" style={{ marginTop: 12 }}>

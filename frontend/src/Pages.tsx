@@ -1,10 +1,10 @@
-import { dayLabel, DEMO } from "./config.ts";
+import { dayLabel, DEMO, TIME_ZONES } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
 import { useEffect, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
-import type { DemoState, Post } from "./types.ts";
+import type { DemoState, Post, PostDraft } from "./types.ts";
 
 type Props = {
   state: DemoState;
@@ -315,6 +315,21 @@ export function Forum({
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [postQuery, setPostQuery] = useState("");
   const [creatingPost, setCreatingPost] = useState(false);
+  const [composer, setComposer] = useState<PostDraft>({
+    title: "",
+    body: "",
+    communityId: "",
+  });
+  function openComposer() {
+    setComposer(
+      state.postDraft ?? {
+        title: "",
+        body: "",
+        communityId: activeCommunityId ?? "",
+      },
+    );
+    setCreatingPost(true);
+  }
   // likes: Set of "post:id" or "comment:postId:index"
   const [likes, setLikes] = useState<Set<string>>(() => new Set());
   function toggleLike(key: string) {
@@ -344,17 +359,20 @@ export function Forum({
     }
   }, [selectedPostId, creatingPost]);
 
-  const userPosts: DiscussionPost[] = state.posts.map((p, i) => ({
-    id: `u${i}`,
+  const userPosts: DiscussionPost[] = state.posts.map((p) => ({
+    id: `u:${p.id}`,
     name: p.name,
     title: p.title,
     body: p.body,
-    communityId: COMMUNITIES.find((c) => c.name === p.tag)?.id ?? "social",
+    communityId:
+      p.communityId ?? COMMUNITIES.find((c) => c.name === p.tag)?.id ?? "",
     upvotes: 1,
     commentCount: 0,
     timeAgo: "just now",
     comments: [],
   }));
+  const localComments = (postId: string) =>
+    state.comments.filter((c) => c.postId === postId);
 
   const allPosts = [...userPosts, ...seedPosts];
 
@@ -387,9 +405,13 @@ export function Forum({
           <div className="forum-create-top">
             <select
               className="forum-community-select"
-              defaultValue={activeCommunityId ?? ""}
+              aria-label="Community"
+              value={composer.communityId}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, communityId: e.target.value }))
+              }
             >
-              <option value="">Select Community ⌄</option>
+              <option value="">No community (local demo post)</option>
               {COMMUNITIES.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -399,16 +421,26 @@ export function Forum({
             className="forum-create-form"
             onSubmit={(e) => {
               e.preventDefault();
-              const f = new FormData(e.currentTarget),
-                title = String(f.get("title")).trim(),
-                body = String(f.get("body")).trim();
+              const title = composer.title.trim(),
+                body = composer.body.trim(),
+                community = COMMUNITIES.find(
+                  (c) => c.id === composer.communityId,
+                );
               if (!title) return;
               update((s) => ({
                 ...s,
                 posts: [
-                  { name: s.name, title, body, tag: activeCommunity?.name ?? "Local demo post" },
+                  {
+                    id: `p${Date.now().toString(36)}`,
+                    name: s.name,
+                    title,
+                    body,
+                    tag: community?.name ?? "Local demo post",
+                    ...(community ? { communityId: community.id } : {}),
+                  },
                   ...s.posts,
                 ].slice(0, 100),
+                postDraft: null,
               }));
               notify("Posted to your local demo only.");
               history.back();
@@ -421,6 +453,10 @@ export function Forum({
               maxLength={100}
               className="forum-create-title"
               placeholder="Title*"
+              value={composer.title}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, title: e.target.value }))
+              }
               autoFocus
             />
             <div className="forum-create-tags-row">
@@ -432,6 +468,10 @@ export function Forum({
               rows={8}
               className="forum-create-body"
               placeholder="Body text (optional)"
+              value={composer.body}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, body: e.target.value }))
+              }
             />
             <div className="forum-create-toolbar">
               <span className="forum-toolbar-group">
@@ -457,7 +497,12 @@ export function Forum({
               <button
                 type="button"
                 className="btn"
-                onClick={() => { notify("Draft saved locally."); history.back(); setCreatingPost(false); }}
+                onClick={() => {
+                  update((s) => ({ ...s, postDraft: composer }));
+                  notify("Draft saved in this browser only.");
+                  history.back();
+                  setCreatingPost(false);
+                }}
               >
                 Save Draft
               </button>
@@ -472,11 +517,13 @@ export function Forum({
   // ── Post detail sub-page ──────────────────────────────────────────────────
   if (selectedPost) {
     const community = COMMUNITIES.find((c) => c.id === selectedPost.communityId);
+    const mine = localComments(selectedPost.id);
+    const conversationJoined = state.joined.includes(selectedPost.title);
     return (
       <div className="forum-detail-page">
         <button
           className="forum-back-btn text-btn"
-          onClick={() => setSelectedPostId(null)}
+          onClick={() => { history.back(); setSelectedPostId(null); }}
         >
           ← Back to posts
         </button>
@@ -484,7 +531,7 @@ export function Forum({
           <article className="forum-detail-article panel">
             <div className="forum-detail-meta">
               <div className="avatar">{selectedPost.name[0]}</div>
-              <span className="forum-post-community">{community?.name ?? selectedPost.communityId}</span>
+              <span className="forum-post-community">{community?.name ?? "Local demo post"}</span>
               <span className="forum-post-author">u/{selectedPost.name}</span>
               <span className="forum-post-time">· {selectedPost.timeAgo}</span>
             </div>
@@ -499,12 +546,28 @@ export function Forum({
               >
                 ▲ {selectedPost.upvotes + (likes.has(`post:${selectedPost.id}`) ? 1 : 0)}
               </button>
-              <span className="forum-stat">💬 {selectedPost.comments.length + selectedPost.commentCount} comments</span>
+              <span className="forum-stat">💬 {selectedPost.comments.length + selectedPost.commentCount + mine.length} comments</span>
+              <button
+                className="text-btn forum-stat"
+                aria-pressed={conversationJoined}
+                onClick={() => {
+                  update((s) => ({
+                    ...s,
+                    joined: s.joined.includes(selectedPost.title)
+                      ? s.joined.filter((x) => x !== selectedPost.title)
+                      : [...s.joined, selectedPost.title],
+                  }));
+                  notify("Updated locally. No message was sent.");
+                }}
+              >
+                <Icon name={conversationJoined ? "check" : "plus"} />
+                {conversationJoined ? "Joined locally" : "Join conversation"}
+              </button>
               <span className="forum-stat fineprint">Fictional demo post — not shared</span>
             </div>
             <section className="forum-comments">
               <h3 className="forum-comments-heading">Comments</h3>
-              {selectedPost.comments.length === 0 && (
+              {selectedPost.comments.length + mine.length === 0 && (
                 <p className="forum-empty-comments">No comments yet. Be the first!</p>
               )}
               {selectedPost.comments.map((c, i) => {
@@ -528,12 +591,32 @@ export function Forum({
                 </div>
                 );
               })}
+              {mine.map((c, i) => (
+                <div className="forum-comment" key={`mine-${i}`}>
+                  <div className="avatar avatar-sm">{c.name[0] ?? "?"}</div>
+                  <div style={{ flex: 1 }}>
+                    <span className="forum-comment-author">u/{c.name}</span>
+                    <span className="forum-post-time"> · Saved in this browser</span>
+                    <p className="forum-comment-text">{c.text}</p>
+                  </div>
+                </div>
+              ))}
               <form
                 className="forum-comment-form"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  notify("Comment saved locally. No message was sent.");
-                  (e.currentTarget as HTMLFormElement).reset();
+                  const form = e.currentTarget,
+                    text = String(new FormData(form).get("comment")).trim();
+                  if (!text) return;
+                  update((s) => ({
+                    ...s,
+                    comments: [
+                      ...s.comments,
+                      { postId: selectedPost.id, name: s.name, text },
+                    ].slice(-200),
+                  }));
+                  notify("Comment saved in this browser only. No message was sent.");
+                  form.reset();
                 }}
               >
                 <label className="field full">
@@ -645,6 +728,45 @@ export function Forum({
           </label>
         </div>
 
+        {activeCommunity && (
+          <section
+            className="notice forum-community-details"
+            aria-label="Community details"
+          >
+            <h3>{activeCommunity.name}</h3>
+            <p>{activeCommunity.description}</p>
+            <p>
+              Topics: {activeCommunity.topics.join(", ")}. Membership is local
+              only.
+            </p>
+            <h4>Related fictional events</h4>
+            {EVENTS.filter((e) => activeCommunity.topics.includes(e.topic))
+              .slice(0, 3)
+              .map((e) => (
+                <p key={e.id}>{e.title}</p>
+              ))}
+            <div className="row">
+              <Button
+                onClick={() =>
+                  update((s) => toggleCommunityMembership(s, activeCommunity.id))
+                }
+              >
+                {state.joinedCommunities.includes(activeCommunity.id)
+                  ? "Leave community"
+                  : "Join locally"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setActiveCommunityId(null);
+                  onSelect(null);
+                }}
+              >
+                Close community details
+              </Button>
+            </div>
+          </section>
+        )}
+
         {/* Create post trigger */}
         <div className="forum-new-post">
           <div className="forum-new-post-row">
@@ -652,7 +774,7 @@ export function Forum({
             <button
               type="button"
               className="forum-create-trigger"
-              onClick={() => setCreatingPost(true)}
+              onClick={openComposer}
             >
               + Create post
             </button>
@@ -669,7 +791,7 @@ export function Forum({
             <article key={p.id} className="forum-post-card">
               <div className="forum-post-card-meta">
                 <span className="forum-post-community">
-                  {community?.name ?? p.communityId}
+                  {community?.name ?? "Local demo post"}
                 </span>
                 <span className="forum-post-author">u/{p.name}</span>
                 <span className="forum-post-time">· {p.timeAgo}</span>
@@ -694,7 +816,7 @@ export function Forum({
                   className="forum-stat text-btn"
                   onClick={() => setSelectedPostId(p.id)}
                 >
-                  💬 {p.commentCount + p.comments.length} comments
+                  💬 {p.commentCount + p.comments.length + localComments(p.id).length} comments
                 </button>
               </div>
             </article>
@@ -724,7 +846,9 @@ export function Settings({
           <div>
             <h3>Time zone</h3>
             <p>
-              Overrides the campus default ({DEMO.time_zone}) for event time display. Resets on demo reset.
+              Shows today&rsquo;s date and, in event details, each event&rsquo;s
+              start in this zone. Schedules, the planner and calendar export
+              stay in campus time ({DEMO.time_zone}). Resets on demo reset.
             </p>
           </div>
           <select
@@ -736,24 +860,7 @@ export function Settings({
               notify("Time zone updated.");
             }}
           >
-            {[
-              "America/New_York",
-              "America/Chicago",
-              "America/Denver",
-              "America/Los_Angeles",
-              "America/Anchorage",
-              "Pacific/Honolulu",
-              "Europe/London",
-              "Europe/Paris",
-              "Europe/Berlin",
-              "Asia/Tokyo",
-              "Asia/Shanghai",
-              "Asia/Singapore",
-              "Asia/Kolkata",
-              "Australia/Sydney",
-              "Pacific/Auckland",
-              "UTC",
-            ].map((tz) => (
+            {TIME_ZONES.map((tz) => (
               <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
             ))}
           </select>
