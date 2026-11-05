@@ -314,11 +314,31 @@ export function Forum({
   const [activeCommunityId, setActiveCommunityId] = useState<string | null>(selected);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [postQuery, setPostQuery] = useState("");
+  const [creatingPost, setCreatingPost] = useState(false);
 
   // Sync activeCommunityId when selected prop changes (e.g. from URL hash)
   useEffect(() => {
     setActiveCommunityId(selected);
   }, [selected]);
+
+  // Push a history entry when entering a sub-page so Mac swipe-back works
+  useEffect(() => {
+    if (selectedPostId || creatingPost) {
+      history.pushState({ forumSubPage: true }, "");
+    }
+  }, [selectedPostId, creatingPost]);
+
+  // Listen for browser back (swipe gesture or back button) to exit sub-pages
+  useEffect(() => {
+    function onPop(e: PopStateEvent) {
+      if (!e.state?.forumSubPage) {
+        setSelectedPostId(null);
+        setCreatingPost(false);
+      }
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const userPosts: DiscussionPost[] = state.posts.map((p, i) => ({
     id: `u${i}`,
@@ -348,6 +368,102 @@ export function Forum({
 
   const selectedPost = selectedPostId ? allPosts.find((p) => p.id === selectedPostId) ?? null : null;
   const activeCommunity = activeCommunityId ? COMMUNITIES.find((c) => c.id === activeCommunityId) : null;
+
+  // ── Create post sub-page ─────────────────────────────────────────────────
+  if (creatingPost) {
+    return (
+      <div className="forum-detail-page">
+        <button
+          className="forum-back-btn text-btn"
+          onClick={() => { history.back(); setCreatingPost(false); }}
+        >
+          ← Back to posts
+        </button>
+        <div className="forum-create-page panel">
+          <div className="forum-create-top">
+            <select
+              className="forum-community-select"
+              defaultValue={activeCommunityId ?? ""}
+            >
+              <option value="">Select Community ⌄</option>
+              {COMMUNITIES.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <form
+            className="forum-create-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget),
+                title = String(f.get("title")).trim(),
+                body = String(f.get("body")).trim();
+              if (!title) return;
+              update((s) => ({
+                ...s,
+                posts: [
+                  { name: s.name, title, body, tag: activeCommunity?.name ?? "Local demo post" },
+                  ...s.posts,
+                ].slice(0, 100),
+              }));
+              notify("Posted to your local demo only.");
+              history.back();
+              setCreatingPost(false);
+            }}
+          >
+            <input
+              name="title"
+              required
+              maxLength={100}
+              className="forum-create-title"
+              placeholder="Title*"
+              autoFocus
+            />
+            <div className="forum-create-tags-row">
+              <button type="button" className="forum-tag-btn">🏷 Add tags</button>
+            </div>
+            <textarea
+              name="body"
+              maxLength={2000}
+              rows={8}
+              className="forum-create-body"
+              placeholder="Body text (optional)"
+            />
+            <div className="forum-create-toolbar">
+              <span className="forum-toolbar-group">
+                <button type="button" title="Bold"><strong>B</strong></button>
+                <button type="button" title="Italic"><em>i</em></button>
+                <button type="button" title="Strikethrough"><s>S</s></button>
+                <button type="button" title="Superscript">x²</button>
+              </span>
+              <span className="forum-toolbar-sep" />
+              <span className="forum-toolbar-group">
+                <button type="button" title="Heading">T↑</button>
+                <button type="button" title="Link">🔗</button>
+                <button type="button" title="Bullet list">• —</button>
+                <button type="button" title="Numbered list">1.</button>
+              </span>
+              <span className="forum-toolbar-sep" />
+              <span className="forum-toolbar-group">
+                <button type="button" title="Quote">"  "</button>
+                <button type="button" title="Code">&lt;/&gt;</button>
+              </span>
+            </div>
+            <div className="forum-create-actions">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => { notify("Draft saved locally."); history.back(); setCreatingPost(false); }}
+              >
+                Save Draft
+              </button>
+              <button type="submit" className="btn primary">Post</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   // ── Post detail sub-page ──────────────────────────────────────────────────
   if (selectedPost) {
@@ -507,50 +623,19 @@ export function Forum({
           </label>
         </div>
 
-        {/* New post form */}
-        <form
-          className="forum-new-post"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget,
-              f = new FormData(form),
-              title = String(f.get("title")).trim(),
-              body = String(f.get("body")).trim();
-            if (!title || !body) return;
-            update((s) => ({
-              ...s,
-              posts: [
-                { name: s.name, title, body, tag: activeCommunity?.name ?? "Local demo post" },
-                ...s.posts,
-              ].slice(0, 100),
-            }));
-            form.reset();
-            notify("Posted to your local demo only.");
-          }}
-        >
+        {/* Create post trigger */}
+        <div className="forum-new-post">
           <div className="forum-new-post-row">
             <div className="avatar">{state.name ? state.name[0] : "?"}</div>
-            <input
-              name="title"
-              required
-              maxLength={100}
-              placeholder="Start a discussion…"
-              className="forum-new-post-input"
-            />
+            <button
+              type="button"
+              className="forum-create-trigger"
+              onClick={() => setCreatingPost(true)}
+            >
+              + Create post
+            </button>
           </div>
-          <div className="forum-new-post-actions">
-            <label className="field" style={{ flex: 1 }}>
-              <textarea
-                name="body"
-                required
-                maxLength={600}
-                rows={2}
-                placeholder="What's on your mind?"
-              />
-            </label>
-            <button className="btn primary" style={{ alignSelf: "flex-end" }}>Post</button>
-          </div>
-        </form>
+        </div>
 
         {/* Post list */}
         {filteredPosts.length === 0 && (
