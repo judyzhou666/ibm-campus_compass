@@ -1878,7 +1878,7 @@ dialog { max-height:90dvh; overflow-y:auto; }
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 18px;
+  padding: 4px 0;
 }
 .forum-sidebar-heading {
   font-size: 14px;
