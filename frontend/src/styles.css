@@ -522,6 +522,7 @@ p {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
+  margin-top: 12px;
   margin-bottom: 20px;
 }
 .chip {
