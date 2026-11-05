@@ -315,6 +315,15 @@ export function Forum({
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [postQuery, setPostQuery] = useState("");
   const [creatingPost, setCreatingPost] = useState(false);
+  // likes: Set of "post:id" or "comment:postId:index"
+  const [likes, setLikes] = useState<Set<string>>(() => new Set());
+  function toggleLike(key: string) {
+    setLikes((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
 
   // Sync activeCommunityId when selected prop changes (e.g. from URL hash)
   useEffect(() => {
@@ -482,7 +491,14 @@ export function Forum({
             <h2 className="forum-detail-title">{selectedPost.title}</h2>
             <p className="forum-detail-body">{selectedPost.body}</p>
             <div className="forum-post-stats">
-              <span className="forum-stat">▲ {selectedPost.upvotes} upvotes</span>
+              <button
+                className={`forum-like-btn ${likes.has(`post:${selectedPost.id}`) ? "liked" : ""}`}
+                onClick={() => toggleLike(`post:${selectedPost.id}`)}
+                aria-pressed={likes.has(`post:${selectedPost.id}`)}
+                aria-label="Like post"
+              >
+                ▲ {selectedPost.upvotes + (likes.has(`post:${selectedPost.id}`) ? 1 : 0)}
+              </button>
               <span className="forum-stat">💬 {selectedPost.comments.length + selectedPost.commentCount} comments</span>
               <span className="forum-stat fineprint">Fictional demo post — not shared</span>
             </div>
@@ -491,16 +507,27 @@ export function Forum({
               {selectedPost.comments.length === 0 && (
                 <p className="forum-empty-comments">No comments yet. Be the first!</p>
               )}
-              {selectedPost.comments.map((c, i) => (
+              {selectedPost.comments.map((c, i) => {
+                const commentKey = `comment:${selectedPost.id}:${i}`;
+                return (
                 <div className="forum-comment" key={i}>
                   <div className="avatar avatar-sm">{c.name[0]}</div>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <span className="forum-comment-author">u/{c.name}</span>
                     <span className="forum-post-time"> · {c.timeAgo}</span>
                     <p className="forum-comment-text">{c.text}</p>
+                    <button
+                      className={`forum-comment-like ${likes.has(commentKey) ? "liked" : ""}`}
+                      onClick={() => toggleLike(commentKey)}
+                      aria-pressed={likes.has(commentKey)}
+                      aria-label="Like comment"
+                    >
+                      ▲ {likes.has(commentKey) ? 1 : 0}
+                    </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               <form
                 className="forum-comment-form"
                 onSubmit={(e) => {
@@ -655,7 +682,14 @@ export function Forum({
               </button>
               <p className="forum-post-preview">{p.body.slice(0, 160)}{p.body.length > 160 ? "…" : ""}</p>
               <div className="forum-post-footer">
-                <span className="forum-stat">▲ {p.upvotes}</span>
+                <button
+                  className={`forum-like-btn ${likes.has(`post:${p.id}`) ? "liked" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); toggleLike(`post:${p.id}`); }}
+                  aria-pressed={likes.has(`post:${p.id}`)}
+                  aria-label="Like post"
+                >
+                  ▲ {p.upvotes + (likes.has(`post:${p.id}`) ? 1 : 0)}
+                </button>
                 <button
                   className="forum-stat text-btn"
                   onClick={() => setSelectedPostId(p.id)}

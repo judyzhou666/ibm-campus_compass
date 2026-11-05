@@ -2082,6 +2082,50 @@ dialog { max-height:90dvh; overflow-y:auto; }
 .forum-stat.text-btn:hover {
   color: var(--green);
 }
+.forum-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.forum-like-btn:hover {
+  color: var(--green);
+  background: var(--mint);
+  border-color: var(--green);
+}
+.forum-like-btn.liked {
+  color: var(--green-dark);
+  background: var(--mint);
+  border-color: var(--green);
+}
+.forum-comment-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin-top: 4px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.forum-comment-like:hover {
+  color: var(--green);
+}
+.forum-comment-like.liked {
+  color: var(--green-dark);
+}
 .forum-empty {
   color: var(--muted);
   font-size: 13px;
