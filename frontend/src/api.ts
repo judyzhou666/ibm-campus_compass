@@ -39,12 +39,10 @@ export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
   })),
 });
 
+export const recommendationSettingsKey = (state: Schedule) =>
+  JSON.stringify(schedulePayload(state));
 export const planningKey = (state: DemoState) =>
-  JSON.stringify([
-    schedulePayload(state),
-    state.constraints,
-    state.preferences,
-  ]);
+  JSON.stringify([schedulePayload(state), state.constraints]);
 
 class InputError extends Error {}
 

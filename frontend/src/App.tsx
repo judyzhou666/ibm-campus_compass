@@ -1,3 +1,4 @@
+import { recommendationSettingsKey } from "./api.ts";
 import { StudentProfileCard, StudentProfilePage } from "./StudentProfile.tsx";
 import {
   discoveryState as withDiscoveryFilters,
@@ -125,13 +126,16 @@ export default function App() {
   );
   const settingsKey = preferenceSettingsKey(state);
   const preferenceRevision = proposalRevision(state);
+  const planningRevision = recommendationSettingsKey(state);
   useEffect(() => {
     proposals.dismiss();
-    setSessionSkipped([]);
   }, [page, preferenceRevision]);
   useEffect(() => {
+    setSessionSkipped([]);
+  }, [page, planningRevision]);
+  useEffect(() => {
     conversation.reset();
-  }, [preferenceRevision, conversation]);
+  }, [planningRevision, conversation]);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {

@@ -19,3 +19,9 @@ Checks: 2 focused Rust exclusion tests and 3 original ranking/evidence regressio
 Rust comparison candidates now use the same exploration/dismissal exclusion helper as recommendation selection, alongside existing access, preference, constraint and planned-event checks. Evidence reuses the operation's active-topic snapshot.
 
 Checks: 3 focused Rust filtering/diagnostic tests and 3 original ranking/evidence tests passed. Added assertions for hidden comparisons, eligible restored comparisons and enabled learning topics excluded during exploration. No captured response baseline changes were necessary.
+
+## 4. Recommendation request identity
+
+`planningKey` now uses only the transmitted recommendation schedule and current search constraints. Text, profile fields and guidance are excluded. Presentation/history identity remains separate. App invalidation uses recommendation settings rather than raw proposal revisions, while note/guidance-only preference saves preserve current search and draft suggestions. Actual ranking/schedule changes still reset obsolete requests.
+
+Checks: frontend typecheck and 13 focused key/history/refresh tests passed, including stable keys for notes/guidance/disabled goals, different keys for real constraints, and delayed-response acceptance versus rejection. Final browser checks cover effect-level deduplication and save behavior.

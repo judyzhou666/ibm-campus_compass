@@ -1,3 +1,4 @@
+import { recommendationSettingsKey } from "./api.ts";
 import { newBusyConflicts, busyConflictWarning } from "./busyCommitments.ts";
 import {
   DirectionSection,
@@ -355,13 +356,21 @@ export function MyPreferences({
               )
                 return s;
               saved = true;
+              const next = {
+                ...s,
+                ...draft,
+                preferences: migratePreferences(p),
+              };
+              const planningChanged =
+                recommendationSettingsKey(s) !==
+                recommendationSettingsKey(next);
               return {
                 ...s,
                 ...draft,
                 preferences: migratePreferences(p),
                 onboarded: true,
-                draft: [],
-                constraints: {},
+                draft: planningChanged ? [] : s.draft,
+                constraints: planningChanged ? {} : s.constraints,
               };
             });
             if (!saved) {
@@ -378,7 +387,11 @@ export function MyPreferences({
             );
           }}
         >
-          {brief ? <div className="quick-setup-fields">{sections}</div> : sections}
+          {brief ? (
+            <div className="quick-setup-fields">{sections}</div>
+          ) : (
+            sections
+          )}
           {conflicts.length > 0 && (
             <div
               className="notice"
