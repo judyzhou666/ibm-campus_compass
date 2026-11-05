@@ -55,6 +55,124 @@ pub fn ranking_details(
     ranking_with_topics(e, state, c, selected, &active_topics(state))
 }
 
+#[derive(Clone, Copy)]
+#[repr(usize)]
+enum RankingReason {
+    Topic,
+    Diversity,
+    Learning,
+    Goal,
+    Primary,
+    Participation,
+    PreferredTime,
+    Free,
+}
+impl RankingReason {
+    fn definition(self) -> (&'static str, u8) {
+        RANKING_WEIGHTS[self as usize]
+    }
+    fn explanation(self, e: &Event, state: &Schedule, c: &Constraints) -> String {
+        match self {
+            Self::Topic if c.topics.as_ref().is_some_and(|t| !t.is_empty()) => {
+                format!("Matches this search topic: {}", e.topic)
+            }
+            Self::Topic => format!("Matches saved interests or enabled topics: {}", e.topic),
+            Self::Diversity => {
+                "Adds a requested or saved topic not yet represented in these suggestions".into()
+            }
+            Self::Learning => format!("Connects to your enabled confirmed {} topic", e.topic),
+            Self::Goal => format!(
+                "Connects to an enabled structured goal mapped to {}",
+                e.topic
+            ),
+            Self::Primary => format!("Connects to your enabled primary-goal topic: {}", e.topic),
+            Self::Participation => format!(
+                "Matches your chosen fictional participation format: {}",
+                e.participation.as_str()
+            ),
+            Self::PreferredTime => format!("Matches your preferred {} time", state.preferred_time),
+            Self::Free => "Free admission".into(),
+        }
+    }
+}
+type RankingFacts = [(RankingReason, bool); 8];
+fn ranking_facts(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    selected: &[&Event],
+    active: &[String],
+) -> RankingFacts {
+    let topics = c
+        .topics
+        .as_deref()
+        .filter(|t| !t.is_empty())
+        .unwrap_or(active);
+    let topic_match = topics.contains(&e.topic);
+    let prefs = state.preferences.as_ref();
+    [
+        (RankingReason::Topic, topic_match),
+        (
+            RankingReason::Diversity,
+            topic_match && !selected.iter().any(|other| other.topic == e.topic),
+        ),
+        (
+            RankingReason::Learning,
+            prefs.is_some_and(|p| p.learning_topics.contains(&e.topic)),
+        ),
+        (
+            RankingReason::Goal,
+            prefs.is_some_and(|p| p.goal_topics.contains(&e.topic)),
+        ),
+        (
+            RankingReason::Primary,
+            prefs.is_some_and(|p| p.primary_topics.contains(&e.topic)),
+        ),
+        (
+            RankingReason::Participation,
+            e.participation != crate::model::ParticipationFormat::Unknown
+                && prefs.is_some_and(|p| {
+                    p.participation
+                        .iter()
+                        .any(|s| s == e.participation.as_str())
+                }),
+        ),
+        (RankingReason::PreferredTime, preferred(e, state)),
+        (RankingReason::Free, e.cost == 0),
+    ]
+}
+fn numerical_score(facts: &RankingFacts) -> u8 {
+    facts
+        .iter()
+        .filter(|(_, matched)| *matched)
+        .map(|(reason, _)| reason.definition().1)
+        .sum()
+}
+#[cfg(test)]
+std::thread_local! { static DETAIL_BUILDS: std::cell::Cell<usize> = const {std::cell::Cell::new(0)}; }
+fn details_from_facts(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    facts: &RankingFacts,
+    score: u8,
+) -> RankingDetails {
+    #[cfg(test)]
+    DETAIL_BUILDS.with(|count| count.set(count.get() + 1));
+    let matches = facts
+        .iter()
+        .filter(|(_, matched)| *matched)
+        .map(|(reason, _)| {
+            let (kind, points) = reason.definition();
+            RecommendationMatch {
+                kind,
+                points,
+                explanation: reason.explanation(e, state, c),
+            }
+        })
+        .collect();
+    RankingDetails { score, matches }
+}
 fn ranking_with_topics(
     e: &Event,
     state: &Schedule,
@@ -62,88 +180,8 @@ fn ranking_with_topics(
     selected: &[&Event],
     active: &[String],
 ) -> RankingDetails {
-    let current = c.topics.as_deref().filter(|t| !t.is_empty());
-    let topics = current.unwrap_or(active);
-    let topic_match = topics.contains(&e.topic);
-    let mut matches = Vec::new();
-    let mut add = |kind: &'static str, condition: bool, explanation: String| {
-        if condition {
-            let points = RANKING_WEIGHTS
-                .iter()
-                .find(|(key, _)| *key == kind)
-                .expect("known ranking reason")
-                .1;
-            matches.push(RecommendationMatch {
-                kind,
-                points,
-                explanation,
-            });
-        }
-    };
-    add(
-        "topic",
-        topic_match,
-        if current.is_some() {
-            format!("Matches this search topic: {}", e.topic)
-        } else {
-            format!("Matches saved interests or enabled topics: {}", e.topic)
-        },
-    );
-    add(
-        "diversity",
-        topic_match && !selected.iter().any(|other| other.topic == e.topic),
-        "Adds a requested or saved topic not yet represented in these suggestions".into(),
-    );
-    add(
-        "learning",
-        state
-            .preferences
-            .as_ref()
-            .is_some_and(|p| p.learning_topics.contains(&e.topic)),
-        format!("Connects to your enabled confirmed {} topic", e.topic),
-    );
-    add(
-        "goal",
-        state
-            .preferences
-            .as_ref()
-            .is_some_and(|p| p.goal_topics.contains(&e.topic)),
-        format!(
-            "Connects to an enabled structured goal mapped to {}",
-            e.topic
-        ),
-    );
-    add(
-        "primary",
-        state
-            .preferences
-            .as_ref()
-            .is_some_and(|p| p.primary_topics.contains(&e.topic)),
-        format!("Connects to your enabled primary-goal topic: {}", e.topic),
-    );
-    add(
-        "participation",
-        e.participation != crate::model::ParticipationFormat::Unknown
-            && state.preferences.as_ref().is_some_and(|p| {
-                p.participation
-                    .iter()
-                    .any(|s| s == e.participation.as_str())
-            }),
-        format!(
-            "Matches your chosen fictional participation format: {}",
-            e.participation.as_str()
-        ),
-    );
-    add(
-        "preferred_time",
-        preferred(e, state),
-        format!("Matches your preferred {} time", state.preferred_time),
-    );
-    add("free", e.cost == 0, "Free admission".into());
-    RankingDetails {
-        score: matches.iter().map(|m| m.points).sum(),
-        matches,
-    }
+    let facts = ranking_facts(e, state, c, selected, active);
+    details_from_facts(e, state, c, &facts, numerical_score(&facts))
 }
 
 pub fn issue(event: &Event, state: &Schedule, events: &[Event]) -> Option<String> {
@@ -303,28 +341,25 @@ pub fn recommend_with_details<'a>(
                     })
             })
             .map(|(index, event)| {
-                (
-                    index,
-                    RankedRecommendation {
-                        event,
-                        details: ranking_with_topics(event, state, c, &selected, &active),
-                    },
-                )
+                let facts = ranking_facts(event, state, c, &selected, &active);
+                let score = numerical_score(&facts);
+                (index, *event, facts, score)
             })
-            .max_by(|(left_index, left), (right_index, right)| {
-                left.details
-                    .score
-                    .cmp(&right.details.score)
-                    .then_with(|| right.event.day.cmp(&left.event.day))
-                    .then_with(|| right.event.start.cmp(&left.event.start))
-                    .then_with(|| right.event.id.cmp(&left.event.id))
-                    .then_with(|| right_index.cmp(left_index))
+            .max_by(|(li, left, _, ls), (ri, right, _, rs)| {
+                ls.cmp(rs)
+                    .then_with(|| right.day.cmp(&left.day))
+                    .then_with(|| right.start.cmp(&left.start))
+                    .then_with(|| right.id.cmp(&left.id))
+                    .then_with(|| ri.cmp(li))
             });
-        let Some((index, winner)) = best else {
+        let Some((index, event, facts, score)) = best else {
             break;
         };
         selected.push(candidates.remove(index));
-        recommendations.push(winner);
+        recommendations.push(RankedRecommendation {
+            event,
+            details: details_from_facts(event, state, c, &facts, score),
+        });
     }
     RecommendationBatch {
         recommendations,
@@ -853,6 +888,26 @@ mod ranking_optimization_tests {
         }
     }
 
+    #[test]
+    fn explanations_are_built_only_for_selected_recommendations() {
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        DETAIL_BUILDS.with(|count| count.set(0));
+        let c = Constraints {
+            limit: Some(5),
+            mode: Some(crate::model::RecommendationMode::Discovery),
+            ..Default::default()
+        };
+        let batch = recommend_with_details(&Schedule::default(), &c, &events);
+        assert_eq!(batch.recommendations.len(), 5);
+        assert_eq!(DETAIL_BUILDS.with(|count| count.get()), 5);
+        assert!(
+            batch
+                .recommendations
+                .iter()
+                .all(|r| r.details.score == r.details.matches.iter().map(|m| m.points).sum::<u8>())
+        );
+    }
     #[test]
     fn snapshots_do_not_cache_preferences_across_calls() {
         let events: Vec<Event> =

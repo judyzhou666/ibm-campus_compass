@@ -37,3 +37,9 @@ Checks: 9 focused TypeScript mode/lifecycle tests, 2 Rust lifecycle/intent tests
 App now enables its Dashboard request hook only on Dashboard. The hook is always called (React hook ordering is unchanged), cleans up inactive requests, and keys requests by its own constraints plus recommendation settings, not unrelated global chat filters.
 
 Checks: frontend typecheck and desktop/mobile `browser-review-seven.mjs` passed. The browser verifies zero `/api/plan` calls for Explore typing/submitted searches, refreshed Dashboard count after relevant changes, text/guidance-only Save preserving an in-flight chat and its filters (issue 4), and exploration/reset/discovery flows (issues 1/5). Both use the labelled simulated browser fallback; full backend/parity checks follow below.
+
+## 7. Rust numerical scoring and selected-only explanations
+
+Separated fixed ranking facts and numerical scores from explanation rendering. An enum indexes the unchanged weight table directly. The candidate loop compares numerical scores and borrowed IDs, then builds detailed explanations only for winners. API response construction continues to reuse winning details and the same active topics.
+
+Checks: 4 Rust optimization tests (including complete pre-refactor order/score/explanation/evidence cases and a selected-only detail-build counter), preference-related Rust tests and 31 exact shared comparisons passed. No score, tie-break or explanation baseline changes were needed for this optimization.
