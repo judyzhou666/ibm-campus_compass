@@ -1,4 +1,4 @@
-import { dayLabel } from "./config.ts";
+import { dayLabel, DEMO } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
 import { useEffect, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
@@ -720,6 +720,44 @@ export function Settings({
         description="A few useful settings for your demonstration."
       />
       <section className="panel">
+        <div className="settings-row">
+          <div>
+            <h3>Time zone</h3>
+            <p>
+              Overrides the campus default ({DEMO.time_zone}) for event time display. Resets on demo reset.
+            </p>
+          </div>
+          <select
+            value={state.timezone || DEMO.time_zone}
+            aria-label="Time zone"
+            style={{ fontSize: 13, padding: "6px 10px", borderRadius: 7, border: "1px solid var(--line)" }}
+            onChange={(e) => {
+              update((s) => ({ ...s, timezone: e.target.value }));
+              notify("Time zone updated.");
+            }}
+          >
+            {[
+              "America/New_York",
+              "America/Chicago",
+              "America/Denver",
+              "America/Los_Angeles",
+              "America/Anchorage",
+              "Pacific/Honolulu",
+              "Europe/London",
+              "Europe/Paris",
+              "Europe/Berlin",
+              "Asia/Tokyo",
+              "Asia/Shanghai",
+              "Asia/Singapore",
+              "Asia/Kolkata",
+              "Australia/Sydney",
+              "Pacific/Auckland",
+              "UTC",
+            ].map((tz) => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+        </div>
         <div className="settings-row">
           <div>
             <h3>Leave time to get there</h3>

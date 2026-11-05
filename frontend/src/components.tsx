@@ -53,12 +53,21 @@ export function Empty({
 export function Heading({
   title,
   description,
+  timezone,
   children,
 }: {
   title: string;
   description: string;
+  timezone?: string;
   children?: ReactNode;
 }) {
+  const tz = timezone || DEMO.time_zone;
+  const todayLabel = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: tz,
+  }).format(new Date());
   return (
     <div className="page-head">
       <div>
@@ -67,7 +76,7 @@ export function Heading({
       </div>
       {children || (
         <span className="date">
-          {dayLabel(0)}, {DEMO.week_start.slice(0, 4)} · Demo
+          {todayLabel} · Demo
         </span>
       )}
     </div>

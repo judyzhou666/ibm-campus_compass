@@ -41,7 +41,7 @@ export const WEEK_LABEL = `${dayLabel(0)}–${dayLabel(4)}, ${DEMO.week_start.sl
 export function storageKey(c = DEMO) {
   // Keep legacy default state; another configuration gets a separate preserved namespace.
   return c.campus_id === "fictional-campus" &&
-    c.week_start === "2026-10-19" &&
+    c.week_start === "2026-11-02" &&
     c.time_zone === "America/New_York"
     ? "campus-compass-demo-v1"
     : `campus-compass-demo-v1:${c.campus_id}:${c.week_start}:${c.time_zone}`;

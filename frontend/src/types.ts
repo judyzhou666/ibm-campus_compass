@@ -65,6 +65,7 @@ export interface DemoState extends Schedule {
   onboarded: boolean;
   major: string;
   goals: string;
+  timezone: string;
   saved: string[];
   rsvps: string[];
   joined: string[];

@@ -409,6 +409,7 @@ export default function App() {
               <Heading
                 title={`Welcome back, ${state.name}.`}
                 description="A little direction. A world of campus possibilities."
+                timezone={state.timezone}
               />
               <div className="layout">
                 <div className="stack">
@@ -566,6 +567,7 @@ export default function App() {
                     ? "Your saved possibilities"
                     : "Explore campus events"
                 }
+                timezone={state.timezone}
                 description={
                   page === "saved"
                     ? "Keep the things that catch your eye in one place."
@@ -617,6 +619,7 @@ export default function App() {
               <Heading
                 title="Your week, with a little guidance."
                 description="Discover opportunities that fit your interests and your actual free time."
+                timezone={state.timezone}
               >
                 <button
                   className="btn"
@@ -916,6 +919,7 @@ export default function App() {
               <Heading
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."
+                timezone={state.timezone}
               >
                 <Button onClick={exportCalendar}>
                   <Icon name="download" />
