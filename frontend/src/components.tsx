@@ -1,3 +1,4 @@
+import { RecommendationInfo } from "./RecommendationPresentation.tsx";
 import { DEMO, dayLabel, isTimeZone, timeIn } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -113,13 +114,21 @@ export function EventCard({
   onSave,
   onDetail,
   onCalendar,
+  onDecline,
+  onAnother,
+  matchReasons,
+  alternativeIds,
 }: {
   event: CampusEvent;
+  alternativeIds?: string[];
+  matchReasons?: import("./planner.ts").RecommendationMatch[];
   state: DemoState;
   onAdd: (id: string) => void;
   onSave: (id: string) => void;
   onDetail: (id: string) => void;
   onCalendar: () => void;
+  onDecline?: (id: string) => void;
+  onAnother?: (id: string) => void;
 }) {
   const inPlan = state.plan.includes(e.id),
     problem = issue(e, state),
@@ -166,11 +175,24 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
-        <div className="reason">
-          {problem ||
-            `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
-        </div>
-        <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
+        <RecommendationInfo
+          event={e}
+          state={state}
+          matches={matchReasons}
+          alternativeIds={alternativeIds}
+        />
+        {onDecline && !inPlan && (
+          <>
+            <Button onClick={() => onDecline(e.id)}>Not for me</Button>
+            {onAnother && (
+              <Button onClick={() => onAnother(e.id)}>Show another</Button>
+            )}
+          </>
+        )}
+        <Button
+          disabled={!inPlan && !!problem}
+          onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}
+        >
           <Icon name={inPlan ? "check" : "plus"} />
           {inPlan ? "In your calendar" : "Add to calendar"}
         </Button>
@@ -215,6 +237,14 @@ export function Week({
                 <strong>{dayLabel(i)}</strong>
               </div>
               {items.map((e) => {
+                const plannedEvent =
+                  e.kind === "event"
+                    ? EVENTS.find((event) => event.id === e.id)
+                    : undefined;
+                const conflict =
+                  plannedEvent && !state.cancelled.includes(e.id)
+                    ? issue(plannedEvent, state)
+                    : null;
                 const cancelled = state.cancelled.includes(e.id),
                   content = (
                     <>
@@ -224,6 +254,11 @@ export function Week({
                           ? "Cancelled"
                           : `${time(e.start)}${full ? " – " + time(e.end) : ""}`}
                       </span>
+                      {conflict && (
+                        <span className="event-problem">
+                          Conflict: {conflict}
+                        </span>
+                      )}
                     </>
                   );
                 return e.kind === "event" ? (
@@ -428,6 +463,7 @@ export function EventDetails({
                   Eligibility: e.eligibility || "Unknown",
                   RSVP: e.rsvp || "Unknown",
                   Availability: e.availability || "Unknown",
+                  "Participation format": e.participation || "unknown",
                   "Food status": e.food_status || "Unknown",
                   Verification: e.verification_status || "Not verified",
                 }).map(([label, value]) => (

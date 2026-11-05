@@ -36,9 +36,17 @@ test("watsonx and server-fallback modes are labelled honestly", async () => {
       understood: true,
       constraints: { topics: ["Career"] },
       event_ids: ["e1"],
+      match_reasons: [
+        {
+          event_id: "e1",
+          score: 1,
+          matches: [{ kind: "free", points: 1, explanation: "Free admission" }],
+        },
+      ],
     });
   const r = await requestPlan("career events", {}, fresh(), live);
   assert.equal(r.mode, "watsonx");
+  assert.equal(r.matchReasons[0]?.event_id, "e1");
   assert.equal(planModeLabel(r), "Rust planner · IBM watsonx");
   const fellBack: typeof fetch = async () =>
     Response.json({
@@ -294,4 +302,127 @@ test("result counts remain supported without bypassing numeric budget rejection"
     requestPlan("career up to 3 events under $5", {}, fresh(), offline),
     /Numeric budgets are not supported/,
   );
+});
+
+test("structured Rust match reasons are validated; legacy responses may omit them", async () => {
+  const response = {
+    mode: "simulated",
+    understood: true,
+    constraints: {},
+    event_ids: ["e1"],
+  };
+  const old = await requestPlan("Find events", {}, fresh(), async () =>
+    Response.json(response),
+  );
+  assert.equal(old.source, "rust");
+  assert.deepEqual(old.matchReasons, []);
+  for (const matchReasons of [
+    [{ event_id: "fake", score: 1, matches: [] }],
+    [{ event_id: "e1", score: 999, matches: [] }],
+    [
+      {
+        event_id: "e1",
+        score: 1,
+        matches: [{ kind: "inferred-ability", points: 1, explanation: "bad" }],
+      },
+    ],
+    [
+      {
+        event_id: "e1",
+        score: 2,
+        matches: [{ kind: "free", points: 2, explanation: "bad" }],
+      },
+    ],
+    [
+      {
+        event_id: "e1",
+        score: 2,
+        matches: [
+          { kind: "free", points: 1, explanation: "duplicate" },
+          { kind: "free", points: 1, explanation: "duplicate" },
+        ],
+      },
+    ],
+  ]) {
+    for (const key of ["match_reasons", "matchReasons"]) {
+      const result = await requestPlan("Find events", {}, fresh(), async () =>
+        Response.json({ ...response, [key]: matchReasons }),
+      );
+      assert.equal(result.source, "browser-fallback");
+      assert.deepEqual(result.evidence, []);
+    }
+  }
+});
+
+test("canonical match_reasons preserves reason content and accepts an older server alias", async () => {
+  const reasons = [
+    {
+      event_id: "e1",
+      score: 1,
+      matches: [{ kind: "free", points: 1, explanation: "Free admission" }],
+    },
+  ];
+  for (const key of ["match_reasons", "matchReasons"]) {
+    const result = await requestPlan("Find events", {}, fresh(), async () =>
+      Response.json({
+        mode: "simulated",
+        understood: true,
+        constraints: {},
+        event_ids: ["e1"],
+        [key]: reasons,
+      }),
+    );
+    assert.equal(result.source, "rust");
+    assert.deepEqual(result.matchReasons, reasons);
+  }
+});
+test("canonical match_reasons takes precedence over an older server alias", async () => {
+  const canonical = [
+    {
+      event_id: "e1",
+      score: 1,
+      matches: [
+        { kind: "free", points: 1, explanation: "Canonical free admission" },
+      ],
+    },
+  ];
+  const result = await requestPlan("Find events", {}, fresh(), async () =>
+    Response.json({
+      mode: "simulated",
+      understood: true,
+      constraints: {},
+      event_ids: ["e1"],
+      match_reasons: canonical,
+      matchReasons: [{ event_id: "fake", score: 999, matches: [] }],
+    }),
+  );
+  assert.equal(result.source, "rust");
+  assert.deepEqual(result.matchReasons, canonical);
+});
+test("invalid canonical match_reasons cannot bypass validation through the legacy alias", async () => {
+  const legacy = [
+    {
+      event_id: "e1",
+      score: 1,
+      matches: [
+        { kind: "free", points: 1, explanation: "Legacy free admission" },
+      ],
+    },
+  ];
+  for (const invalid of [
+    null,
+    [{ event_id: "fake", score: 999, matches: [] }],
+  ]) {
+    const result = await requestPlan("Find events", {}, fresh(), async () =>
+      Response.json({
+        mode: "simulated",
+        understood: true,
+        constraints: {},
+        event_ids: ["e1"],
+        match_reasons: invalid,
+        matchReasons: legacy,
+      }),
+    );
+    assert.equal(result.source, "browser-fallback");
+  }
 });

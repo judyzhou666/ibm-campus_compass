@@ -1,6 +1,308 @@
 # Campus Compass
 
-A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
+A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
+
+## Doris synchronization with main bcabf24 (PR #8)
+
+Merging main brought in PR #8's forum redesign, event-detail overlay, time zone setting, current-week calendar (Nov 2) and eight new fictional events (`e31`–`e38`). Conflicts were resolved as follows:
+- `data/events.json`: main's 38 events, each keeping Doris's `participation` field. The new events use `"unknown"` because their records don't say how people take part.
+- `components.tsx`: main's full-page EventDetails, with Doris's "Participation format" row added to the evidence list. Doris's EventCard and Week changes are unchanged.
+- `Pages.tsx`: Doris's move of Profile into `MyPreferences` plus main's forum and settings changes. Only the imports actually used are kept.
+- `state.ts` and `styles.css`: both sides combined; no CSS selector is added by both.
+
+The new events change some planner results, so the pre-optimization snapshots were re-recorded without weakening them. The original pre-optimization TypeScript planner (`bcfb173`) and Rust binary (`89a405f`) were run on the merged catalog. They matched the current code exactly for all ids, scores, explanations, evidence and diagnostics; the only difference was the intended `match_reasons` field name. Only then were `tests/fixtures/planner-before-optimization.json` and `tests/fixtures/rust-ranking-before-optimization.json` re-recorded. The Academic discovery expectation is now `e1, e14, e31`, the same online and offline. Legacy posts now gain a stable `legacy-N` id on restore, and the migration test checks that.
+
+Verification: `npm test` (186 TypeScript tests and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 35 Rust tests, `cargo build --locked` and `npm run test:api` all pass. The browser journeys and the frozen evaluation were not rerun.
+
+## Seven follow-up review fixes (local Doris work)
+
+Temporary beyond-interest exploration is one request at a time unless explicitly continued; ordinary messages restore saved-topic inclusion, and reset clears exploration/mode. Explicit discovery intent outranks incidental words such as “make friends this week.” Rust no-match diagnostics and comparison alternatives share dismissal/exploration exclusions. Request keys exclude local notes/profile text/guidance; note-only Save preserves active filters and pending responses. Dashboard requests are disabled off Dashboard through an always-mounted hook. Rust now scores numerical facts without formatting strings for unselected candidates; winners retain unchanged explanations and tie-breaking.
+
+See [the per-issue implementation and verification record](docs/judy-seven-review.md) for exact commits, changed paths and checks. Fresh final checks passed: frontend typecheck/build, 182 TypeScript tests, 5 Wiki tests, planner assertions, Rust fmt/check/Clippy/build and 35 tests, API integration with 20 response fixtures, and 31 exact shared comparisons. Focused desktop/mobile simulated browser checks cover request counts, note-only saves, exploration/reset, mode switching, explicit RSVP/busy conflicts and preference confirmation. Live watsonx interpretation, the full browser matrix and frozen evaluation remain unverified in this pass. No push or PR action has been performed.
+
+Demo locally with `npm run build`, `cargo run --locked`, then http://localhost:4173/#planner. Click **Explore beyond my interests**, then ask **Tuesday afternoon events**; saved interests are included again. **start over** clears mode/exploration. **explore social events to make friends this week** selects discovery; **build my weekly schedule** selects a compatible plan. Optional regression: `scripts/browser-review-seven.mjs` with the existing Playwright configuration.
+
+## Final verification of eight review fixes
+
+Verified on Doris: original per-message refresh filters (55f9950), supported-topic proposal interception (3c35dec), compatible default recommendation modes (4df2964), recommendation-only soft preferences (62bb746), honest missing profile facts (bcfb173), TypeScript ranking reuse (89a405f), Rust ranking reuse (00d2c18), and canonical `match_reasons` with legacy read compatibility (005e086). Main’s watsonx integration is retained through merge 8a2d021; no new application changes were needed for final verification.
+
+Fresh pre-push checks passed: `npm run typecheck`, `npm run build`, full `npm test` (planner assertions, 175 TypeScript tests and 5 Wiki fixtures; rsync is a test prerequisite), `cargo fmt --check`, `cargo check --locked`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (29 tests including local watsonx mocks), `cargo build --locked`, `npm run test:api` (including 20 complete response snapshots), and `node --import tsx tests/preference-parity.ts` (25 exact comparisons). No conflict markers or uncommitted application changes remained. Live IBM calls, the full browser matrix and frozen evaluation were not rerun in this final pass.
+
+Run/demo remains `npm ci`, `npm run build`, `cargo run --locked`, then http://localhost:4173. Simulated mode needs no IBM credentials; optional watsonx configuration and visible fallback behavior remain documented in `docs/backend.md`. The existing review-specific sections below describe each fix and its demo/regression commands.
+
+## Doris synchronization with main 6a2ab4b
+
+The conflict in `backend/src/lib.rs` was resolved by combining main’s provider-aware `AppState`, live watsonx dispatch and deterministic safety precheck with Doris’s operation-local ranking batch. The response keeps main’s actual interpreter `mode`, `provider` and optional fallback `notice`, and adds exactly one canonical `match_reasons` field from the cached ranking details. Evidence reuses the batch topics. Health/config/plan/validate/enroll routes, body limits, static serving and explicit RSVP gates remain intact. Root `mode` identifies the interpreter (`simulated` or `watsonx`); `constraints.mode` independently controls compatible plans versus discovery.
+
+Main’s watsonx adapter, model configuration, IAM/token handling, timeout/weekday parsing, startup, dependencies, Bob evidence scaffolding and Wiki changes are preserved. The frontend retains main’s mode/notice handling alongside the feature branch’s filters, preference safeguards, historical refresh snapshots, profile work and canonical-field adapter. No model protocol or live behavior was newly invented during conflict resolution.
+
+Fresh verification: Rust formatting/check/build/Clippy, all 29 Rust tests (including main’s local watsonx success, failure and safety mocks), frontend typecheck/build, all 175 TypeScript tests, planner assertions, API integration with 20 complete response fixtures, and 25 exact shared comparisons passed. Mock handler checks additionally verify canonical match reasons for watsonx success, fallback and clarification responses. No live IBM request, full browser matrix or frozen evaluation was run in this merge verification. Start locally with `npm ci`, `npm run build`, `cargo run --locked`; optional watsonx configuration remains documented in `docs/backend.md` and `.env.example`. Older feature-stage integration status notes below are historical.
+
+## Recommendation API field consistency
+
+Rust `/api/plan` now emits `match_reasons`, with the same event IDs, scores and ordered explanation entries. It no longer emits the camel-case wire key. Response types, API reads, shared comparisons and captured response fixtures use the canonical name. React props, adapter results and stored chat `matchReasons` are intentionally unchanged.
+
+Compatibility was checked against the in-repo optional-field contract: older frontend bundles can still plan, but may omit explanations until upgraded. The new adapter reads an older server’s `matchReasons` only when the canonical key is absent, and still accepts responses without explanations. Canonical data takes precedence and is validated even when a legacy alias is present. No scoring logic changed. See `docs/backend.md` for the contract and migration details.
+
+Fresh verification: frontend typecheck/build, 174 TypeScript tests, Rust formatting/check/build/Clippy and 17 Rust tests, API integration with 20 response fixtures, and 25 exact Rust/TypeScript comparisons passed. The API tests cover both spellings, omission, canonical precedence and malformed canonical data; shared comparisons assert the server does not emit the old key. Browser journeys and frozen evaluation were not rerun for this field-only change.
+
+## Rust ranking calculation optimization
+
+Rust now returns an operation-local recommendation batch with the normalized active topics and each selected event’s computed score/matches. Feasible candidates are scored once per selection round, and tie comparisons borrow event IDs instead of cloning them. The HTTP response reuses winning details and the same active-topic snapshot for evidence; it does not rerun ranking for selected events. Existing event-only `recommend`, standalone `ranking_details` and `evidence` callers remain compatible. No state is cached across requests, and eligibility, scheduling, weights, diversity and tie-breaking are unchanged.
+
+Before refactoring, 20 complete API responses were captured in `tests/fixtures/rust-ranking-before-optimization.json`. Rust tests check their order, scores, ordered explanations and evidence, plus standalone-helper equivalence, fresh preferences between calls and ordinal-ID/first-index ties. API integration compares the complete response bodies, preserving the public JSON contract.
+
+Fresh verification: `cargo fmt`/`cargo fmt --check`, `cargo check --locked`, `cargo test --locked` (17 tests), Clippy with warnings denied, Rust build, frontend typecheck, API integration with the 20 baseline responses, and 25 exact Rust/TypeScript shared comparisons passed. Run `cargo test --locked ranking_optimization_tests`, `npm run test:api` and `node --import tsx tests/preference-parity.ts` after building. Browser journeys, full frontend tests and frozen evaluation were not rerun for this Rust-only refactor.
+
+## Frontend ranking calculation optimization
+
+Each recommendation operation now builds one normalized preference projection and one snapshot of planned/cancelled event IDs. Candidate validation reuses that context, and each feasible candidate is scored once per greedy selection round. Sorting compares stored scores; `recommendWithReasons` reuses the winning score and explanations instead of recomputing them. Active-topic and practical-preference helpers accept an optional projection while existing callers retain fresh normalization. Standalone validation still applies the same real eligibility and scheduling checks. Nothing is cached across user actions.
+
+Behavior is locked against 20 cases captured from pre-refactor commit `bcfb173`: event order, scores, ordered explanation fingerprints, all-event scoring/validation diagnostics and the evaluation-only free-admission baseline match exactly. Additional instrumented tests check one migration/planned-ID scan per operation, one score per candidate per discovery round, and fresh results after in-place preference/schedule changes. No weights, tie-breaking, filtering or wording were changed.
+
+Fresh verification: build/typecheck, planner assertions, all 171 TypeScript tests (including 23 optimization checks), API integration and 25 exact Rust/shared-fixture comparisons passed. Run `node --import tsx --test tests/planner-optimization.test.ts` for focused regression checks. Rust source is unchanged; Rust unit checks, browser journeys and frozen evaluation output were not rerun for this refactor.
+
+## Honest profile defaults
+
+Missing student status and university now default to empty strings, including older stored data without these fields. The card, overview and Basic Information show **Status not added** and **University not added**. Existing saved values (including explicitly supplied fictional demo values) are retained; the configured campus identity is no longer a silent personal-profile default. With no reliable provenance on older saved strings, the app does not guess whether they were entered by a user. Blank values remain blank when saved and reloaded. Profile editing, Save/Cancel and persistence reuse the same state flow; preferences and recommendations are unchanged.
+
+Fresh verification: frontend build/typecheck, 7 focused profile tests and desktop/mobile profile browser checks passed for new/legacy data, saved values, blank/whitespace fields, missing-value labels, Save/Cancel and reload. Run `node --import tsx --test tests/student-profile.test.ts` and the optional `scripts/browser-student-profile.mjs` against the running site. No Rust or full application/browser suites were rerun for this profile-only change.
+
+## Recommendation preferences versus explicit choices
+
+Saved `free_only` and preferred availability windows filter recommendations in both Rust and TypeScript, but no longer veto explicit Add/RSVP or mark an already-planned event invalid. Recommendation scoring and filters are unchanged. Incoming recommendation responses also retain the preference check. The shared eligibility validator now checks only genuine validity, access/full/membership, cancellation, actual busy/planned conflicts and travel time; RSVP confirmation is still required when applicable.
+
+To demo, enable **Recommend only free admission** and set a preferred window that does not include Wednesday evening. Recommendations omit the paid Ceramics beginner workshop (e29), but you may explicitly choose it from Explore if it passes real scheduling/access checks. Changing preferences after planning does not invalidate it. Adding an overlapping real busy commitment still creates a conflict, and adding another incompatible event remains blocked. Nothing is added automatically.
+
+Fresh verification: frontend build/typecheck, planner assertions, 145 TypeScript tests, 14 Rust tests, Rust formatting/Clippy/build, API integration, and 25 exact shared comparisons passed. New checks cover explicit paid additions, outside-window RSVP, already-planned validity, true busy/plan conflicts, eligibility, and unchanged ranking/filtering. Rust API checks separately cover validation/enrollment and required RSVP. Run `node --import tsx --test tests/soft-preferences.test.ts tests/preferences.test.ts`, `cargo test --locked`, `npm run test:api` and `node --import tsx tests/preference-parity.ts` after building. The full browser matrix and frozen evaluation were not rerun. Older hard-preference descriptions below are historical and superseded here.
+
+## Consistent recommendation modes
+
+Ordinary Planner chat, Dashboard and the main briefing default to overlap-free plan-building, matching both planners when mode is omitted. Follow-ups and Show another retain an explicitly selected mode. Discover alternatives and explicit discover/browse/explore wording select discovery; the Across disciplines briefing and Explore outside my interests control also explicitly request discovery. Weekly-plan wording and Build weekly plan select plan-building. Schedule replacement uses plan-building with its existing one-result limit. Refresh preserves the selected message’s original mode (or an explicit override) and resolved filters with current preferences. Discovery options are labelled as alternatives, with named overlap warnings; they are never presented as a combined compatible schedule.
+
+Both Rust and TypeScript retain the backward-compatible omitted-mode contract: mutually compatible recommendations. Only explicit discovery bypasses compatibility among the unplanned suggestions; existing commitments, plans, eligibility, travel buffers, budget/free-admission and other hard filters remain enforced. Scores, ranking and RSVP/latest-schedule gates are unchanged.
+
+Fresh verification: build/typecheck; 140 TypeScript tests; 13 Rust tests; Rust formatting, Clippy and build; API integration; 25 shared-fixture/goal/mode comparisons plus Rust-backed ordinary-chat/weekly-plan/discovery and refresh checks; and the focused mobile mode-switch browser journey passed. The browser check covers an ordinary compatible search, named overlapping discovery alternatives, a compatible weekly plan and switching back. Run `node --import tsx --test tests/recommendation-modes.test.ts tests/recommendation-refresh.test.ts`, `cargo test --locked`, `node --import tsx tests/preference-parity.ts` and `npm run test:api` after building. Full browser matrix and frozen evaluation were not rerun.
+
+## Chat proposal interception
+
+Only explicit interest statements that `proposalTopic()` maps to supported topics open the preference proposal. Ordinary requests such as “Show me Friday events I'm interested in” and unsupported subjects continue to the normal planner; unrecognized interest wording stays in the input for correction and never opens an empty proposal. Supported use-once, review, explicit confirmation, dismiss and stale-proposal safeguards are unchanged.
+
+Fresh checks: frontend build/typecheck; 73 proposal/preference/workflow tests; desktop/mobile proposal browser regression covering Friday search, unsupported input with a nonblank planner reply, unchanged preferences before confirmation, and the existing review/confirm/use-once/dismiss flows. Run `node --import tsx --test tests/preference-proposals.test.ts tests/preferences.test.ts tests/workflows.test.ts` or the optional `scripts/browser-preference-proposals.mjs` against the running site. No Rust/API integration or full browser matrix was rerun for this App-only behavior change.
+
+## Recommendation refresh snapshots
+
+Each new recommendation message stores a validated copy of its resolved search filters. **Refresh suggestions** reuses the selected message’s snapshot with current saved preferences and schedule, changing only an explicitly requested mode. It appends a new response and preserves other messages and their snapshots. Topic/day/time bounds, food/free-admission filters, exclusions, exploration and explicit result limits are retained. Historical filters survive browser reload even though global chat filters reset. Older messages without a valid snapshot ask for a complete restatement; refresh does not substitute current global defaults or guess missing requirements.
+
+Fresh verification for this scoped fix: frontend build/typecheck and all 138 TypeScript tests passed, including Career on Tuesday after 3 PM → preference change → refresh, independent message refreshes, all supported filters, reload and legacy/invalid fallback. A focused browser check verified the selected historical Refresh suggestions button after reload and changed preferences, preserving the other message. Rust checks, API integration and the full browser matrix were not rerun. Run `node --import tsx --test tests/recommendation-refresh.test.ts tests/recommendation-presentation.test.ts tests/workflows.test.ts tests/api.test.ts` for the 80 relevant checks. No backend ranking or contract change is required.
+
+## My Profile
+
+The sidebar student card and header avatar open **My Profile** at `#my-profile`. The existing **My Preferences** route remains `#profile`. Profile uses the existing palette, typography, panels, buttons and initials avatar; no image upload or new app dependencies were added. On small screens, open the navigation menu for the card. Navigation can scroll above the card to keep **View Profile** accessible.
+
+The profile page groups Basic Information, About Me, My Interests, Campus Involvement and My Activity. **Edit Profile** updates the shared demo display name and optional student status, university and short bio; Save persists through the existing browser demo state, while Cancel/navigation warn before discarding edits. The demo display name is reused, but missing status and university remain blank with explicit not-added labels. Saved and intentionally loaded fictional profile fields are preserved; no personal facts are silently inferred. Interests remain editable only through My Preferences. Joined communities, saved/planned events and demo RSVP counts reflect existing local state, not verified membership or attendance.
+
+New optional `studentProfile` fields restore safely for older sessions. They are local browser data, not a public profile or backend account. Profile notes are excluded from existing recommendation payloads. Existing storage-unavailable feedback remains applicable; no cloud profile sync is implemented. Planners, recommendations, discussions and the My Preferences implementation are unchanged.
+
+To test locally, run `npm ci`, then `npm run dev` and open http://localhost:5173/#my-profile. Choose **Use sample preferences** or **Skip for now** if first-time setup opens. Test Edit Profile → Save, reload, Cancel, declined navigation and the interests link. Vite can use the existing Rust service on port 4173; without it the existing labelled browser recommendation fallback applies. Alternatively run `npm run build` and `cargo run --locked`, then open http://localhost:4173/#my-profile.
+
+Fresh verification for this frontend change: build/typecheck, planner assertions and 134 TypeScript tests passed. The focused browser regression at 1280px/390px verified card keyboard navigation, five sections, draft isolation, Save/Cancel, focus, reload persistence, discard warnings, the unchanged preferences route and no horizontal overflow. Run `node --import tsx --test tests/student-profile.test.ts`; optional Playwright check: `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs CAMPUS_TEST_URL=http://127.0.0.1:5173 node scripts/browser-student-profile.mjs`. No Rust checks, live integration or full browser matrix were rerun for this profile-only change. Prior verification below is historical.
+
+## First-time setup popup — October 23, 2026
+
+The first-visit **Quick preference setup** popup now uses the browser's proportions instead of the shared 530px dialog width: 92% of the viewport width (up to 1440px) and 88% of its height on desktop. Direction/interests and participation/guidance appear side by side. Only the questions scroll; the early Skip action and bottom Save/open-full-preferences actions stay visible. Below 760px the questions stack, with 12px clearance around the popup. Existing selection, draft, Save and Skip behavior is retained.
+
+This adjustment is scoped to the first-time dialog in `frontend/src/MyPreferences.tsx` and its `.quick-preference-dialog` CSS. The full **My Preferences** page (`#profile`), other dialogs, recommendation logic and Rust backend are unchanged. To inspect setup without resetting an existing demo session, use a fresh browser profile/private window with the normal local run instructions below.
+
+Verified for this layout change: `npm run build`, `npm test` (127 TypeScript tests, 5 Wiki tests and planner assertions), and `git diff --check`. Browser inspection at 1280×900 and 390×844 confirmed the two-column/single-column layouts, no horizontal dialog overflow, and visible footer actions; changing and saving a setup choice persisted into the full preferences page. The full browser regression matrix was not rerun. That layout-only commit did not address the behavioral findings; the repair described below does.
+
+## Review behavior repairs
+
+Dashboard category and text filters now exclude nonmatching candidates before either planner applies the saved result count. Academic on fresh sample state returns e1/e14/e26 rather than filtering an already truncated list. The existing bounded dismissed-ID request field carries transient candidate exclusions; no new backend contract, ranking weights or persistent preferences were introduced.
+
+Explore and Saved consume current-view skips for both Not for me and Show another. Hiding a Saved card leaves its bookmark intact. These view skips reset on navigation or saved-preference changes. Planner skips apply to every request in the current conversation search, including ordinary follow-ups and replacements. Explicit new searches (a supplied initial constraint set), start over/reset, refresh, new chat and preference-reset boundaries clear them. Follow-up time/topic refinements do not clear them. They are never saved as long-term interests or hidden-event choices.
+
+Confirmed Clear personalization resets the entire editor draft, unfinished busy/window controls, baselines and validation errors, including when saved personalization was already empty. Saved busy commitments, hard requirements, plans and RSVP records remain.
+
+Fresh verification for this repair: frontend typecheck/build, planner assertions, 130 TypeScript tests, 5 Wiki tests, and API integration (including Academic and retained chat exclusions through Rust and fallback) passed. Fresh focused browser checks on top of setup-layout commit ce7f756 cover desktop Rust/mobile fallback discovery controls, desktop/mobile editor clear, repeat-clear, draft/error reset and preservation, plus brief-setup keyboard/focus, Save/Skip and loading/error/retry. The setup layout/CSS is preserved. Run the optional scripts with the existing Playwright environment: scripts/browser-discovery-fixes.mjs and scripts/browser-preference-drafts.mjs after npm run build and starting the Rust service. No fresh Rust unit/Clippy, frozen evaluation, or full browser matrix was run; Rust implementation and ranking are unchanged. Earlier verification below is historical.
+
+## Doris branch integration
+
+Integrated the remote clarification-context fix while preserving the preference features and draft-entry repairs. Fresh merge verification passed: frontend build/type checking, planner assertions, 127 TypeScript tests, 5 Wiki tests, and Rust API integration. No new browser journey or Rust unit/Clippy run was performed for this merge. Run with the existing build/start instructions below; multi-part clarification must retain every unresolved requirement before returning suggestions. Existing fictional-demo and integration limitations remain unchanged.
+
+## Draft-entry and navigation repairs
+
+Unadded busy commitments and availability windows now count as unsaved edits. Save rejects incomplete entries with an accessible message and focuses the relevant field; Add stages an entry, Clear entry discards it, and Cancel resets both staged controls and the preference draft. Navigation warns before losing typed entries. The brand link prevents duplicate default navigation, so declining produces one discard prompt; modified clicks retain normal browser link behavior. The API integration expectation now uses plan-building for ordinary requests.
+
+Fresh repair verification: frontend build/type checking, full `npm test` (117 TypeScript tests, 5 Wiki tests and planner assertions), `npm run test:api`, desktop/mobile draft-entry regressions and desktop-online/mobile-offline busy-conflict journeys passed. Browser regression: `scripts/browser-preference-drafts.mjs` with the existing optional Playwright environment. Rust unit/Clippy and frozen evaluation were not rerun in this repair; prior results below remain historical.
+
+## Current preference flow
+
+First-time setup is optional: **Save quick setup**, **Skip for now**, or open full preferences. It uses the same editor, draft and section components as **My Preferences** (`#profile`), not another preference store. Skipping preserves existing saved/sample choices. Dirty skipping/navigation requires confirmation. Full preferences remain available from navigation and **Using your preferences → Edit preferences**.
+
+The five sections cover direction/interests, learning connections, participation/guidance, time/practical needs and personalization controls. Draft edits have no recommendation effect until Save; Cancel discards them after warning. Structured goals are used only when enabled. Learning notes never become matching topics automatically: select a supported topic, explicitly confirm it and Save. Manual/chat provenance remains visible. Counts 1/3/5 limit displayed suggestions, not attendance. Guidance offers concise information, one optional first step, a short checklist or known requirements/unknowns; optional preparation is not an official requirement.
+
+A supported interest statement offers **This search only**, **Review and save**, or **Dismiss**. Review lists exact additions, existing provenance and every topic that will become enabled. Only confirmation changes saved topics. Unsupported/negated subjects offer manual selection. Saving/clearing preferences preserves plans, RSVP and conversations; old chat recommendations retain snapshots, receive previous-settings labels when relevant settings change, and offer Refresh suggestions. Deleted, dismissed and obsolete proposals/responses cannot restore preferences. **Not for me** and **Show another** are session-only; legacy saved hidden IDs remain explicitly restorable.
+
+## Exact deterministic matching
+
+The current-search topic set replaces saved topic defaults for that search. Otherwise the active set is the union of interests, enabled mapped goals and enabled confirmed learning topics. Current topics strictly restrict candidates; soft saved bonuses cannot widen that filter. Unknown/missing participation and all raw notes add zero points. For each feasible candidate, add each applicable bonus once:
+
+| Component | Points |
+|---|---:|
+| Topic in current/active set | 10 |
+| That topic is not yet represented in earlier suggestions | 4 |
+| Enabled confirmed learning-topic match | 6 |
+| Enabled structured-goal topic match | 3 |
+| Enabled primary-goal topic match | 2 |
+| Exact known participation-format preference match | 2 |
+| Preferred time match | 2 |
+| Free admission | 1 |
+
+Goal IDs map exactly: `career → Career`; `practice` and `research → AI & education`; `people → Social`; `wellbeing → Wellbeing`; `discover`, `unsure`, `other → []`. Primary uses its selected goal's mapping. Time bonuses: morning ends by 12:00; afternoon starts at/after 12:00 and ends by 17:00; evening starts at/after 17:00. Ties use weekday, start minute, then ordinal event ID. A validated current count (1–5) overrides the saved 1/3/5 default. See [the full scoring, recognition and contract details](docs/preferences-design.md#exact-ranking-and-recognition-contract).
+
+## Discovery, plans and busy time
+
+`constraints.mode` is `discovery` or `plan-building`. Omission preserves legacy plan-building. Ordinary chat, Dashboard and main briefing use plan-building. Explicit exploration and the Across disciplines briefing use discovery; **Build weekly plan** selects plan-building. Follow-ups retain the selected mode and filters.
+
+Discovery can return mutually overlapping **unplanned alternatives**. Actual overlaps/insufficient travel time are labelled by event title: these choices cannot both fit the schedule. Plan-building additionally checks mutual compatibility. Both modes enforce existing commitments and planned events, eligibility, cancellations, travel buffer, saved free-only/windows and current request filters. Numeric budgets are unsupported and explicitly rejected. Neither mode adds anything automatically; Add/RSVP always rechecks the latest schedule.
+
+A newly entered busy commitment may conflict with an existing chosen event. Save names the conflicts and requires accessible browser-native confirmation. Accepting preserves the event and RSVP and marks the conflict in calendar/plan views; explicit removal remains available. Nothing is automatically removed, replaced or cancelled. Future suggestions exclude the busy time.
+
+## Data, design rationale and limitations
+
+State is plaintext `localStorage` under `campus-compass-demo-v1` for the default configuration; other campus/week/time-zone configurations get separate namespaces. Notes, provenance and history are local. Normal planner requests can transmit current message/validated constraints plus plan/cancellation IDs, interests, busy **times without titles**, buffer, preferred time and minimal structured preference fields. Raw preference notes, provenance, guidance, history/posts/memberships and snapshot identities are excluded. Use-once proposals send their exact mapped topics and validated filters with a generic message; copying private text into an ordinary planner message can still send that text. Processing is **not all on-device**: Rust handles requests when available; fallback is labelled. Clearing active personalization does not erase preserved chat or archived demo snapshots.
+
+[SDT/BPNT rationale](docs/preferences-design.md#sdtbpnt-design-rationale) informs skip/control/consent (autonomy), manageable guidance (competence), and optional interaction formats/communities (relatedness). These are design choices, not psychological measures, diagnoses or demonstrated outcomes. Timetable data checks conflicts; it does not establish learning.
+
+| Implemented | Unfinished or outside this demo |
+|---|---|
+| Shared versioned preferences/migration, consent, deterministic Rust/fallback matching, modes, grounded reasons/guidance, busy-conflict confirmation, local history/plans and ICS download | Arbitrary-language understanding, numeric-budget or strict location filtering, externally verified metadata, production privacy/authentication/database, real registration, SSO/Canvas/external-calendar connections, live watsonx |
+| Focused parity and browser regression scripts | Exhaustive equivalence, cross-browser/full accessibility certification, real-student evaluation or measured SDT/BPNT outcomes |
+
+## Run and short demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+For frontend development, run `npm run dev` alongside Rust. Use a separate private browser context for the demo so existing saved work is untouched.
+
+1. Open full preferences. Clear interests, leave structured goals disabled, enter a learning note and observe that it adds no topic. Confirm **Career**, choose one suggestion and **A clear first step**, then Save. Switch to step-by-step guidance and inspect the optional checklist.
+2. In Planner enter **“I'm interested in UX research now.”** Use once and inspect unchanged saved topics. Repeat, Review and save, inspect the exact broad AI & education addition/enabled list, then confirm. Unsupported **“I'm learning about quantum gardening”** offers manual selection.
+3. Set count to **3** in full preferences and Save; ensure there are no added plans or extra availability windows yet. In Planner choose **Discover alternatives**, then enter **“events on Tuesday after 3 PM before 5 PM.”** `e1` (Learning with AI, 15:00–16:30) and `e17` (Student wellbeing circle, 16:00–17:00) overlap. Inspect labels, then choose **Build weekly plan**: it retains a compatible subset without adding anything.
+4. Switch back to discovery and explicitly add `e1`, completing its demo RSVP. In full preferences add **Actual seminar**, Tuesday **15:00–16:15**. Decline Save's warning once, then confirm Save. Calendar still holds `e1` and its RSVP, now flagged; removal is explicit, and future suggestions exclude that time.
+
+More precise prerequisites and expected results: [demo script](docs/preferences-design.md#short-reproducible-demo).
+
+## Earlier documentation-pass verification
+
+Application revision inspected: `2dd93ae` on `Doris`; application code was not edited in this task. **Newly run:** `npm run build` (including type checking); 60 focused TypeScript tests; `cargo fmt --check`; 13 Rust tests; Clippy with warnings denied; Rust build; 22 exact shared comparisons plus six server validation/RSVP/conflict checks. All passed. The exact focused command is recorded in [verification and remaining work](docs/preferences-design.md#verification-and-remaining-work).
+
+**Not rerun in that earlier documentation pass:** the full npm/Wiki suite, broad API integration suite, frozen evaluation reproduction, and browser journeys. The subsequent repair reran npm/API and the specific browser journeys listed above. Earlier browser/check reports below are historical, not fresh results. Separate verification commands:
+
+```sh
+npm test
+npm run test:api
+npm run evaluate
+```
+
+Browser rerun commands and unverified behavior are listed in the design document. No check timed out; broader checks were left outside this focused documentation pass. No push, merge or deployment was performed.
+
+## Historical implementation notes
+
+The following records describe earlier commits and their checks, not current-task verification. Earlier limitations or unresolved-review notes may have been superseded by the current implementation above.
+
+<details>
+<summary>Earlier implementation and validation records</summary>
+
+## Brief, skippable setup using the existing editor
+
+First-time setup now renders the existing My Preferences editor and shared direction/interests, participation and guidance components in brief mode. There is no second form or preference store. Skip for now is prominent; Escape works, unsaved changes require discard confirmation, Save gives feedback, and full preferences remain available later. Keyboard focus starts at the dialog heading and returns to main content; mobile actions wrap within the existing styling.
+
+Not for me now skips only the current discovery view/search and never silently changes long-term preferences. Existing saved hidden IDs are preserved until explicitly restored. Recommendation loading no longer shows false empty results, and Dashboard/briefing errors offer retry. Historical verification: frontend build/type checking, 35 focused tests, desktop-online/mobile-offline setup/action checks, injected loading/error/retry checks and both guided browser journeys passed. Existing RSVP approval, cancellation/replacement, archive/restore and export actions remain usable. Optional regression: `scripts/browser-brief-setup.mjs` using tooling from `docs/backend.md`. No decorative features or backend changes were added.
+
+## Saving busy commitments that conflict with chosen events
+
+My Preferences now previews newly introduced busy-time conflicts and requires browser-native confirmation on Save, checked against the latest planned events. Declining retains the unsaved draft. Confirming records the commitment while preserving the chosen events and RSVP records; nothing is automatically removed, replaced or cancelled. Calendar tiles, the Planner calendar and the plan list mark current conflicts. Existing details/Remove actions remain explicit student choices.
+
+Both recommendation modes exclude the new busy time, and adding/confirming RSVP still validates the latest schedule. Busy titles remain local under the existing payload projection. Historical verification: frontend build/type checking, 59 focused busy/preference/workflow tests, diff checks and desktop-online/mobile-offline browser journeys passed. The browser check uses the actual demo RSVP flow, decline/confirm Save, conflict markers, explicit removal availability and reload preservation. Run `scripts/browser-busy-commitments.mjs` with optional tooling from `docs/backend.md`.
+
+## Explicit pending preference proposals
+
+Interest proposals now use a separate transient, one-shot controller. This search only preserves current filters and saved preferences; Review and save displays exact additions, preserved provenance and all topics that will be enabled; Dismiss saves nothing. Only confirmation updates saved topics. Confirmed changes preserve current search/hard constraints, plans, RSVP and conversations. Unsupported/negated statements offer manual selection rather than guessed understanding.
+
+Dismissed, superseded, deleted and stale proposals cannot be confirmed or reused, including when preferences change and later revert. Navigation/new chat/new requests invalidate proposals; delayed search results cannot restore preferences. Historical verification: frontend build/type checking, 31 focused tests and desktop-online/mobile-offline proposal checks passed. The optional regression is `scripts/browser-preference-proposals.mjs`; see `docs/backend.md` for tooling. No backend/ranking change or integration was added.
+
+## Discovery alternatives and compatible plans
+
+The optional shared selection mode is now `discovery` or `plan-building`; omitted mode preserves the old compatible-plan behavior. Dashboard/briefing and ordinary Planner discovery can show mutually overlapping alternatives, clearly labelled by conflicting event title. Build weekly plan keeps suggestions mutually compatible; Discover alternatives switches modes without dropping filters. Both modes still respect commitments, existing plans, eligibility and hard constraints. Adding one alternative rechecks the current schedule and RSVP, so a conflicting partner cannot also be added. Historical chat retains its selection mode.
+
+Historical verification: 13 Rust tests, fmt/Clippy/build, frontend build/type checking, 70 focused overlap/API/workflow/presentation tests, 22 shared comparisons and a mobile browser mode-switch check passed. The two planners agree on overlapping discovery versus compatible plan selection. All application callers were reviewed; no caller work remains. No push, merge, deployment, LLM or Python backend was introduced.
+
+## Preferences across Dashboard, briefing and Planner
+
+All recommendation surfaces now use the shared request path and show “Using your preferences” with Edit preferences. Cards, briefing, chat and draft suggestions render grounded matching explanations and selected guidance depth. Optional decision/preparation guidance is distinguished from the fictional catalog’s recorded requirements; no real registration workflow or missing event facts are invented.
+
+Saving preferences refreshes Dashboard/briefing and invalidates obsolete requests. Plans, RSVP records and conversations remain. Chat retains validated reason/evidence snapshots across reloads, marks old suggestions as based on previous settings, and offers Refresh suggestions to append current results. Legacy messages without snapshots abstain from new-fit claims. Snapshot identities exclude raw notes and busy labels; these local history fields are never recommendation payloads. Clearing personalization preserves history; clear chat separately to remove it.
+
+Historical verification: frontend build/type checking, 78 focused tests, desktop-online/mobile-offline surface checks, existing preferences journeys and full guided desktop/mobile journeys passed. Browser checks cover save/refresh/reload, historical labels, guidance, preserved plans/conversation, RSVP and cancellation safeguards, plus a delayed obsolete response. Run `scripts/browser-preference-surfaces.mjs` using the optional tooling described in `docs/backend.md`. No backend ranking or enrollment changes were needed; live watsonx remains deferred.
+
+## Rust structured preference parity
+
+Rust selection now uses its structured scoring explanation function and returns ordered wire `match_reasons` (adapted to local `matchReasons` in TypeScript): topic/diversity, enabled mapped goals/primary/confirmed learning, known participation, preferred time and free admission. Current-topic/limit behavior and hard constraints are preserved. The typed client validates reason codes, exact weights, totals and bounded collections, while accepting older responses without reasons. Goal IDs are projected once to validated topic arrays before requests; no title/note inference or duplicate mapping is introduced.
+
+Historical verification: 12 Rust tests, formatting/Clippy/build, TypeScript type checking, 23 focused API/fallback tests and 18 exact shared-fixture/goal comparisons passed. Six server validation/RSVP/conflict checks also passed. Run `cargo build --locked` then `node --import tsx tests/preference-parity.ts`. No ranking/reason differences appeared in those canonical fixtures. Intentional differences remain in offline notices, Rust-only catalog evidence, local-vs-generic busy labels and malformed-input handling; see `docs/preferences-design.md`. No LLM, Python backend, push or deployment was introduced.
+
+## Explainable TypeScript fallback scoring
+
+The shared fallback recommendation path now produces structured local match reasons and exact point totals using saved interests, enabled goals/confirmed learning, known participation formats and preferred time. Existing weights are centralized without changing hard filters. Saved counts apply through the shared path; explicit request topics/limits replace only search defaults. Unknown metadata and raw notes add no score. Ties use weekday/start/ordinal event ID. These local explanations remain separate from Rust evidence. See `docs/preferences-design.md` for the exact score table, goal mapping and Rust parity contract.
+
+Historical verification: TypeScript type checking, 34 focused fallback/API/preference tests and diff checks passed. Checks cover exact scores, switches, unknown metadata, note exclusion, hard constraints, current-search overrides, count propagation and order-independent ties. No full suites or Rust implementation changes were run for this fallback-only task.
+
+## Minimal recommendation contracts
+
+The frontend now names its v1 recommendation preference/schedule contracts. Requests exclude raw notes, provenance, browser-only guidance and busy-block titles; local schedule labels remain saved. Rust accepts new time-only blocks with a generic conflict label, as well as legacy labelled blocks and schedules without preferences. Existing enums/counts/collection bounds are validated, including oversized arrays and nonnumeric result counts. Optional event participation metadata explicitly supports Unknown; tests prove missing values are not inferred from titles. The existing authored event topic and structured-goal mapping suffice for goal matching, so no extra suitability metadata or fixture edits were needed. Ranking algorithms are unchanged.
+
+Historical verification: frontend build/type checking, 31 focused API/preference/migration tests, 8 Rust tests, Rust formatting/Clippy/build and API integration passed. API regressions check old/new caller compatibility, collection limits and unchanged event selection. Service diagnostics for unnamed busy blocks use “Busy commitment”; the browser can still display its local labels. No integrations, logging or production infrastructure were added.
+
+## Personalization controls and data boundaries
+
+Goal/learning switches are saved draft choices: disabling excludes their structured topics without deleting them. Individual topic and bulk learning-data removal now require browser-native confirmation and remain drafts until Save; Cancel retains saved data. Clear personalization has a separate explicit confirmation and applies immediately, preserving plans, saved events, RSVP records, conversation messages, memberships, busy blocks and hard scheduling requirements. Current filters/draft suggestions reset. Guided-demo archives remain separate snapshots and can explicitly restore earlier preferences.
+
+Privacy copy follows the actual allowlisted API: raw preference reflection/learning notes, major/free-text goals, provenance and conversation history are not automatically included. Current planner text, structured filters/preferences, plan/cancellation IDs, interests and busy commitment times (without titles) may reach the Rust service. Text explicitly copied into a planner message can be sent. Browser fallback is labelled; no all-on-device claim is made. Timetable data supports conflict checks, not inferred learning.
+
+Historical verification: frontend type check/build, 15 focused preference/migration tests, desktop/mobile controls checks and the Direction/Learning regression passed. The request-capture regression asserts note/history exclusion from actual request bodies. Optional controls browser coverage: `scripts/browser-personalization-controls.mjs`, using the environment described in `docs/backend.md`. No integrations, logging, production infrastructure or ranking changes were introduced.
+
+## Direction, Learning, Participation & Support controls
+
+The existing draft editor keeps multiple structured goals, an optional selected primary goal, exclusive “Not sure yet”, interests and optional local reflection. Learning notes remain separate from confirmed topics: “Choose a supported topic below to use this in recommendations.” Confirming prepares a draft change; Save applies it. Re-confirming an existing topic preserves its manual/chat provenance, and removing a topic does not erase notes. No arbitrary-text understanding is claimed.
+
+Participation supports multiple formats or exclusive No preference. Guidance is one of five choices and result count is 1/3/5. These optional controls update the unsaved summary and follow Save/Cancel. Count limits displayed suggestions, not attendance. No recommendation/ranking logic changed in this UI update.
+
+Historical verification: frontend build/type checking, 14 focused preference/migration tests, and Chromium Direction/Learning and Participation/Support checks at 1280/390px passed. The optional scripts are `scripts/browser-direction-learning.mjs` and `scripts/browser-participation-support.mjs`; use the Playwright/Chromium environment described in `docs/backend.md` against a running built app.
+
+## Preference editor shell safeguards
+
+My Preferences remains the single full interest/time editor (`#profile`), reachable from navigation and the sidebar demo profile. The five existing sections and summary use an isolated draft; Save applies changes and Cancel asks before discarding edits. Browser-native confirmation protects internal navigation, global search and hash/back navigation; a standard before-unload warning protects reload/close where the browser supports it. The helper reads “Skip any question and change your preferences anytime.” No new section fields or ranking changes were added.
+
+Historical verification: frontend type check/build and desktop/mobile Chromium shell checks (1280/390px) passed, covering draft isolation, Cancel confirmation, refusal to leave, hash/search navigation, Save/reload and before-unload registration. Run `scripts/browser-preference-shell.mjs` with the optional Playwright/Chromium environment described in `docs/backend.md`.
+
+## My Preferences — October 23, 2026
+
+My Preferences now replaces the old Profile editing form in navigation (`#profile`). It integrates direction/goals, optional learning notes and explicitly confirmed topics, participation/guidance choices, practical needs and personalization controls. Desktop has a live summary beside the editor; mobile stacks it above the form. The summary previews unsaved changes; only Save changes affects recommendations. Cancel discards edits. Quick setup is optional and supports general browsing.
+
+Dashboard, Weekly Briefing and AI Planner share the Rust selection rules and labelled TypeScript fallback. Enabled structured goals and confirmed learning topics affect ranking, explicit fictional participation formats add a soft bonus, and guidance/count choices change presentation and result quantity. Preferred time ranks; entered busy commitments, travel buffer, saved free-only and available-only windows are hard checks. A current request can change the search topic, but cannot relax saved hard constraints. Unknown metadata is disclosed instead of inferred. No attendance target, competence score or belonging claim is made.
+
+“I’m interested in UX research now” offers a disclosed broad-topic proposal: This search only, Review and save, or Dismiss. Only the exact confirmation dialog adds/enables a long-term learning topic. Raw reflection, major/goals, custom learning and location/format notes remain local and are not recommendation payloads. Existing interests, notes, plans, saved events, RSVP confirmations, messages and community memberships are migrated without inferred learning consent. Saving/clearing preferences preserves chosen plans and flags new conflicts. Clear chat is separate; active clearing does not purge an existing guided-demo archive.
+
+The implementation keeps React/TypeScript and Rust/Axum/Tokio/Serde, with no Python backend or new application dependency. The added participation fixture fields are explicitly authored fictional metadata. Arbitrary notes are not semantically understood; unsupported text stays a note until the student chooses a supported topic. Numeric budgets, strict location filtering, live watsonx, institutional authentication and real calendar/Canvas integration remain unimplemented.
+
+Run from the repository root: `npm ci`, `npm run build`, `cargo run --locked`; optionally `npm run dev` alongside Rust. Open My Preferences to test Save/Cancel, confirmed learning, disabled topics, guidance/count and narrow practical constraints. See [design, theory rationale and data flow](docs/preferences-design.md) for SDT/BPNT mapping and the five-step poster walkthrough. These are design hypotheses, not proven theory outcomes or a validated psychological scale.
+
+Historical verification: planner/catalog assertions, 84 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust tests and API integration passed. Chromium exercised the preferences flows at 1280px online and 390px with the API unavailable, including Save/Cancel/reload, consent, temporary searches, RSVP approval, hard constraints and note-payload exclusion. The existing guided demo journey also passed at both widths. The 20-scenario evaluation retains its metrics; raw evidence was refreshed for the new metadata and wording. Personalized behavior is covered separately by the new tests. No live watsonx or real enrollment was tested.
 
 ## Start here (teammates)
 
@@ -189,7 +491,7 @@ Two community interaction bugs found during review have been fixed on the PR bra
 
 Files changed for these fixes: `communities.ts` (membership operations and community links), `state.ts` / `types.ts` (separate persisted membership field), and `App.tsx` / `Pages.tsx` / `components.tsx` (selected-community navigation). `tests/communities.test.ts` covers name collisions, persistence and valid/invalid links.
 
-Verification: `npm test` passes the planner assertions, 18 TypeScript tests and 5 Wiki tests; `npm run build` passes. The reviewed Rust code passes its 4 unit tests and API integration suite. Browser checks verify named event-to-community navigation, independent conversation/community joins and leave actions, reload persistence, and a 390px mobile layout without horizontal page overflow. To reproduce the collision regression check, create a local post titled `ai`, join its conversation, and confirm **AI & learning circle** still offers **Join locally**. Join and leave that community; the conversation must remain joined.
+Historical verification: `npm test` passes the planner assertions, 18 TypeScript tests and 5 Wiki tests; `npm run build` passes. The reviewed Rust code passes its 4 unit tests and API integration suite. Browser checks verify named event-to-community navigation, independent conversation/community joins and leave actions, reload persistence, and a 390px mobile layout without horizontal page overflow. To reproduce the collision regression check, create a local post titled `ai`, join its conversation, and confirm **AI & learning circle** still offers **Join locally**. Join and leave that community; the conversation must remain joined.
 
 ## Proposal-aligned MVP improvements — Doris
 
@@ -353,3 +655,5 @@ Replace `Judy` with your assigned branch name.
 ## GitHub Wiki
 
 Wiki page sources live in [`wiki/`](wiki/). After changes merge into `main`, the Publish GitHub Wiki workflow updates the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki). One-time credential setup and publishing details are in [`docs/github-wiki.md`](docs/github-wiki.md).
+
+</details>

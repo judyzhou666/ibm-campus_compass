@@ -1,3 +1,10 @@
+import { readStudentProfile } from "./studentProfile.ts";
+import {
+  readMatchReasons,
+  readCatalogEvidence,
+  readResolvedConstraints,
+} from "./recommendationReasons.ts";
+import { defaultPreferences, migratePreferences } from "./preferences.ts";
 import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
@@ -25,6 +32,7 @@ export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 
 export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
+  preferences: defaultPreferences(),
   onboarded: false,
   major: "",
   goals: "",
@@ -59,6 +67,8 @@ export function restore(): DemoState {
         : [];
     return {
       ...base,
+      studentProfile: readStudentProfile(value.studentProfile),
+      preferences: migratePreferences(value.preferences),
       onboarded: value.onboarded === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
@@ -111,7 +121,30 @@ export function restore(): DemoState {
             .map((m: DemoState["messages"][number]) => ({
               role: m.role,
               text: m.text,
-              eventIds: ids(m.eventIds),
+              resolvedConstraints: readResolvedConstraints(
+                m.resolvedConstraints,
+              ),
+              ...(["discovery", "plan-building"].includes(
+                m.recommendationMode || "",
+              )
+                ? { recommendationMode: m.recommendationMode }
+                : {}),
+              ...(Array.isArray(m.eventIds)
+                ? { eventIds: ids(m.eventIds) }
+                : {}),
+              ...(typeof m.settingsKey === "string" &&
+              m.settingsKey.length <= 20000
+                ? { settingsKey: m.settingsKey }
+                : {}),
+              ...(Array.isArray(m.matchReasons)
+                ? {
+                    matchReasons:
+                      readMatchReasons(m.matchReasons, ids(m.eventIds)) ?? [],
+                  }
+                : {}),
+              ...(Array.isArray(m.evidence)
+                ? { evidence: readCatalogEvidence(m.evidence, ids(m.eventIds)) }
+                : {}),
             }))
         : [],
       posts: Array.isArray(value.posts)

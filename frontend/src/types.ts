@@ -1,3 +1,5 @@
+import type { StudentProfile } from "./studentProfile.ts";
+import type { Preferences, Guidance, ResultCount } from "./preferences.ts";
 export interface TimeSlot {
   day: number;
   start: number;
@@ -6,6 +8,31 @@ export interface TimeSlot {
 export interface Block extends TimeSlot {
   id: string;
   title: string;
+}
+export type ParticipationChoice =
+  "independent" | "one-to-one" | "small-group" | "open";
+export type ParticipationFormat = ParticipationChoice | "unknown";
+/** Minimal v1 API projection: local notes, provenance and consent flags stay local. */
+export interface RecommendationPreferences {
+  version: 1;
+  goal_topics: string[];
+  primary_topics: string[];
+  learning_topics: string[];
+  participation: ParticipationChoice[];
+  guidance: Guidance;
+  count: ResultCount;
+  free_only: boolean;
+  windows: TimeSlot[];
+  dismissed: string[];
+}
+export interface RecommendationSchedule {
+  plan: string[];
+  cancelled: string[];
+  interests: string[];
+  blocks: TimeSlot[];
+  buffer: number;
+  preferred_time: string;
+  preferences?: Omit<RecommendationPreferences, "guidance">;
 }
 export interface CampusEvent extends TimeSlot {
   id: string;
@@ -18,6 +45,7 @@ export interface CampusEvent extends TimeSlot {
   access: string;
   description: string;
   poster: string;
+  participation?: ParticipationFormat;
   source: string;
   checked: string;
   rsvp: string;
@@ -37,8 +65,12 @@ export interface Schedule {
   blocks: Block[];
   buffer: number;
   preferred_time?: string;
+  preferences?: Preferences;
 }
+/** Omitted mode means overlap-free plan-building in both planners. Discovery is explicit. */
+export type RecommendationMode = "discovery" | "plan-building";
 export interface Constraints {
+  mode?: RecommendationMode;
   topics?: string[];
   excluded?: string[];
   days?: number[];
@@ -47,12 +79,22 @@ export interface Constraints {
   food?: string;
   free?: boolean;
   limit?: number;
+  explore?: boolean;
+}
+export interface RecommendationMatchResult {
+  event_id: string;
+  score: number;
+  matches: import("./planner.ts").RecommendationMatch[];
 }
 export interface Message {
   role: "user" | "assistant";
   text: string;
   eventIds?: string[];
   evidence?: RecommendationEvidence[];
+  settingsKey?: string;
+  recommendationMode?: RecommendationMode;
+  resolvedConstraints?: Constraints;
+  matchReasons?: RecommendationMatchResult[];
 }
 export interface Post {
   id: string;
@@ -73,6 +115,7 @@ export interface PostDraft {
   communityId: string;
 }
 export interface DemoState extends Schedule {
+  studentProfile?: StudentProfile;
   name: string;
   onboarded: boolean;
   major: string;
@@ -99,6 +142,9 @@ export interface PlanResponse {
   event_ids: string[];
   notice?: string;
   recommendations?: RecommendationEvidence[];
+  match_reasons?: RecommendationMatchResult[];
+  /** @deprecated Read-only compatibility with older Rust responses. Not emitted by current servers. */
+  matchReasons?: RecommendationMatchResult[];
 }
 
 export interface Rsvp {
@@ -114,4 +160,7 @@ export interface RecommendationEvidence {
   trade_offs: string;
   comparison?: string;
   discovery_context?: string;
+  learning_connection?: string;
+  participation_fit?: string;
+  constraints_satisfied?: Constraints;
 }

@@ -1,0 +1,458 @@
+[
+  {
+    "name": "enabled goals, primary and confirmed learning",
+    "ids": [
+      "e20",
+      "e7",
+      "e34"
+    ],
+    "reasonIds": [
+      "e20",
+      "e7",
+      "e34"
+    ],
+    "scores": [
+      26,
+      22,
+      22
+    ],
+    "explanationsHash": "88841ca615badad094f848d573a09fb40a6250b66e9c0be05efc700313040050",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "allScoresHash": "571b76adab551c7a28cdd5c9300c1fb73d3848517bb9fe3d34dd9dc4c9dc4ef6",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "disabled goals and learning retained but inactive",
+    "ids": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "reasonIds": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "scores": [
+      1,
+      1,
+      1
+    ],
+    "explanationsHash": "e0292a96959e01a5dae92b9c213e292f5ea1598895de3997fc5754d3538d039b",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "allScoresHash": "ca5dd44cfcd244923e2635b151b86d5dcfc5bcf80bb4a144b921622ddfbcd933",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "known independent format",
+    "ids": [
+      "e18"
+    ],
+    "reasonIds": [
+      "e18"
+    ],
+    "scores": [
+      17
+    ],
+    "explanationsHash": "2adf7598609ae53b1fa7f04f84e1882a5430d893754a23bb1f6c960920c58139",
+    "baselineIds": [
+      "e10"
+    ],
+    "allScoresHash": "6acdda0b8eb3019a051b8dbca48fd43dae51df2bbc4414207668202c3d44aaf7",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "known small group format",
+    "ids": [
+      "e1"
+    ],
+    "reasonIds": [
+      "e1"
+    ],
+    "scores": [
+      17
+    ],
+    "explanationsHash": "f02f9a7ae0243cfcd4908b597e358a6b4e94f1ecaf5fb39f712fc3ab9547da6c",
+    "baselineIds": [
+      "e10"
+    ],
+    "allScoresHash": "c25ad57de1651d1dbf731de9e24bb6b72c97e712b834fb25670341312a70f653",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "unknown format has no bonus",
+    "ids": [
+      "e2"
+    ],
+    "reasonIds": [
+      "e2"
+    ],
+    "scores": [
+      15
+    ],
+    "explanationsHash": "603dcfb966a66dfabf976b9da0dd881407551237750d6be88576c6bbae415a70",
+    "baselineIds": [
+      "e2"
+    ],
+    "allScoresHash": "b920e52ff5f8e80c56cb706ad177693b3ee8a8688f5b966fbce1199186abfe14",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "current topic cannot relax saved free/window constraints",
+    "ids": [],
+    "reasonIds": [],
+    "scores": [],
+    "explanationsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "baselineIds": [],
+    "allScoresHash": "ebb3b9f32f8bcfe32c2493fabe03a9d2366f22ce4d99391dc475ce650e44484f",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "paid event allowed only without a free constraint",
+    "ids": [
+      "e29"
+    ],
+    "reasonIds": [
+      "e29"
+    ],
+    "scores": [
+      14
+    ],
+    "explanationsHash": "2d2bbe6449b4b5a6771a5b8f79ad81a03bce980dff405c747a4e760e653e41de",
+    "baselineIds": [
+      "e29"
+    ],
+    "allScoresHash": "ebb3b9f32f8bcfe32c2493fabe03a9d2366f22ce4d99391dc475ce650e44484f",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "current limit replaces saved count",
+    "ids": [
+      "e10",
+      "e18"
+    ],
+    "reasonIds": [
+      "e10",
+      "e18"
+    ],
+    "scores": [
+      1,
+      1
+    ],
+    "explanationsHash": "8c0fae4cfb15b958304c50a075317f352d0cbc0d6f5e11ecf9b405c838c1e518",
+    "baselineIds": [
+      "e10",
+      "e18"
+    ],
+    "allScoresHash": "ca5dd44cfcd244923e2635b151b86d5dcfc5bcf80bb4a144b921622ddfbcd933",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "preferred evening, cancellations, travel buffer and exploration",
+    "ids": [
+      "e20",
+      "e23",
+      "e34",
+      "e2",
+      "e37"
+    ],
+    "reasonIds": [
+      "e20",
+      "e23",
+      "e34",
+      "e2",
+      "e37"
+    ],
+    "scores": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "explanationsHash": "3fbe2ccd3ef37f7f51a816704349e01de063cb069c33e8ba8cd16da7ebe55366",
+    "baselineIds": [
+      "e10",
+      "e20",
+      "e7",
+      "e17",
+      "e19"
+    ],
+    "allScoresHash": "81c6606086c27faa7e6d25dafc11c431b8061d15ff1029421dbe0f9844f64989",
+    "validationHash": "f3152d4f3b09311fd3bf8b50adda3bdc3ccf613c6115363241f340503ea9ec9c"
+  },
+  {
+    "name": "legacy schedule without preferences",
+    "ids": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "reasonIds": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "scores": [
+      1,
+      1,
+      1
+    ],
+    "explanationsHash": "e0292a96959e01a5dae92b9c213e292f5ea1598895de3997fc5754d3538d039b",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e14"
+    ],
+    "allScoresHash": "ca5dd44cfcd244923e2635b151b86d5dcfc5bcf80bb4a144b921622ddfbcd933",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "discovery overlap e1/e17",
+    "ids": [
+      "e1",
+      "e17"
+    ],
+    "reasonIds": [
+      "e1",
+      "e17"
+    ],
+    "scores": [
+      1,
+      1
+    ],
+    "explanationsHash": "8c0fae4cfb15b958304c50a075317f352d0cbc0d6f5e11ecf9b405c838c1e518",
+    "baselineIds": [
+      "e1",
+      "e17"
+    ],
+    "allScoresHash": "ca5dd44cfcd244923e2635b151b86d5dcfc5bcf80bb4a144b921622ddfbcd933",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "plan-building overlap e1/e17",
+    "ids": [
+      "e1"
+    ],
+    "reasonIds": [
+      "e1"
+    ],
+    "scores": [
+      1
+    ],
+    "explanationsHash": "af249eddf5639a2f10b353b7564d698f4e71bb29127e9bc0200c60acec7e066b",
+    "baselineIds": [
+      "e1"
+    ],
+    "allScoresHash": "ca5dd44cfcd244923e2635b151b86d5dcfc5bcf80bb4a144b921622ddfbcd933",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "overlap window legacy",
+    "ids": [
+      "e1"
+    ],
+    "reasonIds": [
+      "e1"
+    ],
+    "scores": [
+      15
+    ],
+    "explanationsHash": "20bef826b91869ee6a7b7ffcd889c32d582efb17beadee7b19b310d0cd2250dc",
+    "baselineIds": [
+      "e1"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "overlap window plan-building",
+    "ids": [
+      "e1"
+    ],
+    "reasonIds": [
+      "e1"
+    ],
+    "scores": [
+      15
+    ],
+    "explanationsHash": "20bef826b91869ee6a7b7ffcd889c32d582efb17beadee7b19b310d0cd2250dc",
+    "baselineIds": [
+      "e1"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "overlap window discovery",
+    "ids": [
+      "e1",
+      "e17"
+    ],
+    "reasonIds": [
+      "e1",
+      "e17"
+    ],
+    "scores": [
+      15,
+      1
+    ],
+    "explanationsHash": "b3566e9c2c7087d8a7a790eed523a5b7288781078536f7b0c8fee3ff454b5269",
+    "baselineIds": [
+      "e1",
+      "e17"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "chosen event and ordered real conflicts",
+    "ids": [
+      "e18",
+      "e7",
+      "e6",
+      "e4",
+      "e24"
+    ],
+    "reasonIds": [
+      "e18",
+      "e7",
+      "e6",
+      "e4",
+      "e24"
+    ],
+    "scores": [
+      15,
+      15,
+      15,
+      11,
+      11
+    ],
+    "explanationsHash": "210b09ee1e07545e3cb74a25332ff19caaacda39c53f9a0746d7a8c940beb7e3",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e4",
+      "e7",
+      "e23"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "1a3a0d5983f344c4bf3066cd15372514bfbbda66c891f9f31bd2e15ceafa714c"
+  },
+  {
+    "name": "legacy caller limit and free-only baseline",
+    "ids": [
+      "e18",
+      "e20",
+      "e6",
+      "e7",
+      "e1"
+    ],
+    "reasonIds": [
+      "e18",
+      "e20",
+      "e6"
+    ],
+    "scores": [
+      15,
+      15,
+      15
+    ],
+    "explanationsHash": "43dbe7f3e372c0955363a3cad9763c43ecdf23ec116082ad9d678c5f12488406",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e14",
+      "e22",
+      "e7"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "cancelled chosen event and zero buffer",
+    "ids": [
+      "e18",
+      "e20",
+      "e22",
+      "e31",
+      "e14"
+    ],
+    "reasonIds": [
+      "e18",
+      "e20",
+      "e22",
+      "e31",
+      "e14"
+    ],
+    "scores": [
+      15,
+      15,
+      15,
+      11,
+      11
+    ],
+    "explanationsHash": "dd39649ccaee95c3a1ebaf541e90c337746534719d5ab22126f380320456d1db",
+    "baselineIds": [
+      "e10",
+      "e18",
+      "e31",
+      "e14",
+      "e20"
+    ],
+    "allScoresHash": "649689d055df4ec15c06f0b0f6724d7840f2c69a914ac20a6bb90098b6968bc1",
+    "validationHash": "e52bb3c14343cbdc9bbd177019228f9b47d89d07d66c887df0bf693d0ade8e6c"
+  },
+  {
+    "name": "raw partial and malformed preferences",
+    "ids": [
+      "e20",
+      "e31",
+      "e1"
+    ],
+    "reasonIds": [
+      "e20",
+      "e31",
+      "e1"
+    ],
+    "scores": [
+      20,
+      15,
+      11
+    ],
+    "explanationsHash": "528d1f1ace29d19edaf5c972fc26f5f1be05e8d6d6a9e63209a7f25b74f6e39f",
+    "baselineIds": [
+      "e31",
+      "e20",
+      "e1"
+    ],
+    "allScoresHash": "40b96f4ef5f97992d35e212df24a28861235931c4a9c84e530d3f5883eaac3b2",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  },
+  {
+    "name": "saved count five and paid availability window",
+    "ids": [
+      "e29"
+    ],
+    "reasonIds": [
+      "e29"
+    ],
+    "scores": [
+      14
+    ],
+    "explanationsHash": "2d2bbe6449b4b5a6771a5b8f79ad81a03bce980dff405c747a4e760e653e41de",
+    "baselineIds": [
+      "e29"
+    ],
+    "allScoresHash": "ebb3b9f32f8bcfe32c2493fabe03a9d2366f22ce4d99391dc475ce650e44484f",
+    "validationHash": "a6f51f39db5ac4e7bca87e46fcf0e793f223e21320d7d6c5ad1bd26e833c7d3e"
+  }
+]

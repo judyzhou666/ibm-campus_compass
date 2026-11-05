@@ -1,11 +1,39 @@
+import { recommendationSettingsKey } from "./api.ts";
+import { StudentProfileCard, StudentProfilePage } from "./StudentProfile.tsx";
+import {
+  discoveryState as withDiscoveryFilters,
+  matchesDiscoveryFilter,
+} from "./discovery.ts";
+import {
+  createPreferenceProposals,
+  proposalChanges,
+  proposalRevision,
+} from "./preferenceProposals.ts";
+import {
+  UsingPreferences,
+  RecommendationInfo,
+} from "./RecommendationPresentation.tsx";
+import {
+  activeTopics,
+  preferenceSettingsKey,
+  proposalTopic,
+} from "./preferences.ts";
+import { PreferenceProposal } from "./PreferenceProposal.tsx";
+import { useRecommendations } from "./useRecommendations.ts";
 import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { EVENTS, when } from "./data.ts";
-import { issue, reasons } from "./planner.ts";
+import { issue, overlappingAlternatives } from "./planner.ts";
 import { createEnrollment, type EnrollmentOutcome } from "./enrollment.ts";
 import { createConversation } from "./conversation.ts";
 import { createStore, fresh, restore, STORAGE_KEY } from "./state.ts";
@@ -21,7 +49,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
-import { Briefing, Welcome } from "./Briefing.tsx";
+import { Briefing } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 
@@ -33,7 +61,8 @@ const labels = {
   forum: "Discussion Forum",
   planner: "AI Planner",
   saved: "Saved Events",
-  profile: "Profile",
+  "my-profile": "My Profile",
+  profile: "My Preferences",
   settings: "Settings",
 };
 type Page = keyof typeof labels;
@@ -45,6 +74,7 @@ const navIcons: Record<Page, string> = {
   forum: "chat",
   planner: "spark",
   saved: "bookmark",
+  "my-profile": "user",
   profile: "user",
   settings: "settings",
 };
@@ -87,18 +117,71 @@ export default function App() {
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [proposals] = useState(() => createPreferenceProposals(demo));
+  const proposal = useSyncExternalStore(proposals.subscribe, proposals.read);
+  const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
+  const discoveryState = withDiscoveryFilters(state, sessionSkipped);
+  const recommendationResult = useRecommendations(
+    withDiscoveryFilters(state, sessionSkipped, filter, query),
+    {},
+    page === "dashboard",
+  );
+  const settingsKey = preferenceSettingsKey(state);
+  const preferenceRevision = proposalRevision(state);
+  const planningRevision = recommendationSettingsKey(state);
+  useEffect(() => {
+    proposals.dismiss();
+  }, [page, preferenceRevision]);
+  useEffect(() => {
+    setSessionSkipped([]);
+  }, [page, planningRevision]);
+  useEffect(() => {
+    conversation.reset();
+  }, [planningRevision, conversation]);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
       enrollment.reset();
       conversation.reset();
+      proposals.dispose();
     },
-    [enrollment, conversation],
+    [enrollment, conversation, proposals],
   );
   function notify(text: string) {
     setToast(text);
   }
+  const studentProfileDirty = useRef(false);
+  const setStudentProfileDirty = useCallback((dirty: boolean) => {
+    studentProfileDirty.current = dirty;
+  }, []);
+  function allowStudentProfileDeparture() {
+    if (!studentProfileDirty.current) return true;
+    if (
+      !window.confirm("Discard unsaved profile changes and leave My Profile?")
+    )
+      return false;
+    studentProfileDirty.current = false;
+    return true;
+  }
+  const preferenceDirty = useRef(false);
+  const setPreferenceDirty = useCallback((dirty: boolean) => {
+    preferenceDirty.current = dirty;
+  }, []);
+  function allowPreferenceDeparture() {
+    if (!preferenceDirty.current) return true;
+    if (
+      !window.confirm(
+        "Discard unsaved preference changes and leave My Preferences? Recommendations still use your saved choices.",
+      )
+    )
+      return false;
+    preferenceDirty.current = false;
+    return true;
+  }
   function nav(next: Page, communityId?: string) {
+    if (next !== "my-profile" && !allowStudentProfileDeparture()) return false;
+    if (next !== "profile" && !allowPreferenceDeparture()) return false;
+    if (next !== "planner") proposals.dismiss();
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
@@ -109,6 +192,8 @@ export default function App() {
     location.hash =
       next === "forum" && communityId ? communityHash(communityId) : next;
     window.scrollTo(0, 0);
+    requestAnimationFrame(() => document.getElementById("main")?.focus());
+    return true;
   }
   useEffect(() => {
     try {
@@ -126,7 +211,18 @@ export default function App() {
   }, [toast]);
   useEffect(() => {
     const handle = () => {
-      setPage(validPage(location.hash.slice(1)));
+      const next = validPage(location.hash.slice(1));
+      if (next !== "my-profile" && !allowStudentProfileDeparture()) {
+        history.replaceState(null, "", "#my-profile");
+        return;
+      }
+      if (next !== "profile" && !allowPreferenceDeparture()) {
+        history.replaceState(null, "", "#profile");
+        return;
+      }
+      if (next !== "planner") proposals.dismiss();
+      setPage(next);
+      requestAnimationFrame(() => document.getElementById("main")?.focus());
       setSelectedCommunity(communityFromHash(location.hash));
       setMenu(false);
     };
@@ -160,6 +256,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
   function clearChat() {
+    proposals.dismiss();
     conversation.clear();
     setMessage("");
   }
@@ -202,7 +299,16 @@ export default function App() {
   }
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
-    setMessage("");
+    if (previous === undefined && proposalTopic(text).length > 0) {
+      setMessage("");
+      proposals.propose(text);
+      return;
+    }
+    // Unrecognized interest wording remains editable while the normal planner
+    // responds; phrase presence alone must never create an empty proposal.
+    if (!/\b(interested in|learning about|explore next)\b/i.test(text))
+      setMessage("");
+    proposals.dismiss();
     await conversation.chat(text, previous);
   }
   async function replan() {
@@ -228,14 +334,8 @@ export default function App() {
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        (filter === "All" ||
-          (filter === "Free Food"
-            ? e.food === "Free meal"
-            : e.category === filter)) &&
-        (!query ||
-          `${e.title} ${e.description} ${e.topic} ${e.food}`
-            .toLowerCase()
-            .includes(query.toLowerCase())),
+        !sessionSkipped.includes(e.id) &&
+        matchesDiscoveryFilter(e, filter, query),
     );
   const cards = (list: typeof EVENTS) => (
     <div className="event-grid">
@@ -243,11 +343,32 @@ export default function App() {
         <EventCard
           key={e.id}
           event={e}
+          alternativeIds={
+            page === "dashboard"
+              ? overlappingAlternatives(e, recommendationResult.ids, state)
+              : []
+          }
+          matchReasons={
+            page === "dashboard"
+              ? recommendationResult.matchReasons.find(
+                  (r) => r.event_id === e.id,
+                )?.matches
+              : undefined
+          }
           state={state}
           onAdd={add}
           onSave={save}
           onDetail={setDetail}
           onCalendar={() => nav("calendar")}
+          onAnother={(id) =>
+            setSessionSkipped((ids) => [...new Set([...ids, id])])
+          }
+          onDecline={(id) => {
+            setSessionSkipped((ids) => [...new Set([...ids, id])]);
+            notify(
+              "Skipped in this discovery view. Saved preferences are unchanged.",
+            );
+          }}
         />
       ))}
     </div>
@@ -285,28 +406,43 @@ export default function App() {
       : EVENTS,
   );
   const recommended = filterEvents(
-    EVENTS.filter((e) => !state.plan.includes(e.id) && !issue(e, state)),
-  ).sort(
-    (a, b) =>
-      Number(state.interests.includes(b.topic)) -
-        Number(state.interests.includes(a.topic)) ||
-      a.day - b.day ||
-      a.start - b.start,
+    recommendationResult.ids
+      .map((id) => EVENTS.find((e) => e.id === id)!)
+      .filter(Boolean),
   );
 
   return (
     <>
       {!state.onboarded ? (
-        <Welcome
-          onStart={() => {
+        <Profile
+          brief
+          state={state}
+          update={update}
+          notify={notify}
+          onClearChat={clearChat}
+          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
+          onFull={() => {
             update((s) => ({ ...s, onboarded: true }));
             nav("profile");
           }}
-          onSkip={() => update((s) => ({ ...s, onboarded: true }))}
         />
       ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
-        <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
+        <a
+          className="brand"
+          href="#dashboard"
+          onClick={(event) => {
+            if (
+              event.ctrlKey ||
+              event.metaKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            event.preventDefault();
+            nav("dashboard");
+          }}
+        >
           <span className="logo">
             <Icon name="compass" />
           </span>
@@ -335,17 +471,7 @@ export default function App() {
           ))}
         </nav>
         <div className="side-bottom">
-          <div className="demo-note">
-            <strong>A campus of possibilities.</strong>Your interests. Your
-            time. Your next great discovery.
-          </div>
-          <div className="user">
-            <span className="avatar">{state.name[0] || "J"}</span>
-            <div>
-              <strong>{state.name}’s campus</strong>
-              <small>Graduate student · Demo profile</small>
-            </div>
-          </div>
+          <StudentProfileCard state={state} onView={() => nav("my-profile")} />
         </div>
       </aside>
       <div className="shell">
@@ -366,10 +492,8 @@ export default function App() {
             className="search"
             onSubmit={(e) => {
               e.preventDefault();
-              setQuery(search.trim());
-              setFilter("All");
-              setPage("explore");
-              location.hash = "explore";
+              const term = search.trim();
+              if (nav("explore")) setQuery(term);
             }}
           >
             <Icon name="search" />
@@ -398,15 +522,15 @@ export default function App() {
             </button>
             <button
               className="avatar"
-              aria-label="Open profile"
+              aria-label="View My Profile"
               style={{ border: 0 }}
-              onClick={() => nav("profile")}
+              onClick={() => nav("my-profile")}
             >
               {state.name[0] || "J"}
             </button>
           </div>
         </header>
-        <main id="main">
+        <main id="main" tabIndex={-1}>
           {page === "dashboard" ? (
             <>
               <Heading
@@ -468,16 +592,30 @@ export default function App() {
                       </button>
                     </div>
                     <Briefing
-                      state={state}
+                      state={discoveryState}
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
                       onCalendar={() => nav("calendar")}
+                      onPreferences={() => nav("profile")}
                     />
                     <Filters value={filter} onChange={setFilter} />
-                    {cards(recommended.slice(0, 3))}
-                    {!recommended.length ? (
-                      <Empty title="Try another category">
-                        There are no available matches in this category.
+                    <p role="status">{recommendationResult.notice}</p>
+                    {cards(recommended)}
+                    {!recommendationResult.loading && !recommended.length ? (
+                      <Empty
+                        title={
+                          recommendationResult.source === "error"
+                            ? "Suggestions unavailable"
+                            : "Try another category"
+                        }
+                      >
+                        {recommendationResult.source === "error" ? (
+                          <Button onClick={recommendationResult.retry}>
+                            Retry suggestions
+                          </Button>
+                        ) : (
+                          "There are no available matches in this category."
+                        )}
                       </Empty>
                     ) : null}
                   </section>
@@ -634,6 +772,89 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
+              <UsingPreferences
+                state={state}
+                onEdit={() => nav("profile")}
+                mode={state.constraints.mode ?? "plan-building"}
+              />
+              <div className="row">
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void chat("Find events", {
+                      ...demo.read().constraints,
+                      mode: "discovery",
+                    })
+                  }
+                >
+                  Discover alternatives
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void chat("Build a weekly plan", {
+                      ...demo.read().constraints,
+                      mode: "plan-building",
+                    })
+                  }
+                >
+                  Build weekly plan
+                </Button>
+              </div>
+              {proposal && (
+                <PreferenceProposal
+                  key={proposal.id}
+                  topics={proposal.topics}
+                  changes={proposalChanges(proposal, state)}
+                  onOnce={() => {
+                    const once = proposals.useOnce(proposal.id);
+                    if (!once) {
+                      notify(
+                        "That proposal expired. Please make a fresh request.",
+                      );
+                      return;
+                    }
+                    void conversation.chat(
+                      "Find events. " + once.text,
+                      once.constraints,
+                      once.constraints.topics,
+                    );
+                  }}
+                  onDismiss={() => proposals.dismiss(proposal.id)}
+                  onManual={() => {
+                    proposals.dismiss();
+                    nav("profile");
+                  }}
+                  onSave={() => {
+                    if (!proposals.confirm(proposal.id)) {
+                      notify(
+                        "That proposal expired. Please review a fresh proposal.",
+                      );
+                      return;
+                    }
+                    conversation.reset();
+                    notify(
+                      "Confirmed topics saved. You can edit them in My Preferences.",
+                    );
+                  }}
+                />
+              )}
+              <div className="row">
+                <Button
+                  onClick={() => {
+                    proposals.dismiss();
+                    void conversation.chat("Explore beyond my interests", {
+                      explore: true,
+                      mode: "discovery",
+                    });
+                  }}
+                >
+                  Explore beyond my interests
+                </Button>
+                <Button onClick={() => nav("profile")}>
+                  Edit My Preferences
+                </Button>
+              </div>
               <DemoLauncher
                 state={state}
                 busy={busy || enrolling}
@@ -731,11 +952,49 @@ export default function App() {
                         ) : null}
                         <div className="bubble">
                           {m.text}
+                          {m.role === "assistant" &&
+                            !!m.eventIds?.length &&
+                            m.settingsKey !== settingsKey && (
+                              <div className="notice previous-settings">
+                                <p>
+                                  Based on previous settings. These earlier
+                                  suggestions have not been refreshed.
+                                </p>
+                                <Button
+                                  disabled={busy}
+                                  onClick={() => {
+                                    proposals.dismiss();
+                                    void conversation.refresh(
+                                      m.recommendationMode,
+                                      m,
+                                    );
+                                  }}
+                                >
+                                  Refresh suggestions
+                                </Button>
+                              </div>
+                            )}
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
                               evidence={m.evidence}
+                              matchReasons={m.matchReasons}
+                              previousSettings={m.settingsKey !== settingsKey}
+                              recommendationMode={m.recommendationMode}
                               state={state}
+                              busy={busy}
+                              onDecline={(id) => {
+                                if (conversation.read().busy) return;
+                                proposals.dismiss();
+                                void conversation.another(id);
+                                notify(
+                                  "Skipped in this search. Saved preferences are unchanged.",
+                                );
+                              }}
+                              onAnother={(id) => {
+                                proposals.dismiss();
+                                void conversation.another(id);
+                              }}
                               onDetails={setDetail}
                               onAdd={add}
                             />
@@ -809,7 +1068,11 @@ export default function App() {
                   <aside className="stack">
                     <section className="panel">
                       <div className="section-bar">
-                        <h2>Your draft plan</h2>
+                        <h2>
+                          {state.constraints.mode === "discovery"
+                            ? "Your alternatives"
+                            : "Your draft plan"}
+                        </h2>
                         <span className="tag">
                           {draft.length} {draft.length === 1 ? "idea" : "ideas"}
                         </span>
@@ -828,13 +1091,31 @@ export default function App() {
                               <Icon name="clock" />
                               {when(e!)}
                             </div>
-                            <div className="reason">
-                              {reasons(e!, state, state.constraints).map(
-                                (r) => (
-                                  <div key={r}>• {r}</div>
-                                ),
-                              )}
-                            </div>
+                            <RecommendationInfo
+                              event={e!}
+                              state={state}
+                              alternativeIds={
+                                state.constraints.mode === "discovery"
+                                  ? overlappingAlternatives(
+                                      e!,
+                                      state.draft,
+                                      state,
+                                    )
+                                  : []
+                              }
+                              matches={
+                                [...state.messages]
+                                  .reverse()
+                                  .find(
+                                    (m) =>
+                                      m.settingsKey === settingsKey &&
+                                      m.eventIds?.includes(e!.id),
+                                  )
+                                  ?.matchReasons?.find(
+                                    (r) => r.event_id === e!.id,
+                                  )?.matches
+                              }
+                            />
                             <Button
                               className="small"
                               onClick={() => add(e!.id)}
@@ -938,6 +1219,16 @@ export default function App() {
                   </Button>
                 </div>
               ) : null}
+              {state.plan.some((id) => {
+                const e = EVENTS.find((e) => e.id === id);
+                return e && issue(e, state);
+              }) && (
+                <div className="notice" role="status">
+                  Some existing choices no longer fit your saved requirements or
+                  commitments. They have been preserved. Review details, edit My
+                  Preferences, or remove an event yourself.
+                </div>
+              )}
               <section className="panel calendar-full">
                 <div className="section-bar">
                   <h2>{WEEK_LABEL}</h2>
@@ -978,6 +1269,14 @@ export default function App() {
                         <small>
                           {when(e)} · {e.location}
                         </small>
+                        {state.rsvps.includes(e.id) && (
+                          <small>Demo RSVP confirmed — retained</small>
+                        )}
+                        {!state.cancelled.includes(e.id) && issue(e, state) && (
+                          <small className="event-problem" role="status">
+                            Conflict: {issue(e, state)}
+                          </small>
+                        )}
                       </div>
                       <Button className="small" onClick={() => remove(e.id)}>
                         Remove
@@ -1000,8 +1299,24 @@ export default function App() {
               </section>
             </>
           ) : null}
-          {page === "profile" ? (
-            <Profile state={state} update={update} notify={notify} />
+          {page === "my-profile" ? (
+            <StudentProfilePage
+              state={state}
+              update={update}
+              notify={notify}
+              onPreferences={() => nav("profile")}
+              onActivity={nav}
+              onDirtyChange={setStudentProfileDirty}
+            />
+          ) : null}
+          {page === "profile" && state.onboarded ? (
+            <Profile
+              state={state}
+              update={update}
+              notify={notify}
+              onClearChat={clearChat}
+              onDirtyChange={setPreferenceDirty}
+            />
           ) : null}
           {page === "forum" ? (
             <Forum

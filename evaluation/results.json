@@ -169,7 +169,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education",
@@ -180,12 +180,14 @@
           "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e18",
           "interest_match": "Interest match: AI & education — Experiment with simple visual code; beginners are welcome.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
           "practical": "$0 admission · Maker Space · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Monday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Monday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-018. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education",
@@ -196,12 +198,14 @@
           "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e20",
           "interest_match": "Interest match: Career — Try approachable ways to start a professional conversation.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: one-to-one. No belonging or ability is inferred.",
           "practical": "$0 admission · Career Studio · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Monday, 17:30–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Monday, 17:30–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-020. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education",
@@ -212,8 +216,10 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e6",
           "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
         }
       ],
@@ -467,7 +473,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 720,
             "before": 1020,
@@ -482,12 +488,14 @@
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e1",
           "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
           "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 720,
             "before": 1020,
@@ -502,8 +510,10 @@
           "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e5",
           "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
         }
       ],
@@ -753,7 +763,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
             "free": true,
@@ -764,12 +774,14 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e22",
           "interest_match": "Interest match: Social — A relaxed evening of games and a picnic meal.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Monday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "schedule_fit": "Monday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
             "free": true,
@@ -780,12 +792,14 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e6",
           "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Community dinner & story exchange: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Community dinner & story exchange: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
             "free": true,
@@ -796,8 +810,10 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e2",
           "interest_match": "Interest match: Social — A welcoming shared table for students across schools and cultures.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Thursday, 17:00–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "schedule_fit": "Thursday, 17:00–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-002. Demo eligibility only; no real registration."
         }
       ],
@@ -1029,7 +1045,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               3
@@ -1039,8 +1055,10 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e11",
           "interest_match": "Interest match: Social — Meet students from different backgrounds over tea.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Thursday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday; food: Coffee & snacks.",
+          "schedule_fit": "Thursday, 13:00–14:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday; food: Coffee & snacks.",
           "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-011. Demo eligibility only; no real registration."
         }
       ],
@@ -1505,7 +1523,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               4
@@ -1517,8 +1535,10 @@
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e26",
           "interest_match": "Interest match: AI & education — Explore trade-offs in using AI for student support.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Seminar Room 2 · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Friday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday.",
+          "schedule_fit": "Friday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-026. Demo eligibility only; no real registration."
         }
       ],
@@ -1770,7 +1790,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education"
@@ -1779,12 +1799,14 @@
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e1",
           "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education"
@@ -1793,12 +1815,14 @@
           "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e5",
           "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education"
@@ -1807,8 +1831,10 @@
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e26",
           "interest_match": "Interest match: AI & education — Explore trade-offs in using AI for student support.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Seminar Room 2 · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Friday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "schedule_fit": "Friday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-026. Demo eligibility only; no real registration."
         }
       ],
@@ -2047,7 +2073,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               1
@@ -2059,8 +2085,10 @@
           "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e7",
           "interest_match": "Interest match: Career — Practice introducing your interests in a small peer workshop.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Career Studio · RSVP required · Open to demo students · None",
-          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday.",
+          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday.",
           "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-007. Demo eligibility only; no real registration."
         }
       ],
@@ -2303,7 +2331,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               4
@@ -2317,8 +2345,10 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e16",
           "interest_match": "Interest match: Social — An easy place to meet someone new between classes.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Campus Commons · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Friday, 12:00–13:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal; free admission.",
+          "schedule_fit": "Friday, 12:00–13:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal; free admission.",
           "trade_offs": "60 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-016. Demo eligibility only; no real registration."
         }
       ],
@@ -3229,7 +3259,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "free": true,
             "topics": [
@@ -3240,12 +3270,14 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e22",
           "interest_match": "Interest match: Social — A relaxed evening of games and a picnic meal.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Monday, 18:00–19:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "schedule_fit": "Monday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "free": true,
             "topics": [
@@ -3256,12 +3288,14 @@
           "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e23",
           "interest_match": "Interest match: Arts & culture — Meet student artists and see works in progress.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
           "practical": "$0 admission · Gallery Foyer · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
           "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-023. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "free": true,
             "topics": [
@@ -3272,8 +3306,10 @@
           "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e19",
           "interest_match": "Interest match: Arts & culture — Discuss art and cultural perspectives with a small student group.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Gallery Foyer · RSVP required · Open to demo students · None",
-          "schedule_fit": "Wednesday, 16:30–17:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "schedule_fit": "Wednesday, 16:30–17:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
           "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-019. Demo eligibility only; no real registration."
         }
       ],
@@ -3515,7 +3551,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 1140,
             "days": [
@@ -3528,8 +3564,10 @@
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e27",
           "interest_match": "Interest match: Social — A casual chance to meet students beyond your department.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Unknown",
-          "schedule_fit": "Friday, 19:00–20:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; start at/after 19:00.",
+          "schedule_fit": "Friday, 19:00–20:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; start at/after 19:00.",
           "trade_offs": "90 minutes; no admission cost. Food: Unknown. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-027. Demo eligibility only; no real registration."
         }
       ],
@@ -4272,7 +4310,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted.",
+          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               3
@@ -4285,8 +4323,10 @@
           "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e5",
           "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday.",
+          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
         }
       ],
@@ -4739,7 +4779,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 780,
             "limit": 5,
@@ -4752,12 +4792,14 @@
           "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e18",
           "interest_match": "Interest match: AI & education — Experiment with simple visual code; beginners are welcome.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
           "practical": "$0 admission · Maker Space · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Monday, 14:00–15:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "schedule_fit": "Monday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-018. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 780,
             "limit": 5,
@@ -4770,12 +4812,14 @@
           "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e20",
           "interest_match": "Interest match: Career — Try approachable ways to start a professional conversation.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: one-to-one. No belonging or ability is inferred.",
           "practical": "$0 admission · Career Studio · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Monday, 17:30–18:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "schedule_fit": "Monday, 17:30–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
           "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-020. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 780,
             "limit": 5,
@@ -4788,12 +4832,14 @@
           "discovery_context": "Social / Arts & culture opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e23",
           "interest_match": "Interest match: Arts & culture — Meet student artists and see works in progress.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
           "practical": "$0 admission · Gallery Foyer · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "schedule_fit": "Tuesday, 17:00–18:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
           "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-023. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 780,
             "limit": 5,
@@ -4806,12 +4852,14 @@
           "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e7",
           "interest_match": "Interest match: Career — Practice introducing your interests in a small peer workshop.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Career Studio · RSVP required · Open to demo students · None",
-          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
           "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-007. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted.",
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "after": 780,
             "limit": 5,
@@ -4824,8 +4872,10 @@
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
           "event_id": "e1",
           "interest_match": "Interest match: AI & education — Build a small learning tool and discuss where human judgment matters.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
           "practical": "$0 admission · Learning Studio · RSVP required · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; no current conflicts including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
+          "schedule_fit": "Tuesday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: start at/after 13:00.",
           "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-001. Demo eligibility only; no real registration."
         }
       ],

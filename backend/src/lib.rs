@@ -93,19 +93,31 @@ async fn plan(
     let constraints = interpretation.constraints;
     // Required for every interpreter, including watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
-    let selected = if interpretation.understood && interpretation.clarification.is_none() {
-        planner::recommend(&request.state, &constraints, events)
+    let batch = if interpretation.understood && interpretation.clarification.is_none() {
+        planner::recommend_with_details(&request.state, &constraints, events)
     } else {
-        Vec::new()
+        planner::RecommendationBatch::default()
     };
-    let evidence: Vec<_> = selected
+    let evidence: Vec<_> = batch
+        .recommendations
         .iter()
-        .map(|e| planner::evidence(e, &request.state, &constraints, events))
+        .map(|r| {
+            planner::evidence_with_topics(
+                r.event,
+                &request.state,
+                &constraints,
+                events,
+                &batch.active_topics,
+            )
+        })
         .collect();
-    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
+    let match_reasons: Vec<_> = batch.recommendations.iter()
+        .map(|r| json!({ "event_id": r.event.id, "score": r.details.score, "matches": r.details.matches }))
+        .collect();
+    let ids: Vec<_> = batch.recommendations.iter().map(|r| &r.event.id).collect();
     let diagnostic = if interpretation.understood
         && interpretation.clarification.is_none()
-        && selected.is_empty()
+        && batch.recommendations.is_empty()
     {
         Some(planner::no_match_reason(
             &request.state,
@@ -118,7 +130,7 @@ async fn plan(
     let mut body = json!({
         "mode":mode, "provider":provider, "constraints":constraints,
         "understood":interpretation.understood, "clarification":interpretation.clarification,
-        "event_ids":ids, "recommendations":evidence, "diagnostic":diagnostic
+        "event_ids":ids, "recommendations":evidence, "match_reasons":match_reasons, "diagnostic":diagnostic
     });
     if let Some(notice) = notice {
         body["notice"] = json!(notice);
@@ -265,7 +277,22 @@ mod tests {
             .json()
             .await
             .unwrap();
-        (serde_json::from_str(&text).unwrap(), health)
+        let body: Value = serde_json::from_str(&text).unwrap();
+        assert!(body.get("matchReasons").is_none());
+        assert_eq!(text.matches("\"match_reasons\":").count(), 1);
+        let constraints: Constraints = serde_json::from_value(body["constraints"].clone()).unwrap();
+        let events: Vec<Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let batch = if body["understood"] == true && body["clarification"].is_null() {
+            planner::recommend_with_details(&Schedule::default(), &constraints, &events)
+        } else {
+            planner::RecommendationBatch::default()
+        };
+        let reasons: Vec<_> = batch.recommendations.iter().map(|r| {
+            json!({"event_id":r.event.id,"score":r.details.score,"matches":r.details.matches})
+        }).collect();
+        assert_eq!(body["match_reasons"], json!(reasons));
+        (body, health)
     }
 
     #[tokio::test]

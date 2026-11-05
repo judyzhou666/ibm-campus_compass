@@ -45,6 +45,11 @@ for (const width of [1280, 390]) {
     .click();
   await page.locator(".chat-event").nth(2).waitFor();
   await page
+    .locator(".chat-event")
+    .first()
+    .getByText("Recommendation evidence", { exact: true })
+    .click();
+  await page
     .locator(".chat-event .evidence")
     .first()
     .getByText(/Compared with|No other eligible/)

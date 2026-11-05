@@ -86,6 +86,12 @@ impl SimulatedInterpreter {
             understood |= found;
             found
         };
+        if c.explore == Some(true) {
+            c.explore = None;
+            if c.mode == Some(crate::model::RecommendationMode::Discovery) {
+                c.mode = None;
+            }
+        }
         if matches(r"\b(reset|start over)\b", &q) {
             c = Constraints::default();
         }
@@ -104,6 +110,22 @@ impl SimulatedInterpreter {
             "art|arts|culture|cultural|film|museum|creative|sketch|ceramics",
             "wellbeing|wellness|relax|mindful|movement|quiet|balance",
         ];
+        if matches(
+            r"\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b",
+            &q,
+        ) {
+            c.mode = Some(crate::model::RecommendationMode::Discovery);
+        } else if matches(
+            r"\bweekly plan\b|\b(?:plan|build|create|make)\s+(?:(?:me|my|a|the|our|this)\s+){0,3}(?:weekly\s+)?(?:plan|schedule|week)\b",
+            &q,
+        ) {
+            c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
+        }
+        if matches(r"\b(?:beyond|outside) (?:my|your|saved) interests\b", &q) {
+            c.explore = Some(true);
+            c.mode
+                .get_or_insert(crate::model::RecommendationMode::Discovery);
+        }
         let mut topics = Vec::new();
         let mut excluded = Vec::new();
         for (topic, words) in TOPICS.iter().zip(keywords) {
@@ -118,6 +140,7 @@ impl SimulatedInterpreter {
             }
         }
         if !topics.is_empty() {
+            c.explore = None;
             c.topics = Some(
                 topics
                     .into_iter()
@@ -251,5 +274,70 @@ impl SimulatedInterpreter {
             understood,
             clarification,
         }
+    }
+}
+
+#[cfg(test)]
+mod exploration_lifecycle_tests {
+    use super::*;
+    use crate::model::RecommendationMode;
+    #[test]
+    fn temporary_exploration_and_reset_do_not_leak() {
+        let previous = Constraints {
+            explore: Some(true),
+            mode: Some(RecommendationMode::Discovery),
+            ..Default::default()
+        };
+        let normal = SimulatedInterpreter
+            .parse("Tuesday afternoon events", previous.clone())
+            .constraints;
+        assert_eq!(normal.explore, None);
+        assert_eq!(normal.mode, None);
+        assert_eq!(normal.days, Some(vec![1]));
+        assert_eq!(
+            SimulatedInterpreter
+                .parse("start over", previous.clone())
+                .constraints,
+            Constraints::default()
+        );
+        let explicit = SimulatedInterpreter
+            .parse("Explore beyond my interests", previous)
+            .constraints;
+        assert_eq!(explicit.explore, Some(true));
+        assert_eq!(explicit.mode, Some(RecommendationMode::Discovery));
+    }
+    #[test]
+    fn discovery_words_win_over_incidental_week_and_schedule_words() {
+        use crate::model::RecommendationMode;
+        for text in [
+            "explore social events to make friends this week",
+            "browse events to create connections this week",
+            "discover events for my weekly plan",
+        ] {
+            assert_eq!(
+                SimulatedInterpreter
+                    .parse(text, Constraints::default())
+                    .constraints
+                    .mode,
+                Some(RecommendationMode::Discovery)
+            );
+        }
+        assert_eq!(
+            SimulatedInterpreter
+                .parse("build my weekly schedule", Constraints::default())
+                .constraints
+                .mode,
+            Some(RecommendationMode::PlanBuilding)
+        );
+        assert_eq!(
+            SimulatedInterpreter
+                .parse(
+                    "social events to make friends this week",
+                    Constraints::default()
+                )
+                .constraints
+                .mode,
+            None
+        );
     }
 }
