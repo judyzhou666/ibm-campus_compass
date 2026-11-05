@@ -23,6 +23,12 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## CI fix — November 5, 2026: API integration expectation after new events
+
+The "Rust and React checks" workflow failed on the `Judy` branch at `npm run test:api`. The November 2 catalog update added fictional event `e34` (Graduate school info night, Career, Tuesday 6:00–7:30 PM), which correctly matches the "career after 3" → "PM" / "after 3 PM" follow-up. Rust and the browser fallback both returned `e20, e34, e28`; only the test's hardcoded draft (`e20, e28`) was stale. Updated `tests/backend-integration.ts`; no application behavior changed.
+
+Verification: `npm test` (planner assertions, TypeScript and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass locally.
+
 ## Update — November 4, 2026: Doris's PR #4 merged with watsonx; teammate guides
 
 `main` (Doris's PR #4: clarifications, recommendation evidence, demo configuration and evaluation) was merged into `Judy` together with the watsonx interpreter, then into `main`.
