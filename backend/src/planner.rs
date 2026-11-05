@@ -219,6 +219,29 @@ fn matches_constraints(e: &Event, c: &Constraints) -> bool {
         && c.excluded.as_ref().is_none_or(|t| !t.contains(&e.topic))
 }
 
+enum DiscoveryExclusion {
+    Exploration,
+    Dismissed,
+}
+fn discovery_exclusion(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    active: &[String],
+) -> Option<DiscoveryExclusion> {
+    if c.explore == Some(true) && active.contains(&e.topic) {
+        Some(DiscoveryExclusion::Exploration)
+    } else if state
+        .preferences
+        .as_ref()
+        .is_some_and(|p| p.dismissed.contains(&e.id))
+    {
+        Some(DiscoveryExclusion::Dismissed)
+    } else {
+        None
+    }
+}
+
 pub struct RankedRecommendation<'a> {
     pub event: &'a Event,
     pub details: RankingDetails,
@@ -252,11 +275,7 @@ pub fn recommend_with_details<'a>(
                 && issue(e, state, events).is_none()
                 && preference_issue(e, state).is_none()
                 && matches_constraints(e, c)
-                && (c.explore != Some(true) || !active.contains(&e.topic))
-                && state
-                    .preferences
-                    .as_ref()
-                    .is_none_or(|p| !p.dismissed.contains(&e.id))
+                && discovery_exclusion(e, state, c, &active).is_none()
         })
         .collect();
     let mut selected: Vec<&Event> = Vec::new();
@@ -425,21 +444,36 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
     let mut cancelled = 0;
     let mut missing = 0;
     let mut already = 0;
+    let mut dismissed = 0;
+    let mut explored = 0;
+    let active = active_topics(state);
     for e in within {
         if state.plan.contains(&e.id) {
             already += 1;
+            continue;
         }
         match issue(e, state, events).as_deref() {
             Some(s) if s.starts_with("Conflicts") => conflicts += 1,
             Some("Cancelled in demo") => cancelled += 1,
             Some(s) if s.contains("RSVP") || s.contains("metadata") => missing += 1,
             Some(_) => restrictions += 1,
-            None => {}
+            None => match discovery_exclusion(e, state, c, &active) {
+                Some(DiscoveryExclusion::Exploration) => explored += 1,
+                Some(DiscoveryExclusion::Dismissed) => dismissed += 1,
+                None => {}
+            },
         }
     }
-    format!(
+    let mut explanation = format!(
         "Within your filters: {conflicts} scheduling conflicts, {restrictions} full/restricted/unknown-eligibility records, {cancelled} cancellations, {missing} incomplete/invalid records, and {already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change."
-    )
+    );
+    if dismissed > 0 {
+        explanation.push_str(&format!(" {dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips."));
+    }
+    if explored > 0 {
+        explanation.push_str(&format!(" {explored} events were excluded because beyond-interest exploration excludes your active saved topics. Use a normal search or start over to include those topics."));
+    }
+    explanation
 }
 
 #[cfg(test)]
@@ -860,5 +894,56 @@ mod ranking_optimization_tests {
         };
         let batch = recommend_with_details(&Schedule::default(), &c, &catalog);
         assert!(std::ptr::eq(batch.recommendations[0].event, &catalog[1]));
+    }
+}
+
+#[cfg(test)]
+mod review_filter_tests {
+    use super::*;
+    use crate::model::PreferenceInput;
+    fn event() -> Event {
+        serde_json::from_str::<Vec<Event>>(include_str!("../../data/events.json"))
+            .unwrap()
+            .remove(0)
+    }
+    #[test]
+    fn no_match_explains_dismissed_only_candidates() {
+        let events = vec![event()];
+        let state = Schedule {
+            preferences: Some(PreferenceInput {
+                dismissed: vec![events[0].id.clone()],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let c = Constraints::default();
+        assert!(
+            recommend_with_details(&state, &c, &events)
+                .recommendations
+                .is_empty()
+        );
+        let reason = no_match_reason(&state, &c, &events);
+        assert!(reason.contains("1 events were hidden"));
+        assert!(reason.contains("Restore hidden events"));
+    }
+    #[test]
+    fn no_match_explains_exploration_only_candidates() {
+        let events = vec![event()];
+        let state = Schedule {
+            interests: vec![events[0].topic.clone()],
+            ..Default::default()
+        };
+        let c = Constraints {
+            explore: Some(true),
+            ..Default::default()
+        };
+        assert!(
+            recommend_with_details(&state, &c, &events)
+                .recommendations
+                .is_empty()
+        );
+        let reason = no_match_reason(&state, &c, &events);
+        assert!(reason.contains("1 events were excluded"));
+        assert!(reason.contains("normal search or start over"));
     }
 }
