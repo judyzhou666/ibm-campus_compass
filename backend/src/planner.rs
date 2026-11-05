@@ -366,7 +366,7 @@ pub fn evidence_with_topics(
         .as_deref()
         .filter(|t| !t.is_empty())
         .unwrap_or(active);
-    let comparison = events_comparison(e, state, c, events);
+    let comparison = events_comparison(e, state, c, events, active);
     let mut filters = Vec::new();
     if let Some(days) = &c.days {
         filters.push(format!(
@@ -416,13 +416,20 @@ pub fn evidence_with_topics(
     })
 }
 
-fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Event]) -> String {
+fn events_comparison(
+    e: &Event,
+    state: &Schedule,
+    c: &Constraints,
+    events: &[Event],
+    active: &[String],
+) -> String {
     let other = events.iter().find(|other| {
         other.id != e.id
             && other.topic == e.topic
             && issue(other, state, events).is_none()
             && preference_issue(other, state).is_none()
             && matches_constraints(other, c)
+            && discovery_exclusion(other, state, c, active).is_none()
             && !state.plan.contains(&other.id)
     });
     match other {
@@ -905,6 +912,46 @@ mod review_filter_tests {
         serde_json::from_str::<Vec<Event>>(include_str!("../../data/events.json"))
             .unwrap()
             .remove(0)
+    }
+    #[test]
+    fn comparisons_exclude_hidden_and_exploration_filtered_alternatives() {
+        let original = event();
+        let mut other = original.clone();
+        other.id = "comparison-only".into();
+        other.title = "Hidden comparison candidate".into();
+        let events = vec![original, other];
+        let mut state = Schedule {
+            preferences: Some(PreferenceInput {
+                dismissed: vec![events[1].id.clone()],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let c = Constraints::default();
+        assert!(
+            !events_comparison(&events[0], &state, &c, &events, &active_topics(&state))
+                .contains(&events[1].title)
+        );
+        state.preferences.as_mut().unwrap().dismissed.clear();
+        assert!(
+            events_comparison(&events[0], &state, &c, &events, &active_topics(&state))
+                .contains(&events[1].title)
+        );
+        state.preferences.as_mut().unwrap().learning_topics = vec![events[0].topic.clone()];
+        let exploration = Constraints {
+            explore: Some(true),
+            ..Default::default()
+        };
+        assert!(
+            !events_comparison(
+                &events[0],
+                &state,
+                &exploration,
+                &events,
+                &active_topics(&state)
+            )
+            .contains(&events[1].title)
+        );
     }
     #[test]
     fn no_match_explains_dismissed_only_candidates() {

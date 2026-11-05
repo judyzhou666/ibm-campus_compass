@@ -13,3 +13,9 @@ Checks: 12 focused TypeScript lifecycle/mode/refresh tests; Rust exploration lif
 Changed Rust planner selection and diagnostics to share exploration/dismissal exclusions. Diagnostics distinguish hidden events and beyond-interest exclusions after genuine eligibility checks, and suggest restoring hidden events, a new search or start over without automatically relaxing anything.
 
 Checks: 2 focused Rust exclusion tests and 3 original ranking/evidence regression tests passed. Existing selection and explanation baselines remain intact for unaffected requests.
+
+## 3. Filtered comparison alternatives
+
+Rust comparison candidates now use the same exploration/dismissal exclusion helper as recommendation selection, alongside existing access, preference, constraint and planned-event checks. Evidence reuses the operation's active-topic snapshot.
+
+Checks: 3 focused Rust filtering/diagnostic tests and 3 original ranking/evidence tests passed. Added assertions for hidden comparisons, eligible restored comparisons and enabled learning topics excluded during exploration. No captured response baseline changes were necessary.
