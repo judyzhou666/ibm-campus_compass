@@ -190,6 +190,13 @@ try {
       message,
     );
   }
+  for (const message of [
+    "explore social events to make friends this week",
+    "build my weekly schedule",
+    "social events to make friends this week",
+  ]) {
+    await compare("mode intent: " + message, fresh(), {}, message);
+  }
   for (const goal of Object.keys(GOAL_TOPICS)) {
     const state = {
       ...fresh(),

@@ -111,15 +111,15 @@ impl SimulatedInterpreter {
             "wellbeing|wellness|relax|mindful|movement|quiet|balance",
         ];
         if matches(
-            r"\bweekly plan\b|\b(plan|build|create|make)\b.*\b(week|weekly|schedule)\b",
-            &q,
-        ) {
-            c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
-        } else if matches(
             r"\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b",
             &q,
         ) {
             c.mode = Some(crate::model::RecommendationMode::Discovery);
+        } else if matches(
+            r"\bweekly plan\b|\b(?:plan|build|create|make)\s+(?:(?:me|my|a|the|our|this)\s+){0,3}(?:weekly\s+)?(?:plan|schedule|week)\b",
+            &q,
+        ) {
+            c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
         }
         if matches(r"\b(?:beyond|outside) (?:my|your|saved) interests\b", &q) {
             c.explore = Some(true);
@@ -305,5 +305,39 @@ mod exploration_lifecycle_tests {
             .constraints;
         assert_eq!(explicit.explore, Some(true));
         assert_eq!(explicit.mode, Some(RecommendationMode::Discovery));
+    }
+    #[test]
+    fn discovery_words_win_over_incidental_week_and_schedule_words() {
+        use crate::model::RecommendationMode;
+        for text in [
+            "explore social events to make friends this week",
+            "browse events to create connections this week",
+            "discover events for my weekly plan",
+        ] {
+            assert_eq!(
+                SimulatedInterpreter
+                    .parse(text, Constraints::default())
+                    .constraints
+                    .mode,
+                Some(RecommendationMode::Discovery)
+            );
+        }
+        assert_eq!(
+            SimulatedInterpreter
+                .parse("build my weekly schedule", Constraints::default())
+                .constraints
+                .mode,
+            Some(RecommendationMode::PlanBuilding)
+        );
+        assert_eq!(
+            SimulatedInterpreter
+                .parse(
+                    "social events to make friends this week",
+                    Constraints::default()
+                )
+                .constraints
+                .mode,
+            None
+        );
     }
 }

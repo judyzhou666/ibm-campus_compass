@@ -124,14 +124,14 @@ export function interpretRequest(
     delete c.free;
     delete c.excluded;
   }
-  if (
+  if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
+    c.mode = "discovery";
+  else if (
     test(
-      /\bweekly plan\b|\b(plan|build|create|make)\b.*\b(week|weekly|schedule)\b/,
+      /\bweekly plan\b|\b(?:plan|build|create|make)\s+(?:(?:me|my|a|the|our|this)\s+){0,3}(?:weekly\s+)?(?:plan|schedule|week)\b/,
     )
   )
     c.mode = "plan-building";
-  else if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
-    c.mode = "discovery";
   if (test(/\b(?:beyond|outside) (?:my|your|saved) interests\b/)) {
     c.explore = true;
     c.mode ??= "discovery";

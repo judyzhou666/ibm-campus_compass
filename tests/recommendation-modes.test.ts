@@ -167,3 +167,21 @@ test("explicit exploration allows labelled overlap and refresh retains the selec
     !(demo.read().draft.includes("e1") && demo.read().draft.includes("e17")),
   );
 });
+
+test("explicit discovery beats incidental plan words while schedule construction stays intentional", () => {
+  for (const text of [
+    "explore social events to make friends this week",
+    "browse events to create connections this week",
+    "discover events for my weekly plan",
+  ])
+    assert.equal(interpretRequest(text).constraints.mode, "discovery");
+  assert.equal(
+    interpretRequest("build my weekly schedule").constraints.mode,
+    "plan-building",
+  );
+  assert.equal(
+    interpretRequest("social events to make friends this week").constraints
+      .mode,
+    undefined,
+  );
+});

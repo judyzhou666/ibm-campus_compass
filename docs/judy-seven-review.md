@@ -25,3 +25,9 @@ Checks: 3 focused Rust filtering/diagnostic tests and 3 original ranking/evidenc
 `planningKey` now uses only the transmitted recommendation schedule and current search constraints. Text, profile fields and guidance are excluded. Presentation/history identity remains separate. App invalidation uses recommendation settings rather than raw proposal revisions, while note/guidance-only preference saves preserve current search and draft suggestions. Actual ranking/schedule changes still reset obsolete requests.
 
 Checks: frontend typecheck and 13 focused key/history/refresh tests passed, including stable keys for notes/guidance/disabled goals, different keys for real constraints, and delayed-response acceptance versus rejection. Final browser checks cover effect-level deduplication and save behavior.
+
+## 5. Explicit discovery intent
+
+Both interpreters now prioritize explicit discover/browse/explore wording. Plan construction requires a bounded phrase such as “build my weekly schedule,” not a broad match between “make” and “week.” “Explore social events to make friends this week” therefore selects discovery.
+
+Checks: 9 focused TypeScript mode/lifecycle tests, 2 Rust lifecycle/intent tests and 31 exact shared comparisons passed. Added matching TS/Rust cases for discovery, intentional schedule construction and incidental social wording.
