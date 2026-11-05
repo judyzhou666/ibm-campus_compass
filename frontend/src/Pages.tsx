@@ -321,34 +321,17 @@ export function Forum({
     setActiveCommunityId(selected);
   }, [selected]);
 
-  // On mount, push a base entry so swipe-back at the top level stays on the forum
-  useEffect(() => {
-    history.pushState({ forumBase: true }, "");
-
-    function onPop(e: PopStateEvent) {
-      if (e.state?.forumSubPage) {
-        // Landed on a sub-page entry — shouldn't happen; stay put
-        return;
-      }
-      if (selectedPostId || creatingPost) {
-        // Inside a sub-page: exit it, push a fresh base so the next swipe is absorbed
-        setSelectedPostId(null);
-        setCreatingPost(false);
-        history.pushState({ forumBase: true }, "");
-      } else {
-        // Already at top level: re-push the base entry to absorb the swipe
-        history.pushState({ forumBase: true }, "");
-      }
-    }
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Push a sub-page history entry when drilling into a post or create page
+  // Push a sub-page history entry when drilling into a post or create page,
+  // and listen for swipe-back to exit the sub-page gracefully.
   useEffect(() => {
     if (selectedPostId || creatingPost) {
       history.pushState({ forumSubPage: true }, "");
+      function onPop() {
+        setSelectedPostId(null);
+        setCreatingPost(false);
+      }
+      window.addEventListener("popstate", onPop, { once: true });
+      return () => window.removeEventListener("popstate", onPop);
     }
   }, [selectedPostId, creatingPost]);
 

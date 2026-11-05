@@ -133,6 +133,17 @@ export default function App() {
     window.addEventListener("hashchange", handle);
     return () => window.removeEventListener("hashchange", handle);
   }, []);
+  // Push a base guard on every tab change so Mac swipe-back stays within the tab
+  useEffect(() => {
+    history.pushState({ appTab: page }, "");
+    function onPop(e: PopStateEvent) {
+      // If the popped entry is our own guard (or anything else), re-push it so
+      // the swipe is absorbed and the user stays on the current tab.
+      history.pushState({ appTab: page }, "");
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [page]);
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
