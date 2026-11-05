@@ -186,7 +186,11 @@ export function createConversation(
         requestPlan(
           continuationMessage({
             ...constraints,
-            mode: mode ?? source?.recommendationMode ?? constraints.mode,
+            mode:
+              mode ??
+              source?.recommendationMode ??
+              constraints.mode ??
+              "plan-building",
           }),
           {
             ...constraints,

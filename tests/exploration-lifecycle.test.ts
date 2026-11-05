@@ -41,3 +41,15 @@ test("reset clears temporary mode/exploration but explicit discovery remains ava
     undefined,
   );
 });
+
+test("refresh of an older explicit exploration snapshot keeps the compatible default when mode metadata is absent", async () => {
+  const demo = createStore(fresh()),
+    c = createConversation(demo, () => {}, offline);
+  await c.refresh(undefined, {
+    role: "assistant",
+    text: "Older exploration",
+    resolvedConstraints: { explore: true },
+  });
+  assert.equal(demo.read().constraints.explore, true);
+  assert.equal(demo.read().constraints.mode, "plan-building");
+});

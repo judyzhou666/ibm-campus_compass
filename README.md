@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## Seven follow-up review fixes (local Doris work)
+
+Temporary beyond-interest exploration is one request at a time unless explicitly continued; ordinary messages restore saved-topic inclusion, and reset clears exploration/mode. Explicit discovery intent outranks incidental words such as “make friends this week.” Rust no-match diagnostics and comparison alternatives share dismissal/exploration exclusions. Request keys exclude local notes/profile text/guidance; note-only Save preserves active filters and pending responses. Dashboard requests are disabled off Dashboard through an always-mounted hook. Rust now scores numerical facts without formatting strings for unselected candidates; winners retain unchanged explanations and tie-breaking.
+
+See [the per-issue implementation and verification record](docs/judy-seven-review.md) for exact commits, changed paths and checks. Fresh final checks passed: frontend typecheck/build, 182 TypeScript tests, 5 Wiki tests, planner assertions, Rust fmt/check/Clippy/build and 35 tests, API integration with 20 response fixtures, and 31 exact shared comparisons. Focused desktop/mobile simulated browser checks cover request counts, note-only saves, exploration/reset, mode switching, explicit RSVP/busy conflicts and preference confirmation. Live watsonx interpretation, the full browser matrix and frozen evaluation remain unverified in this pass. No push or PR action has been performed.
+
+Demo locally with `npm run build`, `cargo run --locked`, then http://localhost:4173/#planner. Click **Explore beyond my interests**, then ask **Tuesday afternoon events**; saved interests are included again. **start over** clears mode/exploration. **explore social events to make friends this week** selects discovery; **build my weekly schedule** selects a compatible plan. Optional regression: `scripts/browser-review-seven.mjs` with the existing Playwright configuration.
+
 ## Final verification of eight review fixes
 
 Verified on Doris: original per-message refresh filters (55f9950), supported-topic proposal interception (3c35dec), compatible default recommendation modes (4df2964), recommendation-only soft preferences (62bb746), honest missing profile facts (bcfb173), TypeScript ranking reuse (89a405f), Rust ranking reuse (00d2c18), and canonical `match_reasons` with legacy read compatibility (005e086). Main’s watsonx integration is retained through merge 8a2d021; no new application changes were needed for final verification.
