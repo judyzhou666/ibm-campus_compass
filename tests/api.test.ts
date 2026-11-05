@@ -164,7 +164,7 @@ test("calendar export labels demo records and excludes cancellations", () => {
   assert.ok(!text.includes("UID:e1-"));
   assert.ok(text.includes("UID:e5-"));
   assert.ok(text.includes("[DEMO]"));
-  assert.ok(text.includes("DTSTART:20261022T190000Z"));
+  assert.ok(text.includes("DTSTART:20261105T200000Z"));
 });
 
 test("required RSVP cannot be bypassed, even offline", async () => {

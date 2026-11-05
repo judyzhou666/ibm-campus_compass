@@ -2,6 +2,18 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## Doris synchronization with main bcabf24 (PR #8)
+
+Merging main brought in PR #8's forum redesign, event-detail overlay, time zone setting, current-week calendar (Nov 2) and eight new fictional events (`e31`–`e38`). Conflicts were resolved as follows:
+- `data/events.json`: main's 38 events, each keeping Doris's `participation` field. The new events use `"unknown"` because their records don't say how people take part.
+- `components.tsx`: main's full-page EventDetails, with Doris's "Participation format" row added to the evidence list. Doris's EventCard and Week changes are unchanged.
+- `Pages.tsx`: Doris's move of Profile into `MyPreferences` plus main's forum and settings changes. Only the imports actually used are kept.
+- `state.ts` and `styles.css`: both sides combined; no CSS selector is added by both.
+
+The new events change some planner results, so the pre-optimization snapshots were re-recorded without weakening them. The original pre-optimization TypeScript planner (`bcfb173`) and Rust binary (`89a405f`) were run on the merged catalog. They matched the current code exactly for all ids, scores, explanations, evidence and diagnostics; the only difference was the intended `match_reasons` field name. Only then were `tests/fixtures/planner-before-optimization.json` and `tests/fixtures/rust-ranking-before-optimization.json` re-recorded. The Academic discovery expectation is now `e1, e14, e31`, the same online and offline. Legacy posts now gain a stable `legacy-N` id on restore, and the migration test checks that.
+
+Verification: `npm test` (186 TypeScript tests and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 35 Rust tests, `cargo build --locked` and `npm run test:api` all pass. The browser journeys and the frozen evaluation were not rerun.
+
 ## Seven follow-up review fixes (local Doris work)
 
 Temporary beyond-interest exploration is one request at a time unless explicitly continued; ordinary messages restore saved-topic inclusion, and reset clears exploration/mode. Explicit discovery intent outranks incidental words such as “make friends this week.” Rust no-match diagnostics and comparison alternatives share dismissal/exploration exclusions. Request keys exclude local notes/profile text/guidance; note-only Save preserves active filters and pending responses. Dashboard requests are disabled off Dashboard through an always-mounted hook. Rust now scores numerical facts without formatting strings for unselected candidates; winners retain unchanged explanations and tie-breaking.
@@ -312,6 +324,27 @@ cargo run --locked
 ```
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
+
+## PR #8 review fixes — November 5, 2026
+
+Fixes from the review of the forum redesign, event-detail overlay and time zone setting:
+
+- **Create Post** now uses the community picked in its dropdown. Posts without one show as "Local demo post" instead of being filed under Campus explorers. Each post gets a stable id, so likes no longer move to another post when you add one. Posts saved before this change get ids when they load.
+- **Save Draft** really saves the title, body and community in this browser, and Create Post reopens with the draft. Posting clears it.
+- **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
+- **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
+- **Time zone setting** now says exactly what it changes: the heading date, plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
+- **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app.
+- **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
+- **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
+
+Verification: `npm test` (88 TypeScript tests, including 4 new ones in `tests/forum-settings.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app in a browser I checked: draft save and reopen, posting to a chosen community, a comment and a conversation join surviving in storage, Back across tabs and at the first page, and event-detail focus, Tab wrapping, Escape and the Tokyo time line. Limitations: forum likes still reset on reload, the editor toolbar and "Add tags" buttons do nothing yet, and the Rust planner is unchanged.
+
+## CI fix — November 5, 2026: API integration expectation after new events
+
+The "Rust and React checks" workflow failed on the `Judy` branch at `npm run test:api`. The November 2 catalog update added fictional event `e34` (Graduate school info night, Career, Tuesday 6:00–7:30 PM), which correctly matches the "career after 3" → "PM" / "after 3 PM" follow-up. Rust and the browser fallback both returned `e20, e34, e28`; only the test's hardcoded draft (`e20, e28`) was stale. Updated `tests/backend-integration.ts`; no application behavior changed.
+
+Verification: `npm test` (planner assertions, TypeScript and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass locally.
 
 ## Update — November 4, 2026: Doris's PR #4 merged with watsonx; teammate guides
 

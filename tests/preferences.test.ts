@@ -75,9 +75,13 @@ test("legacy migration preserves notes and unrelated data without inventing lear
       "rsvps",
       "saved",
       "joinedCommunities",
-      "posts",
     ] as const)
       assert.deepEqual(s[k], legacy[k]);
+    // Legacy posts keep their content and gain a stable id on restore.
+    assert.deepEqual(
+      s.posts,
+      legacy.posts.map((p) => ({ ...p, id: "legacy-1" })),
+    );
     assert.equal(s.messages[0].text, "history");
     assert.deepEqual(s.preferences?.learning_topics, []);
     assert.equal(s.preferences?.use_goals, false);
@@ -240,7 +244,13 @@ test("clearing personalization preserves plans, saved events, RSVP, conversation
     messages: [{ role: "user" as const, text: "Keep conversation" }],
     joined: ["Keep discussion"],
     posts: [
-      { name: "Demo", title: "Keep post", body: "Keep body", tag: "demo" },
+      {
+        id: "p1",
+        name: "Demo",
+        title: "Keep post",
+        body: "Keep body",
+        tag: "demo",
+      },
     ],
     joinedCommunities: ["ai"],
     preferences: {

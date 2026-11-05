@@ -77,7 +77,7 @@ try {
       discoveryState(fresh(), [], "Academic"),
       fetcher,
     );
-    assert.deepEqual(academic.ids.slice().sort(), ["e1", "e14", "e26"].sort());
+    assert.deepEqual(academic.ids.slice().sort(), ["e1", "e14", "e31"].sort());
     const demo = createStore(fresh());
     const conversation = createConversation(demo, () => {}, fetcher);
     await conversation.chat("AI events on Tuesday after 1 PM");
@@ -271,7 +271,7 @@ try {
       await conversation.chat(answer);
       assert.deepEqual(demo.read().constraints.topics, ["Career"]);
       assert.equal(demo.read().constraints.after, 900);
-      assert.deepEqual(demo.read().draft, ["e20", "e28"]);
+      assert.deepEqual(demo.read().draft, ["e20", "e34", "e28"]);
       assert.deepEqual(demo.read().plan, []);
       assert.deepEqual(demo.read().rsvps, []);
     }

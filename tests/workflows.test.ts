@@ -403,7 +403,7 @@ for (const request of ["career after 3", "career on Thursday after 3"]) {
         assert.equal(demo.read().constraints.after, 900);
         assert.deepEqual(
           demo.read().draft,
-          request.includes("Thursday") ? ["e28"] : ["e20", "e28"],
+          request.includes("Thursday") ? ["e28"] : ["e20", "e34", "e28"],
         );
         assert.deepEqual(demo.read().plan, []);
         assert.deepEqual(demo.read().rsvps, []);

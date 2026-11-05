@@ -18,26 +18,28 @@ import { measure } from "../evaluation/metrics.ts";
 
 test("demo config validates Mondays and zones, isolates previous storage, and crosses DST correctly", () => {
   assert.deepEqual(weekDates(), [
-    "2026-10-19",
-    "2026-10-20",
-    "2026-10-21",
-    "2026-10-22",
-    "2026-10-23",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
   ]);
-  assert.equal(utcStamp(1, 900), "20261020T190000Z");
-  const winter = { ...DEMO, week_start: "2026-11-02" };
-  assert.equal(utcStamp(1, 900, winter), "20261103T200000Z");
-  const utc = { ...winter, time_zone: "UTC" };
+  // 2026-11-03: US DST ended Nov 1, so EST (-5); 15:00 local = 20:00 UTC
+  assert.equal(utcStamp(1, 900), "20261103T200000Z");
+  const utc = { ...DEMO, time_zone: "UTC" };
   assert.equal(utcStamp(1, 900, utc), "20261103T150000Z");
-  assert.notEqual(storageKey(winter), storageKey());
-  assert.notEqual(storageKey(utc), storageKey(winter));
+  // A different week produces a different storage key
+  const oldWeek = { ...DEMO, week_start: "2026-10-19" };
+  assert.notEqual(storageKey(oldWeek), storageKey());
+  assert.notEqual(storageKey(utc), storageKey());
   assert.throws(() =>
     validateDemoConfig({ ...DEMO, week_start: "2026-10-20" }),
   );
   assert.throws(() =>
     validateDemoConfig({ ...DEMO, time_zone: "Invalid/Zone" }),
   );
-  assert.equal(utcStamp(0, 1440), "20261020T040000Z");
+  // day=0 midnight+1440 wraps to next calendar day in EST
+  assert.equal(utcStamp(0, 1440), "20261103T050000Z");
 });
 test("multiple expressed interests get diverse feasible options without relaxing filters", () => {
   const s = fresh(),
@@ -93,7 +95,7 @@ test("invalid catalog days stay inspectable instead of crashing event details", 
     assert.equal(dayLabel(day), "Date needs review");
     assert.match(when(event), /Unknown day, Date needs review/);
   }
-  assert.match(when(EVENTS[0]), /^Tue, Oct 20/);
+  assert.match(when(EVENTS[0]), /^Tue, Nov 3/);
 });
 test("guided scenario is resettable, limited, and never grants enrollment or RSVP", () => {
   const a = guidedScenario(),

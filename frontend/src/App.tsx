@@ -229,6 +229,20 @@ export default function App() {
     window.addEventListener("hashchange", handle);
     return () => window.removeEventListener("hashchange", handle);
   }, []);
+  // Keep swipe-back (and Back) from leaving the app: mark the first entry as the
+  // root and stack one guard above it. Back still moves between tabs through
+  // hash history; only a pop that reaches the root is absorbed.
+  useEffect(() => {
+    if (!history.state?.ccGuard && !history.state?.ccRoot) {
+      history.replaceState({ ...history.state, ccRoot: true }, "");
+      history.pushState({ ccGuard: true }, "");
+    }
+    function onPop(e: PopStateEvent) {
+      if (e.state?.ccRoot) history.pushState({ ccGuard: true }, "");
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -522,6 +536,7 @@ export default function App() {
               <Heading
                 title={`Welcome back, ${state.name}.`}
                 description="A little direction. A world of campus possibilities."
+                timezone={state.timezone}
               />
               <div className="layout">
                 <div className="stack">
@@ -693,6 +708,7 @@ export default function App() {
                     ? "Your saved possibilities"
                     : "Explore campus events"
                 }
+                timezone={state.timezone}
                 description={
                   page === "saved"
                     ? "Keep the things that catch your eye in one place."
@@ -744,6 +760,7 @@ export default function App() {
               <Heading
                 title="Your week, with a little guidance."
                 description="Discover opportunities that fit your interests and your actual free time."
+                timezone={state.timezone}
               >
                 <button
                   className="btn"
@@ -1186,6 +1203,7 @@ export default function App() {
               <Heading
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."
+                timezone={state.timezone}
               >
                 <Button onClick={exportCalendar}>
                   <Icon name="download" />

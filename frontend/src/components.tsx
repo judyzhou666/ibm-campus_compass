@@ -1,5 +1,5 @@
 import { RecommendationInfo } from "./RecommendationPresentation.tsx";
-import { DEMO, dayLabel } from "./config.ts";
+import { DEMO, dayLabel, isTimeZone, timeIn } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -54,12 +54,21 @@ export function Empty({
 export function Heading({
   title,
   description,
+  timezone,
   children,
 }: {
   title: string;
   description: string;
+  timezone?: string;
   children?: ReactNode;
 }) {
+  const tz = isTimeZone(timezone) ? timezone : DEMO.time_zone;
+  const todayLabel = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: tz,
+  }).format(new Date());
   return (
     <div className="page-head">
       <div>
@@ -68,7 +77,7 @@ export function Heading({
       </div>
       {children || (
         <span className="date">
-          {dayLabel(0)}, {DEMO.week_start.slice(0, 4)} · Demo
+          {todayLabel} · Demo
         </span>
       )}
     </div>
@@ -296,112 +305,214 @@ export function EventDetails({
   onRemove: (id: string) => void;
   onSave: (id: string) => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null),
-    problem = issue(e, state),
-    planned = state.plan.includes(e.id);
+  const problem = issue(e, state),
+    planned = state.plan.includes(e.id),
+    saved = state.saved.includes(e.id);
+  const category =
+    e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const viewerZone =
+    isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
+      ? state.timezone
+      : "";
+  let viewerTime = "";
+  if (viewerZone) {
+    try {
+      viewerTime = timeIn(e.day, e.start, viewerZone);
+    } catch {
+      viewerTime = "";
+    }
+  }
+
+  // Move focus into the overlay and give it back to the opener on close.
   useEffect(() => {
-    const dialog = ref.current!;
-    dialog.showModal();
-    return () => dialog.close();
+    const opener = document.activeElement as HTMLElement | null;
+    overlayRef.current
+      ?.querySelector<HTMLElement>(".event-detail-close")
+      ?.focus();
+    return () => opener?.focus?.();
   }, []);
+
+  // Lock body scroll while detail is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  // Keyboard close
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") return onClose();
+      if (ev.key !== "Tab" || !overlayRef.current) return;
+      // Keep Tab inside the overlay, as the former modal dialog did.
+      const focusable = [
+        ...overlayRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), summary, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0],
+        last = focusable[focusable.length - 1];
+      const inside = overlayRef.current.contains(document.activeElement);
+      if (ev.shiftKey && (document.activeElement === first || !inside)) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && (document.activeElement === last || !inside)) {
+        ev.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <dialog ref={ref} onCancel={onClose} aria-labelledby="detail-title">
-      <button
-        className="icon-btn close"
-        aria-label="Close details"
-        onClick={onClose}
-      >
-        <Icon name="close" />
-      </button>
-      <span className="tag">{e.category} · Fictional event</span>
-      <h2 id="detail-title">{e.title}</h2>
-      <p>{e.description}</p>
-      <div className="meta">
-        <Icon name="calendar" />
-        {when(e)} · {DEMO.time_zone}
+    <div ref={overlayRef} className="event-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      {/* Sticky close bar */}
+      <div className="event-detail-bar">
+        <button className="event-detail-close icon-btn" aria-label="Close details" onClick={onClose}>
+          <Icon name="close" />
+        </button>
       </div>
-      <div className="meta">
-        <Icon name="pin" />
-        {e.location}
-      </div>
-      <div className="meta">
-        <Icon name="food" />
-        {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free admission"}
-      </div>
-      <div className="meta">
-        <Icon name="users" />
-        {e.access === "open"
-          ? "Open to all demo students"
-          : e.access === "members"
-            ? "Membership required"
-            : e.access === "full"
-              ? "At capacity"
-              : "Eligibility not confirmed"}{" "}
-        · {e.rsvp}
-      </div>
-      {problem ? (
-        <div className="notice">{problem}</div>
-      ) : (
-        <div className="reason">
-          {reasons(e, state).map((reason) => (
-            <div key={reason}>{reason}</div>
-          ))}
+
+      {/* Scrollable page content */}
+      <div className="event-detail-scroll">
+
+        {/* Hero banner */}
+        <div className={`event-detail-hero poster ${category}`}>
+          <div className="event-detail-hero-inner">
+            <span className="tag">{e.category} · Fictional event</span>
+            <h1 id="detail-title" className="event-detail-hero-title">{e.title}</h1>
+          </div>
         </div>
-      )}
-      <section>
-        <h3>Related communities</h3>
-        <p className="fineprint">
-          Fictional local groups matching this record’s topic.
-        </p>
-        {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
-          <p key={c.id}>
-            <a href={communityHash(c.id)} onClick={onClose}>
-              {c.name}
-            </a>
-          </p>
-        ))}
-      </section>
-      <div className="source">
-        <strong>Record & evidence</strong>
-        <br />
-        <dl className="evidence">
-          {Object.entries({
-            Campus: e.campus_id || "Unknown",
-            Source: e.source || "Unknown",
-            "Original source URL": e.source_url || "Unknown",
-            "Last checked timestamp": e.last_checked_at || "Not verified",
-            "Intended audience": e.intended_audience || "Unknown",
-            Eligibility: e.eligibility || "Unknown",
-            RSVP: e.rsvp || "Unknown",
-            Availability: e.availability || "Unknown",
-            "Participation format": e.participation || "unknown",
-            "Food status": e.food_status || "Unknown",
-            Verification: e.verification_status || "Not verified",
-          }).map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+
+        {/* Body */}
+        <div className="event-detail-body">
+
+          {/* Left: details */}
+          <div className="event-detail-main">
+            <p className="event-detail-desc">{e.description}</p>
+
+            <div className="event-detail-info-grid">
+              <div className="event-detail-info-row">
+                <Icon name="calendar" />
+                <span>{when(e)} · {DEMO.time_zone}</span>
+              </div>
+              {viewerTime && (
+                <div className="event-detail-info-row">
+                  <Icon name="calendar" />
+                  <span>
+                    Starts {viewerTime} in your time zone ({viewerZone})
+                  </span>
+                </div>
+              )}
+              <div className="event-detail-info-row">
+                <Icon name="pin" />
+                <span>{e.location}</span>
+              </div>
+              <div className="event-detail-info-row">
+                <Icon name="food" />
+                <span>{foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free admission"}</span>
+              </div>
+              <div className="event-detail-info-row">
+                <Icon name="users" />
+                <span>
+                  {e.access === "open"
+                    ? "Open to all demo students"
+                    : e.access === "members"
+                      ? "Membership required"
+                      : e.access === "full"
+                        ? "At capacity"
+                        : "Eligibility not confirmed"
+                  } · {e.rsvp}
+                </span>
+              </div>
             </div>
-          ))}
-        </dl>
-        <br />
-        Authored for this prototype · Internal authoring review (not external
-        verification) {e.checked}
-        <br />
-        RSVP-required events use a mandatory demo registration step. No
-        organizer is contacted and no real place is reserved.
+
+            {problem ? (
+              <div className="notice">{problem}</div>
+            ) : (
+              <div className="event-detail-reasons">
+                {reasons(e, state).map((reason) => (
+                  <div key={reason} className="event-detail-reason-item">✓ {reason}</div>
+                ))}
+              </div>
+            )}
+
+            <section className="event-detail-section">
+              <h2 className="event-detail-section-title">Related communities</h2>
+              <p className="fineprint">Fictional local groups matching this record's topic.</p>
+              <div className="event-detail-communities">
+                {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
+                  <a key={c.id} href={communityHash(c.id)} onClick={onClose} className="event-detail-community-link">
+                    {c.name}
+                  </a>
+                ))}
+              </div>
+            </section>
+
+            <details className="event-detail-evidence">
+              <summary>Record &amp; evidence</summary>
+              <dl className="evidence">
+                {Object.entries({
+                  Campus: e.campus_id || "Unknown",
+                  Source: e.source || "Unknown",
+                  "Original source URL": e.source_url || "Unknown",
+                  "Last checked": e.last_checked_at || "Not verified",
+                  "Intended audience": e.intended_audience || "Unknown",
+                  Eligibility: e.eligibility || "Unknown",
+                  RSVP: e.rsvp || "Unknown",
+                  Availability: e.availability || "Unknown",
+                  "Participation format": e.participation || "unknown",
+                  "Food status": e.food_status || "Unknown",
+                  Verification: e.verification_status || "Not verified",
+                }).map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="fineprint">
+                Authored for this prototype · Internal authoring review (not external verification) {e.checked}.
+                RSVP-required events use a mandatory demo registration step. No organiser is contacted and no real place is reserved.
+              </p>
+            </details>
+          </div>
+
+          {/* Right: sticky action panel */}
+          <aside className="event-detail-aside">
+            <div className="event-detail-aside-inner">
+              <div className={`event-detail-aside-banner poster ${category}`}>
+                <b>{e.poster.split(" / ").map((part, i) => (
+                  <span key={part}>{i > 0 ? " / " : ""}{part}</span>
+                ))}</b>
+              </div>
+              <div className="event-detail-aside-body">
+                <p className="event-detail-aside-date">{when(e)}</p>
+                <p className="event-detail-aside-loc"><Icon name="pin" /> {e.location}</p>
+                <Button
+                  className="primary"
+                  onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
+                >
+                  {planned ? "Remove from calendar" : "Add to calendar"}
+                </Button>
+                <Button onClick={() => onSave(e.id)}>
+                  <Icon name="bookmark" />
+                  {saved ? "Saved" : "Save event"}
+                </Button>
+                <p className="fineprint" style={{ marginTop: 12 }}>
+                  Fictional demo event. No real registration.
+                </p>
+              </div>
+            </div>
+          </aside>
+
+        </div>
       </div>
-      <div className="row">
-        <Button
-          className="primary"
-          onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
-        >
-          {planned ? "Remove from calendar" : "Add to calendar"}
-        </Button>
-        <Button onClick={() => onSave(e.id)}>
-          {state.saved.includes(e.id) ? "Unsave event" : "Save event"}
-        </Button>
-      </div>
-    </dialog>
+
+      {/* Backdrop click to close */}
+      <div className="event-detail-backdrop" onClick={onClose} aria-hidden="true" />
+    </div>
   );
 }

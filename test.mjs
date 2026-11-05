@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {EVENTS,DEFAULT_BLOCKS} from './frontend/src/data.ts';
 import {issue,recommend,overlap} from './frontend/src/planner.ts';
 const s={plan:[],blocks:DEFAULT_BLOCKS,interests:['AI & education','Career','Social'],buffer:15,cancelled:[]};
-assert.equal(EVENTS.length,30);
+assert.equal(EVENTS.length,38);
 assert.deepEqual(interpretRequest('AI and education on Tuesday or Thursday afternoons').constraints.days,[1,3]);
 assert.equal(interpretRequest('after 1 PM').constraints.after,780);
 assert.equal(interpretRequest('before 11:30 am').constraints.before,690);
