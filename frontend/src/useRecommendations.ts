@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { requestPlan, planningKey, continuationMessage } from "./api.ts";
+import {
+  requestPlan,
+  recommendationSettingsKey,
+  continuationMessage,
+} from "./api.ts";
 import type {
   DemoState,
   Constraints,
@@ -8,6 +12,7 @@ import type {
 export function useRecommendations(
   state: DemoState,
   constraints: Constraints = {},
+  enabled = true,
 ) {
   const [attempt, setAttempt] = useState(0);
   const requestConstraints: Constraints = {
@@ -15,7 +20,9 @@ export function useRecommendations(
     mode: constraints.mode ?? "plan-building",
   };
   const key =
-    planningKey(state) + JSON.stringify(requestConstraints) + `:${attempt}`;
+    recommendationSettingsKey(state) +
+    JSON.stringify(requestConstraints) +
+    `:${attempt}`;
   const [result, setResult] = useState<{
     key: string;
     ids: string[];
@@ -24,6 +31,7 @@ export function useRecommendations(
     matchReasons: RecommendationMatchResult[];
   } | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     void requestPlan(
       continuationMessage(requestConstraints),
@@ -54,9 +62,10 @@ export function useRecommendations(
     return () => {
       active = false;
     };
-  }, [key]);
-  const current =
-    result?.key === key
+  }, [key, enabled]);
+  const current = !enabled
+    ? { ids: [], matchReasons: [], notice: "", source: "idle", loading: false }
+    : result?.key === key
       ? { ...result, loading: false }
       : {
           ids: [],

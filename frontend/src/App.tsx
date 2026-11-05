@@ -123,6 +123,8 @@ export default function App() {
   const discoveryState = withDiscoveryFilters(state, sessionSkipped);
   const recommendationResult = useRecommendations(
     withDiscoveryFilters(state, sessionSkipped, filter, query),
+    {},
+    page === "dashboard",
   );
   const settingsKey = preferenceSettingsKey(state);
   const preferenceRevision = proposalRevision(state);

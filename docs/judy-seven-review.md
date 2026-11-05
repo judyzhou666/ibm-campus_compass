@@ -31,3 +31,9 @@ Checks: frontend typecheck and 13 focused key/history/refresh tests passed, incl
 Both interpreters now prioritize explicit discover/browse/explore wording. Plan construction requires a bounded phrase such as “build my weekly schedule,” not a broad match between “make” and “week.” “Explore social events to make friends this week” therefore selects discovery.
 
 Checks: 9 focused TypeScript mode/lifecycle tests, 2 Rust lifecycle/intent tests and 31 exact shared comparisons passed. Added matching TS/Rust cases for discovery, intentional schedule construction and incidental social wording.
+
+## 6. Dashboard-only recommendation requests
+
+App now enables its Dashboard request hook only on Dashboard. The hook is always called (React hook ordering is unchanged), cleans up inactive requests, and keys requests by its own constraints plus recommendation settings, not unrelated global chat filters.
+
+Checks: frontend typecheck and desktop/mobile `browser-review-seven.mjs` passed. The browser verifies zero `/api/plan` calls for Explore typing/submitted searches, refreshed Dashboard count after relevant changes, text/guidance-only Save preserving an in-flight chat and its filters (issue 4), and exploration/reset/discovery flows (issues 1/5). Both use the labelled simulated browser fallback; full backend/parity checks follow below.
