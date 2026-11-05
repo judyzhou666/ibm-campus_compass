@@ -206,7 +206,7 @@ try {
       await conversation.chat(answer);
       assert.deepEqual(demo.read().constraints.topics, ["Career"]);
       assert.equal(demo.read().constraints.after, 900);
-      assert.deepEqual(demo.read().draft, ["e20", "e28"]);
+      assert.deepEqual(demo.read().draft, ["e20", "e34", "e28"]);
       assert.deepEqual(demo.read().plan, []);
       assert.deepEqual(demo.read().rsvps, []);
     }

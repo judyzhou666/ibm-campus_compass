@@ -55,21 +55,36 @@ export interface Message {
   evidence?: RecommendationEvidence[];
 }
 export interface Post {
+  id: string;
   name: string;
   title: string;
   body: string;
   tag: string;
+  communityId?: string;
+}
+export interface ForumComment {
+  postId: string;
+  name: string;
+  text: string;
+}
+export interface PostDraft {
+  title: string;
+  body: string;
+  communityId: string;
 }
 export interface DemoState extends Schedule {
   name: string;
   onboarded: boolean;
   major: string;
   goals: string;
+  timezone: string;
   saved: string[];
   rsvps: string[];
   joined: string[];
   joinedCommunities: string[];
   posts: Post[];
+  comments: ForumComment[];
+  postDraft: PostDraft | null;
   draft: string[];
   constraints: Constraints;
   messages: Message[];

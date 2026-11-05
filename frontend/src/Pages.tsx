@@ -1,10 +1,10 @@
-import { dayLabel } from "./config.ts";
+import { dayLabel, DEMO, TIME_ZONES } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
-import type { DemoState, Post } from "./types.ts";
+import type { DemoState, Post, PostDraft } from "./types.ts";
 
 type Props = {
   state: DemoState;
@@ -218,26 +218,90 @@ export function Profile({ state, update, notify }: Props) {
   );
 }
 
-const seedPosts: Post[] = [
+interface DiscussionPost {
+  id: string;
+  name: string;
+  title: string;
+  body: string;
+  communityId: string;
+  upvotes: number;
+  commentCount: number;
+  timeAgo: string;
+  comments: { name: string; text: string; timeAgo: string }[];
+}
+
+const seedPosts: DiscussionPost[] = [
   {
+    id: "s1",
     name: "Alex",
     title: "Anyone exploring AI and education this week?",
-    body: "I’m planning to try the learning lab. Would love to meet students from other programs.",
-    tag: "AI & learning circle",
+    body: "I'm planning to try the learning lab on Thursday. The session covers responsible AI in classroom settings — would love to meet students from other programs. Feel free to reply if you're going!",
+    communityId: "ai",
+    upvotes: 34,
+    commentCount: 8,
+    timeAgo: "3 hr. ago",
+    comments: [
+      { name: "Jordan", text: "I'll be there! Coming from the CS program.", timeAgo: "2 hr. ago" },
+      { name: "Morgan", text: "Same — I heard the facilitator is really engaging.", timeAgo: "1 hr. ago" },
+    ],
   },
   {
+    id: "s2",
     name: "Sam",
     title: "A shared table for new connections",
-    body: "The community dinner looks like a nice way to meet people beyond our own classes.",
-    tag: "Global table",
+    body: "The community dinner on Friday looks like a wonderful way to meet people outside our own classes. International students especially welcome — all backgrounds, all majors.",
+    communityId: "global",
+    upvotes: 51,
+    commentCount: 12,
+    timeAgo: "5 hr. ago",
+    comments: [
+      { name: "Priya", text: "Looking forward to it! Will there be vegetarian options?", timeAgo: "4 hr. ago" },
+      { name: "Sam", text: "Yes — the organizer confirmed it yesterday.", timeAgo: "3 hr. ago" },
+    ],
   },
   {
+    id: "s3",
     name: "Taylor",
     title: "Making a little room for creativity",
-    body: "Who else is interested in the sketchbook walk? No drawing experience needed.",
-    tag: "Arts & culture",
+    body: "Who else is going to the sketchbook walk on Saturday morning? No drawing experience needed — it's more about slowing down and noticing things. Coffee provided.",
+    communityId: "arts",
+    upvotes: 27,
+    commentCount: 5,
+    timeAgo: "6 hr. ago",
+    comments: [
+      { name: "Casey", text: "This sounds so lovely. Signing up now.", timeAgo: "5 hr. ago" },
+    ],
+  },
+  {
+    id: "s4",
+    name: "Riley",
+    title: "Resume review sessions — how useful were they?",
+    body: "Went to a career centre drop-in last week and got some great feedback on my resume layout. Has anyone else tried the Wednesday evening sessions? Worth it for internship season.",
+    communityId: "career",
+    upvotes: 18,
+    commentCount: 7,
+    timeAgo: "1 day ago",
+    comments: [
+      { name: "Dana", text: "Super helpful! The advisor gave line-by-line notes.", timeAgo: "20 hr. ago" },
+      { name: "Chris", text: "I went twice — second visit was even better.", timeAgo: "18 hr. ago" },
+    ],
+  },
+  {
+    id: "s5",
+    name: "Jamie",
+    title: "Reading group forming — philosophy of mind",
+    body: "Looking for 4–6 people interested in reading Derek Parfit's Reasons and Persons together. Bi-weekly, totally informal, no prior philosophy background required.",
+    communityId: "research",
+    upvotes: 22,
+    commentCount: 4,
+    timeAgo: "2 days ago",
+    comments: [
+      { name: "Alex", text: "I'm very interested. Is this open to undergrads?", timeAgo: "1 day ago" },
+      { name: "Jamie", text: "Absolutely — everyone welcome!", timeAgo: "23 hr. ago" },
+    ],
   },
 ];
+
 export function Forum({
   state,
   update,
@@ -245,184 +309,521 @@ export function Forum({
   selected,
   onSelect,
 }: Props & { selected: string | null; onSelect: (id: string | null) => void }) {
-  const detailsRef = useRef<HTMLElement>(null);
+  const [communityQuery, setCommunityQuery] = useState("");
+  const [communityCategory, setCommunityCategory] = useState("All");
+  const [activeCommunityId, setActiveCommunityId] = useState<string | null>(selected);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [postQuery, setPostQuery] = useState("");
+  const [creatingPost, setCreatingPost] = useState(false);
+  const [composer, setComposer] = useState<PostDraft>({
+    title: "",
+    body: "",
+    communityId: "",
+  });
+  function openComposer() {
+    setComposer(
+      state.postDraft ?? {
+        title: "",
+        body: "",
+        communityId: activeCommunityId ?? "",
+      },
+    );
+    setCreatingPost(true);
+  }
+  // likes: Set of "post:id" or "comment:postId:index"
+  const [likes, setLikes] = useState<Set<string>>(() => new Set());
+  function toggleLike(key: string) {
+    setLikes((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  // Sync activeCommunityId when selected prop changes (e.g. from URL hash)
   useEffect(() => {
-    if (selected) {
-      detailsRef.current?.focus({ preventScroll: true });
-      detailsRef.current?.scrollIntoView({ block: "nearest" });
-    }
+    setActiveCommunityId(selected);
   }, [selected]);
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
-  const community = COMMUNITIES.find((c) => c.id === selected);
-  const shown = COMMUNITIES.filter(
+
+  // Push a sub-page history entry when drilling into a post or create page,
+  // and listen for swipe-back to exit the sub-page gracefully.
+  useEffect(() => {
+    if (selectedPostId || creatingPost) {
+      history.pushState({ forumSubPage: true }, "");
+      function onPop() {
+        setSelectedPostId(null);
+        setCreatingPost(false);
+      }
+      window.addEventListener("popstate", onPop, { once: true });
+      return () => window.removeEventListener("popstate", onPop);
+    }
+  }, [selectedPostId, creatingPost]);
+
+  const userPosts: DiscussionPost[] = state.posts.map((p) => ({
+    id: `u:${p.id}`,
+    name: p.name,
+    title: p.title,
+    body: p.body,
+    communityId:
+      p.communityId ?? COMMUNITIES.find((c) => c.name === p.tag)?.id ?? "",
+    upvotes: 1,
+    commentCount: 0,
+    timeAgo: "just now",
+    comments: [],
+  }));
+  const localComments = (postId: string) =>
+    state.comments.filter((c) => c.postId === postId);
+
+  const allPosts = [...userPosts, ...seedPosts];
+
+  const filteredPosts = allPosts.filter((p) => {
+    if (activeCommunityId && p.communityId !== activeCommunityId) return false;
+    if (postQuery && !`${p.title} ${p.body}`.toLowerCase().includes(postQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  const shownCommunities = COMMUNITIES.filter(
     (c) =>
-      (category === "All" || c.category === category) &&
-      `${c.name} ${c.description}`.toLowerCase().includes(query.toLowerCase()),
+      (communityCategory === "All" || c.category === communityCategory) &&
+      `${c.name} ${c.description}`.toLowerCase().includes(communityQuery.toLowerCase()),
   );
+
+  const selectedPost = selectedPostId ? allPosts.find((p) => p.id === selectedPostId) ?? null : null;
+  const activeCommunity = activeCommunityId ? COMMUNITIES.find((c) => c.id === activeCommunityId) : null;
+
+  // ── Create post sub-page ─────────────────────────────────────────────────
+  if (creatingPost) {
+    return (
+      <div className="forum-detail-page">
+        <button
+          className="forum-back-btn text-btn"
+          onClick={() => { history.back(); setCreatingPost(false); }}
+        >
+          ← Back to posts
+        </button>
+        <div className="forum-create-page panel">
+          <div className="forum-create-top">
+            <select
+              className="forum-community-select"
+              aria-label="Community"
+              value={composer.communityId}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, communityId: e.target.value }))
+              }
+            >
+              <option value="">No community (local demo post)</option>
+              {COMMUNITIES.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <form
+            className="forum-create-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const title = composer.title.trim(),
+                body = composer.body.trim(),
+                community = COMMUNITIES.find(
+                  (c) => c.id === composer.communityId,
+                );
+              if (!title) return;
+              update((s) => ({
+                ...s,
+                posts: [
+                  {
+                    id: `p${Date.now().toString(36)}`,
+                    name: s.name,
+                    title,
+                    body,
+                    tag: community?.name ?? "Local demo post",
+                    ...(community ? { communityId: community.id } : {}),
+                  },
+                  ...s.posts,
+                ].slice(0, 100),
+                postDraft: null,
+              }));
+              notify("Posted to your local demo only.");
+              history.back();
+              setCreatingPost(false);
+            }}
+          >
+            <input
+              name="title"
+              required
+              maxLength={100}
+              className="forum-create-title"
+              placeholder="Title*"
+              value={composer.title}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, title: e.target.value }))
+              }
+              autoFocus
+            />
+            <div className="forum-create-tags-row">
+              <button type="button" className="forum-tag-btn">🏷 Add tags</button>
+            </div>
+            <textarea
+              name="body"
+              maxLength={2000}
+              rows={8}
+              className="forum-create-body"
+              placeholder="Body text (optional)"
+              value={composer.body}
+              onChange={(e) =>
+                setComposer((d) => ({ ...d, body: e.target.value }))
+              }
+            />
+            <div className="forum-create-toolbar">
+              <span className="forum-toolbar-group">
+                <button type="button" title="Bold"><strong>B</strong></button>
+                <button type="button" title="Italic"><em>i</em></button>
+                <button type="button" title="Strikethrough"><s>S</s></button>
+                <button type="button" title="Superscript">x²</button>
+              </span>
+              <span className="forum-toolbar-sep" />
+              <span className="forum-toolbar-group">
+                <button type="button" title="Heading">T↑</button>
+                <button type="button" title="Link">🔗</button>
+                <button type="button" title="Bullet list">• —</button>
+                <button type="button" title="Numbered list">1.</button>
+              </span>
+              <span className="forum-toolbar-sep" />
+              <span className="forum-toolbar-group">
+                <button type="button" title="Quote">"  "</button>
+                <button type="button" title="Code">&lt;/&gt;</button>
+              </span>
+            </div>
+            <div className="forum-create-actions">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  update((s) => ({ ...s, postDraft: composer }));
+                  notify("Draft saved in this browser only.");
+                  history.back();
+                  setCreatingPost(false);
+                }}
+              >
+                Save Draft
+              </button>
+              <button type="submit" className="btn primary">Post</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Post detail sub-page ──────────────────────────────────────────────────
+  if (selectedPost) {
+    const community = COMMUNITIES.find((c) => c.id === selectedPost.communityId);
+    const mine = localComments(selectedPost.id);
+    const conversationJoined = state.joined.includes(selectedPost.title);
+    return (
+      <div className="forum-detail-page">
+        <button
+          className="forum-back-btn text-btn"
+          onClick={() => { history.back(); setSelectedPostId(null); }}
+        >
+          ← Back to posts
+        </button>
+        <div className="forum-detail-layout">
+          <article className="forum-detail-article panel">
+            <div className="forum-detail-meta">
+              <div className="avatar">{selectedPost.name[0]}</div>
+              <span className="forum-post-community">{community?.name ?? "Local demo post"}</span>
+              <span className="forum-post-author">u/{selectedPost.name}</span>
+              <span className="forum-post-time">· {selectedPost.timeAgo}</span>
+            </div>
+            <h2 className="forum-detail-title">{selectedPost.title}</h2>
+            <p className="forum-detail-body">{selectedPost.body}</p>
+            <div className="forum-post-stats">
+              <button
+                className={`forum-like-btn ${likes.has(`post:${selectedPost.id}`) ? "liked" : ""}`}
+                onClick={() => toggleLike(`post:${selectedPost.id}`)}
+                aria-pressed={likes.has(`post:${selectedPost.id}`)}
+                aria-label="Like post"
+              >
+                ▲ {selectedPost.upvotes + (likes.has(`post:${selectedPost.id}`) ? 1 : 0)}
+              </button>
+              <span className="forum-stat">💬 {selectedPost.comments.length + selectedPost.commentCount + mine.length} comments</span>
+              <button
+                className="text-btn forum-stat"
+                aria-pressed={conversationJoined}
+                onClick={() => {
+                  update((s) => ({
+                    ...s,
+                    joined: s.joined.includes(selectedPost.title)
+                      ? s.joined.filter((x) => x !== selectedPost.title)
+                      : [...s.joined, selectedPost.title],
+                  }));
+                  notify("Updated locally. No message was sent.");
+                }}
+              >
+                <Icon name={conversationJoined ? "check" : "plus"} />
+                {conversationJoined ? "Joined locally" : "Join conversation"}
+              </button>
+              <span className="forum-stat fineprint">Fictional demo post — not shared</span>
+            </div>
+            <section className="forum-comments">
+              <h3 className="forum-comments-heading">Comments</h3>
+              {selectedPost.comments.length + mine.length === 0 && (
+                <p className="forum-empty-comments">No comments yet. Be the first!</p>
+              )}
+              {selectedPost.comments.map((c, i) => {
+                const commentKey = `comment:${selectedPost.id}:${i}`;
+                return (
+                <div className="forum-comment" key={i}>
+                  <div className="avatar avatar-sm">{c.name[0]}</div>
+                  <div style={{ flex: 1 }}>
+                    <span className="forum-comment-author">u/{c.name}</span>
+                    <span className="forum-post-time"> · {c.timeAgo}</span>
+                    <p className="forum-comment-text">{c.text}</p>
+                    <button
+                      className={`forum-comment-like ${likes.has(commentKey) ? "liked" : ""}`}
+                      onClick={() => toggleLike(commentKey)}
+                      aria-pressed={likes.has(commentKey)}
+                      aria-label="Like comment"
+                    >
+                      ▲ {likes.has(commentKey) ? 1 : 0}
+                    </button>
+                  </div>
+                </div>
+                );
+              })}
+              {mine.map((c, i) => (
+                <div className="forum-comment" key={`mine-${i}`}>
+                  <div className="avatar avatar-sm">{c.name[0] ?? "?"}</div>
+                  <div style={{ flex: 1 }}>
+                    <span className="forum-comment-author">u/{c.name}</span>
+                    <span className="forum-post-time"> · Saved in this browser</span>
+                    <p className="forum-comment-text">{c.text}</p>
+                  </div>
+                </div>
+              ))}
+              <form
+                className="forum-comment-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget,
+                    text = String(new FormData(form).get("comment")).trim();
+                  if (!text) return;
+                  update((s) => ({
+                    ...s,
+                    comments: [
+                      ...s.comments,
+                      { postId: selectedPost.id, name: s.name, text },
+                    ].slice(-200),
+                  }));
+                  notify("Comment saved in this browser only. No message was sent.");
+                  form.reset();
+                }}
+              >
+                <label className="field full">
+                  Add a comment
+                  <textarea
+                    name="comment"
+                    required
+                    maxLength={400}
+                    placeholder="Share your thoughts…"
+                  />
+                </label>
+                <button className="btn primary">Comment (local only)</button>
+              </form>
+            </section>
+          </article>
+          <aside className="forum-detail-sidebar panel" style={{ alignSelf: "start" }}>
+            {community && (
+              <>
+                <h3 className="forum-sidebar-heading">{community.name}</h3>
+                <p className="forum-sidebar-desc">{community.description}</p>
+                <p className="fineprint">{community.category} · Fictional community</p>
+                <Button
+                  onClick={() => update((s) => toggleCommunityMembership(s, community.id))}
+                >
+                  {state.joinedCommunities.includes(community.id) ? "Leave community" : "Join locally"}
+                </Button>
+              </>
+            )}
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main forum layout ─────────────────────────────────────────────────────
   return (
     <>
       <Heading
         title="Good things start with a hello."
         description="A sample community board for the Campus Compass demonstration."
       />
-      <section className="panel communities">
-        <h2>All Communities</h2>
-        <p>
-          Fictional groups. Joining and posting only change this browser; no
-          messages are delivered.
-        </p>
+      <div className="forum-layout">
+      {/* Left sidebar: community search + filters */}
+      <aside className="forum-sidebar">
+        <h2 className="forum-sidebar-heading">Communities</h2>
         <label className="field">
-          Search communities
-          <input value={query} onChange={(e) => setQuery(e.target.value)} />
+          Search
+          <input
+            value={communityQuery}
+            onChange={(e) => setCommunityQuery(e.target.value)}
+            placeholder="Search communities…"
+          />
         </label>
-        <div className="filters">
+        <div className="filters" style={{ marginBottom: 16 }}>
           {["All", "Academic", "Career", "Social", "Arts"].map((c) => (
             <button
-              className={`chip ${category === c ? "active" : ""}`}
-              aria-pressed={category === c}
               key={c}
-              onClick={() => setCategory(c)}
+              className={`chip ${communityCategory === c ? "active" : ""}`}
+              aria-pressed={communityCategory === c}
+              onClick={() => setCommunityCategory(c)}
             >
               {c}
             </button>
           ))}
         </div>
-        <div className="briefing-grid">
-          {shown.map((c) => (
-            <article key={c.id}>
-              <h3>
-                <button className="text-btn" onClick={() => onSelect(c.id)}>
-                  {c.name}
-                </button>
-              </h3>
-              <p>{c.description}</p>
-              <p className="fineprint">{c.category} · Fictional community</p>
-              <Button
-                onClick={() =>
-                  update((s) => toggleCommunityMembership(s, c.id))
-                }
+        <ul className="forum-community-list">
+          {shownCommunities.map((c) => (
+            <li key={c.id}>
+              <button
+                className={`forum-community-item ${activeCommunityId === c.id ? "active" : ""}`}
+                onClick={() => {
+                  const next = activeCommunityId === c.id ? null : c.id;
+                  setActiveCommunityId(next);
+                  onSelect(next);
+                }}
               >
-                {state.joinedCommunities.includes(c.id)
-                  ? "Leave community"
-                  : "Join locally"}
-              </Button>
-            </article>
+                <span className="forum-community-avatar">{c.name[0]}</span>
+                <span className="forum-community-info">
+                  <span className="forum-community-name">{c.name}</span>
+                  <span className="forum-community-cat">{c.category}</span>
+                </span>
+                {state.joinedCommunities.includes(c.id) && (
+                  <span className="forum-joined-badge">Joined</span>
+                )}
+              </button>
+            </li>
           ))}
+          {!shownCommunities.length && (
+            <li className="fineprint" style={{ padding: "8px 0" }}>No communities match.</li>
+          )}
+        </ul>
+        <p className="fineprint" style={{ marginTop: 16 }}>
+          Joining only changes this browser. No messages are delivered.
+        </p>
+      </aside>
+
+      {/* Center: post feed */}
+      <main className="forum-feed panel">
+        <div className="forum-feed-header">
+          <h2 className="forum-feed-title">
+            {activeCommunity ? activeCommunity.name : "All Posts"}
+          </h2>
+          <label className="field forum-search-field">
+            <input
+              value={postQuery}
+              onChange={(e) => setPostQuery(e.target.value)}
+              placeholder="Search posts…"
+            />
+          </label>
         </div>
-        {!shown.length && (
-          <p role="status">
-            No communities match. Try another search or category.
-          </p>
-        )}
-        {community && (
+
+        {activeCommunity && (
           <section
-            className="notice"
+            className="notice forum-community-details"
             aria-label="Community details"
-            ref={detailsRef}
-            tabIndex={-1}
           >
-            <h3>{community.name}</h3>
-            <p>{community.description}</p>
+            <h3>{activeCommunity.name}</h3>
+            <p>{activeCommunity.description}</p>
             <p>
-              Topics: {community.topics.join(", ")}. Membership is local only.
+              Topics: {activeCommunity.topics.join(", ")}. Membership is local
+              only.
             </p>
             <h4>Related fictional events</h4>
-            {EVENTS.filter((e) => community.topics.includes(e.topic))
+            {EVENTS.filter((e) => activeCommunity.topics.includes(e.topic))
               .slice(0, 3)
               .map((e) => (
                 <p key={e.id}>{e.title}</p>
               ))}
-            <Button onClick={() => onSelect(null)}>
-              Close community details
-            </Button>
+            <div className="row">
+              <Button
+                onClick={() =>
+                  update((s) => toggleCommunityMembership(s, activeCommunity.id))
+                }
+              >
+                {state.joinedCommunities.includes(activeCommunity.id)
+                  ? "Leave community"
+                  : "Join locally"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setActiveCommunityId(null);
+                  onSelect(null);
+                }}
+              >
+                Close community details
+              </Button>
+            </div>
           </section>
         )}
-      </section>
-      <div className="wide-grid">
-        <section className="panel">
-          <h2>Campus conversations</h2>
-          {[...state.posts, ...seedPosts].map((p, i) => (
-            <article className="discussion" key={`${i}-${p.title}`}>
-              <div className="avatar">{p.name[0]}</div>
-              <div>
-                <h3>{p.title}</h3>
-                <small>
-                  {p.name} · Fictional demo participant · {p.tag}
-                </small>
-                <p>{p.body}</p>
+
+        {/* Create post trigger */}
+        <div className="forum-new-post">
+          <div className="forum-new-post-row">
+            <div className="avatar">{state.name ? state.name[0] : "?"}</div>
+            <button
+              type="button"
+              className="forum-create-trigger"
+              onClick={openComposer}
+            >
+              + Create post
+            </button>
+          </div>
+        </div>
+
+        {/* Post list */}
+        {filteredPosts.length === 0 && (
+          <p role="status" className="forum-empty">No posts yet. Start the conversation!</p>
+        )}
+        {filteredPosts.map((p) => {
+          const community = COMMUNITIES.find((c) => c.id === p.communityId);
+          return (
+            <article key={p.id} className="forum-post-card">
+              <div className="forum-post-card-meta">
+                <span className="forum-post-community">
+                  {community?.name ?? "Local demo post"}
+                </span>
+                <span className="forum-post-author">u/{p.name}</span>
+                <span className="forum-post-time">· {p.timeAgo}</span>
+              </div>
+              <button
+                className="forum-post-title text-btn"
+                onClick={() => setSelectedPostId(p.id)}
+              >
+                {p.title}
+              </button>
+              <p className="forum-post-preview">{p.body.slice(0, 160)}{p.body.length > 160 ? "…" : ""}</p>
+              <div className="forum-post-footer">
                 <button
-                  className="text-btn"
-                  onClick={() => {
-                    update((s) => ({
-                      ...s,
-                      joined: s.joined.includes(p.title)
-                        ? s.joined.filter((x) => x !== p.title)
-                        : [...s.joined, p.title],
-                    }));
-                    notify("Updated locally. No message was sent.");
-                  }}
+                  className={`forum-like-btn ${likes.has(`post:${p.id}`) ? "liked" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); toggleLike(`post:${p.id}`); }}
+                  aria-pressed={likes.has(`post:${p.id}`)}
+                  aria-label="Like post"
                 >
-                  <Icon
-                    name={state.joined.includes(p.title) ? "check" : "plus"}
-                  />
-                  {state.joined.includes(p.title)
-                    ? "Joined locally"
-                    : "Join conversation"}
+                  ▲ {p.upvotes + (likes.has(`post:${p.id}`) ? 1 : 0)}
+                </button>
+                <button
+                  className="forum-stat text-btn"
+                  onClick={() => setSelectedPostId(p.id)}
+                >
+                  💬 {p.commentCount + p.comments.length + localComments(p.id).length} comments
                 </button>
               </div>
             </article>
-          ))}
-        </section>
-        <section className="panel" style={{ alignSelf: "start" }}>
-          <h2>Start a conversation</h2>
-          <p className="sub">
-            Demo posts stay on this device and are not shared with anyone.
-          </p>
-          <form
-            className="form-grid"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.currentTarget,
-                f = new FormData(form),
-                title = String(f.get("title")).trim(),
-                body = String(f.get("body")).trim();
-              if (!title || !body) return;
-              update((s) => ({
-                ...s,
-                posts: [
-                  { name: s.name, title, body, tag: "Local demo post" },
-                  ...s.posts,
-                ].slice(0, 100),
-              }));
-              form.reset();
-              notify("Posted to your local demo only.");
-            }}
-          >
-            <label className="field full">
-              Topic
-              <input
-                name="title"
-                required
-                maxLength={100}
-                placeholder="What are you curious about?"
-              />
-            </label>
-            <label className="field full">
-              Message
-              <textarea
-                name="body"
-                required
-                maxLength={600}
-                placeholder="Say hello to the demo community…"
-              />
-            </label>
-            <div className="field full">
-              <button className="btn primary">Post to local demo</button>
-            </div>
-          </form>
-        </section>
-      </div>
+          );
+        })}
+      </main>
+    </div>
     </>
   );
 }
@@ -441,6 +842,29 @@ export function Settings({
         description="A few useful settings for your demonstration."
       />
       <section className="panel">
+        <div className="settings-row">
+          <div>
+            <h3>Time zone</h3>
+            <p>
+              Shows today&rsquo;s date and, in event details, each event&rsquo;s
+              start in this zone. Schedules, the planner and calendar export
+              stay in campus time ({DEMO.time_zone}). Resets on demo reset.
+            </p>
+          </div>
+          <select
+            value={state.timezone || DEMO.time_zone}
+            aria-label="Time zone"
+            style={{ fontSize: 13, padding: "6px 10px", borderRadius: 7, border: "1px solid var(--line)" }}
+            onChange={(e) => {
+              update((s) => ({ ...s, timezone: e.target.value }));
+              notify("Time zone updated.");
+            }}
+          >
+            {TIME_ZONES.map((tz) => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+        </div>
         <div className="settings-row">
           <div>
             <h3>Leave time to get there</h3>
