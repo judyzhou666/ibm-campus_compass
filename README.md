@@ -2,6 +2,14 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## Latest review fixes — November 10, 2026
+
+Doris now uses structured planner continuation, preserves deterministic mode/exploration through watsonx extraction and AM/PM clarification, and prioritizes explicit schedule-building intent. Schedule edits retain pending clarification/session skips while still invalidating stale results. Dashboard category/search exclusions are separate from dismissals, with matching actionable no-match explanations online and offline. App preference/projection calculations are memoized.
+
+Fresh checks: **192 TypeScript tests, 5 Wiki tests, 37 Rust tests**, frontend typecheck/build, Rust fmt/Clippy/build, API integration including 20 baseline responses, and 40 exact cross-stack comparisons passed. Focused desktop/mobile checks passed for schedule edits during clarification, prior review flows, category/dismissal behavior and preference-editor clearing. watsonx checks used local mocks; no live IBM verification is claimed. See [the verification record](docs/latest-review-verification.md) for individual commands, changed files and limits.
+
+Try locally: `npm run build`, then `PLANNER_PROVIDER=simulated cargo run --locked` and open http://localhost:4173/#planner. Ask **Explore beyond my interests after 3**, answer **PM**, then compare **Build my weekly plan to explore career options** with **Explore social events to make friends this week**. Refresh retains the original message's filters. Optional browser regression: `scripts/browser-latest-review.mjs`, using the Playwright environment described in the verification record. No changes from this pass have been pushed.
+
 ## Main synchronization verification — November 10, 2026
 
 Fetched main `bcabf24` and Doris `c92dd79`. Remote Doris already contained main through merge `c92dd79` (parents `a946555` and `bcabf24`), so the clean local Doris checkout was fast-forwarded; merging origin/main then reported already up to date. No conflict resolution, history rewrite or application changes were needed. Previous review-fix commits remain ancestors, and their core planner, API, interpreter, preferences, profile and request-hook implementations are unchanged. Teammates’ forum, history, event-detail, timezone and expanded-catalog changes are preserved.
