@@ -2,6 +2,16 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for **October 19–23, 2026, America/New_York**. No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## Main synchronization verification — November 10, 2026
+
+Fetched main `bcabf24` and Doris `c92dd79`. Remote Doris already contained main through merge `c92dd79` (parents `a946555` and `bcabf24`), so the clean local Doris checkout was fast-forwarded; merging origin/main then reported already up to date. No conflict resolution, history rewrite or application changes were needed. Previous review-fix commits remain ancestors, and their core planner, API, interpreter, preferences, profile and request-hook implementations are unchanged. Teammates’ forum, history, event-detail, timezone and expanded-catalog changes are preserved.
+
+Fresh checks passed on the synchronized source: frontend typecheck/build, full npm test (planner assertions, 186 TypeScript tests, 5 Wiki fixtures), Rust fmt/check/Clippy/build and 35 Rust tests, API integration with complete response fixtures, and 31 exact TypeScript/Rust parity comparisons. Focused desktop/mobile browser checks passed for request counts and text-only saves, exploration/reset/discovery, student profile editing/persistence, explicit proposal confirmation/use-once/dismiss, and compatible-plan versus overlapping-discovery labels.
+
+Browser verification used temporary copies of existing scripts with the current `storageKey()` substituted for their hard-coded legacy namespace; repository scripts and assertions were unchanged. Updating those scripts to discover the namespace is a remaining test-maintenance task. The configured demo week is now November 2–6, 2026, and its separate browser namespace intentionally does not restore the legacy October session; old stored data is not deleted. No live IBM watsonx account, full browser matrix or frozen evaluation was exercised in this synchronization.
+
+Run locally with `npm ci`, `npm run build`, `cargo run --locked`, then http://localhost:4173. No PR state or review comments were changed.
+
 ## Doris synchronization with main bcabf24 (PR #8)
 
 Merging main brought in PR #8's forum redesign, event-detail overlay, time zone setting, current-week calendar (Nov 2) and eight new fictional events (`e31`–`e38`). Conflicts were resolved as follows:
