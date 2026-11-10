@@ -26,6 +26,7 @@ export interface RecommendationPreferences {
   dismissed: string[];
 }
 export interface RecommendationSchedule {
+  view_excluded?: string[];
   plan: string[];
   cancelled: string[];
   interests: string[];
@@ -59,6 +60,8 @@ export interface CampusEvent extends TimeSlot {
   food_status?: string;
 }
 export interface Schedule {
+  /** Transient Dashboard category/query projection; never a saved dismissal. */
+  view_excluded?: string[];
   plan: string[];
   cancelled: string[];
   interests: string[];

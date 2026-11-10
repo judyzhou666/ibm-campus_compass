@@ -12,7 +12,7 @@ import type {
   Rsvp,
 } from "./types.ts";
 import { EVENTS } from "./data.ts";
-import { recommendWithReasons, issue } from "./planner.ts";
+import { recommendWithReasons, noMatchReason, issue } from "./planner.ts";
 import {
   PlanningClarification,
   interpretRequest,
@@ -26,6 +26,9 @@ function requestPreferences(state: Schedule) {
 }
 
 export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
+  ...(state.view_excluded?.length
+    ? { view_excluded: [...state.view_excluded] }
+    : {}),
   plan: [...state.plan],
   cancelled: [...state.cancelled],
   interests: [...state.interests],
@@ -41,6 +44,15 @@ export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
 
 export const recommendationSettingsKey = (state: Schedule) =>
   JSON.stringify(schedulePayload(state));
+// Schedule edits invalidate in-flight results via planningKey, but must not erase
+// conversation clarifications or current-search dismissals.
+export const recommendationPreferenceKey = (state: Schedule) =>
+  JSON.stringify({
+    interests: state.interests,
+    buffer: state.buffer,
+    preferred_time: state.preferred_time || "any",
+    preferences: state.preferences ? requestPreferences(state) : undefined,
+  });
 export const planningKey = (state: DemoState) =>
   JSON.stringify([schedulePayload(state), state.constraints]);
 
@@ -165,7 +177,8 @@ export async function requestPlan(
       source: "browser-fallback",
       mode: "simulated" as const,
       notice:
-        "The Rust planner is unavailable. These suggestions use the browser’s simulated demo planner.",
+        "The Rust planner is unavailable. These suggestions use the browser’s simulated demo planner." +
+        (!selected.length ? " " + noMatchReason(state, constraints) : ""),
     };
   }
 }

@@ -30,17 +30,12 @@ export function discoveryState(
   const preferences = migratePreferences(state.preferences);
   return {
     ...state,
+    view_excluded: EVENTS.filter(
+      (event) => !matchesDiscoveryFilter(event, category, query),
+    ).map((event) => event.id),
     preferences: {
       ...preferences,
-      dismissed: [
-        ...new Set([
-          ...preferences.dismissed,
-          ...skipped,
-          ...EVENTS.filter(
-            (event) => !matchesDiscoveryFilter(event, category, query),
-          ).map((event) => event.id),
-        ]),
-      ],
+      dismissed: [...new Set([...preferences.dismissed, ...skipped])],
     },
   };
 }

@@ -75,6 +75,8 @@ pub struct Block {
 #[derive(Clone, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Schedule {
+    #[serde(default)]
+    pub view_excluded: Vec<String>,
     pub plan: Vec<String>,
     pub cancelled: Vec<String>,
     pub interests: Vec<String>,
@@ -244,6 +246,7 @@ impl Schedule {
             || self.blocks.len() > 100
             || self.plan.len() > events.len()
             || self.cancelled.len() > events.len()
+            || self.view_excluded.len() > events.len()
             || self.interests.len() > TOPICS.len()
         {
             return Err("Invalid schedule size or travel buffer");
@@ -252,6 +255,7 @@ impl Schedule {
             .plan
             .iter()
             .chain(&self.cancelled)
+            .chain(&self.view_excluded)
             .any(|id| !events.iter().any(|e| e.id == *id))
         {
             return Err("Unknown event ID");

@@ -258,6 +258,7 @@ fn matches_constraints(e: &Event, c: &Constraints) -> bool {
 }
 
 enum DiscoveryExclusion {
+    View,
     Exploration,
     Dismissed,
 }
@@ -267,7 +268,9 @@ fn discovery_exclusion(
     c: &Constraints,
     active: &[String],
 ) -> Option<DiscoveryExclusion> {
-    if c.explore == Some(true) && active.contains(&e.topic) {
+    if state.view_excluded.contains(&e.id) {
+        Some(DiscoveryExclusion::View)
+    } else if c.explore == Some(true) && active.contains(&e.topic) {
         Some(DiscoveryExclusion::Exploration)
     } else if state
         .preferences
@@ -488,6 +491,7 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
     let mut already = 0;
     let mut dismissed = 0;
     let mut explored = 0;
+    let mut view = 0;
     let active = active_topics(state);
     for e in within {
         if state.plan.contains(&e.id) {
@@ -500,6 +504,7 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
             Some(s) if s.contains("RSVP") || s.contains("metadata") => missing += 1,
             Some(_) => restrictions += 1,
             None => match discovery_exclusion(e, state, c, &active) {
+                Some(DiscoveryExclusion::View) => view += 1,
                 Some(DiscoveryExclusion::Exploration) => explored += 1,
                 Some(DiscoveryExclusion::Dismissed) => dismissed += 1,
                 None => {}
@@ -509,6 +514,9 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
     let mut explanation = format!(
         "Within your filters: {conflicts} scheduling conflicts, {restrictions} full/restricted/unknown-eligibility records, {cancelled} cancellations, {missing} incomplete/invalid records, and {already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change."
     );
+    if view > 0 {
+        explanation.push_str(&format!(" {view} events were hidden by the current category/search filters. Change the category or search query to include them."));
+    }
     if dismissed > 0 {
         explanation.push_str(&format!(" {dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips."));
     }

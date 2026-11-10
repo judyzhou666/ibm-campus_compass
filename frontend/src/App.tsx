@@ -1,4 +1,4 @@
-import { recommendationSettingsKey } from "./api.ts";
+import { recommendationPreferenceKey } from "./api.ts";
 import { StudentProfileCard, StudentProfilePage } from "./StudentProfile.tsx";
 import {
   discoveryState as withDiscoveryFilters,
@@ -28,6 +28,7 @@ import { communityFromHash, communityHash } from "./communities.ts";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -120,15 +121,25 @@ export default function App() {
   const [proposals] = useState(() => createPreferenceProposals(demo));
   const proposal = useSyncExternalStore(proposals.subscribe, proposals.read);
   const [sessionSkipped, setSessionSkipped] = useState<string[]>([]);
-  const discoveryState = withDiscoveryFilters(state, sessionSkipped);
+  const discoveryState = useMemo(
+    () => withDiscoveryFilters(state, sessionSkipped),
+    [state, sessionSkipped],
+  );
+  const dashboardState = useMemo(
+    () => withDiscoveryFilters(state, sessionSkipped, filter, query),
+    [state, sessionSkipped, filter, query],
+  );
   const recommendationResult = useRecommendations(
-    withDiscoveryFilters(state, sessionSkipped, filter, query),
+    dashboardState,
     {},
     page === "dashboard",
   );
-  const settingsKey = preferenceSettingsKey(state);
+  const settingsKey = useMemo(() => preferenceSettingsKey(state), [state]);
   const preferenceRevision = proposalRevision(state);
-  const planningRevision = recommendationSettingsKey(state);
+  const planningRevision = useMemo(
+    () => recommendationPreferenceKey(state),
+    [state.interests, state.buffer, state.preferred_time, state.preferences],
+  );
   useEffect(() => {
     proposals.dismiss();
   }, [page, preferenceRevision]);

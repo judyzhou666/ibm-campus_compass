@@ -1,6 +1,7 @@
 import { createConversation } from "../frontend/src/conversation.ts";
 import { EVENTS } from "../frontend/src/data.ts";
-import { overlap } from "../frontend/src/planner.ts";
+import { discoveryState } from "../frontend/src/discovery.ts";
+import { noMatchReason, overlap } from "../frontend/src/planner.ts";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -57,8 +58,9 @@ try {
     state: DemoState,
     constraints: Constraints = {},
     message = "Find events",
+    continuation = false,
   ) {
-    const interpreted = interpretRequest(message, constraints);
+    const interpreted = interpretRequest(message, constraints, continuation);
     const expected = recommendWithReasons(state, interpreted.constraints).map(
       ({ event, score, matches }) => ({ event_id: event.id, score, matches }),
     );
@@ -68,6 +70,7 @@ try {
       body: JSON.stringify({
         message,
         previous: constraints,
+        continuation,
         state: schedulePayload(state),
       }),
     });
@@ -87,8 +90,87 @@ try {
       ),
       name,
     );
+    if (
+      !actual.event_ids.length &&
+      interpreted.understood &&
+      !interpreted.clarification
+    )
+      assert.equal(
+        actual.diagnostic,
+        noMatchReason(state, interpreted.constraints),
+        name + " diagnostic",
+      );
     compared++;
   }
+  await compare(
+    "main plan intent with exploratory purpose",
+    fresh(),
+    {},
+    "Build my weekly plan to explore career options",
+  );
+  await compare(
+    "main discovery intent",
+    fresh(),
+    {},
+    "Explore social events to make friends this week",
+  );
+  const exploration = interpretRequest(
+    "Explore beyond my interests after 3",
+  ).constraints;
+  await compare(
+    "resolved exploration clarification",
+    fresh(),
+    exploration,
+    "after 3 PM",
+    true,
+  );
+  await compare(
+    "structured exploration refresh",
+    fresh(),
+    { ...exploration, after: 900 },
+    "Find events",
+    true,
+  );
+  await compare(
+    "ordinary new request ends exploration",
+    fresh(),
+    exploration,
+    "Tuesday afternoon events",
+  );
+  await compare(
+    "reset overrides continuation",
+    fresh(),
+    exploration,
+    "reset",
+    true,
+  );
+  await compare(
+    "category/search no match",
+    discoveryState(fresh(), [], "All", "no such fictional event"),
+  );
+  await compare("dismissed no match", discoveryState(fresh(), ["e1"]), {
+    topics: ["AI & education"],
+    days: [1],
+    after: 900,
+    before: 990,
+  });
+  await compare(
+    "exploration no match",
+    {
+      ...fresh(),
+      interests: [
+        "AI & education",
+        "Career",
+        "Social",
+        "Arts & culture",
+        "Wellbeing",
+      ],
+      preferences: undefined,
+    },
+    { explore: true },
+    "Find events",
+    true,
+  );
   for (const fixture of fixtures) {
     const state = {
       ...fresh(),
@@ -139,6 +221,30 @@ try {
   );
   const fetcher: typeof fetch = (path, options) =>
     fetch(base + String(path), options);
+  {
+    const demo = createStore(fresh());
+    const conversation = createConversation(demo, () => {}, fetcher);
+    await conversation.chat("Explore beyond my interests after 3");
+    assert.match(demo.read().messages.at(-1)!.text, /AM.*PM|AM\/PM/);
+    await conversation.chat("PM");
+    assert.equal(demo.read().constraints.explore, true);
+    assert.equal(demo.read().constraints.mode, "discovery");
+    assert.equal(demo.read().constraints.after, 900);
+    const message = structuredClone(demo.read().messages.at(-1)!);
+    demo.update((s) => ({
+      ...s,
+      preferences: { ...migratePreferences(s.preferences), count: 1 },
+    }));
+    conversation.reset();
+    await conversation.refresh(undefined, message);
+    assert.equal(demo.read().constraints.explore, true);
+    assert.equal(demo.read().constraints.after, 900);
+    await conversation.chat("Tuesday afternoon events");
+    assert.equal(demo.read().constraints.explore, undefined);
+    assert.notEqual(demo.read().constraints.mode, "discovery");
+    await conversation.chat("reset");
+    assert.deepEqual(demo.read().constraints, {});
+  }
   for (const [text, expectedMode] of [
     ["events on Tuesday after 3 PM before 5 PM", "plan-building"],
     ["Build a weekly plan on Tuesday after 3 PM before 5 PM", "plan-building"],
@@ -266,6 +372,20 @@ try {
     ).status,
     200,
   );
+  for (const view_excluded of [
+    ["not-a-catalog-id"],
+    Array(EVENTS.length + 1).fill("e1"),
+  ]) {
+    assert.equal(
+      (
+        await post("/api/plan", {
+          message: "Find events",
+          state: { ...schedulePayload(fresh()), view_excluded },
+        })
+      ).status,
+      400,
+    );
+  }
   const online = await requestPlan("Find events", {}, fresh(), (url, init) =>
     fetch(base + url, init),
   );

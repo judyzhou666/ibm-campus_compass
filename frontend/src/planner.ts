@@ -165,19 +165,11 @@ function selectRecommendations(
       !validation.plannedIds.has(e.id) &&
       !issueWithSnapshot(e, state, validation) &&
       !practicalIssue(e, state, prefs) &&
-      (!constraints.days || constraints.days.includes(e.day)) &&
-      (constraints.after == null || e.start >= constraints.after) &&
-      (constraints.before == null || e.end <= constraints.before) &&
-      (!constraints.food || e.food === constraints.food) &&
-      (!constraints.free || e.cost === 0) &&
-      !constraints.excluded?.includes(e.topic) &&
+      matchesConstraints(e, constraints) &&
+      !state.view_excluded?.includes(e.id) &&
       (!constraints.explore || !active.includes(e.topic)) &&
       !prefs.dismissed.includes(e.id),
   );
-  if (constraints.topics?.length)
-    candidates = candidates.filter((e) =>
-      constraints.topics?.includes(e.topic),
-    );
   const selected: ({ event: CampusEvent } & ReturnType<
     typeof rankingWithSnapshot
   >)[] = [];
@@ -266,4 +258,59 @@ export function overlappingAlternatives(
       ids.includes(other.id) &&
       overlap(event, other, state.buffer),
   ).map((other) => other.id);
+}
+
+function matchesConstraints(e: CampusEvent, c: Constraints) {
+  return (
+    (!c.topics?.length || c.topics.includes(e.topic)) &&
+    (!c.days || c.days.includes(e.day)) &&
+    (c.after == null || e.start >= c.after) &&
+    (c.before == null || e.end <= c.before) &&
+    (!c.food || e.food === c.food) &&
+    (!c.free || e.cost === 0) &&
+    !c.excluded?.includes(e.topic)
+  );
+}
+
+/** Same classification order and copy as Rust; no hard filter is relaxed. */
+export function noMatchReason(state: Schedule, c: Constraints = {}) {
+  const prefs = wirePreferences(state);
+  const active = activeTopics(state, prefs);
+  const within = EVENTS.filter(
+    (e) => matchesConstraints(e, c) && !practicalIssue(e, state, prefs),
+  );
+  if (!within.length)
+    return "No synthetic catalog records satisfy these topic/day/time/cost/food filters and saved recommendation preferences. State which filter you want to change; none will be relaxed automatically.";
+  const snapshot = validationSnapshot(state);
+  let conflicts = 0,
+    restrictions = 0,
+    cancelled = 0,
+    missing = 0,
+    already = 0,
+    dismissed = 0,
+    explored = 0,
+    view = 0;
+  for (const e of within) {
+    if (snapshot.plannedIds.has(e.id)) {
+      already++;
+      continue;
+    }
+    const problem = issueWithSnapshot(e, state, snapshot);
+    if (problem?.startsWith("Conflicts")) conflicts++;
+    else if (problem === "Cancelled in demo") cancelled++;
+    else if (problem?.includes("RSVP") || problem?.includes("metadata"))
+      missing++;
+    else if (problem) restrictions++;
+    else if (state.view_excluded?.includes(e.id)) view++;
+    else if (c.explore && active.includes(e.topic)) explored++;
+    else if (prefs.dismissed.includes(e.id)) dismissed++;
+  }
+  let explanation = `Within your filters: ${conflicts} scheduling conflicts, ${restrictions} full/restricted/unknown-eligibility records, ${cancelled} cancellations, ${missing} incomplete/invalid records, and ${already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change.`;
+  if (view)
+    explanation += ` ${view} events were hidden by the current category/search filters. Change the category or search query to include them.`;
+  if (dismissed)
+    explanation += ` ${dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips.`;
+  if (explored)
+    explanation += ` ${explored} events were excluded because beyond-interest exploration excludes your active saved topics. Use a normal search or start over to include those topics.`;
+  return explanation;
 }
