@@ -48,6 +48,8 @@ struct PlanRequest {
     message: String,
     #[serde(default)]
     previous: Constraints,
+    #[serde(default)]
+    continuation: bool,
     state: Schedule,
 }
 
@@ -70,13 +72,23 @@ async fn plan(
     request.previous.validate().map_err(bad_request)?;
     // Deterministic safety rules (such as refusing unsupported numeric budgets) run before any
     // live model call, so a clarification never depends on the model.
-    let simulated = SimulatedInterpreter.parse(&request.message, request.previous.clone());
+    let simulated = SimulatedInterpreter.parse_with_context(
+        &request.message,
+        request.previous.clone(),
+        request.continuation,
+    );
     let (interpretation, mode, provider, notice) = match &app.provider {
         Provider::Watsonx(live) if simulated.clarification.is_none() => match live
             .interpret(&request.message, request.previous.clone())
             .await
         {
-            Ok(i) => (i, "watsonx", format!("watsonx:{}", live.model_id()), None),
+            Ok(mut i) => {
+                // Model extraction cannot override deterministic selection policy, including
+                // explicit continuation/reset decisions or the overlap-free default.
+                i.constraints.mode = simulated.constraints.mode;
+                i.constraints.explore = simulated.constraints.explore;
+                (i, "watsonx", format!("watsonx:{}", live.model_id()), None)
+            }
             Err(error) => {
                 // Log the failure kind only: never the message, key, token or upstream body.
                 eprintln!("watsonx interpreter unavailable ({error}); using simulated planner");
@@ -251,6 +263,15 @@ mod tests {
 
     /// Serves `app_with` a watsonx provider backed by a local mock and posts one plan request.
     async fn plan_with_watsonx(behavior: Behavior, message: &str) -> (Value, Value) {
+        plan_with_context(behavior, message, json!({}), false).await
+    }
+
+    async fn plan_with_context(
+        behavior: Behavior,
+        message: &str,
+        previous: Value,
+        continuation: bool,
+    ) -> (Value, Value) {
         let (config, _) = mock(behavior).await;
         let router = app_with(Provider::Watsonx(Box::new(
             WatsonxInterpreter::new(config).unwrap(),
@@ -262,7 +283,7 @@ mod tests {
         let empty = json!({"plan":[],"cancelled":[],"interests":[],"blocks":[],"buffer":0});
         let response = client
             .post(format!("{base}/api/plan"))
-            .json(&json!({"message":message,"state":empty}))
+            .json(&json!({"message":message,"state":empty,"previous":previous,"continuation":continuation}))
             .send()
             .await
             .unwrap();
@@ -293,6 +314,78 @@ mod tests {
         }).collect();
         assert_eq!(body["match_reasons"], json!(reasons));
         (body, health)
+    }
+
+    #[tokio::test]
+    async fn mocked_watsonx_cannot_replace_rule_based_mode_and_exploration() {
+        for (message, previous, continuation, mode, explore) in [
+            (
+                "Explore beyond my interests",
+                json!({}),
+                false,
+                json!("discovery"),
+                json!(true),
+            ),
+            (
+                "Build my weekly plan to explore career options",
+                json!({}),
+                false,
+                json!("plan-building"),
+                Value::Null,
+            ),
+            (
+                "Explore social events to make friends this week",
+                json!({}),
+                false,
+                json!("discovery"),
+                Value::Null,
+            ),
+            (
+                "after 3 PM",
+                json!({"explore":true,"mode":"discovery"}),
+                true,
+                json!("discovery"),
+                json!(true),
+            ),
+            (
+                "Find events",
+                json!({"explore":true,"mode":"discovery","after":900}),
+                true,
+                json!("discovery"),
+                json!(true),
+            ),
+            (
+                "Tuesday afternoon events",
+                json!({"explore":true,"mode":"discovery"}),
+                false,
+                Value::Null,
+                Value::Null,
+            ),
+            (
+                "reset",
+                json!({"explore":true,"mode":"discovery"}),
+                true,
+                Value::Null,
+                Value::Null,
+            ),
+        ] {
+            // Deliberately conflicting selection policy from a fake model.
+            let (body, _) = plan_with_context(
+                Behavior::Reply(r#"{"mode":"plan-building","explore":false}"#),
+                message,
+                previous,
+                continuation,
+            )
+            .await;
+            assert_eq!(body["mode"], "watsonx", "{message}");
+            assert_eq!(body["constraints"]["mode"], mode, "{message}");
+            assert_eq!(body["constraints"]["explore"], explore, "{message}");
+        }
+        let (body, health) =
+            plan_with_watsonx(Behavior::Reply("{}"), "Explore beyond my interests after 3").await;
+        assert!(body["clarification"].as_str().unwrap().contains("AM"));
+        assert_eq!(body["constraints"]["explore"], true);
+        assert_eq!(health["watsonx_connected"], false);
     }
 
     #[tokio::test]

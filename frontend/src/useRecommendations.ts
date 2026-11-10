@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  requestPlan,
-  recommendationSettingsKey,
-  continuationMessage,
-} from "./api.ts";
+import { requestPlan, recommendationSettingsKey } from "./api.ts";
 import type {
   DemoState,
   Constraints,
@@ -34,9 +30,12 @@ export function useRecommendations(
     if (!enabled) return;
     let active = true;
     void requestPlan(
-      continuationMessage(requestConstraints),
+      "Find events",
       requestConstraints,
       state,
+      undefined,
+      undefined,
+      true,
     )
       .then((r) => {
         if (active)

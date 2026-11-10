@@ -84,7 +84,7 @@ test("refresh preserves every supported filter and clones stored constraints", a
   };
   const demo = createStore(fresh()),
     c = createConversation(demo, () => {}, offline);
-  await c.chat("Find events", filters);
+  await c.chat("Find events", filters, undefined, true);
   const message = structuredClone(demo.read().messages.at(-1)!);
   assert.deepEqual(message.resolvedConstraints, filters);
   demo.update((s) => ({

@@ -67,7 +67,16 @@ impl Interpreter for SimulatedInterpreter {
 
 impl SimulatedInterpreter {
     /// Deterministic rules shared in spirit with `frontend/src/planner.ts`.
-    pub fn parse(&self, message: &str, mut c: Constraints) -> Interpretation {
+    pub fn parse(&self, message: &str, c: Constraints) -> Interpretation {
+        self.parse_with_context(message, c, false)
+    }
+
+    pub fn parse_with_context(
+        &self,
+        message: &str,
+        mut c: Constraints,
+        continuation: bool,
+    ) -> Interpretation {
         let q = message.to_lowercase();
         let budget_text =
             Regex::new(r"\b(?:at most|up to|no more than)\s+[1-5]\s+(?:events|options|choices)\b")
@@ -86,7 +95,7 @@ impl SimulatedInterpreter {
             understood |= found;
             found
         };
-        if c.explore == Some(true) {
+        if c.explore == Some(true) && !continuation {
             c.explore = None;
             if c.mode == Some(crate::model::RecommendationMode::Discovery) {
                 c.mode = None;
@@ -111,6 +120,11 @@ impl SimulatedInterpreter {
             "wellbeing|wellness|relax|mindful|movement|quiet|balance",
         ];
         if matches(
+            r"^(?:please\s+)?(?:build|create|make|plan)\s+(?:(?:me|my|a|the|our|this)\s+){0,3}(?:weekly\s+)?(?:plan|schedule|week)\b",
+            &q,
+        ) {
+            c.mode = Some(crate::model::RecommendationMode::PlanBuilding);
+        } else if matches(
             r"\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b",
             &q,
         ) {
@@ -338,6 +352,36 @@ mod exploration_lifecycle_tests {
                 .constraints
                 .mode,
             None
+        );
+    }
+}
+
+#[cfg(test)]
+mod structured_continuation_tests {
+    use super::*;
+    use crate::model::RecommendationMode;
+    #[test]
+    fn continuation_preserves_policy_but_normal_requests_and_reset_do_not() {
+        let pending = SimulatedInterpreter.parse(
+            "Explore beyond my interests after 3",
+            Constraints::default(),
+        );
+        assert!(pending.clarification.is_some());
+        let answer = SimulatedInterpreter
+            .parse_with_context("after 3 PM", pending.constraints.clone(), true)
+            .constraints;
+        assert_eq!(answer.explore, Some(true));
+        assert_eq!(answer.mode, Some(RecommendationMode::Discovery));
+        assert_eq!(answer.after, Some(900));
+        let ordinary = SimulatedInterpreter
+            .parse("Tuesday afternoon events", answer.clone())
+            .constraints;
+        assert_eq!(ordinary.explore, None);
+        assert_eq!(
+            SimulatedInterpreter
+                .parse_with_context("reset", answer, true)
+                .constraints,
+            Constraints::default()
         );
     }
 }

@@ -53,3 +53,41 @@ test("refresh of an older explicit exploration snapshot keeps the compatible def
   assert.equal(demo.read().constraints.explore, true);
   assert.equal(demo.read().constraints.mode, "plan-building");
 });
+
+test("AM/PM clarification and explicit continuation retain exploration without magic messages", async () => {
+  const requests: any[] = [];
+  const demo = createStore(fresh()),
+    c = createConversation(
+      demo,
+      () => {},
+      async (_path, options) => {
+        requests.push(JSON.parse(String(options?.body)));
+        throw Error("offline");
+      },
+    );
+  await c.chat("Explore beyond my interests after 3");
+  assert.equal(requests.length, 0);
+  await c.chat("PM");
+  assert.equal(demo.read().constraints.explore, true);
+  assert.equal(demo.read().constraints.mode, "discovery");
+  assert.equal(demo.read().constraints.after, 900);
+  assert.equal(requests.at(-1).message, "after 3 PM");
+  assert.equal(requests.at(-1).continuation, true);
+  await c.another("e1");
+  assert.equal(requests.at(-1).message, "Find events");
+  assert.equal(requests.at(-1).continuation, true);
+  assert.equal(demo.read().constraints.explore, true);
+  await c.chat("Tuesday afternoon events");
+  assert.equal(demo.read().constraints.explore, undefined);
+  assert.equal(requests.at(-1).continuation, undefined);
+});
+test("an explicit unrelated request replaces a pending clock clarification", async () => {
+  const demo = createStore(fresh()),
+    c = createConversation(demo, () => {}, offline);
+  await c.chat("Explore beyond my interests after 3");
+  await c.chat("Show career events on Monday");
+  assert.deepEqual(demo.read().constraints.topics, ["Career"]);
+  assert.deepEqual(demo.read().constraints.days, [0]);
+  assert.equal(demo.read().constraints.explore, undefined);
+  assert.equal(demo.read().constraints.after, undefined);
+});

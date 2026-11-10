@@ -72,8 +72,9 @@ export async function requestPlan(
   state: Schedule,
   fetcher = globalThis.fetch,
   exactTopics?: readonly string[],
+  continuation = false,
 ) {
-  const interpreted = interpretRequest(message, previous);
+  const interpreted = interpretRequest(message, previous, continuation);
   // Proposal topics are already reviewed mappings. Parse all safeguards first,
   // then keep those exact topics instead of reinterpreting intent-prefix words.
   if (exactTopics) {
@@ -101,6 +102,7 @@ export async function requestPlan(
       {
         message: exactTopics ? "Find events" : message,
         previous: exactTopics ? interpreted.constraints : previous,
+        ...(continuation ? { continuation: true } : {}),
         state: schedulePayload(state),
       },
       fetcher,
@@ -258,11 +260,3 @@ export const planModeLabel = (result: {
     : result.mode === "watsonx"
       ? "Rust planner · IBM watsonx"
       : "Rust planner · Simulated";
-
-/** Internal continuation explicitly reapplies a selected temporary exploration. */
-export const continuationMessage = (c: Constraints) =>
-  c.explore
-    ? c.mode === "plan-building"
-      ? "Build a weekly plan beyond my interests"
-      : "Explore beyond my interests"
-    : "Find events";

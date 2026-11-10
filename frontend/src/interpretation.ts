@@ -81,6 +81,7 @@ export class PlanningClarification extends Error {
 export function interpretRequest(
   text: string,
   previous: Constraints = {},
+  continuation = false,
 ): {
   constraints: Constraints;
   understood: boolean;
@@ -111,7 +112,7 @@ export function interpretRequest(
     return found;
   };
   let c = { ...previous };
-  if (previous.explore) {
+  if (previous.explore && !continuation) {
     delete c.explore;
     if (c.mode === "discovery") delete c.mode;
   }
@@ -124,7 +125,13 @@ export function interpretRequest(
     delete c.free;
     delete c.excluded;
   }
-  if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
+  if (
+    test(
+      /^(?:please\s+)?(?:build|create|make|plan)\s+(?:(?:me|my|a|the|our|this)\s+){0,3}(?:weekly\s+)?(?:plan|schedule|week)\b/,
+    )
+  )
+    c.mode = "plan-building";
+  else if (test(/\b(discover|browse|explore)\b|\bshow\b.*\balternatives\b/))
     c.mode = "discovery";
   else if (
     test(
