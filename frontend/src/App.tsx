@@ -195,6 +195,7 @@ export default function App() {
   function presentEnrollment(
     id: string,
     result: EnrollmentOutcome,
+    draftBefore: string[],
   ): string | null {
     if (result.kind === "added") {
       setDetail(null);
@@ -205,6 +206,22 @@ export default function App() {
           label: "Undo",
           run: () => {
             enrollment.remove(id);
+            // Adding takes the event out of the planner's draft ideas; put it
+            // back where it was so Undo returns to the earlier state.
+            const at = draftBefore.indexOf(id);
+            if (at >= 0)
+              update((s) =>
+                s.draft.includes(id)
+                  ? s
+                  : {
+                      ...s,
+                      draft: [
+                        ...s.draft.slice(0, at),
+                        id,
+                        ...s.draft.slice(at),
+                      ],
+                    },
+              );
             notify("Removed from your calendar.");
           },
         },
@@ -221,12 +238,14 @@ export default function App() {
     return null;
   }
   async function add(id: string) {
+    const draftBefore = demo.read().draft;
     const result = await enrollment.choose(id);
     if (result.kind === "rejected") setDetail(id);
-    presentEnrollment(id, result);
+    presentEnrollment(id, result, draftBefore);
   }
   async function completeEnrollment(id: string, rsvp: Rsvp) {
-    return presentEnrollment(id, await enrollment.confirm(rsvp));
+    const draftBefore = demo.read().draft;
+    return presentEnrollment(id, await enrollment.confirm(rsvp), draftBefore);
   }
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
