@@ -8,6 +8,8 @@
   --line: #e1e7de;
   --white: #fff;
   --amber: #946320;
+  --notice-bg: #f8f0df;
+  --notice-ink: #806028;
   --radius: 14px;
   --shadow: 0 12px 36px #183e3114;
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
@@ -678,12 +680,12 @@ p {
   margin-bottom: 11px;
 }
 .reason.blocked {
-  color: var(--notice-ink, #806028);
+  color: var(--notice-ink);
 }
 .event-body .btn.blocked {
-  background: var(--notice-bg, #f8f0df);
+  background: var(--notice-bg);
   border-color: #ead9b4;
-  color: var(--notice-ink, #806028);
+  color: var(--notice-ink);
 }
 .event-body .btn.blocked:hover {
   background: #f3e6c9;
@@ -957,8 +959,8 @@ p {
 }
 .notice {
   border-radius: 9px;
-  background: #f8f0df;
-  color: #806028;
+  background: var(--notice-bg);
+  color: var(--notice-ink);
   padding: 13px 15px;
   font-size: 11px;
   line-height: 1.6;
