@@ -235,7 +235,7 @@ const seedPosts: DiscussionPost[] = [
     id: "s1",
     name: "Alex",
     title: "Anyone exploring AI and education this week?",
-    body: "I'm planning to try the learning lab on Thursday. The session covers responsible AI in classroom settings — would love to meet students from other programs. Feel free to reply if you're going!",
+    body: "I'm planning to try the Learning with AI lab on Tuesday afternoon. It's hands-on with classroom AI tools — would love to meet students from other programs. Feel free to reply if you're going!",
     communityId: "ai",
     upvotes: 34,
     commentCount: 8,
@@ -249,7 +249,7 @@ const seedPosts: DiscussionPost[] = [
     id: "s2",
     name: "Sam",
     title: "A shared table for new connections",
-    body: "The community dinner on Friday looks like a wonderful way to meet people outside our own classes. International students especially welcome — all backgrounds, all majors.",
+    body: "The community dinner on Tuesday evening looks like a wonderful way to meet people outside our own classes. International students especially welcome — all backgrounds, all majors.",
     communityId: "global",
     upvotes: 51,
     commentCount: 12,
@@ -263,7 +263,7 @@ const seedPosts: DiscussionPost[] = [
     id: "s3",
     name: "Taylor",
     title: "Making a little room for creativity",
-    body: "Who else is going to the sketchbook walk on Saturday morning? No drawing experience needed — it's more about slowing down and noticing things. Coffee provided.",
+    body: "Who else is going to the sketchbook walk on Friday afternoon? No drawing experience needed — it's more about slowing down and noticing things.",
     communityId: "arts",
     upvotes: 27,
     commentCount: 5,
@@ -276,7 +276,7 @@ const seedPosts: DiscussionPost[] = [
     id: "s4",
     name: "Riley",
     title: "Resume review sessions — how useful were they?",
-    body: "Went to a career centre drop-in last week and got some great feedback on my resume layout. Has anyone else tried the Wednesday evening sessions? Worth it for internship season.",
+    body: "Went to a career center drop-in last week and got some great feedback on my resume layout. Has anyone else tried the Wednesday lunchtime peer reviews? Worth it for internship season.",
     communityId: "career",
     upvotes: 18,
     commentCount: 7,
@@ -846,8 +846,8 @@ export function Settings({
           <div>
             <h3>Time zone</h3>
             <p>
-              Shows today&rsquo;s date and, in event details, each event&rsquo;s
-              start in this zone. Schedules, the planner and calendar export
+              Shows the demo date and time, the day marked today and, in
+              event details, each event&rsquo;s start in this zone. Schedules, the planner and calendar export
               stay in campus time ({DEMO.time_zone}). Resets on demo reset.
             </p>
           </div>

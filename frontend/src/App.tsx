@@ -37,6 +37,10 @@ const labels = {
   settings: "Settings",
 };
 type Page = keyof typeof labels;
+interface ToastAction {
+  label: string;
+  run: () => void;
+}
 const navIcons: Record<Page, string> = {
   review: "settings",
   dashboard: "home",
@@ -60,6 +64,9 @@ const validPage = (s: string): Page => {
 export default function App() {
   const [demo] = useState(() => createStore(restore()));
   const state = useSyncExternalStore(demo.subscribe, demo.read);
+  // Remember whether this page load began before onboarding, so the first
+  // visit greets with "Welcome" rather than "Welcome back".
+  const [firstVisit] = useState(() => !state.onboarded);
   const update = demo.update;
   const [enrollment] = useState(() => createEnrollment(demo));
   const [conversation] = useState(() =>
@@ -86,6 +93,18 @@ export default function App() {
     [detail, setDetail] = useState<string | null>(null),
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
+  const [toastActions, setToastActions] = useState<ToastAction[]>([]);
+  const [toastHeld, setToastHeld] = useState(false);
+  // Bumped after a toast action: its button unmounts with the toast, so move
+  // focus to the page heading once the page has rendered.
+  const [focusHeading, setFocusHeading] = useState(0);
+  useEffect(() => {
+    if (!focusHeading) return;
+    const heading = document.querySelector<HTMLElement>("main h1");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus();
+  }, [focusHeading]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
@@ -95,8 +114,10 @@ export default function App() {
     },
     [enrollment, conversation],
   );
-  function notify(text: string) {
+  function notify(text: string, actions: ToastAction[] = []) {
     setToast(text);
+    setToastActions(actions);
+    setToastHeld(false);
   }
   function nav(next: Page, communityId?: string) {
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
@@ -114,16 +135,21 @@ export default function App() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      setToast(
+      notify(
         "Changes are available for this session only. Browser storage is unavailable.",
       );
     }
   }, [state]);
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(""), 5000);
+    // Hold the toast while the pointer or keyboard focus is on it; give
+    // toasts with actions longer to be read and used.
+    if (!toast || toastHeld) return;
+    const timer = setTimeout(
+      () => setToast(""),
+      toastActions.length ? 9000 : 5000,
+    );
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, toastActions, toastHeld]);
   useEffect(() => {
     const handle = () => {
       setPage(validPage(location.hash.slice(1)));
@@ -176,11 +202,40 @@ export default function App() {
         : [...s.saved, id],
     }));
   }
-  function presentEnrollment(result: EnrollmentOutcome): string | null {
+  function presentEnrollment(
+    id: string,
+    result: EnrollmentOutcome,
+    draftBefore: string[],
+  ): string | null {
     if (result.kind === "added") {
       setDetail(null);
       setCalendarOpen(true);
-      notify(result.notice);
+      notify(result.notice, [
+        { label: "View calendar", run: () => nav("calendar") },
+        {
+          label: "Undo",
+          run: () => {
+            enrollment.remove(id);
+            // Adding takes the event out of the planner's draft ideas; put it
+            // back where it was so Undo returns to the earlier state.
+            const at = draftBefore.indexOf(id);
+            if (at >= 0)
+              update((s) =>
+                s.draft.includes(id)
+                  ? s
+                  : {
+                      ...s,
+                      draft: [
+                        ...s.draft.slice(0, at),
+                        id,
+                        ...s.draft.slice(at),
+                      ],
+                    },
+              );
+            notify("Removed from your calendar.");
+          },
+        },
+      ]);
     } else if (result.kind === "already-added") {
       setCalendarOpen(true);
       notify("This event is already in your calendar.");
@@ -193,12 +248,14 @@ export default function App() {
     return null;
   }
   async function add(id: string) {
+    const draftBefore = demo.read().draft;
     const result = await enrollment.choose(id);
     if (result.kind === "rejected") setDetail(id);
-    presentEnrollment(result);
+    presentEnrollment(id, result, draftBefore);
   }
-  async function completeEnrollment(rsvp: Rsvp) {
-    return presentEnrollment(await enrollment.confirm(rsvp));
+  async function completeEnrollment(id: string, rsvp: Rsvp) {
+    const draftBefore = demo.read().draft;
+    return presentEnrollment(id, await enrollment.confirm(rsvp), draftBefore);
   }
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
@@ -410,7 +467,7 @@ export default function App() {
           {page === "dashboard" ? (
             <>
               <Heading
-                title={`Welcome back, ${state.name}.`}
+                title={`${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`}
                 description="A little direction. A world of campus possibilities."
                 timezone={state.timezone}
               />
@@ -579,7 +636,9 @@ export default function App() {
               />
               <div className="section-bar">
                 <Filters value={filter} onChange={setFilter} />
-                <span className="date">{list.length} fictional events</span>
+                <span className="date">
+                  {list.length} fictional {list.length === 1 ? "event" : "events"}
+                </span>
               </div>
               {query ? (
                 <p>
@@ -705,7 +764,7 @@ export default function App() {
                       <h2>Chat with your campus guide</h2>
                       <span className="status-label">
                         <i className="dot green" />
-                        {mode} · Name coming soon
+                        {mode}
                       </span>
                     </div>
                     <button
@@ -1051,11 +1110,36 @@ export default function App() {
       </div>
       <div
         id="toast"
-        role="status"
-        aria-live="polite"
         className={toast ? "show" : ""}
+        onMouseEnter={() => setToastHeld(true)}
+        onMouseLeave={() => setToastHeld(false)}
+        onFocus={() => setToastHeld(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) setToastHeld(false);
+        }}
       >
-        {toast}
+        {/* Only the message is announced; the actions are ordinary buttons. */}
+        <span role="status" aria-live="polite">
+          {toast}
+        </span>
+        {toast && toastActions.length ? (
+          <span className="toast-actions">
+            {toastActions.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                onClick={() => {
+                  setToast("");
+                  setToastHeld(false);
+                  a.run();
+                  setFocusHeading((n) => n + 1);
+                }}
+              >
+                {a.label}
+              </button>
+            ))}
+          </span>
+        ) : null}
       </div>
       {rsvpEvent ? (
         <RsvpDialog
@@ -1064,7 +1148,7 @@ export default function App() {
           name={state.name}
           busy={enrolling}
           onClose={enrollment.cancel}
-          onSubmit={completeEnrollment}
+          onSubmit={(rsvp) => completeEnrollment(rsvpEvent, rsvp)}
         />
       ) : null}
       {detailEvent ? (

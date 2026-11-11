@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { EVENTS } from "./data.ts";
 import { requestPlan, planningKey } from "./api.ts";
 import { issue } from "./planner.ts";
-import { Button } from "./components.tsx";
+import { Button, Icon } from "./components.tsx";
 import type { DemoState } from "./types.ts";
 export function Welcome({
   onStart,
@@ -19,7 +19,20 @@ export function Welcome({
     return () => d.close();
   }, []);
   return (
-    <dialog ref={ref} aria-labelledby="welcome-title" onCancel={onSkip}>
+    <dialog
+      ref={ref}
+      className="welcome-dialog"
+      aria-labelledby="welcome-title"
+      onCancel={onSkip}
+    >
+      <button
+        type="button"
+        className="welcome-close icon-btn"
+        aria-label="Close and use default preferences"
+        onClick={onSkip}
+      >
+        <Icon name="close" />
+      </button>
       <h2 id="welcome-title">Make campus feel more familiar.</h2>
       <p>
         Personalize academic, research, career, social and cultural interests
@@ -28,7 +41,7 @@ export function Welcome({
       </p>
       <div className="row">
         <Button onClick={onStart}>Personalize my demo</Button>
-        <Button onClick={onSkip}>Use sample preferences</Button>
+        <Button onClick={onSkip}>Default Preference</Button>
       </div>
     </dialog>
   );

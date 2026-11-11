@@ -1,4 +1,11 @@
-import { DEMO, dayLabel, isTimeZone, timeIn } from "./config.ts";
+import {
+  DEMO,
+  DEMO_NOW_MINUTE,
+  dayLabel,
+  demoTodayIndex,
+  isTimeZone,
+  timeIn,
+} from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -62,12 +69,9 @@ export function Heading({
   children?: ReactNode;
 }) {
   const tz = isTimeZone(timezone) ? timezone : DEMO.time_zone;
-  const todayLabel = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: tz,
-  }).format(new Date());
+  // The demo is frozen at Monday 9:00 AM campus time of the demo week, so the
+  // heading date always agrees with the "today" marker on the week strip.
+  const todayLabel = timeIn(0, DEMO_NOW_MINUTE, tz);
   return (
     <div className="page-head">
       <div>
@@ -76,7 +80,7 @@ export function Heading({
       </div>
       {children || (
         <span className="date">
-          {todayLabel} · Demo
+          {todayLabel} · Demo week
         </span>
       )}
     </div>
@@ -166,14 +170,21 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
-        <div className="reason">
+        <div className={`reason ${problem && !inPlan ? "blocked" : ""}`}>
           {problem ||
             `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
         </div>
-        <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
-          <Icon name={inPlan ? "check" : "plus"} />
-          {inPlan ? "In your calendar" : "Add to calendar"}
-        </Button>
+        {problem && !inPlan ? (
+          // A blocked event explains itself instead of offering an add that fails.
+          <Button className="blocked" onClick={() => onDetail(e.id)}>
+            Can’t add · See why
+          </Button>
+        ) : (
+          <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
+            <Icon name={inPlan ? "check" : "plus"} />
+            {inPlan ? "In your calendar" : "Add to calendar"}
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -196,6 +207,10 @@ export function Week({
   onDetail: (id: string) => void;
   onDay: (day: number) => void;
 }) {
+  // Mark the same day the heading shows for the chosen time zone.
+  const today = demoTodayIndex(
+    isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone,
+  );
   return (
     <div className="week-scroll">
       <div className="week">
@@ -210,7 +225,7 @@ export function Week({
           ].sort((a, b) => a.start - b.start);
           return (
             <div className="week-day" key={day}>
-              <div className={`day-head ${i === 0 ? "today" : ""}`}>
+              <div className={`day-head ${i === today ? "today" : ""}`}>
                 {day}
                 <strong>{dayLabel(i)}</strong>
               </div>

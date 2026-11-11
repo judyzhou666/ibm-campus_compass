@@ -23,6 +23,33 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## PR #9 review fixes — November 10, 2026
+
+Fixes from the code review of the presentation-polish pull request, one commit each:
+
+- **Undo** after adding an event now also puts it back in the planner's draft ideas, in its original position.
+- **"Why this fits"** on planner results uses the topics the student asked for in chat, so it agrees with the folded evidence. Evidence times also convert "24:00" to "12:00 AM".
+- **Toast:** the browser-storage warning no longer shows the previous toast's buttons. After pressing View calendar or Undo, keyboard focus moves to the page heading. Screen readers announce only the message, not the buttons.
+- **Today marker** follows the chosen time zone. In Auckland or Sydney the demo clock falls on Tuesday, and the week strip now marks Tuesday to match the heading. The Settings note says what the time zone changes.
+- **Styles:** the amber notice colors are defined once as `--notice-bg` and `--notice-ink`.
+
+Verification: `npm test` (91 TypeScript tests, including 3 new ones in `tests/planner-display.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked RSVP → add → Undo restoring the draft, View calendar moving focus to the calendar heading, the live region holding only the message, and the Auckland heading and today marker both showing Tue Nov 3.
+
+## Presentation polish — November 10, 2026
+
+A design critique of the prototype (saved in `.impeccable/critique/`, not committed) found problems that show during a live demo. Fixed, one commit each:
+
+- **Dates agree.** The page heading used the real date (Nov 10) while the week strip showed Nov 2–6 with Monday marked today. The heading now shows the demo clock, **Mon, Nov 2, 9:00 AM · Demo week**, in the chosen time zone. The "today" marker on the week strip is a pill wide enough for "Nov 2".
+- **Planner answers read as plain language.** Each result starts with "Why this fits: …" (interest, schedule, cost). The full planner evidence is folded under "How the planner checked this", with readable labels and 12-hour times. "Name coming soon" is gone from the status line; the honest **Rust planner / Browser fallback · Simulated** label stays.
+- **Adding to the calendar ends well.** The confirmation toast offers **View calendar** and **Undo**. It stays up for 9 seconds and stays open while you hover over it or focus it.
+- **Blocked events say so up front.** Event cards that conflict, are full, cancelled or need membership show the reason in amber and a **Can't add · See why** button that opens the details, instead of an "Add to calendar" button that fails.
+- **Forum posts match the catalog.** Seed posts now name the right days for the Learning with AI lab, community dinner, sketchbook walk and resume peer review.
+- **Copy:** "Welcome, Judy." on a first visit (then "Welcome back"), and "1 event" instead of "1 events".
+
+**Demo tip:** to show the first-visit flow again, clear this site's storage in the browser (or run `localStorage.clear()` in the console) and reload.
+
+Verification: `npm test` (88 TypeScript tests and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked the heading date and today pill, a planner reply with the folded evidence, Add → Undo from the toast, the ten blocked cards on Explore, the forum post days and the first-visit greeting. Limitations: accessibility and mobile items from the critique (small text, tap targets, screen-reader structure) are deferred because this is a presentation prototype; the Rust planner's evidence text itself is unchanged, only how it is shown.
+
 ## PR #8 review fixes — November 5, 2026
 
 Fixes from the review of the forum redesign, event-detail overlay and time zone setting:
@@ -31,7 +58,7 @@ Fixes from the review of the forum redesign, event-detail overlay and time zone 
 - **Save Draft** really saves the title, body and community in this browser, and Create Post reopens with the draft. Posting clears it.
 - **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
 - **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
-- **Time zone setting** now says exactly what it changes: the heading date, plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
+- **Time zone setting** now says exactly what it changes: the heading date (now the demo clock, see Presentation polish above), plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
 - **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app.
 - **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
 - **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
@@ -199,7 +226,7 @@ Event details now show campus identity, intended audience, eligibility, capacity
 
 Dashboard **This Week's Briefing** uses deterministic planning for interest and cross-topic suggestions, lists saved-but-not-added events, highlights uncertainty and current plan conflicts/cancellations, and links to details, Planner and Calendar. Cross-disciplinary means topics beyond selected interests; verified department information is unavailable. The digest updates from local state, never background scraping.
 
-First-time demo users can personalize or use sample preferences. Profile supports optional major/interdisciplinary notes, optional research/career goals, academic/social/cultural topic selections and preferred times. Topic selections and preferred time affect ranking; free-text notes are stored locally but are not semantically interpreted. Busy commitments and travel buffer remain editable. A career goal is never required.
+First-time demo users can personalize, choose Default Preference, or close the welcome prompt (top-right ×, or Escape) to go straight to the default preferences. Profile supports optional major/interdisciplinary notes, optional research/career goals, academic/social/cultural topic selections and preferred times. Topic selections and preferred time affect ranking; free-text notes are stored locally but are not semantically interpreted. Busy commitments and travel buffer remain editable. A career goal is never required.
 
 Discussion Forum includes searchable **All Communities**, category filters, individual details, local Join/Leave states, and topic-related events. Event details link to matching fictional communities. Posts and memberships stay in this browser; nothing is sent to other students.
 
