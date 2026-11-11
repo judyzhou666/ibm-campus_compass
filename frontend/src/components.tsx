@@ -169,14 +169,21 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
-        <div className="reason">
+        <div className={`reason ${problem && !inPlan ? "blocked" : ""}`}>
           {problem ||
             `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
         </div>
-        <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
-          <Icon name={inPlan ? "check" : "plus"} />
-          {inPlan ? "In your calendar" : "Add to calendar"}
-        </Button>
+        {problem && !inPlan ? (
+          // A blocked event explains itself instead of offering an add that fails.
+          <Button className="blocked" onClick={() => onDetail(e.id)}>
+            Can’t add · See why
+          </Button>
+        ) : (
+          <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
+            <Icon name={inPlan ? "check" : "plus"} />
+            {inPlan ? "In your calendar" : "Add to calendar"}
+          </Button>
+        )}
       </div>
     </article>
   );

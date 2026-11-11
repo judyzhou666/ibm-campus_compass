@@ -677,6 +677,17 @@ p {
   margin-top: auto;
   margin-bottom: 11px;
 }
+.reason.blocked {
+  color: var(--notice-ink, #806028);
+}
+.event-body .btn.blocked {
+  background: var(--notice-bg, #f8f0df);
+  border-color: #ead9b4;
+  color: var(--notice-ink, #806028);
+}
+.event-body .btn.blocked:hover {
+  background: #f3e6c9;
+}
 .event-body .btn {
   width: 100%;
   font-size: 10px;
