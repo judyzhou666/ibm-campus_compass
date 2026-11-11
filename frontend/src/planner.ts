@@ -85,11 +85,17 @@ export function recommend(
   }
   return selected;
 }
+/** Lowercases a topic for use mid-sentence but keeps acronyms such as "AI". */
+const midSentence = (topic: string) =>
+  topic
+    .split(" ")
+    .map((w) => (w.length > 1 && w === w.toUpperCase() ? w : w.toLowerCase()))
+    .join(" ");
 export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
   return [
     (c.topics || state.interests).includes(e.topic)
-      ? `Matches your interest in ${e.topic.toLowerCase()}`
-      : `An opportunity to explore ${e.topic.toLowerCase()}`,
+      ? `Matches your interest in ${midSentence(e.topic)}`
+      : `An opportunity to explore ${midSentence(e.topic)}`,
     `Fits your schedule${state.buffer ? " with a 15-minute travel buffer" : ""}`,
     e.cost === 0 ? "Free admission" : `$${e.cost} admission`,
     e.food === "Unknown"

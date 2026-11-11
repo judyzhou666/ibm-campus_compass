@@ -2,9 +2,29 @@ import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
-import { issue } from "./planner.ts";
+import { issue, reasons } from "./planner.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
+type EvidenceKey = Exclude<
+  keyof import("./types.ts").RecommendationEvidence,
+  "event_id"
+>;
+/** Student-facing labels, in reading order, for the planner's evidence fields. */
+const EVIDENCE_LABELS: [EvidenceKey, string][] = [
+  ["interest_match", "Interest"],
+  ["schedule_fit", "Timing"],
+  ["practical", "Practical details"],
+  ["trade_offs", "Trade-offs"],
+  ["comparison", "Compared with similar events"],
+  ["discovery_context", "Who it’s for"],
+];
+/** Shows the planner's 24-hour clock times ("15:00") as "3:00 PM". */
+export function twelveHour(text: string) {
+  return text.replace(/\b([01]\d|2[0-3]):([0-5]\d)\b/g, (_, h, m) => {
+    const hour = Number(h);
+    return `${hour % 12 || 12}:${m} ${hour < 12 ? "AM" : "PM"}`;
+  });
+}
 export function ChatEvents({
   ids,
   state,
@@ -33,28 +53,36 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
+            {problem ? null : (
+              <p className="why-fits">
+                <strong>Why this fits:</strong>{" "}
+                {reasons(event, state).slice(0, 3).join(" · ")}
+              </p>
+            )}
             {evidence.find((item) => item.event_id === id) ? (
-              <dl
-                className="evidence"
-                aria-label="Evidence at recommendation time; current availability is checked again before adding"
-              >
-                {Object.entries(evidence.find((item) => item.event_id === id)!)
-                  .filter(
-                    ([key]) =>
-                      key !== "event_id" && key !== "constraints_satisfied",
-                  )
-                  .map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{key.replaceAll("_", " ")}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
-              </dl>
+              <details className="evidence-more">
+                <summary>How the planner checked this</summary>
+                <dl
+                  className="evidence"
+                  aria-label="Evidence at recommendation time; current availability is checked again before adding"
+                >
+                  {EVIDENCE_LABELS.map(([key, label]) => {
+                    const value = evidence.find(
+                      (item) => item.event_id === id,
+                    )![key];
+                    return value ? (
+                      <div key={key}>
+                        <dt>{label}</dt>
+                        <dd>{twelveHour(value)}</dd>
+                      </div>
+                    ) : null;
+                  })}
+                </dl>
+              </details>
             ) : (
               <p className="fineprint">
-                No current Rust evidence available. Review the fictional record
-                and current availability in details; browser suggestions are
-                simulated.
+                Simulated browser suggestion. Open details to check the
+                fictional record and current availability.
               </p>
             )}
             {problem ? <p className="event-problem">{problem}</p> : null}

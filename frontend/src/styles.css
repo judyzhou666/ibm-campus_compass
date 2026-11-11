@@ -2057,9 +2057,13 @@ p {
   }
 }
 
+.why-fits { margin:10px 0 0; font-size:13px; line-height:1.5; }
+.evidence-more { margin-top:10px; font-size:12px; }
+.evidence-more summary { cursor:pointer; color:var(--green); font-weight:650; width:fit-content; }
+.evidence-more[open] summary { margin-bottom:4px; }
 .evidence { margin:12px 0; font-size:12px; line-height:1.6; }
 .evidence div { margin-bottom:8px; }
-.evidence dt { font-weight:700; text-transform:capitalize; }
+.evidence dt { font-weight:700; }
 .evidence dd { margin:0; overflow-wrap:anywhere; }
 .briefing { margin:18px 0; }
 .briefing-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }

@@ -705,7 +705,7 @@ export default function App() {
                       <h2>Chat with your campus guide</h2>
                       <span className="status-label">
                         <i className="dot green" />
-                        {mode} · Name coming soon
+                        {mode}
                       </span>
                     </div>
                     <button
