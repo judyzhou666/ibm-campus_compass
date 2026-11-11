@@ -37,6 +37,10 @@ const labels = {
   settings: "Settings",
 };
 type Page = keyof typeof labels;
+interface ToastAction {
+  label: string;
+  run: () => void;
+}
 const navIcons: Record<Page, string> = {
   review: "settings",
   dashboard: "home",
@@ -86,6 +90,8 @@ export default function App() {
     [detail, setDetail] = useState<string | null>(null),
     [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
+  const [toastActions, setToastActions] = useState<ToastAction[]>([]);
+  const [toastHeld, setToastHeld] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
@@ -95,8 +101,10 @@ export default function App() {
     },
     [enrollment, conversation],
   );
-  function notify(text: string) {
+  function notify(text: string, actions: ToastAction[] = []) {
     setToast(text);
+    setToastActions(actions);
+    setToastHeld(false);
   }
   function nav(next: Page, communityId?: string) {
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
@@ -120,10 +128,15 @@ export default function App() {
     }
   }, [state]);
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(""), 5000);
+    // Hold the toast while the pointer or keyboard focus is on it; give
+    // toasts with actions longer to be read and used.
+    if (!toast || toastHeld) return;
+    const timer = setTimeout(
+      () => setToast(""),
+      toastActions.length ? 9000 : 5000,
+    );
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, toastActions, toastHeld]);
   useEffect(() => {
     const handle = () => {
       setPage(validPage(location.hash.slice(1)));
@@ -176,11 +189,23 @@ export default function App() {
         : [...s.saved, id],
     }));
   }
-  function presentEnrollment(result: EnrollmentOutcome): string | null {
+  function presentEnrollment(
+    id: string,
+    result: EnrollmentOutcome,
+  ): string | null {
     if (result.kind === "added") {
       setDetail(null);
       setCalendarOpen(true);
-      notify(result.notice);
+      notify(result.notice, [
+        { label: "View calendar", run: () => nav("calendar") },
+        {
+          label: "Undo",
+          run: () => {
+            enrollment.remove(id);
+            notify("Removed from your calendar.");
+          },
+        },
+      ]);
     } else if (result.kind === "already-added") {
       setCalendarOpen(true);
       notify("This event is already in your calendar.");
@@ -195,10 +220,10 @@ export default function App() {
   async function add(id: string) {
     const result = await enrollment.choose(id);
     if (result.kind === "rejected") setDetail(id);
-    presentEnrollment(result);
+    presentEnrollment(id, result);
   }
-  async function completeEnrollment(rsvp: Rsvp) {
-    return presentEnrollment(await enrollment.confirm(rsvp));
+  async function completeEnrollment(id: string, rsvp: Rsvp) {
+    return presentEnrollment(id, await enrollment.confirm(rsvp));
   }
   async function chat(text: string, previous?: Constraints) {
     if (conversation.read().busy || !text.trim()) return;
@@ -1054,8 +1079,30 @@ export default function App() {
         role="status"
         aria-live="polite"
         className={toast ? "show" : ""}
+        onMouseEnter={() => setToastHeld(true)}
+        onMouseLeave={() => setToastHeld(false)}
+        onFocus={() => setToastHeld(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) setToastHeld(false);
+        }}
       >
-        {toast}
+        <span>{toast}</span>
+        {toast && toastActions.length ? (
+          <span className="toast-actions">
+            {toastActions.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                onClick={() => {
+                  setToast("");
+                  a.run();
+                }}
+              >
+                {a.label}
+              </button>
+            ))}
+          </span>
+        ) : null}
       </div>
       {rsvpEvent ? (
         <RsvpDialog
@@ -1064,7 +1111,7 @@ export default function App() {
           name={state.name}
           busy={enrolling}
           onClose={enrollment.cancel}
-          onSubmit={completeEnrollment}
+          onSubmit={(rsvp) => completeEnrollment(rsvpEvent, rsvp)}
         />
       ) : null}
       {detailEvent ? (
