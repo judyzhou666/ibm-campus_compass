@@ -18,10 +18,10 @@ const EVIDENCE_LABELS: [EvidenceKey, string][] = [
   ["comparison", "Compared with similar events"],
   ["discovery_context", "Who it’s for"],
 ];
-/** Shows the planner's 24-hour clock times ("15:00") as "3:00 PM". */
+/** Shows the planner's 24-hour clock times ("15:00", "24:00") as "3:00 PM". */
 export function twelveHour(text: string) {
-  return text.replace(/\b([01]\d|2[0-3]):([0-5]\d)\b/g, (_, h, m) => {
-    const hour = Number(h);
+  return text.replace(/\b([01]\d|2[0-4]):([0-5]\d)\b/g, (_, h, m) => {
+    const hour = Number(h) % 24;
     return `${hour % 12 || 12}:${m} ${hour < 12 ? "AM" : "PM"}`;
   });
 }
@@ -44,7 +44,8 @@ export function ChatEvents({
         const event = EVENTS.find((e) => e.id === id);
         if (!event) return null;
         const added = state.plan.includes(id),
-          problem = issue(event, state);
+          problem = issue(event, state),
+          found = evidence.find((item) => item.event_id === id);
         return (
           <article className="chat-event" key={id} aria-label={event.title}>
             <span className="tag">{event.category}</span>
@@ -56,10 +57,12 @@ export function ChatEvents({
             {problem ? null : (
               <p className="why-fits">
                 <strong>Why this fits:</strong>{" "}
-                {reasons(event, state).slice(0, 3).join(" · ")}
+                {reasons(event, state, state.constraints)
+                  .slice(0, 3)
+                  .join(" · ")}
               </p>
             )}
-            {evidence.find((item) => item.event_id === id) ? (
+            {found ? (
               <details className="evidence-more">
                 <summary>How the planner checked this</summary>
                 <dl
@@ -67,9 +70,7 @@ export function ChatEvents({
                   aria-label="Evidence at recommendation time; current availability is checked again before adding"
                 >
                   {EVIDENCE_LABELS.map(([key, label]) => {
-                    const value = evidence.find(
-                      (item) => item.event_id === id,
-                    )![key];
+                    const value = found[key];
                     return value ? (
                       <div key={key}>
                         <dt>{label}</dt>
