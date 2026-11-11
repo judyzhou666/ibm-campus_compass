@@ -42,17 +42,26 @@ const entryOf = (state: unknown): Entry | null =>
     ? (state as Entry)
     : null;
 
-/** True while the browser treats this moment as a user gesture. */
-function hasGesture() {
+/**
+ * True while the browser treats this event as a user gesture. Browsers
+ * without `navigator.userActivation` (e.g. Safari before 16.4) get a
+ * conservative fallback: only a click or a non-Escape key press counts, never
+ * a pointer-down, which on touch screens is not a gesture.
+ */
+export function isGesture(event: Pick<Event, "type"> & { key?: string }) {
   const activation = (
     navigator as Navigator & { userActivation?: { isActive: boolean } }
   ).userActivation;
-  return activation ? activation.isActive : true;
+  if (activation) return activation.isActive;
+  return (
+    event.type === "click" ||
+    (event.type === "keydown" && event.key !== "Escape")
+  );
 }
 
-/** Refill the cushion; only ever called from a user-gesture event. */
-function topUp() {
-  if (!hasGesture()) return;
+/** Refill the cushion; only ever acts during a user gesture. */
+function topUp(event: Event) {
+  if (!isGesture(event as KeyboardEvent)) return;
   while (currentIdx < CUSHION) {
     currentIdx += 1;
     history.pushState({ cc: "tab", idx: currentIdx }, "", location.href);
@@ -71,7 +80,7 @@ export function initHistory() {
     currentIdx = 0;
     history.replaceState({ cc: "root", idx: 0 }, "");
   }
-  for (const type of ["pointerdown", "pointerup", "touchend", "keydown"])
+  for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"])
     window.addEventListener(type, topUp, { capture: true });
 }
 
@@ -109,8 +118,18 @@ export function handlePopState(
   history.replaceState(history.state, "", currentUrl());
 }
 
-/** Number of registered sub-pages (for tests and debugging). */
+/** Number of registered sub-pages. */
 export const openSubPageCount = () => stack.length;
+
+/** Registers a sub-page so Back closes it; returns the unregister function. */
+export function registerSubPage(close: () => void) {
+  const page = { id: nextId++, close };
+  stack.push(page);
+  return () => {
+    const at = stack.indexOf(page);
+    if (at >= 0) stack.splice(at, 1);
+  };
+}
 
 /**
  * Registers a sub-page while `open` is true, so Back closes it. Returns the
@@ -121,12 +140,7 @@ export function useSubPage(open: boolean, close: () => void) {
   closeRef.current = close;
   useEffect(() => {
     if (!open) return;
-    const page = { id: nextId++, close: () => closeRef.current() };
-    stack.push(page);
-    return () => {
-      const at = stack.indexOf(page);
-      if (at >= 0) stack.splice(at, 1);
-    };
+    return registerSubPage(() => closeRef.current());
   }, [open]);
   return () => closeRef.current();
 }
