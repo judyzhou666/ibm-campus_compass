@@ -3,7 +3,7 @@ import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
-import { closeTopSubPage, useSubPage } from "./navigation.ts";
+import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -81,14 +81,8 @@ export default function App() {
     enrollment.subscribe,
     enrollment.read,
   );
-  // Before any sub-page pushes an entry: mark the first entry as the root and
-  // add one tab entry above it, so the first Back stays inside the app.
-  useState(() => {
-    if (!history.state?.cc) {
-      history.replaceState({ cc: "root" }, "");
-      history.pushState({ cc: "tab" }, "");
-    }
-  });
+  // Before any sub-page pushes an entry (see navigation.ts).
+  useState(initHistory);
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
   );
@@ -184,17 +178,17 @@ export default function App() {
   // absorb it by re-adding the entry just left, so the app stays put.
   useEffect(() => {
     function onPop(e: PopStateEvent) {
-      if (!e.state?.cc) {
-        // A link or typed URL changed the hash: go there as a tab switch.
-        history.replaceState({ cc: "tab" }, "");
-        setPage(validPage(location.hash.slice(1)));
-        setSelectedCommunity(communityFromHash(location.hash));
-        setDetail(null);
-        setMenu(false);
-        return;
-      }
-      if (closeTopSubPage()) return;
-      history.pushState({ cc: "tab" }, "", appUrlRef.current);
+      handlePopState(
+        e,
+        () => {
+          // A link or typed URL changed the hash: go there as a tab switch.
+          setPage(validPage(location.hash.slice(1)));
+          setSelectedCommunity(communityFromHash(location.hash));
+          setDetail(null);
+          setMenu(false);
+        },
+        () => appUrlRef.current,
+      );
     }
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -389,7 +383,14 @@ export default function App() {
         />
       ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
-        <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
+        <a
+          className="brand"
+          href="#dashboard"
+          onClick={(e) => {
+            e.preventDefault();
+            nav("dashboard");
+          }}
+        >
           <span className="logo">
             <Icon name="compass" />
           </span>
