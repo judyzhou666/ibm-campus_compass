@@ -64,6 +64,9 @@ const validPage = (s: string): Page => {
 export default function App() {
   const [demo] = useState(() => createStore(restore()));
   const state = useSyncExternalStore(demo.subscribe, demo.read);
+  // Remember whether this page load began before onboarding, so the first
+  // visit greets with "Welcome" rather than "Welcome back".
+  const [firstVisit] = useState(() => !state.onboarded);
   const update = demo.update;
   const [enrollment] = useState(() => createEnrollment(demo));
   const [conversation] = useState(() =>
@@ -435,7 +438,7 @@ export default function App() {
           {page === "dashboard" ? (
             <>
               <Heading
-                title={`Welcome back, ${state.name}.`}
+                title={`${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`}
                 description="A little direction. A world of campus possibilities."
                 timezone={state.timezone}
               />
@@ -604,7 +607,9 @@ export default function App() {
               />
               <div className="section-bar">
                 <Filters value={filter} onChange={setFilter} />
-                <span className="date">{list.length} fictional events</span>
+                <span className="date">
+                  {list.length} fictional {list.length === 1 ? "event" : "events"}
+                </span>
               </div>
               {query ? (
                 <p>

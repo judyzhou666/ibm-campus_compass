@@ -114,6 +114,7 @@ export function PlannerCalendar({
   onClose: () => void;
   onDetails: (id: string) => void;
 }) {
+  const added = state.plan.filter((id) => !state.cancelled.includes(id)).length;
   return (
     <aside
       className="panel planner-calendar"
@@ -138,8 +139,7 @@ export function PlannerCalendar({
         <span>○ Busy commitments</span>
       </div>
       <p className="fineprint" role="status">
-        {state.plan.filter((id) => !state.cancelled.includes(id)).length} events
-        added · Updates as you plan
+        {added} {added === 1 ? "event" : "events"} added · Updates as you plan
       </p>
       <div className="planner-agenda">
         {DAYS.map((day, index) => {
