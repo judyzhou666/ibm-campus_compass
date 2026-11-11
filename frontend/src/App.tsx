@@ -95,6 +95,16 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
+  // Bumped after a toast action: its button unmounts with the toast, so move
+  // focus to the page heading once the page has rendered.
+  const [focusHeading, setFocusHeading] = useState(0);
+  useEffect(() => {
+    if (!focusHeading) return;
+    const heading = document.querySelector<HTMLElement>("main h1");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus();
+  }, [focusHeading]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
@@ -125,7 +135,7 @@ export default function App() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      setToast(
+      notify(
         "Changes are available for this session only. Browser storage is unavailable.",
       );
     }
@@ -1100,8 +1110,6 @@ export default function App() {
       </div>
       <div
         id="toast"
-        role="status"
-        aria-live="polite"
         className={toast ? "show" : ""}
         onMouseEnter={() => setToastHeld(true)}
         onMouseLeave={() => setToastHeld(false)}
@@ -1110,7 +1118,10 @@ export default function App() {
           if (!e.currentTarget.contains(e.relatedTarget)) setToastHeld(false);
         }}
       >
-        <span>{toast}</span>
+        {/* Only the message is announced; the actions are ordinary buttons. */}
+        <span role="status" aria-live="polite">
+          {toast}
+        </span>
         {toast && toastActions.length ? (
           <span className="toast-actions">
             {toastActions.map((a) => (
@@ -1119,7 +1130,9 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   setToast("");
+                  setToastHeld(false);
                   a.run();
+                  setFocusHeading((n) => n + 1);
                 }}
               >
                 {a.label}
