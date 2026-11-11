@@ -95,18 +95,27 @@ export function Filters({
 }) {
   return (
     <div className="filters">
-      {["All", "Academic", "Career", "Social", "Workshops", "Free Food"].map(
-        (c) => (
-          <button
-            key={c}
-            className={`chip ${value === c ? "active" : ""}`}
-            aria-pressed={value === c}
-            onClick={() => onChange(c)}
-          >
-            {c}
-          </button>
-        ),
-      )}
+      {[
+        "All",
+        "Academic",
+        "Career",
+        "Social",
+        "Workshops",
+        "Free Food",
+        "Coffee & snacks",
+        "Paid food",
+        "No food",
+        "Food unknown",
+      ].map((c) => (
+        <button
+          key={c}
+          className={`chip ${value === c ? "active" : ""}`}
+          aria-pressed={value === c}
+          onClick={() => onChange(c)}
+        >
+          {c}
+        </button>
+      ))}
     </div>
   );
 }
@@ -170,6 +179,13 @@ export function EventCard({
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
+        {e.host_school && (
+          <div className="meta">
+            <Icon name="users" />
+            {e.host_school}
+            {e.goal_type?.length ? ` · ${e.goal_type.join(", ")}` : ""}
+          </div>
+        )}
         <div className={`reason ${problem && !inPlan ? "blocked" : ""}`}>
           {problem ||
             `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
@@ -195,6 +211,14 @@ export function foodLabel(food: string) {
     : food === "Unknown"
       ? "Food unconfirmed"
       : food;
+}
+/** Renders an access_conditions field value; "unknown" → "Not confirmed". */
+export function conditionLabel(value: boolean | number | string | undefined) {
+  if (value === "unknown" || value === undefined) return "Not confirmed";
+  if (value === true) return "Required";
+  if (value === false) return "Not required";
+  if (value === "full") return "Full";
+  return String(value);
 }
 export function Week({
   state,
@@ -409,6 +433,29 @@ export function EventDetails({
                   } · {e.rsvp}
                 </span>
               </div>
+              {e.host_school && (
+                <div className="event-detail-info-row">
+                  <Icon name="users" />
+                  <span>Hosted by {e.host_school}</span>
+                </div>
+              )}
+              {e.goal_type && e.goal_type.length > 0 && (
+                <div className="event-detail-info-row">
+                  <Icon name="spark" />
+                  <span>Goal: {e.goal_type.join(" · ")}</span>
+                </div>
+              )}
+              {e.access_conditions && (
+                <div className="event-detail-info-row">
+                  <Icon name="settings" />
+                  <span>
+                    Membership: {conditionLabel(e.access_conditions.membership)} ·{" "}
+                    Min age: {conditionLabel(e.access_conditions.min_age)} ·{" "}
+                    Ticket: {conditionLabel(e.access_conditions.ticket)} ·{" "}
+                    Capacity: {conditionLabel(e.access_conditions.capacity)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {problem ? (
@@ -445,15 +492,18 @@ export function EventDetails({
               <summary>Record &amp; evidence</summary>
               <dl className="evidence">
                 {Object.entries({
+                  "Host school": e.host_school || "Not confirmed",
+                  "Goal type": e.goal_type?.length ? e.goal_type.join(", ") : "Not confirmed",
                   Campus: e.campus_id || "Unknown",
                   Source: e.source || "Unknown",
-                  "Original source URL": e.source_url || "Unknown",
-                  "Last checked": e.last_checked_at || "Not verified",
-                  "Intended audience": e.intended_audience || "Unknown",
-                  Eligibility: e.eligibility || "Unknown",
+                  "Last checked": e.last_checked_at
+                    ? new Date(e.last_checked_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
+                    : "Not confirmed",
+                  "Intended audience": e.intended_audience || "Not confirmed",
+                  Eligibility: e.eligibility || "Not confirmed",
                   RSVP: e.rsvp || "Unknown",
-                  Availability: e.availability || "Unknown",
-                  "Food status": e.food_status || "Unknown",
+                  Availability: e.availability || "Not confirmed",
+                  "Food status": e.food_status || "Not confirmed",
                   Verification: e.verification_status || "Not verified",
                 }).map(([label, value]) => (
                   <div key={label}>
@@ -461,6 +511,21 @@ export function EventDetails({
                     <dd>{value}</dd>
                   </div>
                 ))}
+                {e.source_url ? (
+                  <div>
+                    <dt>Original source URL</dt>
+                    <dd>
+                      <a href={e.source_url} target="_blank" rel="noopener noreferrer">
+                        {e.source_url}
+                      </a>
+                    </dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt>Original source URL</dt>
+                    <dd>Not confirmed</dd>
+                  </div>
+                )}
               </dl>
               <p className="fineprint">
                 Authored for this prototype · Internal authoring review (not external verification) {e.checked}.

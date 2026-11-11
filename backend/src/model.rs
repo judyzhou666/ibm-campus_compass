@@ -32,6 +32,15 @@ pub struct Event {
     pub verification_status: String,
     #[serde(default)]
     pub eligibility: String,
+    /// Hosting school, department, or club name.
+    #[serde(default)]
+    pub host_school: String,
+    /// One or more goal categories: "research", "industry", "social connection", "cultural exploration".
+    #[serde(default)]
+    pub goal_type: Vec<String>,
+    /// Structured access conditions; each field is a concrete value or the string "unknown".
+    #[serde(default)]
+    pub access_conditions: serde_json::Value,
 }
 
 #[derive(Clone, Deserialize, Default)]
@@ -93,11 +102,16 @@ impl Constraints {
                 return Err("Unknown interest category");
             }
         }
-        if self
-            .food
-            .as_ref()
-            .is_some_and(|s| !["Free meal", "Coffee & snacks"].contains(&s.as_str()))
-        {
+        if self.food.as_ref().is_some_and(|s| {
+            ![
+                "Free meal",
+                "Coffee & snacks",
+                "Paid food",
+                "None",
+                "Unknown",
+            ]
+            .contains(&s.as_str())
+        }) {
             return Err("Unknown food preference");
         }
         Ok(())

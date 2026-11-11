@@ -2,6 +2,55 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Cross-school discovery, goal-balanced plans, access conditions — November 11, 2026
+
+The fictional event catalog was extended for cross-school discovery and realistic access conditions.
+
+### What was added
+
+**New fields on every event** (`data/events.json`, `backend/src/model.rs`, `frontend/src/types.ts`):
+- `host_school` — hosting school, department, or club name (e.g. "School of Education", "Business School", "Arts Collective").
+- `goal_type` — one or more of "research", "industry", "social connection", "cultural exploration".
+- `access_conditions` — object with `membership`, `min_age`, `ticket`, `capacity`; each is a concrete value or `"unknown"`.
+- `source_url` — fictional URL under `https://example.edu/` (was null for all records; now populated).
+- `last_checked_at` — ISO timestamp within the demo week (was null; now populated).
+
+**10 new fictional events (e39–e48):**
+- AI and pedagogy cross-school dialogue (Monday, School of Education)
+- Engineering + Education: building adaptive tools (Tuesday, School of Engineering)
+- Industry panel: AI careers in education tech (Wednesday, Business School)
+- Education school welcome mixer (Monday, School of Education)
+- Business school welcome reception (Tuesday, Business School)
+- Engineering club social night — members-only (Wednesday, School of Engineering)
+- Night at the grad bar (21+, ticketed) — Thursday, Graduate Student Center
+- Interdisciplinary AI futures talk (Thursday, Graduate Student Center)
+- Business analytics and AI: industry conversation (Friday, Business School)
+- Research skills bootcamp: AI tools (Friday, School of Education)
+
+**Food filtering** — all five food states (Free meal, Coffee & snacks, Paid food, None, Unknown) are now selectable in the Explore filter chips. Constraints food validation extended in both Rust and TypeScript.
+
+**Event cards and details** now show `host_school` and `goal_type` inline, and the Record & evidence panel shows `last checked` as a formatted date, `source URL` as a clickable link (or "Not confirmed"), all `access_conditions` fields ("Not confirmed" for `"unknown"` values — never shown as open), and `host_school` / `goal_type`.
+
+**Data review** (`Settings → Team tools`) flags `Missing host school` and `Missing goal type` as new quality categories.
+
+### Evaluation results after catalog expansion
+
+`npm run evaluate` was run after these changes. The evaluation scenarios (`evaluation/scenarios.json`) are frozen and unchanged. The expanded catalog changes which events the planner recommends for several scenarios:
+
+- **D01** (cross-disciplinary AI/career/social): new events e36, e41, e42, e47 now rank for this query.
+- **D02** (Tuesday/Thursday afternoon AI): e46 (Interdisciplinary AI futures, Thu) now ranks above e5.
+- **D06** (membership): e48 (Research skills bootcamp) now covers the AI slot instead of e12.
+- **D07** (cancelled/full exclusions): e31 and e46 now rank for AI queries.
+- **H01** (arts/social free admission): e42 now appears.
+- **H05** (replacement): e46 now qualifies for this slot.
+- **H07** (five results): updated with new options.
+
+Rules/Rust/Context adapters remain at 0 eligibility violations and 0 conflict violations. The evaluation report was regenerated and written to `docs/evaluation-report.md`.
+
+### Verification
+
+`npm test` (92 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
 ## Start here (teammates)
 
 **New to coding? Use the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki).** It has copy-and-paste, step-by-step guides:

@@ -303,15 +303,22 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     notify("Exported chosen events. Cancelled events were excluded.");
   }
+  const FOOD_FILTERS: Record<string, string> = {
+    "Free Food": "Free meal",
+    "Coffee & snacks": "Coffee & snacks",
+    "Paid food": "Paid food",
+    "No food": "None",
+    "Food unknown": "Unknown",
+  };
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
         (filter === "All" ||
-          (filter === "Free Food"
-            ? e.food === "Free meal"
+          (filter in FOOD_FILTERS
+            ? e.food === FOOD_FILTERS[filter]
             : e.category === filter)) &&
         (!query ||
-          `${e.title} ${e.description} ${e.topic} ${e.food}`
+          `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
             .toLowerCase()
             .includes(query.toLowerCase())),
     );

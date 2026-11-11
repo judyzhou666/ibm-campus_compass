@@ -7,6 +7,12 @@ export interface Block extends TimeSlot {
   id: string;
   title: string;
 }
+export interface AccessConditions {
+  membership: boolean | string;
+  min_age: number | string;
+  ticket: boolean | string;
+  capacity: number | string;
+}
 export interface CampusEvent extends TimeSlot {
   id: string;
   title: string;
@@ -29,6 +35,9 @@ export interface CampusEvent extends TimeSlot {
   availability?: string;
   verification_status?: string;
   food_status?: string;
+  host_school?: string;
+  goal_type?: string[];
+  access_conditions?: AccessConditions;
 }
 export interface Schedule {
   plan: string[];
