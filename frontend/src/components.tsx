@@ -274,6 +274,7 @@ export function EventDetails({
   event: e,
   state,
   onClose,
+  onCommunity,
   onAdd,
   onRemove,
   onSave,
@@ -281,6 +282,7 @@ export function EventDetails({
   event: CampusEvent;
   state: DemoState;
   onClose: () => void;
+  onCommunity: (id: string) => void;
   onAdd: (id: string) => void;
   onRemove: (id: string) => void;
   onSave: (id: string) => void;
@@ -424,7 +426,15 @@ export function EventDetails({
               <p className="fineprint">Fictional local groups matching this record's topic.</p>
               <div className="event-detail-communities">
                 {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
-                  <a key={c.id} href={communityHash(c.id)} onClick={onClose} className="event-detail-community-link">
+                  <a
+                    key={c.id}
+                    href={communityHash(c.id)}
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      onCommunity(c.id);
+                    }}
+                    className="event-detail-community-link"
+                  >
                     {c.name}
                   </a>
                 ))}

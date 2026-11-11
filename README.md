@@ -23,6 +23,21 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Back and swipe-back between tabs — November 10, 2026
+
+Back (and the swipe-back gesture) no longer steps through tabs you visited before. Sidebar tabs (Dashboard, My Calendar, Explore Events, Discussion Forum, AI Planner, Saved Events, Profile, Settings) are on the same level, so on any of them Back is blocked and you stay where you are. Back only closes sub-pages, innermost first:
+
+| Sub-page | Back returns to |
+| --- | --- |
+| Event details (from any page) | The page underneath |
+| A community in the forum (also from an event's "Related communities" link or a `#forum?community=…` URL) | All forum posts |
+| A forum post or the Create post editor | The post list (or the open community) |
+| Synthetic-data review (Settings → Team tools) | Settings |
+
+How it works: switching tabs replaces the browser history entry instead of adding one, and each open sub-page owns one entry (`frontend/src/navigation.ts`). In-page Close / "Back to posts" buttons use up that entry, so a later Back doesn't land on a stale one. The old `hashchange` listener is gone; links and typed `#page` URLs are handled in the same `popstate` listener.
+
+Verification: `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In a fresh browser tab I pressed Back on every sidebar tab (all stayed put, three Backs in a row on Settings too), and checked event details (Back and Close button), the event → community link, community → post → Back → Back, switching communities, Create post with Back / "Back to posts" / Save Draft, the logo link, the search box, a typed `#calendar`, reloading on `#forum?community=ai`, and the data review returning to Settings. Limitation: checked with `history.back()` in Chromium; the real iOS/macOS swipe gesture triggers the same browser Back but was not tried on a device.
+
 ## PR #9 review fixes — November 10, 2026
 
 Fixes from the code review of the presentation-polish pull request, one commit each:
@@ -59,7 +74,7 @@ Fixes from the review of the forum redesign, event-detail overlay and time zone 
 - **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
 - **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
 - **Time zone setting** now says exactly what it changes: the heading date (now the demo clock, see Presentation polish above), plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
-- **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app.
+- **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app. *(Superseded: Back is now blocked on every tab and only closes sub-pages; see "Back and swipe-back between tabs" above.)*
 - **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
 - **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
 
