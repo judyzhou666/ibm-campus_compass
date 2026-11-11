@@ -23,6 +23,24 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Top bar: search, quick links and demo sign-in — November 11, 2026
+
+The top bar follows a familiar events-site layout:
+
+- **Search box** has a visible rounded border, a leading search icon and a round green search button. Press Enter or the button to search Explore Events.
+- **Quick links** on the right: Find events, My calendar, Forum, plus a green **Plan with AI** button. The link for the current page is underlined.
+- **Sign in** sits at the far right. Signing in asks only for a display name, then the profile circle replaces it; the circle opens Profile, which has **Sign out**. Signed out, the dashboard says "Welcome to Campus Compass." and the sidebar shows Guest.
+- The breadcrumb and campus-name label were removed from the top bar. The campus name still appears in the footer.
+
+The demo sign-in is fictional: there is no account, password or email, and the name stays in this browser (`signedIn` in the saved demo state). A new demo starts signed out. Profiles saved before this change also show as signed out until you sign in.
+
+Layout by width:
+- **Above 1060px:** all quick links show.
+- **1060px down to phone width:** only Plan with AI shows; the sidebar still has every page.
+- **Phone:** the links and the bell are hidden, and the search box and Sign in or the profile circle stay.
+
+Verification: `npm test` (92 TypeScript tests, including a new one in `tests/sign-in.test.ts`, and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In the browser at 1440px, 1024px and 375px I checked the layout, signed in through the dialog, searched for "film" with the round button, saw the current-page underline on Find events and Plan with AI, opened Profile from the circle and signed out. There was no sideways scrolling on the phone.
+
 ## Back and swipe-back between tabs — November 10, 2026
 
 Back (and the swipe-back gesture) no longer steps through tabs you visited before. Sidebar tabs (Dashboard, My Calendar, Explore Events, Discussion Forum, AI Planner, Saved Events, Profile, Settings) are on the same level, so on any of them Back is blocked and you stay where you are. Back only closes sub-pages, innermost first:

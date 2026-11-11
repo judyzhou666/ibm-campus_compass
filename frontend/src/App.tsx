@@ -16,6 +16,7 @@ import {
   Empty,
   EventCard,
   EventDetails,
+  SignInDialog,
   Filters,
   Heading,
   Icon,
@@ -109,6 +110,7 @@ export default function App() {
     heading.focus();
   }, [focusHeading]);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -422,13 +424,25 @@ export default function App() {
             <strong>A campus of possibilities.</strong>Your interests. Your
             time. Your next great discovery.
           </div>
-          <div className="user">
-            <span className="avatar">{state.name[0] || "J"}</span>
-            <div>
-              <strong>{state.name}’s campus</strong>
-              <small>Graduate student · Demo profile</small>
+          {state.signedIn ? (
+            <div className="user">
+              <span className="avatar">{state.name[0] || "J"}</span>
+              <div>
+                <strong>{state.name}’s campus</strong>
+                <small>Graduate student · Demo profile</small>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="user">
+              <span className="avatar guest">
+                <Icon name="user" />
+              </span>
+              <div>
+                <strong>Guest</strong>
+                <small>Not signed in · Demo</small>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
       <div className="shell">
@@ -442,11 +456,9 @@ export default function App() {
           >
             <Icon name="menu" />
           </button>
-          <div className="breadcrumb">
-            My campus <span>/ &nbsp; {labels[page]}</span>
-          </div>
           <form
             className="search"
+            role="search"
             onSubmit={(e) => {
               e.preventDefault();
               setQuery(search.trim());
@@ -457,13 +469,40 @@ export default function App() {
             <Icon name="search" />
             <input
               aria-label="Search events"
-              placeholder="Find something that sparks your interest"
+              placeholder="Search events"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <button type="submit" className="search-go" aria-label="Search">
+              <Icon name="search" />
+            </button>
           </form>
+          <nav className="top-links" aria-label="Quick links">
+            {(
+              [
+                ["explore", "Find events"],
+                ["calendar", "My calendar"],
+                ["forum", "Forum"],
+              ] as [Page, string][]
+            ).map(([p, label]) => (
+              <button
+                key={p}
+                className={page === p ? "active" : ""}
+                aria-current={page === p ? "page" : undefined}
+                onClick={() => nav(p)}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              className={`top-cta ${page === "planner" ? "active" : ""}`}
+              aria-current={page === "planner" ? "page" : undefined}
+              onClick={() => nav("planner")}
+            >
+              Plan with AI
+            </button>
+          </nav>
           <div className="top-actions">
-            <span className="term">{DEMO.campus_name}</span>
             <button
               className="icon-btn"
               aria-label="View notifications"
@@ -478,21 +517,31 @@ export default function App() {
             >
               <Icon name="bell" />
             </button>
-            <button
-              className="avatar"
-              aria-label="Open profile"
-              style={{ border: 0 }}
-              onClick={() => nav("profile")}
-            >
-              {state.name[0] || "J"}
-            </button>
+            {state.signedIn ? (
+              <button
+                className="avatar"
+                aria-label={`Open profile for ${state.name}`}
+                style={{ border: 0 }}
+                onClick={() => nav("profile")}
+              >
+                {state.name[0] || "J"}
+              </button>
+            ) : (
+              <button className="sign-in" onClick={() => setSigningIn(true)}>
+                Sign in
+              </button>
+            )}
           </div>
         </header>
         <main id="main">
           {page === "dashboard" ? (
             <>
               <Heading
-                title={`${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`}
+                title={
+                  state.signedIn
+                    ? `${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`
+                    : "Welcome to Campus Compass."
+                }
                 description="A little direction. A world of campus possibilities."
                 timezone={state.timezone}
               />
@@ -1166,6 +1215,17 @@ export default function App() {
           </span>
         ) : null}
       </div>
+      {signingIn ? (
+        <SignInDialog
+          name={state.name}
+          onClose={() => setSigningIn(false)}
+          onSignIn={(name) => {
+            update((s) => ({ ...s, name, signedIn: true }));
+            setSigningIn(false);
+            notify(`Signed in as ${name}. Demo only; nothing leaves this browser.`);
+          }}
+        />
+      ) : null}
       {rsvpEvent ? (
         <RsvpDialog
           key={rsvpEvent}

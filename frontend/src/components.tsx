@@ -505,3 +505,60 @@ export function EventDetails({
     </div>
   );
 }
+
+/** Demo sign-in: a display name only. No account, password or email. */
+export function SignInDialog({
+  name,
+  onSignIn,
+  onClose,
+}: {
+  name: string;
+  onSignIn: (name: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current!;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="rsvp-dialog signin-dialog"
+      aria-labelledby="signin-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      <h2 id="signin-title">Sign in to Campus Compass</h2>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = String(
+            new FormData(e.currentTarget).get("name") || "",
+          ).trim();
+          if (value) onSignIn(value.slice(0, 30));
+        }}
+      >
+        <label className="rsvp-name">
+          Display name
+          <input name="name" autoFocus required maxLength={30} defaultValue={name} />
+        </label>
+        <p className="fineprint">
+          Demo sign-in only: there is no account or password, and no email is
+          needed. Your fictional profile stays in this browser.
+        </p>
+        <div className="row">
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn primary">
+            Sign in
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}

@@ -71,7 +71,18 @@ export function Profile({ state, update, notify }: Props) {
       <Heading
         title="A little about you."
         description="Your interests and availability help make better recommendations."
-      />
+      >
+        {state.signedIn ? (
+          <Button
+            onClick={() => {
+              update((s) => ({ ...s, signedIn: false }));
+              notify("Signed out. Your demo plans stay in this browser.");
+            }}
+          >
+            Sign out
+          </Button>
+        ) : undefined}
+      </Heading>
       <div className="wide-grid">
         <section className="panel">
           <h2>What are you curious about?</h2>

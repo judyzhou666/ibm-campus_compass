@@ -74,6 +74,8 @@ export interface PostDraft {
 }
 export interface DemoState extends Schedule {
   name: string;
+  /** Demo sign-in only: no account or password; the profile stays local. */
+  signedIn: boolean;
   onboarded: boolean;
   major: string;
   goals: string;

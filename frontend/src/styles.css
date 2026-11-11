@@ -215,14 +215,6 @@ textarea {
   padding: 0 34px;
   gap: 20px;
 }
-.breadcrumb {
-  font-size: 12px;
-  color: var(--muted);
-}
-.breadcrumb span {
-  color: var(--ink);
-  margin-left: 12px;
-}
 .search {
   display: flex;
   align-items: center;
@@ -247,11 +239,6 @@ textarea::placeholder {
   display: flex;
   gap: 18px;
   align-items: center;
-}
-.term {
-  color: var(--muted);
-  font-size: 11px;
-  white-space: nowrap;
 }
 .icon-btn {
   border: 1px solid var(--line);
@@ -1456,9 +1443,6 @@ p {
     width: 90px;
     height: 90px;
   }
-  .term {
-    display: none;
-  }
   .planner-layout {
     grid-template-columns: minmax(0, 1fr) 280px;
   }
@@ -1501,9 +1485,6 @@ p {
   }
   .wide-grid {
     grid-template-columns: 1fr;
-  }
-  .breadcrumb {
-    display: none;
   }
   .hero-compass {
     width: 130px;
@@ -2648,4 +2629,141 @@ p {
   position: absolute;
   top: 12px;
   right: 12px;
+}
+/* ── Top bar: bordered search, quick links, sign in ─────────────────────── */
+.topbar {
+  justify-content: flex-start;
+}
+.topbar .search {
+  flex: 0 1 420px;
+  width: auto;
+  height: 44px;
+  padding: 0 4px 0 16px;
+  border: 1px solid #d3dbd2;
+  border-radius: 999px;
+  background: var(--bg);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.topbar .search:hover {
+  border-color: #b9c6b8;
+}
+.topbar .search:focus-within {
+  background: #fff;
+  border-color: var(--green);
+  outline: 3px solid #57a77a40;
+  outline-offset: 0;
+}
+.search-go {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.search-go:hover {
+  background: var(--green-dark);
+}
+.search-go svg {
+  width: 16px;
+  height: 16px;
+}
+.top-links {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.top-links button {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 9px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.top-links button:hover {
+  background: var(--mint);
+}
+.top-links button.active {
+  color: var(--green);
+  box-shadow: inset 0 -2px 0 var(--green);
+  border-radius: 8px 8px 0 0;
+}
+.top-links .top-cta {
+  margin-left: 6px;
+  background: var(--green);
+  color: #fff;
+}
+.top-links .top-cta:hover,
+.top-links .top-cta.active {
+  background: var(--green-dark);
+  color: #fff;
+  box-shadow: none;
+  border-radius: 8px;
+}
+.topbar .top-actions {
+  gap: 10px;
+}
+.sign-in {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 9px 4px 9px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sign-in:hover {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.avatar.guest {
+  background: var(--mint);
+  color: var(--green);
+}
+.avatar.guest svg {
+  width: 16px;
+  height: 16px;
+}
+.signin-dialog form {
+  margin-top: 12px;
+}
+@media (max-width: 1180px) {
+  .top-links button:not(.top-cta) {
+    padding: 9px 8px;
+  }
+}
+@media (max-width: 1060px) {
+  .top-links button:not(.top-cta) {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .top-links {
+    display: none;
+  }
+  .topbar .search {
+    flex: 1;
+    height: 40px;
+  }
+  .top-actions > .avatar {
+    display: grid;
+  }
+  .top-actions .icon-btn {
+    display: none;
+  }
 }

@@ -25,6 +25,7 @@ export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 
 export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
+  signedIn: false,
   onboarded: false,
   major: "",
   goals: "",
@@ -60,6 +61,7 @@ export function restore(): DemoState {
     return {
       ...base,
       onboarded: value.onboarded === true,
+      signedIn: value.signedIn === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
       timezone: isTimeZone(value.timezone) ? value.timezone : "",
