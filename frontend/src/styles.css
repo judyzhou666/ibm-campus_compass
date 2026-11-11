@@ -2589,3 +2589,14 @@ p {
   gap: 10px;
   padding-top: 8px;
 }
+/* First-visit welcome prompt: close (top right) applies default preferences */
+.welcome-dialog {
+  position: fixed;
+  overflow: visible;
+  padding-right: 56px;
+}
+.welcome-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
