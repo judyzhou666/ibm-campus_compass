@@ -1,6 +1,7 @@
 import { dayLabel, DEMO, TIME_ZONES } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
 import { useEffect, useState, type FormEvent } from "react";
+import { useSubPage } from "./navigation.ts";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
@@ -345,19 +346,12 @@ export function Forum({
     setActiveCommunityId(selected);
   }, [selected]);
 
-  // Push a sub-page history entry when drilling into a post or create page,
-  // and listen for swipe-back to exit the sub-page gracefully.
-  useEffect(() => {
-    if (selectedPostId || creatingPost) {
-      history.pushState({ forumSubPage: true }, "");
-      function onPop() {
-        setSelectedPostId(null);
-        setCreatingPost(false);
-      }
-      window.addEventListener("popstate", onPop, { once: true });
-      return () => window.removeEventListener("popstate", onPop);
-    }
-  }, [selectedPostId, creatingPost]);
+  // A post or the post editor is a sub-page: it owns one history entry, so
+  // Back / swipe-back returns to the post list.
+  const closeSubPage = useSubPage(Boolean(selectedPostId || creatingPost), () => {
+    setSelectedPostId(null);
+    setCreatingPost(false);
+  });
 
   const userPosts: DiscussionPost[] = state.posts.map((p) => ({
     id: `u:${p.id}`,
@@ -397,7 +391,7 @@ export function Forum({
       <div className="forum-detail-page">
         <button
           className="forum-back-btn text-btn"
-          onClick={() => { history.back(); setCreatingPost(false); }}
+          onClick={closeSubPage}
         >
           ← Back to posts
         </button>
@@ -443,8 +437,7 @@ export function Forum({
                 postDraft: null,
               }));
               notify("Posted to your local demo only.");
-              history.back();
-              setCreatingPost(false);
+              closeSubPage();
             }}
           >
             <input
@@ -500,8 +493,7 @@ export function Forum({
                 onClick={() => {
                   update((s) => ({ ...s, postDraft: composer }));
                   notify("Draft saved in this browser only.");
-                  history.back();
-                  setCreatingPost(false);
+                  closeSubPage();
                 }}
               >
                 Save Draft
@@ -523,7 +515,7 @@ export function Forum({
       <div className="forum-detail-page">
         <button
           className="forum-back-btn text-btn"
-          onClick={() => { history.back(); setSelectedPostId(null); }}
+          onClick={closeSubPage}
         >
           ← Back to posts
         </button>

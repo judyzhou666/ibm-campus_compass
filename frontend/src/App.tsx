@@ -3,6 +3,7 @@ import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
+import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTS, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
@@ -80,6 +81,8 @@ export default function App() {
     enrollment.subscribe,
     enrollment.read,
   );
+  // Before any sub-page pushes an entry (see navigation.ts).
+  useState(initHistory);
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
   );
@@ -127,8 +130,8 @@ export default function App() {
     setFilter("All");
     setQuery("");
     setSearch("");
-    location.hash =
-      next === "forum" && communityId ? communityHash(communityId) : next;
+    // The URL follows page state (see the URL effect below); switching tabs
+    // replaces the history entry, so Back never steps between sibling tabs.
     window.scrollTo(0, 0);
   }
   useEffect(() => {
@@ -150,25 +153,42 @@ export default function App() {
     );
     return () => clearTimeout(timer);
   }, [toast, toastActions, toastHeld]);
+  // Sub-pages: an open community and the event details overlay each own one
+  // history entry, so Back closes them before anything else.
+  const closeCommunity = useSubPage(
+    page === "forum" && selectedCommunity !== null,
+    () => setSelectedCommunity(null),
+    selectedCommunity ? communityHash(selectedCommunity) : undefined,
+  );
+  const closeDetail = useSubPage(detail !== null, () => setDetail(null));
+  // The synthetic-data review is opened from Settings, not the sidebar, so
+  // Back returns to Settings.
+  useSubPage(page === "review", () => setPage("settings"), "#review");
+  // Keep the URL in step with the current tab without adding history.
+  const appUrl =
+    page === "forum" && selectedCommunity
+      ? communityHash(selectedCommunity)
+      : `#${page}`;
+  const appUrlRef = useRef(appUrl);
+  appUrlRef.current = appUrl;
   useEffect(() => {
-    const handle = () => {
-      setPage(validPage(location.hash.slice(1)));
-      setSelectedCommunity(communityFromHash(location.hash));
-      setMenu(false);
-    };
-    window.addEventListener("hashchange", handle);
-    return () => window.removeEventListener("hashchange", handle);
-  }, []);
-  // Keep swipe-back (and Back) from leaving the app: mark the first entry as the
-  // root and stack one guard above it. Back still moves between tabs through
-  // hash history; only a pop that reaches the root is absorbed.
+    if (location.hash !== appUrl) history.replaceState(history.state, "", appUrl);
+  }, [appUrl]);
+  // Back / swipe-back: close the innermost sub-page; at a top-level tab,
+  // absorb it by re-adding the entry just left, so the app stays put.
   useEffect(() => {
-    if (!history.state?.ccGuard && !history.state?.ccRoot) {
-      history.replaceState({ ...history.state, ccRoot: true }, "");
-      history.pushState({ ccGuard: true }, "");
-    }
     function onPop(e: PopStateEvent) {
-      if (e.state?.ccRoot) history.pushState({ ccGuard: true }, "");
+      handlePopState(
+        e,
+        () => {
+          // A link or typed URL changed the hash: go there as a tab switch.
+          setPage(validPage(location.hash.slice(1)));
+          setSelectedCommunity(communityFromHash(location.hash));
+          setDetail(null);
+          setMenu(false);
+        },
+        () => appUrlRef.current,
+      );
     }
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -363,7 +383,14 @@ export default function App() {
         />
       ) : null}
       <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
-        <a className="brand" href="#dashboard" onClick={() => nav("dashboard")}>
+        <a
+          className="brand"
+          href="#dashboard"
+          onClick={(e) => {
+            e.preventDefault();
+            nav("dashboard");
+          }}
+        >
           <span className="logo">
             <Icon name="compass" />
           </span>
@@ -426,7 +453,6 @@ export default function App() {
               setQuery(search.trim());
               setFilter("All");
               setPage("explore");
-              location.hash = "explore";
             }}
           >
             <Icon name="search" />
@@ -1068,7 +1094,7 @@ export default function App() {
               update={update}
               notify={notify}
               selected={selectedCommunity}
-              onSelect={(id) => nav("forum", id ?? undefined)}
+              onSelect={(id) => (id ? nav("forum", id) : closeCommunity())}
             />
           ) : null}
           {page === "settings" ? (
@@ -1155,7 +1181,8 @@ export default function App() {
         <EventDetails
           event={detailEvent}
           state={state}
-          onClose={() => setDetail(null)}
+          onClose={closeDetail}
+          onCommunity={(id) => nav("forum", id)}
           onAdd={add}
           onRemove={remove}
           onSave={save}
