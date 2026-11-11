@@ -23,6 +23,21 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Presentation polish — November 10, 2026
+
+A design critique of the prototype (saved in `.impeccable/critique/`, not committed) found problems that show during a live demo. Fixed, one commit each:
+
+- **Dates agree.** The page heading used the real date (Nov 10) while the week strip showed Nov 2–6 with Monday marked today. The heading now shows the demo clock, **Mon, Nov 2, 9:00 AM · Demo week**, in the chosen time zone. The "today" marker on the week strip is a pill wide enough for "Nov 2".
+- **Planner answers read as plain language.** Each result starts with "Why this fits: …" (interest, schedule, cost). The full planner evidence is folded under "How the planner checked this", with readable labels and 12-hour times. "Name coming soon" is gone from the status line; the honest **Rust planner / Browser fallback · Simulated** label stays.
+- **Adding to the calendar ends well.** The confirmation toast offers **View calendar** and **Undo**. It stays up for 9 seconds and stays open while you hover over it or focus it.
+- **Blocked events say so up front.** Event cards that conflict, are full, cancelled or need membership show the reason in amber and a **Can't add · See why** button that opens the details, instead of an "Add to calendar" button that fails.
+- **Forum posts match the catalog.** Seed posts now name the right days for the Learning with AI lab, community dinner, sketchbook walk and resume peer review.
+- **Copy:** "Welcome, Judy." on a first visit (then "Welcome back"), and "1 event" instead of "1 events".
+
+**Demo tip:** to show the first-visit flow again, clear this site's storage in the browser (or run `localStorage.clear()` in the console) and reload.
+
+Verification: `npm test` (88 TypeScript tests and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked the heading date and today pill, a planner reply with the folded evidence, Add → Undo from the toast, the ten blocked cards on Explore, the forum post days and the first-visit greeting. Limitations: accessibility and mobile items from the critique (small text, tap targets, screen-reader structure) are deferred because this is a presentation prototype; the Rust planner's evidence text itself is unchanged, only how it is shown.
+
 ## PR #8 review fixes — November 5, 2026
 
 Fixes from the review of the forum redesign, event-detail overlay and time zone setting:
@@ -31,7 +46,7 @@ Fixes from the review of the forum redesign, event-detail overlay and time zone 
 - **Save Draft** really saves the title, body and community in this browser, and Create Post reopens with the draft. Posting clears it.
 - **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
 - **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
-- **Time zone setting** now says exactly what it changes: the heading date, plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
+- **Time zone setting** now says exactly what it changes: the heading date (now the demo clock, see Presentation polish above), plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
 - **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app.
 - **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
 - **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
