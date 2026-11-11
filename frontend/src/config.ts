@@ -37,6 +37,8 @@ export function dayLabel(day: number, c = DEMO) {
     timeZone: "UTC",
   }).format(new Date(`${weekDates(c)[day]}T12:00:00Z`));
 }
+/** The demo clock: Monday of the demo week at 9:00 AM campus time. */
+export const DEMO_NOW_MINUTE = 9 * 60;
 export const WEEK_LABEL = `${dayLabel(0)}–${dayLabel(4)}, ${DEMO.week_start.slice(0, 4)}`;
 export function storageKey(c = DEMO) {
   // Keep legacy default state; another configuration gets a separate preserved namespace.

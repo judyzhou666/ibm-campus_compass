@@ -1,4 +1,10 @@
-import { DEMO, dayLabel, isTimeZone, timeIn } from "./config.ts";
+import {
+  DEMO,
+  DEMO_NOW_MINUTE,
+  dayLabel,
+  isTimeZone,
+  timeIn,
+} from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
@@ -62,12 +68,9 @@ export function Heading({
   children?: ReactNode;
 }) {
   const tz = isTimeZone(timezone) ? timezone : DEMO.time_zone;
-  const todayLabel = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: tz,
-  }).format(new Date());
+  // The demo is frozen at Monday 9:00 AM campus time of the demo week, so the
+  // heading date always agrees with the "today" marker on the week strip.
+  const todayLabel = timeIn(0, DEMO_NOW_MINUTE, tz);
   return (
     <div className="page-head">
       <div>
@@ -76,7 +79,7 @@ export function Heading({
       </div>
       {children || (
         <span className="date">
-          {todayLabel} · Demo
+          {todayLabel} · Demo week
         </span>
       )}
     </div>

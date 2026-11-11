@@ -447,11 +447,13 @@ p {
 .day-head.today strong {
   background: var(--green);
   color: white;
-  border-radius: 50%;
-  width: 29px;
+  border-radius: 999px;
+  min-width: 29px;
   height: 29px;
+  padding: 0 10px;
   display: grid;
   place-items: center;
+  white-space: nowrap;
 }
 .week-day {
   min-width: 0;
