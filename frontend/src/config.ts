@@ -86,6 +86,20 @@ export function timeIn(day: number, minute: number, zone: string, c = DEMO) {
     timeZone: zone,
   }).format(eventEpoch(day, minute, c));
 }
+/**
+ * Which demo-week day (0–4) the demo clock falls on in a viewer's time zone, or
+ * -1 if it lands outside Monday–Friday. Far-east zones see the campus Monday
+ * morning as Monday evening or Tuesday.
+ */
+export function demoTodayIndex(zone: string, c = DEMO) {
+  const date = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: zone,
+  }).format(eventEpoch(0, DEMO_NOW_MINUTE, c));
+  return weekDates(c).indexOf(date);
+}
 export function utcStamp(day: number, minute: number, c = DEMO) {
   return new Date(eventEpoch(day, minute, c))
     .toISOString()

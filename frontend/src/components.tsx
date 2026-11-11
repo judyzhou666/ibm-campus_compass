@@ -2,6 +2,7 @@ import {
   DEMO,
   DEMO_NOW_MINUTE,
   dayLabel,
+  demoTodayIndex,
   isTimeZone,
   timeIn,
 } from "./config.ts";
@@ -206,6 +207,10 @@ export function Week({
   onDetail: (id: string) => void;
   onDay: (day: number) => void;
 }) {
+  // Mark the same day the heading shows for the chosen time zone.
+  const today = demoTodayIndex(
+    isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone,
+  );
   return (
     <div className="week-scroll">
       <div className="week">
@@ -220,7 +225,7 @@ export function Week({
           ].sort((a, b) => a.start - b.start);
           return (
             <div className="week-day" key={day}>
-              <div className={`day-head ${i === 0 ? "today" : ""}`}>
+              <div className={`day-head ${i === today ? "today" : ""}`}>
                 {day}
                 <strong>{dayLabel(i)}</strong>
               </div>

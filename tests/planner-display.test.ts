@@ -22,3 +22,11 @@ test("why-this-fits uses the chat's requested topics and keeps acronyms", () => 
     "Matches your interest in AI & education",
   );
 });
+
+test("the today marker follows the heading's date in each time zone", async () => {
+  const { demoTodayIndex } = await import("../frontend/src/config.ts");
+  assert.equal(demoTodayIndex("America/New_York"), 0);
+  assert.equal(demoTodayIndex("Pacific/Honolulu"), 0);
+  assert.equal(demoTodayIndex("Asia/Tokyo"), 0);
+  assert.equal(demoTodayIndex("Pacific/Auckland"), 1);
+});

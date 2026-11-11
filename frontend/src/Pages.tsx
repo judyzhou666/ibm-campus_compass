@@ -846,8 +846,8 @@ export function Settings({
           <div>
             <h3>Time zone</h3>
             <p>
-              Shows today&rsquo;s date and, in event details, each event&rsquo;s
-              start in this zone. Schedules, the planner and calendar export
+              Shows the demo date and time, the day marked today and, in
+              event details, each event&rsquo;s start in this zone. Schedules, the planner and calendar export
               stay in campus time ({DEMO.time_zone}). Resets on demo reset.
             </p>
           </div>
