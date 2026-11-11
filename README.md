@@ -34,9 +34,22 @@ Back (and the swipe-back gesture) no longer steps through tabs you visited befor
 | A forum post or the Create post editor | The post list (or the open community) |
 | Synthetic-data review (Settings → Team tools) | Settings |
 
-How it works: switching tabs replaces the browser history entry instead of adding one, and each open sub-page owns one entry (`frontend/src/navigation.ts`). Each entry records its position, so the browser's Forward button is ignored instead of being mistaken for Back. The logo link no longer adds a history entry on each click. In-page Close / "Back to posts" buttons use up that entry, so a later Back doesn't land on a stale one. The old `hashchange` listener is gone; links and typed `#page` URLs are handled in the same `popstate` listener.
+How it works (`frontend/src/navigation.ts`): switching tabs replaces the browser history entry instead of adding one. Back closes the innermost open sub-page; on a tab, nothing happens. Forward is ignored. The logo link no longer adds a history entry on each click.
 
-Verification: `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In a fresh browser tab I pressed Back on every sidebar tab (all stayed put, three Backs in a row on Settings too), and checked event details (Back and Close button), the event → community link, community → post → Back → Back, switching communities, Create post with Back / "Back to posts" / Save Draft, the logo link, the search box, a typed `#calendar`, reloading on `#forum?community=ai`, and the data review returning to Settings. After review, a scripted run of 31 checks also covers Forward (community → post → Back → Forward changes nothing) and reloading partway through a session. Limitation: checked with `history.back()` in Chromium; the real iOS/macOS swipe gesture triggers the same browser Back but was not tried on a device.
+**Why the first version still let a real swipe leave the site (fixed November 11):** Chrome and Safari skip history entries that a page adds without a user gesture, so a site can't trap visitors. The app used to add its guard entry on page load and re-add it inside the Back handler. Neither counts as a gesture, so a real swipe or Back press went straight past the guard and left the website. Scripted `history.back()` doesn't apply that skipping, which is why the earlier checks passed. Now the app adds entries only while you're tapping, clicking or typing: each interaction tops up a cushion of 3 Back presses, and each Back uses one.
+
+Verification:
+- `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+- In a fresh browser tab with another page in its history before the app, I used real clicks and recorded every history entry the app added: all of them were added during a user gesture.
+- After clicking Explore Events, three Backs in a row stayed on Explore Events.
+- Event details: Back closed them, then the next Backs were absorbed.
+- Forum: community → post, then Back, Back, Back closed the post, then the community, then was absorbed.
+- Forward changed nothing.
+
+Limitations:
+- **No protection before the first interaction.** A Back or swipe before you tap, click or type anything leaves the site, because browsers ignore entries added without a gesture.
+- **At most 3 Backs absorbed.** A fourth Back in a row without touching the page leaves.
+- **Not tried with a real swipe.** I checked with real clicks plus `history.back()` in Chromium; a real swipe on a Mac trackpad, iPhone or Android device wasn't tried.
 
 ## PR #9 review fixes — November 10, 2026
 

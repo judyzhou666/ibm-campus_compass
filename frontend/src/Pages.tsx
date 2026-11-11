@@ -346,8 +346,8 @@ export function Forum({
     setActiveCommunityId(selected);
   }, [selected]);
 
-  // A post or the post editor is a sub-page: it owns one history entry, so
-  // Back / swipe-back returns to the post list.
+  // A post or the post editor is a sub-page: Back / swipe-back returns to the
+  // post list (see navigation.ts).
   const closeSubPage = useSubPage(Boolean(selectedPostId || creatingPost), () => {
     setSelectedPostId(null);
     setCreatingPost(false);

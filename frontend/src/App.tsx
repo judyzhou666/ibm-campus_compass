@@ -153,17 +153,16 @@ export default function App() {
     );
     return () => clearTimeout(timer);
   }, [toast, toastActions, toastHeld]);
-  // Sub-pages: an open community and the event details overlay each own one
-  // history entry, so Back closes them before anything else.
+  // Sub-pages: Back closes an open community or the event details overlay
+  // before anything else (see navigation.ts).
   const closeCommunity = useSubPage(
     page === "forum" && selectedCommunity !== null,
     () => setSelectedCommunity(null),
-    selectedCommunity ? communityHash(selectedCommunity) : undefined,
   );
   const closeDetail = useSubPage(detail !== null, () => setDetail(null));
   // The synthetic-data review is opened from Settings, not the sidebar, so
   // Back returns to Settings.
-  useSubPage(page === "review", () => setPage("settings"), "#review");
+  useSubPage(page === "review", () => setPage("settings"));
   // Keep the URL in step with the current tab without adding history.
   const appUrl =
     page === "forum" && selectedCommunity
@@ -174,8 +173,8 @@ export default function App() {
   useEffect(() => {
     if (location.hash !== appUrl) history.replaceState(history.state, "", appUrl);
   }, [appUrl]);
-  // Back / swipe-back: close the innermost sub-page; at a top-level tab,
-  // absorb it by re-adding the entry just left, so the app stays put.
+  // Back / swipe-back: close the innermost sub-page; on a top-level tab,
+  // nothing happens.
   useEffect(() => {
     function onPop(e: PopStateEvent) {
       handlePopState(
