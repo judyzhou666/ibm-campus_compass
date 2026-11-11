@@ -23,6 +23,18 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## PR #9 review fixes — November 10, 2026
+
+Fixes from the code review of the presentation-polish pull request, one commit each:
+
+- **Undo** after adding an event now also puts it back in the planner's draft ideas, in its original position.
+- **"Why this fits"** on planner results uses the topics the student asked for in chat, so it agrees with the folded evidence. Evidence times also convert "24:00" to "12:00 AM".
+- **Toast:** the browser-storage warning no longer shows the previous toast's buttons. After pressing View calendar or Undo, keyboard focus moves to the page heading. Screen readers announce only the message, not the buttons.
+- **Today marker** follows the chosen time zone. In Auckland or Sydney the demo clock falls on Tuesday, and the week strip now marks Tuesday to match the heading. The Settings note says what the time zone changes.
+- **Styles:** the amber notice colors are defined once as `--notice-bg` and `--notice-ink`.
+
+Verification: `npm test` (91 TypeScript tests, including 3 new ones in `tests/planner-display.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked RSVP → add → Undo restoring the draft, View calendar moving focus to the calendar heading, the live region holding only the message, and the Auckland heading and today marker both showing Tue Nov 3.
+
 ## Presentation polish — November 10, 2026
 
 A design critique of the prototype (saved in `.impeccable/critique/`, not committed) found problems that show during a live demo. Fixed, one commit each:
