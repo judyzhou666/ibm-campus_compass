@@ -253,6 +253,10 @@ export default function App() {
     // replaces the history entry, so Back never steps between sibling tabs.
     window.scrollTo(0, 0);
   }
+  function openProfileEditor() {
+    nav("profile");
+    setProfileEditMode(true);
+  }
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -799,10 +803,7 @@ export default function App() {
               </div>
               <button
                 className="btn primary user-profile-edit"
-                onClick={() => {
-                  nav("profile");
-                  setProfileEditMode(true);
-                }}
+                onClick={openProfileEditor}
               >
                 Edit Profile
               </button>
@@ -1491,6 +1492,7 @@ export default function App() {
               editBasicInformation={profileEditMode}
               onCancelBasicInformation={() => setProfileEditMode(false)}
               onSaveBasicInformation={() => setProfileEditMode(false)}
+              onEditBasicInformation={openProfileEditor}
             />
           ) : null}
           {page === "forum" ? (

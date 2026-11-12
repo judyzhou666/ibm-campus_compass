@@ -1106,6 +1106,10 @@ p {
   color: var(--ink);
   width: 100%;
 }
+.field input[readonly] {
+  background: var(--bg);
+  cursor: default;
+}
 .field textarea {
   min-height: 90px;
 }
@@ -1120,6 +1124,9 @@ p {
   flex-direction: row;
   gap: 12px;
   flex-wrap: wrap;
+}
+.profile-edit-link {
+  justify-self: start;
 }
 .row {
   display: flex;

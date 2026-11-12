@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Consolidate basic profile editing — November 12, 2026
+
+Made Display Name and Major / Program read-only in the main Profile preferences form and added an Edit action that opens the existing Basic Information editor. Both views continue to use the existing browser-local state. Student/Admin identity and Calendar behavior were left unchanged. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `node --import tsx --test tests/profile.test.ts tests/sign-in.test.ts`, and browser checks for the read-only fields and shared editing entry point pass.
+
 ## Merge main (PR #23 calendar, PR #24 Student/Admin sign-in) into Doris — November 12, 2026
 
 Conflict resolution, made with Claude Code.
