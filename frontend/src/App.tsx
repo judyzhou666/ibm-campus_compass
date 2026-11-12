@@ -28,6 +28,7 @@ import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
+import { News } from "./News.tsx";
 import {
   NotificationDetail,
   NotificationMenu,
@@ -852,6 +853,10 @@ export default function App() {
                       </span>
                     </div>
                   </section>
+                  <News
+                    onEvent={setDetail}
+                    onCommunity={(id) => nav("forum", id)}
+                  />
                 </div>
                 <aside className="stack rail">
                   <section className="panel planner-teaser">

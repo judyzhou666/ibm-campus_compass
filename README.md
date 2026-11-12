@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## My Dashboard: News — November 12, 2026
+
+- **News** now sits under the Weekly Calendar on My Dashboard (`frontend/src/News.tsx`, posts in `frontend/src/news.ts`). Each post is a card with poster art on the left (in the event-card colours) and, on the right, the title, date ("Updated …" for newsletters), "Posted by … for …" in italics, a short summary and "View event". Four posts show first; **Show more news** reveals the rest. On phones the art sits above the text.
+- **All six posts are fictional**, written by invented people for the demo's own communities and schools, and the section is labelled "Fictional campus news". Each post links to a catalog event (clicking opens its detail page) and most also to a demo community; summaries were checked against the linked event records (time, food, RSVP, eligibility).
+- **To demo:** My Dashboard → scroll to News → click "Volunteers wanted for the Friday community lunch" → the Friday community lunch detail opens.
+- **Verification:** `npm test` (195 TypeScript tests, including 3 new ones in `tests/news.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px and 390px: four cards, Show more → six, the first card opens the Friday community lunch, no sideways scrolling.
+- **Limitation:** news is a fixed demo list; there is no posting, editing or live news feed.
+
 ## My Dashboard: "This Week's Briefing" removed — November 12, 2026
 
 - The briefing panel (update feed, interest and cross-discipline suggestions, saved-not-added, uncertainties, plan warnings) is gone from My Dashboard; the dashboard now shows the hero, Weekly Calendar and the right-hand rail. `Briefing.tsx` is renamed `Welcome.tsx` and keeps only the first-visit dialog; the briefing's unused styles are deleted.
