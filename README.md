@@ -165,6 +165,17 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Update — November 12, 2026: Discussion Forum likes and comment counts
+
+Split out of the calendar PR (#12) so each PR covers one feature.
+
+- **Likes are saved.** Post and comment likes used to live in component state and reset as soon as you left the forum. They are now saved with the rest of the browser-local demo state (`state.likes`, validated on restore), so they survive leaving the page and reloading.
+- **Comment counts are real.** Seed posts added a hidden `commentCount` on top of the comments shown (e.g. "10 comments" with 2 visible). Counts now show the comments that exist, with singular "1 comment". This is a visible change on seed posts.
+
+How to try it: `npm run build`, `cargo run --locked`, open http://127.0.0.1:4173/#forum, like a post, go to another page and back (or reload), and compare each post's count with its comments.
+
+Verification: `npm test` 176 TypeScript tests (one new restore test for likes) and 5 Wiki tests, `npm run build` clean; checked in the browser. Written with Claude Code, not IBM Bob.
+
 ## Update — November 12, 2026: Calendar Day/Week/Month/Year views
 
 **What changed:** The My Calendar page now has a Google-Calendar-style calendar with Day, Week, Month, and Year views, replacing the fixed Mon–Fri cards-only layout.
