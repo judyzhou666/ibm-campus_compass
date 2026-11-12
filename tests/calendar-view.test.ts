@@ -19,6 +19,7 @@ import {
   demoDayIndex,
   demoWeekDates,
   demoToday,
+  sortByStart,
 } from "../frontend/src/calendarGrid.ts";
 
 test("addDays moves forward and backward correctly", () => {
@@ -212,4 +213,29 @@ test("demoWeekDates returns 5 dates Mon-Fri", () => {
 
 test("demoToday returns the demo week start date", () => {
   assert.equal(demoToday(), "2026-11-02");
+});
+
+test("sortByStart returns items in ascending start order", () => {
+  const items = [
+    { id: "c", start: 780, end: 840 },
+    { id: "a", start: 540, end: 600 },
+    { id: "b", start: 720, end: 780 },
+  ];
+  const sorted = sortByStart(items);
+  assert.equal(sorted[0].id, "a");
+  assert.equal(sorted[1].id, "b");
+  assert.equal(sorted[2].id, "c");
+  // original array not mutated
+  assert.equal(items[0].id, "c");
+});
+
+test("sortByStart preserves order for equal start times", () => {
+  const items = [
+    { id: "x", start: 600, end: 660 },
+    { id: "y", start: 600, end: 720 },
+  ];
+  const sorted = sortByStart(items);
+  assert.equal(sorted.length, 2);
+  assert.equal(sorted[0].start, 600);
+  assert.equal(sorted[1].start, 600);
 });

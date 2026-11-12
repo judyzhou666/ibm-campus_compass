@@ -29,11 +29,23 @@ Then open http://127.0.0.1:4173. The chat label under AI Planner shows which pla
 
 - **New files:**
   - `frontend/src/CalendarView.tsx` — Day/Week/Month/Year views with time grids, overlapping-event columns, "now" line, and navigation toolbar.
-  - `frontend/src/calendarGrid.ts` — Pure date-math helpers (week/month/year grids, overlap layout, item position). No React, no DOM.
-  - `tests/calendar-view.test.ts` — 21 unit tests for the date-math helpers.
+  - `frontend/src/calendarGrid.ts` — Pure date-math helpers (week/month/year grids, overlap layout, item position, sortByStart). No React, no DOM.
+  - `tests/calendar-view.test.ts` — 23 unit tests for the date-math helpers.
 - **Changed files:**
   - `frontend/src/App.tsx` — Calendar page now renders `<CalendarView>` instead of the `week(true)` strip. Dashboard strip and AI Planner panel are **unchanged**.
   - `frontend/src/styles.css` — New `.gcal-*` CSS classes appended at the end.
+
+**Round-2 polish fixes (commit after initial):**
+1. Month-view columns now use `repeat(7, minmax(0,1fr))` on both header and grid — day numbers always align with the weekday labels.
+2. Week/Day view header and time grid share a single horizontal-scroll container so they never misalign on phone or desktop.
+3. Year/Month view "today" circle (dark-green fill, white number) wins over the pale demo-week background via CSS specificity.
+4. "Find an event" `+` button moved to the column header so it is always visible without scrolling.
+5. Month chips are sorted by start time (using `sortByStart` helper, with 2 new unit tests).
+6. Chosen events have a stronger green fill and solid green left border; classes remain grey with a grey border.
+7. Event block titles wrap up to 2 lines; full title + time shown on `title` attribute hover.
+8. Toolbar uses a 2-row right-side layout at ≥ 760 px so the Day/Week/Month/Year switcher never moves when the title changes.
+9. "Demo week" label shown only on the Monday cell in Month view; green background still covers all 5 demo-week days.
+10. Removed duplicate `setAnchor(today)` in `goToToday`; simplified redundant `isDemoWeekRange && isInDemo` check.
 
 **How to try it:**
 ```sh
@@ -42,8 +54,8 @@ cargo run --locked
 ```
 Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher, the ‹ › and Today buttons, and click any event to open its details. Clicking a day in Month/Year view opens Day view for that date.
 
-**Test results:**
-- `npm test`: 112 TypeScript tests pass (up from 91), 5 Wiki tests pass.
+**Test results (after round-2 fixes):**
+- `npm test`: 114 TypeScript tests pass (up from 112), 5 Wiki tests pass.
 - `npm run build`: clean TypeScript + Vite build, no new warnings.
 - `cargo test --locked`: 18 Rust tests pass.
 

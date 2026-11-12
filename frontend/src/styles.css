@@ -2663,12 +2663,16 @@ p {
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
+/*
+ * Fix #8: at ≥ 1024 px the toolbar-right uses a 2-row sub-layout so the
+ * switcher always sits in the top row and doesn't jump when the title
+ * changes length.  On smaller screens everything wraps as before.
+ */
 .gcal-toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 10px;
 }
 .gcal-toolbar-left {
@@ -2676,15 +2680,29 @@ p {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 .gcal-toolbar-right {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+.gcal-toolbar-right-top {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+}
+.gcal-toolbar-right-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .gcal-today-btn {
   font-size: 12px;
+  flex: none;
 }
 .gcal-nav-btn {
   border: 1px solid var(--line);
@@ -2696,6 +2714,7 @@ p {
   display: inline-grid;
   place-items: center;
   line-height: 1;
+  flex: none;
 }
 .gcal-nav-btn:hover {
   background: var(--mint);
@@ -2704,8 +2723,9 @@ p {
   font-size: 15px;
   font-weight: 650;
   color: var(--ink);
-  margin-left: 4px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* View switcher */
@@ -2769,6 +2789,18 @@ p {
   overflow: hidden;
 }
 
+/*
+ * Fix #2: one shared horizontal-scroll container (.gcal-scroll-host) holds
+ * BOTH the sticky header row and the scrollable grid body.  They always
+ * share the same column widths and scroll together, so no misalignment at
+ * any viewport width.  scrollbar-gutter:stable reserves the scrollbar lane
+ * on the body so the header never shifts when the scrollbar appears.
+ */
+.gcal-scroll-host {
+  overflow-x: auto;
+  /* On desktop constrain to a comfortable height; inner body scrolls vertically */
+}
+
 /* ── Column headers (Day/Week) ────────────────────────────────────────────── */
 .gcal-col-headers {
   display: flex;
@@ -2777,21 +2809,19 @@ p {
   position: sticky;
   top: 0;
   z-index: 5;
-}
-.gcal-col-headers-day {
-  /* single column */
+  /* Fix #2: minimum width matches the inner time-grid minimum width */
+  min-width: 500px;
 }
 .gcal-gutter {
   width: 56px;
   flex: none;
-  padding: 10px 0;
 }
 .gcal-col-head {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 4px;
+  padding: 6px 4px;
   gap: 2px;
   min-width: 0;
 }
@@ -2822,19 +2852,51 @@ p {
   place-items: center;
 }
 
+/* Fix #4: "+" button in the column header */
+.gcal-add-header-btn {
+  border: 1px dashed #b5c9b2;
+  background: none;
+  color: var(--green);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  margin-top: 2px;
+  flex: none;
+}
+.gcal-add-header-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+.gcal-add-header-btn:hover {
+  background: var(--mint);
+}
+.gcal-add-header-btn:focus-visible {
+  outline: 2px solid #57a77a;
+  outline-offset: 2px;
+}
+
 /* ── Time grid ────────────────────────────────────────────────────────────── */
+/*
+ * Fix #2: the scrollable body is inside .gcal-scroll-host (shared with the
+ * header), so horizontal scroll is synchronised automatically.
+ * scrollbar-gutter:stable on the wrap reserves the scrollbar space so the
+ * column widths don't shift when the scrollbar appears.
+ */
 .gcal-time-grid-wrap {
   overflow-y: auto;
-  overflow-x: hidden;
-  max-height: 600px;
-  position: relative;
+  overflow-x: visible; /* horizontal scroll is handled by .gcal-scroll-host */
+  max-height: 580px;
+  scrollbar-gutter: stable;
 }
 .gcal-time-grid {
   display: flex;
   position: relative;
-  min-height: 0;
+  /* Fix #2: same min-width as .gcal-col-headers */
+  min-width: 500px;
 }
-/* Hour rows drive the height */
+/* Gutter with hour labels */
 .gcal-gutter {
   display: flex;
   flex-direction: column;
@@ -2847,7 +2909,6 @@ p {
   z-index: 4;
 }
 .gcal-hour-label {
-  flex: 1;
   font-size: 9px;
   color: var(--muted);
   padding: 0 6px;
@@ -2871,7 +2932,6 @@ p {
   z-index: 1;
 }
 .gcal-grid-line {
-  flex: 1;
   height: 48px;
   border-top: 1px solid var(--line);
 }
@@ -2888,10 +2948,15 @@ p {
 }
 
 /* ── Event blocks (positioned) ────────────────────────────────────────────── */
+/*
+ * Fix #6: chosen events use a solid green left border to stand out clearly
+ *   from the plain grey classes.
+ * Fix #7: title wraps up to 2 lines; title attribute shows full text on hover.
+ */
 .gcal-event-block {
   position: absolute;
-  border-radius: 6px;
-  padding: 3px 5px;
+  border-radius: 5px;
+  padding: 3px 5px 3px 7px;
   font-size: 10px;
   line-height: 1.35;
   overflow: hidden;
@@ -2903,29 +2968,39 @@ p {
   flex-direction: column;
   cursor: pointer;
 }
+/* Fix #7: allow title to wrap up to 2 lines */
 .gcal-event-block strong {
   font-size: 10px;
   font-weight: 600;
-  display: block;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.3;
 }
 .gcal-event-block span {
   font-size: 9px;
   opacity: 0.85;
+  white-space: nowrap;
 }
+/* Classes: plain grey */
 .gcal-class {
-  background: #f2f3ef;
+  background: #f0f1ec;
   color: var(--ink);
+  border-left: 3px solid #c4c9bf;
 }
+/* Fix #6: chosen events: stronger green with solid left border */
 .gcal-chosen {
-  background: #e7f1e6;
+  background: #d4eed7;
   color: var(--green-dark);
+  border-left: 3px solid var(--green);
 }
 .gcal-cancelled {
   background: #f8e9e3 !important;
   color: #9c4938 !important;
+  border-left: 3px solid #d9847a !important;
 }
 .gcal-event-block:focus-visible {
   outline: 3px solid #57a77a;
@@ -2954,36 +3029,18 @@ p {
   border-radius: 50%;
 }
 
-/* Add-day button */
-.gcal-add-day {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  border: 1px dashed #d5ded3;
-  background: none;
-  color: #82917f;
-  font-size: 10px;
-  height: 26px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 4px;
-  z-index: 2;
-  /* top is set inline */
-}
-.gcal-add-day:hover {
-  background: var(--mint);
-}
-
 /* ── Month view ───────────────────────────────────────────────────────────── */
+/*
+ * Fix #1: both header and grid use repeat(7, minmax(0,1fr)) so every column
+ * is equal width and day numbers always sit under the correct weekday header.
+ * Fix #5: chips use white-space:nowrap + overflow:hidden + text-overflow:ellipsis.
+ */
 .gcal-month {
   padding: 12px;
 }
 .gcal-month-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
   margin-bottom: 4px;
 }
@@ -2998,7 +3055,7 @@ p {
 }
 .gcal-month-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
 }
 .gcal-month-cell {
@@ -3013,6 +3070,8 @@ p {
   gap: 2px;
   font-size: 10px;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
 }
 .gcal-month-cell:hover {
   background: var(--bg);
@@ -3035,13 +3094,20 @@ p {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 26px;
   height: 26px;
-  line-height: 26px;
-  text-align: center;
   border-radius: 50%;
-  margin-bottom: 2px;
+  flex: none;
+  /* Fix #3 (month): today dot wins over demo-week background */
+}
+/* Fix #3: today dot in month view — more specific than .gcal-demo-week-cell .gcal-month-day-num */
+.gcal-today-cell .gcal-today-dot,
+.gcal-month-day-num.gcal-today-dot {
+  background: var(--green);
+  color: white !important;
 }
 .gcal-demo-week-label {
   font-size: 8px;
@@ -3052,10 +3118,12 @@ p {
   border-radius: 3px;
   padding: 1px 4px;
   align-self: flex-start;
+  white-space: nowrap;
 }
+/* Fix #1 + #5: chips are single-line with ellipsis; no content can widen the cell */
 .gcal-month-chip {
   display: block;
-  background: #e7f1e6;
+  background: #d4eed7;
   color: var(--green-dark);
   border-radius: 3px;
   padding: 1px 4px;
@@ -3063,6 +3131,7 @@ p {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 .gcal-chip-cancelled {
   background: #f8e9e3;
@@ -3132,13 +3201,15 @@ p {
   color: var(--muted);
   opacity: 0.5;
 }
-.gcal-mini-today {
-  background: var(--green);
-  color: white;
-  border-radius: 50%;
-}
+/* Fix #3: demo-week background (applied before today so today wins) */
 .gcal-mini-demo {
   background: #f1f9f2;
+}
+/* Fix #3: today circle always dark green + white text, even on demo-week days */
+.gcal-mini-today {
+  background: var(--green) !important;
+  color: white !important;
+  border-radius: 50%;
 }
 .gcal-event-dot {
   display: block;
@@ -3155,25 +3226,25 @@ p {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+/* Fix #8: at < 760 px allow the toolbar to stack */
 @media (max-width: 760px) {
   .gcal-toolbar {
     flex-direction: column;
     align-items: flex-start;
   }
   .gcal-toolbar-right {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .gcal-toolbar-right-top,
+  .gcal-toolbar-right-bottom {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
   .gcal-year {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 10px;
     gap: 14px;
-  }
-  .gcal-time-grid-wrap {
-    overflow-x: auto;
-  }
-  .gcal-time-grid {
-    min-width: 500px;
   }
   .gcal-month-cell {
     min-height: 58px;

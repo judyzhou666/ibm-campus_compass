@@ -288,3 +288,8 @@ export function isoWeekdayIndex(iso: string): number {
 export function demoDayIndex(iso: string, c: DemoConfig = DEMO): number {
   return demoWeekDates(c).indexOf(iso);
 }
+
+/** Sort an array of items with a `start` field ascending by start time. Pure. */
+export function sortByStart<T extends { start: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.start - b.start);
+}
