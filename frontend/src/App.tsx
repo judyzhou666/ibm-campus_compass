@@ -1407,6 +1407,8 @@ export default function App() {
                 onDay={findOnDay}
                 onEditAvailability={() => nav("profile")}
                 onExportCalendar={exportCalendar}
+                onUpdate={update}
+                notify={notify}
               />
 
               <section style={{ marginTop: 28 }}>

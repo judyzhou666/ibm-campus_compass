@@ -4,7 +4,7 @@ import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import { DEFAULT_READ_IDS } from "./notifications.ts";
-import type { DemoState } from "./types.ts";
+import type { DemoState, PersonalEvent } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
 
 export function createStore<T>(initial: T) {
@@ -57,6 +57,7 @@ export const fresh = (): DemoState => ({
   appliedUpdateIds: [],
   lastUpdateCheck: null,
   readNotificationIds: [...DEFAULT_READ_IDS],
+  personalEvents: [],
   eventDrafts: [],
 });
 
@@ -217,6 +218,28 @@ export function restore(): DemoState {
             .filter((id: unknown) => typeof id === "string" && id.length <= 40)
             .slice(0, 500)
         : base.readNotificationIds,
+      personalEvents: Array.isArray(value.personalEvents)
+        ? value.personalEvents
+            .filter((e: unknown): e is PersonalEvent => {
+              if (!e || typeof e !== "object") return false;
+              const p = e as Record<string, unknown>;
+              return (
+                typeof p.id === "string" &&
+                typeof p.title === "string" &&
+                p.title.length > 0 &&
+                typeof p.date === "string" &&
+                /^\d{4}-\d{2}-\d{2}$/.test(p.date) &&
+                Number.isInteger(p.start) &&
+                Number.isInteger(p.end) &&
+                (p.start as number) >= 0 &&
+                (p.end as number) <= 1440 &&
+                (p.start as number) < (p.end as number) &&
+                (p.repeat === "none" || p.repeat === "weekly") &&
+                (p.location === undefined || typeof p.location === "string")
+              );
+            })
+            .slice(0, 200)
+        : [],
       eventDrafts: restoreDrafts(value.eventDrafts),
     };
   } catch {

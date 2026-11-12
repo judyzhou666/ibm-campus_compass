@@ -121,6 +121,21 @@ export const GOAL_TYPES = [
 ] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
 
+/** A student-created calendar item (one-off or weekly-repeating). */
+export interface PersonalEvent {
+  id: string;
+  title: string;
+  /** ISO date of the first (or only) occurrence: "YYYY-MM-DD". */
+  date: string;
+  /** Start time in minutes after midnight. */
+  start: number;
+  /** End time in minutes after midnight (> start). */
+  end: number;
+  /** "none" = single occurrence; "weekly" = repeats on the same weekday from date onward. */
+  repeat: "none" | "weekly";
+  location?: string;
+}
+
 export interface DemoState extends Schedule {
   name: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
@@ -151,6 +166,8 @@ export interface DemoState extends Schedule {
   lastUpdateCheck: string | null;
   /** IDs of notifications the student has opened or marked as read. */
   readNotificationIds: string[];
+  /** Student-created calendar items (one-off or weekly-repeating). Cap 200. */
+  personalEvents: PersonalEvent[];
   /** Admin event drafts; browser-local and never added to the catalog. */
   eventDrafts: EventDraft[];
 }

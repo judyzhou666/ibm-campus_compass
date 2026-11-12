@@ -2,6 +2,53 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+
+## Calendar: fix grid height, cross-day drag, grab offset, drag-vs-click, month drag — November 12, 2026
+
+Fixed eight bugs found during hands-on testing of commit 709a0fa. Work done with IBM Bob (note: Fix 1 corrects a grid-height bug introduced in b0dec35, which was written with Claude Code).
+
+1. **Grid height** — `.gcal-day-col` had `height: calc(13 * 48px)` hardcoded while `gridHours()` can produce grids of 14+ rows. Added `colHeight(start, end)` pure helper and `--gcal-col-h` CSS variable; the column height now matches the hour rows exactly for any grid span. Added `colHeight` and `HOUR_PX` exports to `calendarGrid.ts`.
+
+2. **Cross-day drag** — `setPointerCapture` locked pointer events to the original column, so `colIndex` always reflected the origin. Fixed by capturing all column DOMRects at `startDrag` time and computing the nearest column from `clientX` vs stored rects in `moveDrag`.
+
+3. **Grab offset / time jump** — was centering the block on the pointer (`newMins − dur/2`), causing a jump on mousedown. Now computes `grabOffsetPx = startY − blockTopClientY` at drag start and uses `colTop + newBlockTopPx` to derive the new start time. Resize uses the same grab-based math: dragging 1 hour now adds exactly 60 minutes.
+
+4. **Drag opens dialog after drop** — `onClick` on own blocks was always calling `onEditBlock/Personal`. Changed to let `endDrag` decide: only open the dialog when `active === false` (click); never call it from `onClick`. Text selection in the drag path prevented by `e.preventDefault()` on `onPointerDown`.
+
+5. **Text selection during drag** — `e.preventDefault()` added to `onPointerDown` of own blocks and resize handles; `.gcal-is-dragging` class applied to `.gcal-time-grid` while a drag is active, with `user-select: none`.
+
+6. **Undo appears twice** — removed the `gcal-undo-bar` banner; Undo now shows only as a `ToastAction` in the bottom toast (using the existing `run:` field on `App.tsx`'s `ToastAction` interface). `notify` prop updated to accept `Array<{label, run}>`.
+
+7. **Month view drag** — added `MonthDragState`, `startMonthDrag`, `moveMonthDrag`, `endMonthDrag` in `MonthView`. Uses `data-iso` attributes on cells for hit-testing. Chips show `.gcal-dragging` while in flight; target cell highlighted with `.gcal-month-drag-target`. `handleMonthDrop` wired into main component.
+
+8. **Weekday-only drop rule** — blocks snap back during both move and resize when targeting a weekend; validated in `moveDrag` preview and `endDrag` final commit.
+
+**New tests** (personal-events.test.ts, now 26): `colHeight` for 13/14/15-hour grids; `pixelToMins` at top/bottom/4 PM; target-column-from-clientX by midpoint; drag-threshold math (< 4px = click, ≥ 4px = drag).
+
+**Verification:** TypeScript 268/268 (26 new), npm test 5/5 Wiki, npm run build clean, cargo test 58/58, npm run test:api PASS.
+
+
+
+## Calendar: create, edit, delete and drag your own items — November 12, 2026
+
+Added Canvas-style personal calendar entries alongside existing busy-time blocks and campus events. Work done with IBM Bob.
+
+**Data model:** `PersonalEvent { id, title, date, start, end, repeat, location? }` added to `DemoState` (cap 200, validated in `restore()`). New `busyBlocks()` helper in `frontend/src/personalEvents.ts` combines `state.blocks` and personal-event demo-week occurrences; wired into `planner.ts` `issue()` and `recommend()`, `api.ts` `schedulePayload`, `updates.ts` conflict detection, `PlannerPanels.tsx` agenda, `components.tsx` WeekStrip, and `CalendarView.tsx` grid-hours computation.
+
+**Calendar interactions (My Calendar):**
+- "+" New event button in the toolbar; clicking empty time-grid space pre-fills the dialog; clicking empty month-cell creates for that date.
+- `PersonalEventDialog` (new `frontend/src/PersonalEventDialog.tsx`): Title, Date, From/To (15-min steps), Frequency (Does not repeat / Weekly), Location, Calendar (Personal or Class / busy time). Validation: end > start required, class+weekly+weekday → `state.blocks` entry. Delete with confirm step. Escape/× close; focus returns to opener.
+- Click own items in Day/Week/Month to open dialog. Click campus events unchanged (opens detail).
+- Drag own items with pointer events (no library): vertical move/resize in time grid, horizontal column change; Month view date drag. Snaps to 15 min. Preview shown during drag. After drop: toast "Moved X to Day, time. Undo" with Undo button.
+- Campus events: no drag, title="Campus event — time set by the organizer".
+- Blocks can only be dropped Mon–Fri; weekend drop shows message and cancels.
+
+**Visual:** personal items blue (`--personal: #1a6fb8`), classes grey, campus events green. Legend updated. Resize handle on own blocks.
+
+**Tests:** 22 new tests in `tests/personal-events.test.ts` covering state validation, `busyBlocks`, planner conflict, `recommend()` skipping, drag math helpers (`pixelToMins`, `clampStart`, `clampEnd`, `blockDropAllowed`), and `personalEventToBlock`.
+
+**Verification:** `npm test` (5/5 Wiki), TypeScript tests 264/264, `npm run build` clean, `cargo fmt --check` clean, `cargo clippy` 0 warnings, `cargo test` 58/58, `npm run test:api` PASS.
+
 ## Admin: Create Event entry and event drafts — November 12, 2026
 
 Made with Claude Code (not IBM Bob).
