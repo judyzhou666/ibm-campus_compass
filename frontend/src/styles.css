@@ -14,7 +14,7 @@
   --shadow: 0 12px 36px #183e3114;
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 15px;
   background: var(--bg);
 }
 * {
@@ -107,7 +107,7 @@ textarea {
   text-decoration: none;
   color: var(--green-dark);
   font-weight: 750;
-  font-size: 21px;
+  font-size: 20px;
   line-height: 1.1;
   letter-spacing: -0.6px;
 }
@@ -122,7 +122,7 @@ textarea {
 }
 .brand small {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 1.6px;
   margin-top: 6px;
   font-weight: 600;
@@ -142,7 +142,7 @@ textarea {
   padding: 13px 15px;
   border-radius: 9px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   color: #627065;
 }
 .nav button:hover {
@@ -155,7 +155,7 @@ textarea {
 }
 .nav .badge {
   margin-left: auto;
-  font-size: 13px;
+  font-size: 12px;
   background: white;
   padding: 2px 6px;
   border-radius: 5px;
@@ -172,7 +172,7 @@ textarea {
   padding: 17px 13px;
   border-radius: 12px;
   background: #f6f7f1;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.6;
   margin: 36px 0 18px;
@@ -180,7 +180,7 @@ textarea {
 .demo-note strong {
   display: block;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 13px;
 }
 .user {
   display: flex;
@@ -200,12 +200,12 @@ textarea {
   font-weight: 700;
 }
 .user strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 .user small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   margin-top: 3px;
 }
 .shell {
@@ -276,20 +276,20 @@ main {
   margin-bottom: 24px;
 }
 h1 {
-  font-size: 32px;
+  font-size: 31px;
   letter-spacing: -1px;
   line-height: 1.2;
   margin: 0 0 8px;
   font-weight: 650;
 }
 h2 {
-  font-size: 20px;
+  font-size: 19px;
   letter-spacing: -0.4px;
   margin: 0;
   font-weight: 650;
 }
 h3 {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.35;
   margin: 0;
   font-weight: 650;
@@ -300,10 +300,10 @@ p {
 .sub {
   color: var(--muted);
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
 }
 .date {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -330,14 +330,14 @@ p {
   min-height: 210px;
 }
 .hero h2 {
-  font-size: 32px;
+  font-size: 31px;
   max-width: 420px;
   line-height: 1.2;
   letter-spacing: -1px;
 }
 .hero p {
   color: #c3d8c9;
-  font-size: 14px;
+  font-size: 13px;
   max-width: 340px;
   margin: 12px 0 20px;
 }
@@ -369,7 +369,7 @@ p {
   background: white;
   padding: 10px 15px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   text-decoration: none;
   line-height: 1.4;
   min-height: 38px;
@@ -389,7 +389,7 @@ p {
 .btn.small {
   min-height: 30px;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .btn.danger {
   color: #a04232;
@@ -398,7 +398,7 @@ p {
   background: none;
   border: 0;
   color: var(--green);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   gap: 7px;
@@ -427,7 +427,7 @@ p {
   gap: 9px;
 }
 .day-head {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   padding: 2px 0 11px;
   display: flex;
@@ -435,7 +435,7 @@ p {
   align-items: center;
 }
 .day-head strong {
-  font-size: 19px;
+  font-size: 18px;
   color: var(--ink);
   font-weight: 600;
 }
@@ -458,7 +458,7 @@ p {
   border-radius: 7px;
   background: #f2f3ef;
   margin-bottom: 7px;
-  font-size: 12px;
+  font-size: 11px;
   min-height: 53px;
   line-height: 1.45;
   border: 0;
@@ -468,13 +468,13 @@ p {
 }
 .calendar-item strong {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   margin-bottom: 4px;
 }
 .calendar-item span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
 }
 .calendar-item.event {
   background: #e7f1e6;
@@ -489,7 +489,7 @@ p {
   border: 1px dashed #d5ded3;
   background: none;
   color: #82917f;
-  font-size: 13px;
+  font-size: 12px;
   height: 31px;
   border-radius: 6px;
 }
@@ -501,7 +501,7 @@ p {
   align-items: center;
   gap: 16px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   margin-top: 13px;
 }
 .dot {
@@ -528,7 +528,7 @@ p {
   background: white;
   padding: 7px 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .chip.active {
   background: var(--green);
@@ -591,11 +591,11 @@ p {
   bottom: -40px;
 }
 .poster small {
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 1.3px;
 }
 .poster b {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 550;
   letter-spacing: -0.4px;
   line-height: 1.1;
@@ -622,7 +622,7 @@ p {
   flex: 1;
 }
 .tag {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.7px;
   color: #527654;
@@ -647,7 +647,7 @@ p {
   color: var(--green);
 }
 .event-title h3 {
-  font-size: 15px;
+  font-size: 14px;
   min-height: 35px;
 }
 .meta {
@@ -655,7 +655,7 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   margin: 5px 0;
   line-height: 1.5;
 }
@@ -665,7 +665,7 @@ p {
   margin-top: 1px;
 }
 .reason {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.6;
   color: #527357;
   padding-top: 10px;
@@ -685,7 +685,7 @@ p {
 }
 .event-body .btn {
   width: 100%;
-  font-size: 12px;
+  font-size: 11px;
   padding: 7px;
   min-height: 32px;
 }
@@ -693,7 +693,7 @@ p {
   padding: 20px;
 }
 .rail h2 {
-  font-size: 16px;
+  font-size: 15px;
 }
 .planner-teaser {
   text-align: center;
@@ -707,10 +707,10 @@ p {
   margin: 0 auto 12px;
 }
 .planner-teaser h2 {
-  font-size: 21px;
+  font-size: 20px;
 }
 .planner-teaser p {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   margin: 9px 0 16px;
 }
@@ -718,7 +718,7 @@ p {
   width: 100%;
 }
 .label {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.5px;
   color: var(--muted);
   display: inline-block;
@@ -733,17 +733,17 @@ p {
   padding-bottom: 0;
 }
 .feed strong {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
 }
 .feed p {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   margin: 4px 0 0;
 }
 .feed .text-btn {
-  font-size: 12px;
+  font-size: 11px;
   margin-top: 6px;
   padding-left: 0;
 }
@@ -763,16 +763,16 @@ p {
   color: #6c7b52;
 }
 .group strong {
-  font-size: 13px;
+  font-size: 12px;
 }
 .group small {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
   margin-top: 3px;
 }
 .section-footer {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   margin-top: 25px;
   display: flex;
@@ -802,10 +802,10 @@ p {
   object-fit: contain;
 }
 .chat-header h2 {
-  font-size: 17px;
+  font-size: 16px;
 }
 .status-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   margin-top: 4px;
   display: block;
@@ -834,7 +834,7 @@ p {
   background: var(--bg);
   border-radius: 0 12px 12px 12px;
   padding: 14px 16px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
   max-width: 90%;
   white-space: pre-line;
@@ -854,7 +854,7 @@ p {
   margin-bottom: 15px;
 }
 .prompts button {
-  font-size: 12px;
+  font-size: 11px;
   background: white;
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -880,7 +880,7 @@ p {
   flex: 1;
   min-width: 0;
   padding: 5px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   outline: none;
   height: 46px;
@@ -897,7 +897,7 @@ p {
   place-items: center;
 }
 .fineprint {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.5;
   color: var(--muted);
   margin: 9px 0 0;
@@ -911,10 +911,10 @@ p {
   border: 0;
 }
 .draft-item h3 {
-  font-size: 14px;
+  font-size: 13px;
 }
 .draft-item .meta {
-  font-size: 12px;
+  font-size: 11px;
 }
 .draft-item .reason {
   margin-bottom: 8px;
@@ -926,7 +926,7 @@ p {
   text-align: center;
   padding: 40px 20px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
 }
 .empty .icon {
@@ -944,7 +944,7 @@ p {
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
-  font-size: 13px;
+  font-size: 12px;
   border-bottom: 1px solid var(--line);
 }
 .summary-line:last-child {
@@ -955,7 +955,7 @@ p {
   background: var(--notice-bg);
   color: var(--notice-ink);
   padding: 13px 15px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.6;
   margin-bottom: 18px;
 }
@@ -966,15 +966,15 @@ p {
   gap: 13px;
 }
 .calendar-full .calendar-item {
-  font-size: 14px;
+  font-size: 13px;
   min-height: 90px;
   padding: 15px;
 }
 .calendar-full .calendar-item strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 .calendar-full .calendar-item span {
-  font-size: 13px;
+  font-size: 12px;
 }
 .calendar-full .week-day {
   min-height: 330px;
@@ -991,7 +991,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
 .field input,
@@ -1023,7 +1023,7 @@ p {
   align-items: center;
   padding: 13px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 14px;
+  font-size: 13px;
 }
 .block-row small {
   display: block;
@@ -1042,7 +1042,7 @@ p {
   margin: 16px 0;
 }
 .topic-options label {
-  font-size: 14px;
+  font-size: 13px;
   background: var(--bg);
   padding: 10px;
   border-radius: 7px;
@@ -1058,7 +1058,7 @@ p {
   gap: 15px;
 }
 .discussion p {
-  font-size: 14px;
+  font-size: 13px;
   margin: 8px 0;
   color: var(--muted);
 }
@@ -1067,7 +1067,7 @@ p {
 }
 .discussion small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 .discussion button {
   margin-top: 8px;
@@ -1082,7 +1082,7 @@ p {
 }
 .settings-row p {
   margin: 5px 0 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
 .settings-row input {
@@ -1165,7 +1165,7 @@ p {
   gap: 10px;
 }
 .event-detail-hero-title {
-  font-size: 34px;
+  font-size: 33px;
   font-weight: 900;
   letter-spacing: -0.5px;
   line-height: 1.15;
@@ -1187,7 +1187,7 @@ p {
   gap: 24px;
 }
 .event-detail-desc {
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.7;
   color: var(--ink);
   margin: 0;
@@ -1205,7 +1205,7 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--ink);
   line-height: 1.5;
 }
@@ -1223,7 +1223,7 @@ p {
   gap: 8px;
 }
 .event-detail-reason-item {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--green-dark);
   font-weight: 600;
 }
@@ -1233,7 +1233,7 @@ p {
   gap: 8px;
 }
 .event-detail-section-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   margin: 0;
 }
@@ -1243,7 +1243,7 @@ p {
   gap: 6px;
 }
 .event-detail-community-link {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--green);
   text-decoration: underline;
@@ -1254,7 +1254,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 18px 22px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .event-detail-evidence summary {
   font-weight: 700;
@@ -1266,7 +1266,7 @@ p {
 }
 .event-detail-evidence summary::before {
   content: "▶";
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   transition: transform 0.15s;
 }
@@ -1300,13 +1300,13 @@ p {
   gap: 10px;
 }
 .event-detail-aside-date {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
   margin: 0;
 }
 .event-detail-aside-loc {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   margin: 0;
   display: flex;
@@ -1322,7 +1322,7 @@ p {
     position: static;
   }
   .event-detail-hero-title {
-    font-size: 26px;
+    font-size: 25px;
   }
 }
 #toast {
@@ -1338,7 +1338,7 @@ p {
   border-radius: 9px;
   padding: 13px 22px;
   box-shadow: var(--shadow);
-  font-size: 14px;
+  font-size: 13px;
   transition:
     opacity 0.2s,
     transform 0.2s;
@@ -1402,10 +1402,10 @@ p {
     height: 145px;
   }
   .event-title h3 {
-    font-size: 17px;
+    font-size: 16px;
   }
   .meta {
-    font-size: 13px;
+    font-size: 12px;
   }
   .hero {
     min-height: 230px;
@@ -1417,7 +1417,7 @@ p {
     padding: 25px 13px;
   }
   .brand {
-    font-size: 19px;
+    font-size: 18px;
     gap: 8px;
   }
   .shell {
@@ -1443,7 +1443,7 @@ p {
     padding: 25px;
   }
   .hero h2 {
-    font-size: 29px;
+    font-size: 28px;
   }
   .hero-compass {
     width: 90px;
@@ -1533,7 +1533,7 @@ p {
     flex: 1;
   }
   .topbar .search input {
-    font-size: 14px;
+    font-size: 13px;
   }
   .top-actions {
     gap: 8px;
@@ -1545,7 +1545,7 @@ p {
     padding: 24px 18px;
   }
   h1 {
-    font-size: 27px;
+    font-size: 26px;
   }
   .page-head {
     margin-bottom: 20px;
@@ -1555,17 +1555,17 @@ p {
     display: none;
   }
   .sub {
-    font-size: 14px;
+    font-size: 13px;
   }
   .hero {
     padding: 25px;
     min-height: 210px;
   }
   .hero h2 {
-    font-size: 28px;
+    font-size: 27px;
   }
   .hero p {
-    font-size: 13px;
+    font-size: 12px;
   }
   .hero-compass {
     display: none;
@@ -1578,29 +1578,29 @@ p {
     gap: 19px;
   }
   .section-bar h2 {
-    font-size: 18px;
+    font-size: 17px;
   }
   .week {
     gap: 5px;
   }
   .day-head {
-    font-size: 11px;
+    font-size: 10px;
     flex-direction: column;
     gap: 4px;
   }
   .day-head strong {
-    font-size: 17px;
+    font-size: 16px;
   }
   .calendar-item {
     padding: 7px 5px;
     min-height: 75px;
   }
   .calendar-item strong {
-    font-size: 10px;
+    font-size: 9px;
     overflow-wrap: anywhere;
   }
   .calendar-item span {
-    font-size: 10px;
+    font-size: 9px;
   }
   .add-day {
     font-size: 0;
@@ -1623,20 +1623,20 @@ p {
     height: 112px;
   }
   .poster b {
-    font-size: 21px;
+    font-size: 20px;
     max-width: 100px;
   }
   .event-title h3 {
-    font-size: 14px;
+    font-size: 13px;
   }
   .meta {
-    font-size: 11px;
+    font-size: 10px;
   }
   .reason {
-    font-size: 11px;
+    font-size: 10px;
   }
   .event-body .btn {
-    font-size: 11px;
+    font-size: 10px;
   }
   .rail {
     grid-template-columns: 1fr;
@@ -1656,7 +1656,7 @@ p {
     margin: 0;
   }
   .planner-teaser h2 {
-    font-size: 19px;
+    font-size: 18px;
   }
   .planner-teaser p {
     margin: 5px 0 12px;
@@ -1672,14 +1672,14 @@ p {
   }
   .bubble {
     max-width: 95%;
-    font-size: 14px;
+    font-size: 13px;
   }
   .messages {
     max-height: 450px;
   }
   .section-footer {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
   }
   .section-footer span {
     display: block;
@@ -1692,7 +1692,7 @@ p {
     grid-column: auto;
   }
   .page-head .btn {
-    font-size: 12px;
+    font-size: 11px;
     padding: 8px;
   }
   .settings-row {
@@ -1702,7 +1702,7 @@ p {
     gap: 6px;
   }
   .chip {
-    font-size: 12px;
+    font-size: 11px;
     padding: 7px 10px;
   }
   #toast {
@@ -1710,7 +1710,7 @@ p {
     width: max-content;
   }
   .draft-item h3 {
-    font-size: 15px;
+    font-size: 14px;
   }
   .chat-header .label {
     display: none;
@@ -1746,56 +1746,56 @@ p {
   min-height: 220px;
 }
 .meta {
-  font-size: 14px;
+  font-size: 13px;
 }
 .reason {
-  font-size: 14px;
+  font-size: 13px;
 }
 .event-title h3 {
-  font-size: 17px;
+  font-size: 16px;
 }
 .event-body .btn {
-  font-size: 14px;
+  font-size: 13px;
 }
 .tag {
-  font-size: 12px;
+  font-size: 11px;
 }
 .fineprint {
-  font-size: 13px;
+  font-size: 12px;
 }
 .calendar-item strong {
-  font-size: 13px;
+  font-size: 12px;
 }
 .calendar-item span {
-  font-size: 12px;
+  font-size: 11px;
 }
 .draft-item .reason,
 .draft-item .meta {
-  font-size: 14px;
+  font-size: 13px;
 }
 .draft-item h3 {
-  font-size: 16px;
+  font-size: 15px;
 }
 .draft-item .btn {
-  font-size: 14px;
+  font-size: 13px;
 }
 .chat-header .status-label {
-  font-size: 13px;
+  font-size: 12px;
 }
 .prompts button {
-  font-size: 13px;
+  font-size: 12px;
 }
 .bubble {
-  font-size: 15px;
+  font-size: 14px;
 }
 .composer textarea {
-  font-size: 15px;
+  font-size: 14px;
 }
 .section-footer {
-  font-size: 13px;
+  font-size: 12px;
 }
 .legend {
-  font-size: 13px;
+  font-size: 12px;
 }
 @media (max-width: 700px) {
   .sidebar {
@@ -1809,10 +1809,10 @@ p {
     min-height: 0;
   }
   .calendar-item strong {
-    font-size: 12px;
+    font-size: 11px;
   }
   .calendar-item span {
-    font-size: 11px;
+    font-size: 10px;
   }
   .event-grid {
     grid-template-columns: 1fr;
@@ -1825,25 +1825,25 @@ p {
   }
   .event-title h3 {
     min-height: 0;
-    font-size: 18px;
+    font-size: 17px;
   }
   .event-body {
     padding: 16px;
   }
   .event-body .btn {
     min-height: 40px;
-    font-size: 14px;
+    font-size: 13px;
   }
   .event-body .meta,
   .event-body .reason {
-    font-size: 14px;
+    font-size: 13px;
   }
   .meta .icon {
     width: 15px;
     height: 15px;
   }
   .section-bar h2 {
-    font-size: 18px;
+    font-size: 17px;
   }
   .calendar-item {
     min-height: 85px;
@@ -1858,21 +1858,21 @@ p {
     gap: 12px;
   }
   .chat-header h2 {
-    font-size: 15px;
+    font-size: 14px;
   }
   .chat-header .text-btn {
-    font-size: 13px;
+    font-size: 12px;
   }
   .fineprint {
-    font-size: 12px;
+    font-size: 11px;
   }
   .legend {
-    font-size: 12px;
+    font-size: 11px;
     gap: 9px;
     flex-wrap: wrap;
   }
   .section-footer {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
@@ -1886,14 +1886,14 @@ p {
     gap: 9px;
   }
   .day-head {
-    font-size: 13px;
+    font-size: 12px;
     flex-direction: row;
   }
   .calendar-item strong {
-    font-size: 14px;
+    font-size: 13px;
   }
   .calendar-item span {
-    font-size: 13px;
+    font-size: 12px;
   }
   .calendar-item {
     min-height: 72px;
@@ -1946,7 +1946,7 @@ p {
   padding: 14px;
 }
 .chat-event h3 {
-  font-size: 17px;
+  font-size: 16px;
   margin: 8px 0;
   line-height: 1.4;
 }
@@ -1959,7 +1959,7 @@ p {
 }
 .event-problem {
   color: #97412e;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .planner-calendar {
@@ -1975,7 +1975,7 @@ p {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--green-dark);
   margin: 8px 0;
 }
@@ -1992,7 +1992,7 @@ p {
   display: flex;
   justify-content: space-between;
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .agenda-day h3 span {
   font-weight: 400;
@@ -2007,7 +2007,7 @@ p {
   border-radius: 9px;
   padding: 11px 12px;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
 }
 .agenda-entry strong {
@@ -2015,7 +2015,7 @@ p {
 }
 .agenda-entry span,
 .agenda-entry small {
-  font-size: 13px;
+  font-size: 12px;
 }
 .agenda-entry.commitment {
   background: var(--bg);
@@ -2052,7 +2052,7 @@ p {
   display: grid;
   gap: 8px;
   margin: 20px 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 .rsvp-name input {
@@ -2066,7 +2066,7 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
 }
 .rsvp-check input {
@@ -2087,11 +2087,11 @@ p {
   }
 }
 
-.why-fits { margin:10px 0 0; font-size:15px; line-height:1.5; }
-.evidence-more { margin-top:10px; font-size:14px; }
+.why-fits { margin:10px 0 0; font-size:14px; line-height:1.5; }
+.evidence-more { margin-top:10px; font-size:13px; }
 .evidence-more summary { cursor:pointer; color:var(--green); font-weight:650; width:fit-content; }
 .evidence-more[open] summary { margin-bottom:4px; }
-.evidence { margin:12px 0; font-size:14px; line-height:1.6; }
+.evidence { margin:12px 0; font-size:13px; line-height:1.6; }
 .evidence div { margin-bottom:8px; }
 .evidence dt { font-weight:700; }
 .evidence dd { margin:0; overflow-wrap:anywhere; }
@@ -2124,7 +2124,7 @@ p {
   padding: 4px 0;
 }
 .forum-sidebar-heading {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0 0 14px;
   color: var(--ink);
@@ -2163,7 +2163,7 @@ p {
   border-radius: 50%;
   background: var(--green);
   color: white;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -2177,7 +2177,7 @@ p {
   flex: 1;
 }
 .forum-community-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
@@ -2185,11 +2185,11 @@ p {
   text-overflow: ellipsis;
 }
 .forum-community-cat {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
 }
 .forum-joined-badge {
-  font-size: 12px;
+  font-size: 11px;
   background: var(--green);
   color: white;
   border-radius: 4px;
@@ -2209,14 +2209,14 @@ p {
   gap: 16px;
 }
 .forum-feed-title {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   margin: 0;
   white-space: nowrap;
 }
 .forum-search-field {
   flex: 1;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   gap: 0;
 }
@@ -2246,7 +2246,7 @@ p {
   padding: 9px 16px;
   color: var(--muted);
   text-align: left;
-  font-size: 15px;
+  font-size: 14px;
   transition: background 0.15s, border-color 0.15s;
 }
 .forum-create-trigger:hover {
@@ -2270,11 +2270,11 @@ p {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .forum-post-community {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--green-dark);
   background: var(--mint);
   padding: 2px 8px;
@@ -2282,14 +2282,14 @@ p {
 }
 .forum-post-author {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .forum-post-time {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .forum-post-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ink);
   text-align: left;
@@ -2300,7 +2300,7 @@ p {
   color: var(--green);
 }
 .forum-post-preview {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   margin: 2px 0 0;
   line-height: 1.5;
@@ -2312,7 +2312,7 @@ p {
   margin-top: 6px;
 }
 .forum-stat {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   font-weight: 600;
   background: none;
@@ -2329,7 +2329,7 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--muted);
   background: none;
@@ -2353,7 +2353,7 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   background: none;
@@ -2371,7 +2371,7 @@ p {
 }
 .forum-empty {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
   padding: 24px 0;
   text-align: center;
 }
@@ -2383,7 +2383,7 @@ p {
   gap: 16px;
 }
 .forum-back-btn {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -2407,13 +2407,13 @@ p {
   flex-wrap: wrap;
 }
 .forum-detail-title {
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 800;
   margin: 0;
   line-height: 1.3;
 }
 .forum-detail-body {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.7;
   color: var(--ink);
   margin: 0;
@@ -2434,7 +2434,7 @@ p {
   margin-top: 4px;
 }
 .forum-comments-heading {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0;
 }
@@ -2446,22 +2446,22 @@ p {
 .avatar-sm {
   width: 28px;
   height: 28px;
-  font-size: 14px;
+  font-size: 13px;
   flex: none;
 }
 .forum-comment-author {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
 .forum-comment-text {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
   margin: 4px 0 0;
   line-height: 1.5;
 }
 .forum-empty-comments {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
 }
 .forum-comment-form {
@@ -2479,7 +2479,7 @@ p {
   gap: 10px;
 }
 .forum-sidebar-desc {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
@@ -2517,7 +2517,7 @@ p {
   border-radius: 20px;
   background: white;
   padding: 7px 16px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
@@ -2537,7 +2537,7 @@ p {
   border: none;
   border-bottom: 2px solid var(--line);
   background: transparent;
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 800;
   color: var(--ink);
   padding: 6px 0;
@@ -2559,7 +2559,7 @@ p {
   border-radius: 20px;
   background: white;
   padding: 5px 14px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   cursor: pointer;
 }
@@ -2573,7 +2573,7 @@ p {
   border-radius: 8px;
   background: white;
   padding: 12px;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--ink);
   resize: vertical;
   min-height: 160px;
@@ -2604,7 +2604,7 @@ p {
   background: none;
   border-radius: 5px;
   padding: 4px 8px;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   cursor: pointer;
 }
@@ -2696,7 +2696,7 @@ p {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
   padding: 9px 12px;
   border-radius: 8px;
@@ -2731,7 +2731,7 @@ p {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
   padding: 9px 4px 9px 8px;
   white-space: nowrap;
@@ -2795,7 +2795,7 @@ p {
   color: var(--conflict-ink);
   border: 1px solid var(--conflict-border);
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 12px;
   padding: 1px 7px;
   font-weight: 600;
   vertical-align: middle;
@@ -2807,7 +2807,7 @@ p {
   color: var(--updated-ink);
   border: 1px solid var(--updated-border);
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 12px;
   padding: 1px 7px;
   font-weight: 500;
   vertical-align: middle;
@@ -2818,7 +2818,7 @@ p {
   background: var(--mint);
   color: var(--green);
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 12px;
   padding: 1px 7px;
   font-weight: 500;
   vertical-align: middle;
@@ -2842,7 +2842,7 @@ p {
 
 .meta--fineprint {
   opacity: 0.75;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* Update feed in Briefing / bell menu */
@@ -2855,7 +2855,7 @@ p {
 }
 
 .update-feed h3 {
-  font-size: 15px;
+  font-size: 14px;
   margin: 0 0 10px;
   display: flex;
   align-items: center;
@@ -2891,7 +2891,7 @@ p {
 }
 
 .update-tag {
-  font-size: 13px;
+  font-size: 12px;
   border-radius: 4px;
   padding: 1px 7px;
 }
@@ -2919,7 +2919,7 @@ p {
 .update-detail {
   width: 100%;
   margin: 4px 0 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -2996,7 +2996,7 @@ p {
   gap: 8px;
 }
 .gcal-today-btn {
-  font-size: 14px;
+  font-size: 13px;
   flex: none;
 }
 .gcal-nav-btn {
@@ -3005,7 +3005,7 @@ p {
   border-radius: 7px;
   width: 30px;
   height: 30px;
-  font-size: 18px;
+  font-size: 17px;
   display: inline-grid;
   place-items: center;
   line-height: 1;
@@ -3015,7 +3015,7 @@ p {
   background: var(--mint);
 }
 .gcal-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 650;
   color: var(--ink);
   white-space: nowrap;
@@ -3035,7 +3035,7 @@ p {
   border: 0;
   border-left: 1px solid var(--line);
   padding: 6px 11px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -3073,7 +3073,7 @@ p {
   color: var(--notice-ink);
   border-radius: 9px;
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
@@ -3128,7 +3128,7 @@ p {
   min-width: 0;
 }
 .gcal-dow {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -3139,7 +3139,7 @@ p {
  * one row.
  */
 .gcal-dom {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1;
@@ -3219,7 +3219,7 @@ p {
   z-index: 4;
 }
 .gcal-hour-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
   padding: 0 6px;
   text-align: right;
@@ -3267,7 +3267,7 @@ p {
   position: absolute;
   border-radius: 5px;
   padding: 3px 5px 3px 7px;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.35;
   overflow: hidden;
   z-index: 2;
@@ -3280,7 +3280,7 @@ p {
 }
 /* Fix #7: allow title to wrap up to 2 lines */
 .gcal-event-block strong {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3291,7 +3291,7 @@ p {
   line-height: 1.3;
 }
 .gcal-event-block span {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.85;
   white-space: nowrap;
 }
@@ -3355,7 +3355,7 @@ p {
   margin-bottom: 4px;
 }
 .gcal-month-dow {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   text-align: center;
   padding: 4px;
@@ -3378,7 +3378,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   min-width: 0;
   overflow: hidden;
@@ -3401,7 +3401,7 @@ p {
   background: #f1f9f2;
 }
 .gcal-month-day-num {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   display: inline-flex;
@@ -3420,7 +3420,7 @@ p {
   color: white !important;
 }
 .gcal-demo-week-label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--green);
   font-weight: 600;
   letter-spacing: 0.3px;
@@ -3437,7 +3437,7 @@ p {
   color: var(--green-dark);
   border-radius: 3px;
   padding: 1px 4px;
-  font-size: 11px;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3448,7 +3448,7 @@ p {
   color: #9c4938;
 }
 .gcal-month-more {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
   padding-left: 4px;
 }
@@ -3466,7 +3466,7 @@ p {
   gap: 4px;
 }
 .gcal-mini-month-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 4px;
@@ -3478,7 +3478,7 @@ p {
   margin-bottom: 2px;
 }
 .gcal-mini-dow {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
   text-align: center;
   font-weight: 600;
@@ -3490,7 +3490,7 @@ p {
 }
 .gcal-mini-cell {
   position: relative;
-  font-size: 11px;
+  font-size: 10px;
   text-align: center;
   padding: 2px 0;
   border-radius: 3px;
@@ -3560,7 +3560,7 @@ p {
     min-height: 58px;
   }
   .gcal-title {
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
@@ -3587,7 +3587,7 @@ p {
 }
 .gcal-tag {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
   line-height: 1.3;
   padding: 0 4px;
@@ -3606,7 +3606,7 @@ button.gcal-month-day-num {
   background: none;
   padding: 0;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -3623,7 +3623,7 @@ button.gcal-month-chip {
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: 11px;
+  font-size: 10px;
   cursor: pointer;
 }
 button.gcal-month-chip:hover {
@@ -3684,7 +3684,7 @@ button.gcal-month-chip:hover {
     white-space: nowrap;
   }
   .gcal-month-more {
-    font-size: 11px;
+    font-size: 10px;
     padding-left: 0;
     line-height: 10px;
   }
@@ -3692,15 +3692,15 @@ button.gcal-month-chip:hover {
     grid-template-columns: minmax(0, 1fr);
   }
   .gcal-mini-month-title {
-    font-size: 17px;
+    font-size: 16px;
   }
   .gcal-mini-dow {
-    font-size: 13px;
+    font-size: 12px;
   }
   .gcal-mini-cell {
     min-height: 36px;
     min-width: 32px;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.2;
   }
 }
@@ -3903,7 +3903,7 @@ button.gcal-event-block {
 }
 .notif-menu-head h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
 }
 .notif-menu-list {
   overflow-y: auto;
@@ -3946,7 +3946,7 @@ button.gcal-event-block {
 .notif-menu-item strong,
 .notif-menu-check strong {
   display: block;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1.4;
 }
@@ -3955,7 +3955,7 @@ button.gcal-event-block {
 .notif-row small {
   display: block;
   margin-top: 3px;
-  font-size: 13.5px;
+  font-size: 12.5px;
   color: var(--muted);
 }
 .notif-menu-check {
@@ -3970,7 +3970,7 @@ button.gcal-event-block {
   padding: 26px 18px;
   text-align: center;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
 }
 .notif-layout {
   display: grid;
@@ -3988,13 +3988,13 @@ button.gcal-event-block {
 .notif-filters h2,
 .notif-list h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
 }
 .notif-filters .check-row {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
 }
 .notif-filters .check-row input {
@@ -4029,7 +4029,7 @@ button.gcal-event-block {
 }
 .notif-title {
   display: block;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 450;
   line-height: 1.4;
 }
@@ -4051,7 +4051,7 @@ button.gcal-event-block {
 }
 .notif-kind {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -4059,17 +4059,17 @@ button.gcal-event-block {
 }
 .notif-detail h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 25px;
   line-height: 1.25;
 }
 .notif-sent {
   margin: 8px 0 20px;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
 }
 .notif-body {
   margin: 0 0 24px;
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.65;
 }
 .notif-actions {
@@ -4124,17 +4124,17 @@ button.gcal-event-block {
   white-space: nowrap;
   min-width: 108px;
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
   color: var(--ink);
 }
 .week-nav-note {
   margin: -4px 0 12px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
 .week-nav-note .text-btn {
-  font-size: 14px;
+  font-size: 13px;
 }
 @media (max-width: 700px) {
   /* Title and Full Calendar on the first row, week arrows below. */
@@ -4167,7 +4167,7 @@ button.gcal-event-block {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 22px;
+  font-size: 21px;
 }
 .home h2 .icon {
   color: var(--green);
@@ -4235,7 +4235,7 @@ button.gcal-event-block {
   gap: 8px;
   background: #e7f2dc;
   color: #254730;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.9px;
   text-transform: uppercase;
@@ -4261,7 +4261,7 @@ button.gcal-event-block {
 }
 .announce-body {
   color: #cfe0d4;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.6;
 }
 .update .announce-body {
@@ -4272,7 +4272,7 @@ button.gcal-event-block {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 8px;
-  font-size: 15px;
+  font-size: 14px;
   color: #e7f2dc;
 }
 .announce-meta .icon {
@@ -4291,7 +4291,7 @@ button.gcal-event-block {
   background: #fff;
   color: var(--green-dark);
   font-weight: 650;
-  font-size: 16px;
+  font-size: 15px;
   padding: 11px 20px;
   border-radius: 999px;
   transition: transform 0.15s;
@@ -4309,11 +4309,11 @@ button.gcal-event-block {
   box-shadow: 0 18px 40px #0005;
 }
 .poster.announce-art b {
-  font-size: 32px;
+  font-size: 31px;
   max-width: none;
 }
 .poster.announce-art small {
-  font-size: 11px;
+  font-size: 10px;
 }
 /* Full-height arrow zones on each side; shown only while hovered or focused. */
 .announce-arrow {
@@ -4440,10 +4440,10 @@ button.gcal-event-block {
   stroke-width: 1.3;
 }
 .cat-entry strong {
-  font-size: 15px;
+  font-size: 14px;
 }
 .cat-entry small {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
 }
 .cat-entry:hover .cat-circle {
@@ -4516,7 +4516,7 @@ button.gcal-event-block {
     display: none;
   }
   .announce-body {
-    font-size: 15px;
+    font-size: 14px;
   }
   .home-categories ul {
     display: flex;

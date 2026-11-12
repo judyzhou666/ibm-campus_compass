@@ -9,8 +9,8 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 
 ## Larger text across the site — November 12, 2026
 
-- Every fixed font size in `frontend/src/styles.css` (236 values) and the one inline size in `Pages.tsx` is 2px larger; the page base goes from 14px to 16px, and the smallest 8–10px labels become 10–12px. Headings grow by proportionally less, so the hierarchy is unchanged.
-- **Verification:** `npm test` and `npm run build` pass. Checked in headless Chrome at 1440px (Home, My Dashboard, Explore, My Calendar, AI Planner, Forum) and 390px (Home, My Dashboard, My Calendar): no sideways scrolling and no clipped controls. On phones the top-bar search box shows only the start of its placeholder, as before, and week-view event titles in My Calendar are truncated in the narrow day columns, as before.
+- Every fixed font size in `frontend/src/styles.css` (236 values) and the one inline size in `Pages.tsx` is 1px larger than before this change; the page base goes from 14px to 15px, and the smallest 8–10px labels become 9–11px. (A first pass added 2px; it read too large and was eased back to 1px.)
+- **Verification:** `npm test` and `npm run build` pass. Checked in headless Chrome at 1440px (Home, My Dashboard; at +2px also Explore, My Calendar, AI Planner, Forum) and 390px (Home): no sideways scrolling and no clipped controls. On phones the top-bar search box shows only the start of its placeholder, and week-view event titles in My Calendar are truncated in the narrow day columns, both as before.
 
 ## Home page — November 12, 2026
 
