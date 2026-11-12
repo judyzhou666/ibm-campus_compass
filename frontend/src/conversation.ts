@@ -1,4 +1,5 @@
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
+import { parseDemoDates, partialWeekNote } from "./demoDates.ts";
 import { requestPlan, planningKey, planModeLabel, LimitedDemoHint } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
 import { issue, recommend, overlap } from "./planner.ts";
@@ -41,6 +42,8 @@ export function createConversation(
     availabilityChangeSummary?: string,
     /** When set, prepend this line to the result response (e.g. "Removed Thursday."). */
     replyPrefix?: string,
+    /** A separate first paragraph, e.g. which requested dates are in the demo week. */
+    lead?: string,
   ) {
     const token = ++version;
     const snapshot = demo.read(),
@@ -121,6 +124,8 @@ export function createConversation(
           response = localAlt.text;
         }
       }
+      if (lead && !old && !availabilityChangeSummary)
+        response = `${lead}\n\n${response}`;
       // Only prepend plan.notice when it is a watsonx fallback or similar (not the diagnostic).
       // When plan.notice IS the diagnostic we've already assigned it as response above.
       if (plan.notice && matches.length) response = plan.notice + "\n\n" + response;
@@ -556,14 +561,20 @@ export function createConversation(
         constraints: previous ?? (isFollowUp ? s.constraints : {}),
         messages: [...s.messages, { role: "user", text }],
       }));
-      await run((snapshot) =>
-        requestPlan(
-          resolvedText,
-          context ?? (isFollowUp ? snapshot.constraints : {}),
-          snapshot,
-          fetcher,
-          isWatsonxMode(),
-        ),
+      const dates = parseDemoDates(resolvedText);
+      await run(
+        (snapshot) =>
+          requestPlan(
+            resolvedText,
+            context ?? (isFollowUp ? snapshot.constraints : {}),
+            snapshot,
+            fetcher,
+            isWatsonxMode(),
+          ),
+        undefined,
+        undefined,
+        undefined,
+        dates ? partialWeekNote(dates) : undefined,
       );
     },
   };

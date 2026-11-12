@@ -69,16 +69,16 @@ export function recommend(
     candidates = candidates.filter((e) =>
       constraints.topics?.includes(e.topic),
     );
+  // Weights: topic 30 > novelty 12 > relevance (up to 8) > preferred time 2 > free 1.
+  // Without focus terms this ranks exactly as the earlier 10/4/2/1 weights did.
+  const focus = constraints.focus ?? [];
+  const base = (e: CampusEvent) =>
+    Number(topics.includes(e.topic)) * 30 +
+    relevance(e, focus) * 4 +
+    2 * Number(preferred(e, state)) +
+    Number(e.cost === 0);
   candidates.sort(
-    (a, b) =>
-      Number(topics.includes(b.topic)) * 10 +
-        Number(b.cost === 0) +
-        2 * Number(preferred(b, state)) -
-        (Number(topics.includes(a.topic)) * 10 +
-          Number(a.cost === 0) +
-          2 * Number(preferred(a, state))) ||
-      a.day - b.day ||
-      a.start - b.start,
+    (a, b) => base(b) - base(a) || a.day - b.day || a.start - b.start,
   );
   const selected: CampusEvent[] = [];
   while (candidates.length && selected.length < (constraints.limit || limit)) {
@@ -87,14 +87,12 @@ export function recommend(
     );
     const score = (e: CampusEvent) =>
       contextual
-        ? Number(topics.includes(e.topic)) * 10 +
+        ? base(e) +
           Number(
             topics.includes(e.topic) &&
               !selected.some((x) => x.topic === e.topic),
           ) *
-            4 +
-          2 * Number(preferred(e, state)) +
-          Number(e.cost === 0)
+            12
         : Number(e.cost === 0);
     feasible.sort(
       (a, b) => score(b) - score(a) || a.day - b.day || a.start - b.start,
@@ -124,6 +122,15 @@ export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
         ? "No food provided"
         : e.food,
   ];
+}
+
+/** How many focus terms (at most 2) appear as whole words in the title or description. */
+export function relevance(e: CampusEvent, focus: string[]) {
+  const text = `${e.title} ${e.description}`.toLowerCase();
+  let n = 0;
+  for (const term of focus)
+    if (new RegExp(`\\b${term.replace(/ /g, "\\s+")}\\b`).test(text)) n++;
+  return Math.min(n, 2);
 }
 
 function preferred(e: CampusEvent, state: Schedule) {

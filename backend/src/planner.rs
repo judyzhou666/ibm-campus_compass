@@ -78,17 +78,17 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
                 && matches_constraints(e, c)
         })
         .collect();
-    candidates.sort_by_key(|e| {
-        (
-            std::cmp::Reverse(
-                u8::from(topics.contains(&e.topic)) * 10
-                    + u8::from(e.cost == 0)
-                    + 2 * u8::from(preferred(e, state)),
-            ),
-            e.day,
-            e.start,
-        )
-    });
+    // Weights: topic 30 > novelty 12 > relevance (up to 8) > preferred time 2 > free 1.
+    // Without focus terms this ranks exactly as the earlier 10/4/2/1 weights did.
+    // Mirrors `recommend` in frontend/src/planner.ts.
+    let focus = c.focus.as_deref().unwrap_or_default();
+    let base = |e: &Event| {
+        u8::from(topics.contains(&e.topic)) * 30
+            + relevance(e, focus) * 4
+            + 2 * u8::from(preferred(e, state))
+            + u8::from(e.cost == 0)
+    };
+    candidates.sort_by_key(|e| (std::cmp::Reverse(base(e)), e.day, e.start));
     let mut selected: Vec<&Event> = Vec::new();
     while !candidates.is_empty() && selected.len() < c.limit.unwrap_or(3) {
         let best = candidates
@@ -110,13 +110,7 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
             .max_by_key(|(index, e)| {
                 let novel = topics.contains(&e.topic)
                     && !selected.iter().any(|other| other.topic == e.topic);
-                (
-                    u8::from(topics.contains(&e.topic)) * 10
-                        + u8::from(novel) * 4
-                        + u8::from(preferred(e, state)) * 2
-                        + u8::from(e.cost == 0),
-                    std::cmp::Reverse(*index),
-                )
+                (base(e) + u8::from(novel) * 12, std::cmp::Reverse(*index))
             })
             .map(|(index, _)| index);
         let Some(index) = best else {
@@ -125,6 +119,19 @@ pub fn recommend<'a>(state: &Schedule, c: &Constraints, events: &'a [Event]) -> 
         selected.push(candidates.remove(index));
     }
     selected
+}
+
+/// How many focus terms (at most 2) appear as whole words in the title or description.
+pub fn relevance(e: &Event, focus: &[String]) -> u8 {
+    let text = format!("{} {}", e.title, e.description).to_lowercase();
+    let found = focus
+        .iter()
+        .filter(|term| {
+            regex::Regex::new(&format!(r"\b{}\b", term.replace(' ', r"\s+")))
+                .is_ok_and(|re| re.is_match(&text))
+        })
+        .count();
+    found.min(2) as u8
 }
 
 fn preferred(e: &Event, state: &Schedule) -> bool {

@@ -181,6 +181,9 @@ pub struct Constraints {
     pub free: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<usize>,
+    /// Request words that chose the topics ("ai", "education"); events mentioning them rank first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub focus: Option<Vec<String>>,
 }
 
 impl Constraints {
@@ -211,6 +214,19 @@ impl Constraints {
             .contains(&s.as_str())
         }) {
             return Err("Unknown food preference");
+        }
+        if self.focus.as_ref().is_some_and(|terms| {
+            terms.len() > 12
+                || terms.iter().any(|t| {
+                    t.len() > 40
+                        || t.is_empty()
+                        || t.starts_with(' ')
+                        || t.ends_with(' ')
+                        || t.contains("  ")
+                        || !t.chars().all(|c| c.is_ascii_lowercase() || c == ' ')
+                })
+        }) {
+            return Err("Invalid focus terms");
         }
         Ok(())
     }

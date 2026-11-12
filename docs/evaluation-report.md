@@ -44,7 +44,7 @@ Outputs are event IDs or a request status. A result can be relevant yet unsafe; 
 
 | Case | Split | Scenario | A | B | C |
 |---|---|---|---|---|---|
-| D01 | development | Cross-disciplinary AI, career and social interests | e28, e36, e41 | e18, e14, e22 | e18, e42, e7 |
+| D01 | development | Cross-disciplinary AI, career and social interests | e28, e36, e41 | e18, e14, e22 | e31, e47, e42 |
 | D02 | development | Restricted Tuesday/Thursday afternoon | e1, e4, e5 | e1, e46 | e1, e46 |
 | D03 | development | Full meal, not refreshments | e2, e6, e8 | e22, e6, e2 | e22, e6, e2 |
 | D04 | development | Refreshments, not meal | e15, e42 | e11 | e11 |
@@ -56,13 +56,13 @@ Outputs are event IDs or a request status. A result can be relevant yet unsafe; 
 | D10 | development | Unsupported request requires guidance | no_matches | unsupported | unsupported |
 | D11 | development | Ambiguous proximity needs clarification | e1, e6, e8 | clarification | clarification |
 | D12 | development | Existing plan replacement with strict time/food filters | no_matches | no_matches | no_matches |
-| H01 | held-out | Arts/social diversity with free admission | e8, e13, e19 | e42, e23, e19 | e42, e23, e19 |
+| H01 | held-out | Arts/social diversity with free admission | e8, e13, e19 | e42, e23, e19 | e23, e42, e19 |
 | H02 | held-out | Friday late evening unknown-food social record | e16, e2, e6 | e27 | e27 |
 | H03 | held-out | Unknown alumni eligibility excludes sole coffee match | e15, e3, e7 | no_matches | no_matches |
 | H04 | held-out | Paid ceramics excluded by explicit free admission | e13, e22, e29 | no_matches | no_matches |
 | H05 | held-out | Feasible replacement retains another calendar choice | no_matches | e46 | e46 |
 | H06 | held-out | Contradictory day exclusions need clarification | e2, e6, e8 | clarification | clarification |
-| H07 | held-out | Multiple topics, travel and existing commitments | e28, e35, e41, e47, e1 | e18, e14, e7, e1, e23 | e18, e20, e23, e7, e1 |
+| H07 | held-out | Multiple topics, travel and existing commitments | e28, e35, e41, e47, e1 | e18, e14, e7, e1, e23 | e31, e23, e47, e1, e35 |
 | H08 | held-out | Weekend named event is actually Friday; strict weekend has no match | e27, e2, e6 | no_matches | no_matches |
 
 ## Observed failures

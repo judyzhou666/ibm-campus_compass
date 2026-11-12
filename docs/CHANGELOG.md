@@ -2,6 +2,39 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: demo-week dates and relevance to the student's words — November 12, 2026
+
+Fixes irrelevant answers to requests such as "AI in education relevant events for week Nov 6-12". Made with Claude Code (not IBM Bob). The code landed in commit `20f7fca`, whose message only mentions the bookmark icon; this entry describes it.
+
+**What was wrong**
+
+- Dates were ignored. "Nov 6-12" searched the whole week from Monday, even though the demo week ends on Fri Nov 6.
+- "AI & education" is a broad category that also covers research, coding and data. Results were ordered by time, so "Creative coding introduction" and "Student research lightning talks" came before events about AI in education.
+
+**What changed** (Rust `backend/src/interpreter.rs`, `planner.rs`, `model.rs`; TypeScript `frontend/src/demoDates.ts`, `interpretation.ts`, `planner.ts`, `conversation.ts`, `types.ts`)
+
+- **Dates.** Both interpreters read month-day dates and ranges ("Nov 6", "November 3rd to 4th", "Oct 30 – Nov 3") and keep the days inside the demo week. Dates override weekday words.
+  - No requested day in the week: the planner says "Campus Compass only has fictional events for the demo week, Mon Nov 2 – Fri Nov 6, 2026, so there is nothing on Nov 7–12…" and suggests nothing.
+  - Some requested days in the week: the reply starts with "The demo week is Mon Nov 2 – Fri Nov 6, 2026, so for Nov 6–12 I searched Fri Nov 6 only."
+- **Relevance.** A new optional `focus` filter keeps the words that chose the topic ("ai", "education"). Events whose title or description contain them rank first. Words that only name a whole category ("career", "social", "wellbeing") are left out, because every event in that category is equally about them.
+  - Weights are now topic 30, topic variety 12, relevance up to 8, preferred time 2, free 1. Requests without focus words rank exactly as before.
+- **Results.** "AI in education events" now returns AI ethics roundtable, Interdisciplinary AI futures talk and Research skills bootcamp: AI tools, instead of Creative coding introduction, Student research lightning talks and Learning with AI. The Nov 6-12 request returns Friday's Research skills bootcamp: AI tools and AI ethics debate.
+
+**Evaluation.** `npm run evaluate` was rerun. All aggregate metrics are unchanged, including zero conflict and eligibility violations and the diversity figures. Three example rows changed:
+- D01 "AI career social events": e18, e42, e7 → e31, e47, e42
+- H07: e18, e20, e23, e7, e1 → e31, e23, e47, e1, e35
+- H01: same events, new order
+
+**Demo script.** The demo prompt now suggests three drop-in events, so `docs/demo-script.md` adds "career on Tuesday afternoon" to show the RSVP form with Designing your career story.
+
+**Verification.** `npm test` (252 TypeScript + 5 Wiki tests, including new `tests/planner-dates-relevance.test.ts`), `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (63, including 5 new), `cargo build` and `npm run test:api` pass. The API test now compares Rust and the browser fallback on seven new date and wording requests and two outside-the-week clarifications.
+
+**Limitations**
+
+- Only written month names are understood ("Nov 6"), not numeric dates ("11/6") or "next week".
+- Relevance looks only at words that already select a topic. Words like "pedagogy" or "classroom" are not used.
+- Not checked in watsonx mode. There the model chooses the filters and is not told about focus words or the demo-week date rule. Dates entirely outside the week are still caught in the browser before the request is sent.
+
 ## PR #21 review fixes — November 12, 2026
 
 Four README wording fixes from the PR #21 review, made with Claude Code (not IBM Bob):
