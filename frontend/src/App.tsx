@@ -92,6 +92,17 @@ export default function App() {
     conversation.subscribe,
     conversation.read,
   );
+  /** Label shown in the chat header status area. Before the first reply it
+   *  reflects the health endpoint mode; after a reply it reflects the plan mode. */
+  const chatStatusLabel =
+    state.messages.length === 0
+      ? watsonxMode
+        ? "IBM watsonx (Granite) · Ranking and explaining picks · Fictional events"
+        : "Simulated planner · No live AI"
+      : mode;
+  const chatFineprint = watsonxMode
+    ? "IBM watsonx (Granite) is ranking and explaining picks. All events are fictional demo data."
+    : "Simulated responses using fictional events. No live AI or external calendar is connected.";
   const { busy: enrolling, rsvpEvent } = useSyncExternalStore(
     enrollment.subscribe,
     enrollment.read,
@@ -791,6 +802,7 @@ export default function App() {
               <DemoLauncher
                 state={state}
                 busy={busy || enrolling}
+                watsonxMode={watsonxMode}
                 onPrepare={() => {
                   try {
                     if (
@@ -859,7 +871,7 @@ export default function App() {
                       <h2>Chat with your campus guide</h2>
                       <span className="status-label">
                         <i className="dot green" />
-                        {mode}
+                        {chatStatusLabel}
                       </span>
                     </div>
                     <button
@@ -948,10 +960,7 @@ export default function App() {
                       <Icon name="send" />
                     </button>
                   </form>
-                  <p className="fineprint">
-                    Simulated responses using fictional events. No live AI or
-                    external calendar is connected.
-                  </p>
+                  <p className="fineprint">{chatFineprint}</p>
                 </section>
                 {calendarOpen ? (
                   <PlannerCalendar

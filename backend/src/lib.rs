@@ -223,7 +223,7 @@ async fn plan(
                                 selected.iter().find(|e| e.id == r.id).map(|e| {
                                     let mut ev =
                                         planner::evidence(e, &request.state, &constraints, events);
-                                    ev["interest_match"] = json!(format!("{} (AI)", r.reason));
+                                    ev["ai_reason"] = json!(r.reason);
                                     ev["cited_fields"] = json!(r.cited_fields);
                                     ev
                                 })

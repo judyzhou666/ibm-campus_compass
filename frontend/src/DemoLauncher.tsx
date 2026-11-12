@@ -41,6 +41,7 @@ export function DemoLauncher({
   onReplace,
   onExport,
   busy,
+  watsonxMode = false,
 }: {
   state: DemoState;
   onPrepare: () => boolean;
@@ -50,6 +51,7 @@ export function DemoLauncher({
   onReplace: () => void;
   onExport: () => void;
   busy: boolean;
+  watsonxMode?: boolean;
 }) {
   const [confirm, setConfirm] = useState(false);
   const active = state.plan.filter((id) => !state.cancelled.includes(id));
@@ -58,8 +60,10 @@ export function DemoLauncher({
     <section className="panel demo-launcher">
       <h2>Demo Scenario Launcher</h2>
       <p className="fineprint">
-        Three-minute journey · Fictional first-semester graduate student · No
-        live AI
+        Three-minute journey · Fictional first-semester graduate student ·{" "}
+        {watsonxMode
+          ? "IBM watsonx (Granite) ranking · Fictional events"
+          : "No live AI"}
       </p>
       <details>
         <summary>Student context and limited availability</summary>

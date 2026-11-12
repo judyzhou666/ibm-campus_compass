@@ -2,6 +2,35 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Honest AI attribution, separate evidence fields, dynamic mode labels — November 12, 2026
+
+The backend and frontend were updated to separate AI-written evidence from template evidence, and to derive all honest mode labels from the live API rather than hardcoding them.
+
+### What was changed
+
+**Backend (`backend/src/lib.rs`):** when watsonx ranking succeeds, `interest_match` is no longer appended with `" (AI)"`. Instead, the model's reason is placed in a new `ai_reason` field and `cited_fields` (the catalog fields cited by the model) is kept alongside it. Template evidence from the simulated planner has neither field.
+
+**Frontend types (`frontend/src/types.ts`):** `RecommendationEvidence` gains two optional fields: `ai_reason?: string` and `cited_fields?: string[]`.
+
+**Chat event cards (`frontend/src/PlannerPanels.tsx`, `ChatEvents`):** when a recommendation has `ai_reason`, the "Why this fits" line shows the model's reason followed by a small attribution label ("Written by IBM watsonx (Granite) from this event's record") and the cited fields as small inline tags. When `ai_reason` is absent the existing `reasons()` template text is used. "How the planner checked this" is unchanged (no more "(AI)" suffix in `interest_match`).
+
+**Honest mode labels (`frontend/src/App.tsx`, `frontend/src/DemoLauncher.tsx`):** the chat header status (before first reply), the fineprint under the chat input, and the Demo Scenario Launcher subtitle are now derived from `/api/health` on page load and updated from each `/api/plan` reply. In watsonx mode they name IBM watsonx (Granite) and note that events are fictional; in simulated mode the existing wording is preserved.
+
+### Tests
+
+14 new tests added in `tests/mode-labels.test.ts`:
+- `ai_reason` shown when present, template reasons used when absent, neither when no evidence object
+- `chatStatusLabel` derivation in both modes before and after first reply
+- `chatFineprint` wording in simulated and watsonx mode
+- `DemoLauncher` subtitle in simulated and watsonx mode
+- `planModeLabel` for all combinations (browser fallback, watsonx + AI explanations, watsonx + template, simulated)
+
+### Verification
+
+`npm test` (111 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
 ## Cross-school discovery, goal-balanced plans, access conditions — November 11, 2026
 
 The fictional event catalog was extended for cross-school discovery and realistic access conditions.

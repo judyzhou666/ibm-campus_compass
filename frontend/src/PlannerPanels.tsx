@@ -7,7 +7,7 @@ import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
 type EvidenceKey = Exclude<
   keyof import("./types.ts").RecommendationEvidence,
-  "event_id"
+  "event_id" | "ai_reason" | "cited_fields"
 >;
 /** Student-facing labels, in reading order, for the planner's evidence fields. */
 const EVIDENCE_LABELS: [EvidenceKey, string][] = [
@@ -54,7 +54,24 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
-            {problem ? null : (
+            {problem ? null : found?.ai_reason ? (
+              <div className="why-fits ai-why">
+                <strong>Why this fits:</strong>{" "}
+                {found.ai_reason}
+                <span className="ai-attribution">
+                  Written by IBM watsonx (Granite) from this event&apos;s record
+                </span>
+                {found.cited_fields && found.cited_fields.length > 0 && (
+                  <span className="cited-fields">
+                    {found.cited_fields.map((f) => (
+                      <span key={f} className="cited-tag">
+                        {f.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </div>
+            ) : problem ? null : (
               <p className="why-fits">
                 <strong>Why this fits:</strong>{" "}
                 {reasons(event, state, state.constraints)

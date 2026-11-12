@@ -138,4 +138,8 @@ export interface RecommendationEvidence {
   trade_offs: string;
   comparison?: string;
   discovery_context?: string;
+  /** AI-written reason from IBM watsonx (Granite). Present only on watsonx-ranked results. */
+  ai_reason?: string;
+  /** Catalog fields the model cited when writing ai_reason. */
+  cited_fields?: string[];
 }
