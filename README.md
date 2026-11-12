@@ -41,13 +41,13 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 
 | Archetype | How it shows up |
 |---|---|
-| **Context-Aware Expert** | Plans around the student's stated interests, existing busy times, travel buffer and live event updates. Access conditions, conflicts and cancellations are re-checked on every add. |
+| **Context-Aware Expert** | Plans around the student's stated interests, existing busy times, travel buffer and synthetic event updates. Access conditions, conflicts and cancellations are re-checked on every add. |
 | **Cognitive Load Reducer** | Turns scattered event listings into a short feasible week plan with plain "Why this fits" reasons for each pick (interest match, schedule fit, cost, RSVP status). |
 | **Human–AI Boundary Manager** | Clarifies ambiguous requests (AM/PM, excluded days, unsupported budgets) before suggesting anything. Never adds an event without the student's explicit approval. Labels every reply with the mode that produced it (Simulated or IBM watsonx). |
 
 ## Technology
 
-- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/) (Tingting's exports are being added).
+- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/). Judy's review of the synthetic update feed is exported in `bob_sessions/Judy/`; Tingting's exports are still being added, so the work above is not yet backed by an export.
 - **IBM watsonx.ai Granite** — optional live interpreter and ranker via `PLANNER_PROVIDER=watsonx`. Default is the deterministic simulated planner. Every reply is labelled with the mode that produced it.
 - **Rust** (Axum, Tokio, Serde) — backend API, typed validation, deterministic scheduling logic.
 - **React + TypeScript + Vite** — frontend; browser-local state; explicitly labelled simulation fallback when the backend is unavailable.
@@ -59,7 +59,7 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 - All state is browser-local; nothing is shared between users.
 - Student approval required for every calendar addition.
 - Deterministic validation runs after any model output; the model cannot invent event IDs or eligibility.
-- Every reply is labelled with the mode that produced it (Simulated · No live AI, or IBM watsonx · Granite).
+- Every reply is labelled with the mode that produced it (Rust planner · Simulated, Rust planner · IBM watsonx, or Browser fallback · Simulated).
 - See [Data and assets register](#data-and-assets-register) below.
 
 ## Run it
@@ -97,7 +97,7 @@ Follow [docs/demo-script.md](docs/demo-script.md). Start from **Settings → Res
 
 ## Evaluation
 
-[docs/evaluation-report.md](docs/evaluation-report.md) reports 20 frozen synthetic scenarios (12 development, 8 held-out) comparing keyword/category search, deterministic rules and the Rust context planner. The Rust planner has zero measured conflict or eligibility violations on this suite and achieves 100% diversity on development scenarios. **Live watsonx: Not yet evaluated.** This is a small visible synthetic benchmark, not proof of live AI value or user benefit.
+[docs/evaluation-report.md](docs/evaluation-report.md) reports 20 frozen synthetic scenarios (12 development, 8 held-out) comparing keyword/category search, deterministic rules and the Rust context planner. The Rust planner has zero measured conflict or eligibility violations on this suite and achieves 100% diversity on development scenarios (85.7% on held-out, the same as the rules baseline). **Live watsonx: Not yet evaluated.** This is a small visible synthetic benchmark, not proof of live AI value or user benefit.
 
 ## Current limits
 

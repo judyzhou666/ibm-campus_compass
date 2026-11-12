@@ -2,6 +2,17 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## PR #21 review fixes — November 12, 2026
+
+Four README wording fixes from the PR #21 review, made with Claude Code (not IBM Bob):
+
+- **Synthetic, not live.** The Context-Aware Expert row now says "synthetic event updates" instead of "live event updates".
+- **Real mode labels.** Responsible AI and data now quotes the labels the app shows: Rust planner · Simulated, Rust planner · IBM watsonx, and Browser fallback · Simulated.
+- **Held-out diversity.** The evaluation summary adds the held-out figure (85.7%, the same as the rules baseline) next to 100% on development scenarios.
+- **Bob evidence.** The Technology line points to Judy's exported Bob session and says Tingting's listed Bob work is not yet backed by an export.
+
+Verification: documentation only; `npm test` and `npm run build` pass.
+
 ## Merge main (PR #19 event detail, PR #20 planner cleanup) into Tingting — November 12, 2026
 
 PR #20 removed the Demo Scenario Launcher, so the earlier change on this branch that only moved it into a collapsed "Demo tools (for presenters)" section is superseded: `frontend/src/App.tsx` and `docs/demo-script.md` now match main. README.md overview updated to match main (AI Planner is "Mimi", no "What I'm working with" panel, demo starts from Settings → Reset demo). PR #19/#20 README update sections moved verbatim to this file. Merge resolved with Claude Code, not IBM Bob.
