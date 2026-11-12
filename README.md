@@ -2,6 +2,11 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Larger text across the site — November 12, 2026
+
+- Every fixed font size in `frontend/src/styles.css` (236 values) and the one inline size in `Pages.tsx` is 2px larger; the page base goes from 14px to 16px, and the smallest 8–10px labels become 10–12px. Headings grow by proportionally less, so the hierarchy is unchanged.
+- **Verification:** `npm test` and `npm run build` pass. Checked in headless Chrome at 1440px (Home, My Dashboard, Explore, My Calendar, AI Planner, Forum) and 390px (Home, My Dashboard, My Calendar): no sideways scrolling and no clipped controls. On phones the top-bar search box shows only the start of its placeholder, as before, and week-view event titles in My Calendar are truncated in the narrow day columns, as before.
+
 ## Home page — November 12, 2026
 
 - **New Home tab** (first in the sidebar) is now the landing page; the Campus Compass logo and "Reset demo" also go there. My Dashboard is unchanged and gets its own grid icon. The top bar is unchanged.

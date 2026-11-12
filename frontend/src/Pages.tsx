@@ -886,7 +886,7 @@ export function Settings({
           <select
             value={state.timezone || DEMO.time_zone}
             aria-label="Time zone"
-            style={{ fontSize: 13, padding: "6px 10px", borderRadius: 7, border: "1px solid var(--line)" }}
+            style={{ fontSize: 15, padding: "6px 10px", borderRadius: 7, border: "1px solid var(--line)" }}
             onChange={(e) => {
               update((s) => ({ ...s, timezone: e.target.value }));
               notify("Time zone updated.");
