@@ -3552,3 +3552,163 @@ p {
     font-size: 13px;
   }
 }
+
+/* ── Review fixes: attention state, moved-time tags, month chips ─────────── */
+.dot.amber {
+  background: var(--amber);
+}
+.gcal-attention {
+  border-left-color: var(--amber);
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+}
+.gcal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 1px;
+  min-width: 0;
+  max-width: 100%;
+}
+.gcal-tags .gcal-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gcal-tag {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #ffffffb3;
+  color: var(--green-dark);
+  white-space: nowrap;
+}
+.gcal-tag-attention {
+  background: var(--notice-bg);
+  color: var(--notice-ink);
+}
+/* Month cells are no longer buttons: the date number and each chip are. */
+button.gcal-month-day-num {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.gcal-month-day-num:hover {
+  background: var(--mint);
+}
+button.gcal-month-day-num:focus-visible,
+.gcal-month-chip:focus-visible {
+  outline: 2px solid #57a77a;
+  outline-offset: 1px;
+}
+button.gcal-month-chip {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+button.gcal-month-chip:hover {
+  filter: brightness(0.95);
+}
+.gcal-chip-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gcal-chip-attention {
+  background: var(--notice-bg);
+  color: var(--notice-ink);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* Phones: month chips become dots; year shows one large month per row. */
+@media (max-width: 480px) {
+  .gcal-month-cell {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 3px;
+    padding: 3px;
+  }
+  /* Keep the date a fixed circle and push the dots onto the next line. */
+  .gcal-month-cell button.gcal-month-day-num {
+    flex: 0 0 26px;
+    width: 26px;
+    min-width: 26px;
+    margin-right: calc(100% - 26px);
+  }
+  .gcal-demo-week-label {
+    display: none;
+  }
+  button.gcal-month-chip {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  button.gcal-month-chip.gcal-chip-attention {
+    background: var(--amber);
+    box-shadow: none;
+  }
+  button.gcal-month-chip.gcal-chip-cancelled {
+    background: #d9847a;
+  }
+  .gcal-chip-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .gcal-month-more {
+    font-size: 9px;
+    padding-left: 0;
+    line-height: 10px;
+  }
+  .gcal-year {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gcal-mini-month-title {
+    font-size: 15px;
+  }
+  .gcal-mini-dow {
+    font-size: 11px;
+  }
+  .gcal-mini-cell {
+    min-height: 36px;
+    min-width: 32px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+}
+
+/* Narrow blocks (side-by-side overlaps): show only the tag symbol. The full
+   wording stays in the block's title tooltip and accessible name. */
+button.gcal-event-block {
+  container-type: inline-size;
+}
+.gcal-tag-icon {
+  display: none;
+  margin-right: 2px;
+}
+@container (max-width: 70px) {
+  .gcal-tag-icon {
+    display: inline;
+    margin-right: 0;
+  }
+  .gcal-tag-label {
+    display: none;
+  }
+}

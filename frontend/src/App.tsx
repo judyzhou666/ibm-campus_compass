@@ -394,19 +394,16 @@ export default function App() {
       ))}
     </div>
   );
+  // Shared by the Dashboard strip and the My Calendar "+" buttons.
+  const findOnDay = (day: number) => {
+    nav("planner");
+    void chat(
+      `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
+      { days: [day] },
+    );
+  };
   const week = (full = false) => (
-    <Week
-      state={state}
-      full={full}
-      onDetail={setDetail}
-      onDay={(day) => {
-        nav("planner");
-        void chat(
-          `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
-          { days: [day] },
-        );
-      }}
-    />
+    <Week state={state} full={full} onDetail={setDetail} onDay={findOnDay} />
   );
   const draft = state.draft
     .map((id) => EVENTS.find((e) => e.id === id))
@@ -1180,13 +1177,7 @@ export default function App() {
               <CalendarView
                 state={state}
                 onDetail={setDetail}
-                onDay={(day) => {
-                  nav("planner");
-                  void chat(
-                    `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
-                    { days: [day] },
-                  );
-                }}
+                onDay={findOnDay}
                 onEditAvailability={() => nav("profile")}
                 onExportCalendar={exportCalendar}
               />
@@ -1199,7 +1190,7 @@ export default function App() {
                   </button>
                 </div>
                 {state.plan.length ? (
-                  EVENTS.filter((e) => state.plan.includes(e.id)).map((e) => (
+                  effEvents.filter((e) => state.plan.includes(e.id)).map((e) => (
                     <div className="block-row" key={e.id}>
                       <div>
                         <strong>
@@ -1208,6 +1199,10 @@ export default function App() {
                         </strong>
                         <small>
                           {when(e)} · {e.location}
+                          {(() => {
+                            const o = EVENTS.find((x) => x.id === e.id);
+                            return o && (o.start !== e.start || o.end !== e.end) ? " · Time changed" : "";
+                          })()}
                         </small>
                       </div>
                       <Button className="small" onClick={() => remove(e.id)}>

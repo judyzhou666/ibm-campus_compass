@@ -13,14 +13,24 @@ import {
   viewTitle,
   itemPosition,
   layoutColumns,
-  isInDemoWeek,
   isWeekday,
   isoWeekdayIndex,
   demoDayIndex,
-  demoWeekDates,
-  demoToday,
   sortByStart,
+  todayIso,
+  gridHours,
+  fitsGrid,
+  itemsForDate,
+  attentionTag,
+  parseSavedPosition,
 } from "../frontend/src/calendarGrid.ts";
+import { weekDates } from "../frontend/src/config.ts";
+import { DEFAULT_BLOCKS, EVENTS } from "../frontend/src/data.ts";
+import { effectiveEvents } from "../frontend/src/updates.ts";
+import { issue } from "../frontend/src/planner.ts";
+import { calendarText } from "../frontend/src/calendar.ts";
+import { utcStamp } from "../frontend/src/config.ts";
+import { fresh } from "../frontend/src/state.ts";
 
 test("addDays moves forward and backward correctly", () => {
   assert.equal(addDays("2026-11-02", 1), "2026-11-03");
@@ -173,14 +183,6 @@ test("layoutColumns handles 3-way overlapping items", () => {
   assert.equal(layout[0].totalCols, 3);
 });
 
-test("isInDemoWeek correctly identifies demo week dates", () => {
-  assert.equal(isInDemoWeek("2026-11-02"), true); // Monday
-  assert.equal(isInDemoWeek("2026-11-06"), true); // Friday
-  assert.equal(isInDemoWeek("2026-11-07"), false); // Saturday
-  assert.equal(isInDemoWeek("2026-10-26"), false); // previous week
-  assert.equal(isInDemoWeek("2026-11-09"), false); // next week
-});
-
 test("isWeekday returns true for Mon-Fri only", () => {
   assert.equal(isWeekday("2026-11-02"), true);  // Monday
   assert.equal(isWeekday("2026-11-06"), true);  // Friday
@@ -202,17 +204,6 @@ test("demoDayIndex returns 0-4 for demo week weekdays", () => {
   assert.equal(demoDayIndex("2026-11-06"), 4); // Friday
   assert.equal(demoDayIndex("2026-11-07"), -1); // Saturday (not in demo week)
   assert.equal(demoDayIndex("2026-11-09"), -1); // next Monday
-});
-
-test("demoWeekDates returns 5 dates Mon-Fri", () => {
-  const dates = demoWeekDates();
-  assert.equal(dates.length, 5);
-  assert.equal(dates[0], "2026-11-02");
-  assert.equal(dates[4], "2026-11-06");
-});
-
-test("demoToday returns the demo week start date", () => {
-  assert.equal(demoToday(), "2026-11-02");
 });
 
 test("sortByStart returns items in ascending start order", () => {
@@ -238,4 +229,97 @@ test("sortByStart preserves order for equal start times", () => {
   assert.equal(sorted.length, 2);
   assert.equal(sorted[0].start, 600);
   assert.equal(sorted[1].start, 600);
+});
+
+// ── Review fixes (PR #12) ──────────────────────────────────────────────────
+
+test("todayIso follows the chosen time zone like the Dashboard strip", () => {
+  assert.equal(todayIso("America/New_York"), "2026-11-02");
+  assert.equal(todayIso("Asia/Tokyo"), "2026-11-02"); // Monday 11 PM there
+  assert.equal(todayIso("Pacific/Auckland"), "2026-11-03"); // already Tuesday
+  assert.deepEqual(weekDates().length, 5);
+});
+
+test("gridHours keeps 8 AM–9 PM when everything fits", () => {
+  assert.deepEqual(gridHours([{ start: 600, end: 720 }]), { start: 8, end: 21 });
+  assert.deepEqual(gridHours([]), { start: 8, end: 21 });
+});
+
+test("gridHours extends to 10 PM for an item ending at 22:00", () => {
+  assert.deepEqual(gridHours([{ start: 1200, end: 1320 }]), { start: 8, end: 22 });
+});
+
+test("gridHours extends to 7 AM for an item starting at 7:00", () => {
+  assert.deepEqual(gridHours([{ start: 420, end: 470 }]), { start: 7, end: 21 });
+});
+
+test("gridHours rounds partial hours outward and ignores empty items", () => {
+  assert.deepEqual(gridHours([{ start: 450, end: 1290 }]), { start: 7, end: 22 });
+  assert.deepEqual(gridHours([{ start: 300, end: 300 }]), { start: 8, end: 21 });
+});
+
+test("every catalog event and default busy time fits the computed grid", () => {
+  const grid = gridHours([...EVENTS, ...DEFAULT_BLOCKS]);
+  for (const item of [...EVENTS, ...DEFAULT_BLOCKS]) {
+    assert.ok(fitsGrid(item, grid), `${item.title} ${item.start}-${item.end} is outside ${grid.start}-${grid.end}`);
+  }
+});
+
+test("itemsForDate uses moved times from applied updates and flags them", () => {
+  const state = { blocks: [], plan: ["e1"], cancelled: [] };
+  const before = itemsForDate("2026-11-03", state, EVENTS, EVENTS, false);
+  const after = itemsForDate("2026-11-03", state, effectiveEvents(["u3"]), EVENTS, false);
+  assert.equal(before[0].start, 900);
+  assert.equal(after[0].start, 630);
+  assert.equal(after[0].end, 720);
+  assert.equal(after[0].kind === "event" && after[0].moved, true);
+  assert.equal(before[0].kind === "event" && before[0].moved, false);
+});
+
+test("itemsForDate repeats classes weekly but keeps events on the demo week", () => {
+  const state = { blocks: [{ id: "b", title: "Class", day: 1, start: 600, end: 660 }], plan: ["e1"], cancelled: [] };
+  const nextTue = itemsForDate("2026-11-10", state, EVENTS, EVENTS, true);
+  assert.deepEqual(nextTue.map((i) => i.kind), ["class"]);
+  assert.deepEqual(itemsForDate("2026-11-03", state, EVENTS, EVENTS, false).map((i) => i.id), ["e1"]);
+});
+
+test("a moved event that overlaps a class is tagged Conflict; back-to-back is not", () => {
+  const events = effectiveEvents(["u3"]);
+  const e1 = events.find((e) => e.id === "e1")!;
+  const base = { plan: ["e1"], cancelled: [], interests: [], buffer: 0, appliedUpdateIds: ["u3"] };
+  const clash = issue(e1, { ...base, blocks: [{ id: "b", title: "Research Methods", day: 1, start: 600, end: 720 }] }, events);
+  assert.equal(attentionTag(clash), "Conflict");
+  const backToBack = issue(e1, { ...base, blocks: [{ id: "b", title: "Seminar", day: 1, start: 720, end: 780 }] }, events);
+  assert.equal(attentionTag(backToBack), null);
+});
+
+test("attentionTag ignores cancellation and labels other issues", () => {
+  assert.equal(attentionTag(null), null);
+  assert.equal(attentionTag("Cancelled in demo"), null);
+  assert.equal(attentionTag("Event is full"), "Full");
+  assert.equal(attentionTag("Membership not verified"), "Check");
+});
+
+test("parseSavedPosition restores a valid view and date", () => {
+  assert.deepEqual(parseSavedPosition('{"view":"month","anchor":"2026-12-01"}', "2026-11-02"), {
+    view: "month",
+    anchor: "2026-12-01",
+  });
+});
+
+test("parseSavedPosition falls back to Week and today for missing or invalid values", () => {
+  const fallback = { view: "week", anchor: "2026-11-02" };
+  assert.deepEqual(parseSavedPosition(null, "2026-11-02"), fallback);
+  assert.deepEqual(parseSavedPosition("not json", "2026-11-02"), fallback);
+  assert.deepEqual(parseSavedPosition('{"view":"agenda","anchor":"2026-12-01"}', "2026-11-02"), fallback);
+  assert.deepEqual(parseSavedPosition('{"view":"day","anchor":"2026-02-30"}', "2026-11-02"), fallback);
+  assert.deepEqual(parseSavedPosition('{"view":"day","anchor":"1726-02-01"}', "2026-11-02"), fallback);
+});
+
+test("calendar export uses moved times and changed rooms from applied updates", () => {
+  const text = calendarText({ ...fresh(), plan: ["e1", "e9"], cancelled: [], appliedUpdateIds: ["u3", "u4"] })!;
+  assert.ok(text.includes(`DTSTART:${utcStamp(1, 630)}`), "moved start");
+  assert.ok(text.includes(`DTEND:${utcStamp(1, 720)}`), "moved end");
+  assert.ok(!text.includes(`DTSTART:${utcStamp(1, 900)}`), "old start is gone");
+  assert.ok(text.includes("LOCATION:Innovation Hub\\, Room 3"), "changed room");
 });

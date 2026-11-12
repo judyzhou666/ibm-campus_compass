@@ -196,17 +196,34 @@ cargo run --locked
 ```
 Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher, the ‹ › and Today buttons, and click any event to open its details. Clicking a day in Month/Year view opens Day view for that date.
 
-**Test results (after round-2 fixes):**
-- `npm test`: 114 TypeScript tests pass (up from 112), 5 Wiki tests pass.
-- `npm run build`: clean TypeScript + Vite build, no new warnings.
-- `cargo test --locked`: 18 Rust tests pass.
+**Review fixes for PR #12 (Judy's review plus hands-on testing):**
+- **Today follows the chosen time zone** like the Dashboard strip and page heading (e.g. Auckland shows Tuesday). The grid stays in campus time, so the now line is drawn only on the campus demo date when that is also today.
+- **The grid fits every item.** Hours are computed from the whole catalog plus busy times (`gridHours`), so the 8–10 PM grad-bar event and a 7:00 AM busy time are drawn at their real times instead of being clipped.
+- **Moved events show their new time** in Day, Week, Month and Year view and in "Your campus plans" (`effectiveEvents`). Moved blocks get a "Time changed" tag; a chosen event that now overlaps something (same `issue()` rule as the rest of the app, including the travel buffer) gets an amber "Conflict" tag. Narrow side-by-side blocks show ⚠ / ↻ symbols; the full wording is in the tooltip and accessible name.
+- **Legend:** the grey "Busy commitments" key only appears in Day/Week; Month/Year say "Classes appear in Day and Week view."
+- **The calendar remembers its view and date** for the browser session (sessionStorage, with a safe fallback to Week / today).
+- **Month chips are buttons** that open the event; clicking the rest of a day opens Day view (no nested buttons).
+- **Phones:** Month shows dots instead of cut-off text; Year shows one month per row with 44×36 px day targets and scrolls the current month into view.
+- **Cleanup:** one shared `findOnDay` handler in `App.tsx`; `calendarGrid.ts` reuses `weekDates` / `demoTodayIndex` from `config.ts`; unused helpers removed.
 
-**Known limits / not implemented:**
-- The "now" line is drawn at demo-clock time (Mon Nov 2, 9:00 AM), not the real wall clock, consistent with the rest of the app.
-- No live-scroll to the current hour on open (grid can be scrolled manually).
-- Month/Year views do not show busy-class blocks (by design per requirements — classes are weekly repeating in Day/Week only).
-- The "+N more" chip in Month view opens Day view for that date (clicking any day cell does the same); individual event detail from Month chips is not added.
-- This change was made with [IBM Bob](https://www.ibm.com/products/bob).
+**Related fixes outside the calendar (same "moved event" bug class, plus the forum):**
+- Event details: "Starts … in your time zone" and the side panel date/room now use the moved time and changed room.
+- Calendar export (.ics) uses moved times and changed rooms.
+- Dashboard / AI Planner week strip, AI Planner agenda and suggestion cards use moved times.
+- Profile: adding a busy time checks conflicts against moved times.
+- Forum: likes are saved with the browser-local demo state (they used to reset when you left the page), and comment counts show the comments that actually exist (they used to add a hidden padding number).
+
+**Test results:**
+- `npm test`: 175 TypeScript tests (33 calendar tests), 5 Wiki tests — all pass.
+- `npm run build`: clean. `cargo test --locked`: 41 pass. `npm run test:api`: pass.
+- Browser checks at 375 px, 1024 px and 1280 px: header/column alignment, Auckland today, update u3 move + conflict, 7:00 AM busy time, Month chip click, view memory across pages and reload, phone Month/Year.
+
+**Known limits:**
+- The "now" line uses the demo clock (Mon Nov 2, 9:00 AM campus time), not the real time.
+- Month/Year views don't show busy classes (they repeat weekly; see Day/Week).
+
+**Authorship:** rounds 1–4 of the calendar (commits up to "restore week header min-width") were written with [IBM Bob](https://www.ibm.com/products/bob); Tingting is adding the Bob task-history export to `bob_sessions/Tingting/` before merge. The merge with main, the PR #12 review fixes and the related fixes above were written with Claude Code, not IBM Bob.
+
 ## Update — November 11, 2026: watsonx ranking and explanations
 
 ### What was added

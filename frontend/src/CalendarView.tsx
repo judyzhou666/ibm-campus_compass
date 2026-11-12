@@ -3,116 +3,107 @@
  * Used only on the My Calendar page; the Dashboard strip and
  * AI Planner panel continue to use the existing Week component.
  */
-import { useState } from "react";
-import { DEMO, DEMO_NOW_MINUTE } from "./config.ts";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { DEMO, DEMO_NOW_MINUTE, isTimeZone, weekDates } from "./config.ts";
 import { EVENTS, time } from "./data.ts";
-import type { DemoState } from "./types.ts";
+import { issue } from "./planner.ts";
+import { effectiveEvents } from "./updates.ts";
+import type { CampusEvent, DemoState } from "./types.ts";
 import { Icon } from "./components.tsx";
 import {
   type CalView,
-  addDays,
-  weekDatesFor,
-  monthGridDates,
-  yearMonthStarts,
-  navigate,
-  viewTitle,
+  type CalendarItem,
+  attentionTag,
+  gridHours,
   itemPosition,
-  layoutColumns,
-  isWeekday,
+  itemsForDate,
   isoWeekdayIndex,
-  demoDayIndex,
-  demoWeekDates,
-  demoToday,
-  demoNowMinute,
+  isWeekday,
+  layoutColumns,
+  monthGridDates,
   monthStart,
-  sortByStart,
+  navigate,
+  parseSavedPosition,
+  demoDayIndex,
+  todayIso,
+  viewTitle,
+  weekDatesFor,
+  yearMonthStarts,
 } from "./calendarGrid.ts";
 
-const GRID_START = 8;  // 8 AM
-const GRID_END = 21;   // 9 PM
-const HOURS = Array.from({ length: GRID_END - GRID_START }, (_, i) => GRID_START + i);
 const DAY_NAMES_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_NAMES_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const POSITION_KEY = "campus-compass-calendar-position";
+const MAX_CHIPS = 3;
 
-/** Format a minute-of-day as "8 AM" or "1:30 PM". */
-function fmtHour(h: number): string {
-  return time(h * 60);
-}
-
-/** Short date label e.g. "Nov 2". */
+/** "Nov 2" for any ISO date (config's dayLabel only covers the demo week). */
 function shortDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return `${MONTH_NAMES_SHORT[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(`${iso}T12:00:00Z`),
+  );
 }
 
-/** Day-of-month number. */
 function dayOfMonth(iso: string): number {
   return new Date(`${iso}T12:00:00Z`).getUTCDate();
 }
 
-/** True if two ISO dates share the same month. */
 function sameMonth(a: string, b: string): boolean {
   return a.slice(0, 7) === b.slice(0, 7);
+}
+
+function readSavedPosition(): string | null {
+  try {
+    return window.sessionStorage.getItem(POSITION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedPosition(value: { view: CalView; anchor: string }) {
+  try {
+    window.sessionStorage.setItem(POSITION_KEY, JSON.stringify(value));
+  } catch {
+    // Storage unavailable (private mode, blocked): the calendar still works.
+  }
 }
 
 interface CalendarViewProps {
   state: DemoState;
   onDetail: (id: string) => void;
-  onDay: (dayIndex: number) => void; // existing handler (0-4 = Mon-Fri demo-week days)
+  onDay: (dayIndex: number) => void; // 0-4 = Mon-Fri of the demo week
   onEditAvailability: () => void;
   onExportCalendar: () => void;
 }
 
-type CalendarItem =
-  | { kind: "class"; id: string; title: string; day: number; start: number; end: number }
-  | { kind: "event"; id: string; title: string; day: number; start: number; end: number; cancelled: boolean };
+/** Chosen-event status shown on blocks and chips. */
+interface ItemStatus {
+  /** Short tag ("Conflict", "Full", "Check") or null. */
+  tag: string | null;
+  /** Full reason from the planner's issue() check. */
+  reason: string | null;
+}
 
-/**
- * Get items for a given ISO date string.
- * - Events: shown only on their demo-week date (chosen events only).
- * - Classes: repeat on their weekday index for all weeks (day/week view only).
- * `includeClasses` should be false for month/year views per requirements.
- */
-function itemsForDate(
-  iso: string,
-  state: DemoState,
-  includeClasses: boolean,
-): CalendarItem[] {
-  const items: CalendarItem[] = [];
-
-  if (includeClasses) {
-    // Classes repeat every week on their weekday (0=Mon…4=Fri).
-    const wdIdx = isoWeekdayIndex(iso); // 0=Mon…6=Sun
-    if (wdIdx < 5) { // only weekdays
-      for (const b of state.blocks) {
-        if (b.day === wdIdx) {
-          items.push({ kind: "class", ...b });
-        }
-      }
+function useStatuses(state: DemoState, events: CampusEvent[]) {
+  return useMemo(() => {
+    const map = new Map<string, ItemStatus>();
+    for (const id of state.plan) {
+      const e = events.find((x) => x.id === id);
+      if (!e) continue;
+      const reason = issue(e, state, events);
+      map.set(id, { tag: attentionTag(reason), reason });
     }
-  }
+    return map;
+  }, [state, events]);
+}
 
-  // Events appear only on their specific demo-week date.
-  const dayIdx = demoDayIndex(iso);
-  if (dayIdx >= 0) {
-    for (const e of EVENTS) {
-      if (e.day === dayIdx && state.plan.includes(e.id)) {
-        items.push({
-          kind: "event",
-          id: e.id,
-          title: e.title,
-          day: e.day,
-          start: e.start,
-          end: e.end,
-          cancelled: state.cancelled.includes(e.id),
-        });
-      }
-    }
+function itemLabel(item: CalendarItem, status?: ItemStatus): string {
+  const parts = [`${item.title}, ${time(item.start)}–${time(item.end)}`];
+  if (item.kind === "event") {
+    if (item.cancelled) parts.push("Cancelled");
+    if (item.moved) parts.push("Time changed");
+    if (status?.tag && status.reason) parts.push(`${status.tag}: ${status.reason}`);
   }
-
-  return sortByStart(items);
+  return parts.join(", ");
 }
 
 /** Demo-week range banner shown when outside the demo week. */
@@ -131,174 +122,162 @@ function DemoWeekBanner({ onGoToDemo }: { onGoToDemo: () => void }) {
 function DayColumn({
   iso,
   items,
-  isToday,
+  grid,
+  showNow,
+  statuses,
   onDetail,
 }: {
   iso: string;
   items: CalendarItem[];
-  isToday: boolean;
+  grid: { start: number; end: number };
+  showNow: boolean;
+  statuses: Map<string, ItemStatus>;
   onDetail: (id: string) => void;
 }) {
-  const nowMinute = demoNowMinute();
-  const totalMin = (GRID_END - GRID_START) * 60;
-  const nowPct = ((nowMinute - GRID_START * 60) / totalMin) * 100;
+  const totalMin = (grid.end - grid.start) * 60;
+  const nowPct = ((DEMO_NOW_MINUTE - grid.start * 60) / totalMin) * 100;
   const layout = layoutColumns(items);
 
   return (
     <div className="gcal-day-col" aria-label={`${DAY_NAMES_FULL[isoWeekdayIndex(iso)]}, ${shortDate(iso)}`}>
-      {/* Items */}
       {layout.map(({ item, col, totalCols }) => {
-        const { top, height } = itemPosition(item.start, item.end, GRID_START, GRID_END);
+        const { top, height } = itemPosition(item.start, item.end, grid.start, grid.end);
         const widthPct = 92 / totalCols; // leave 4% gap on each side
         const leftPct = 4 + col * widthPct;
-        const isCancelled = item.kind === "event" && item.cancelled;
-        const cls = [
-          "gcal-event-block",
-          item.kind === "class" ? "gcal-class" : "gcal-chosen",
-          isCancelled ? "gcal-cancelled" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
+        const style = { top, height, left: `${leftPct}%`, width: `${widthPct}%` };
+        const timeText = `${time(item.start)}–${time(item.end)}`;
 
-        const label = `${item.title}, ${time(item.start)}–${time(item.end)}${isCancelled ? ", Cancelled" : ""}`;
-        const titleAttr = `${item.title} · ${time(item.start)}–${time(item.end)}${isCancelled ? " (Cancelled)" : ""}`;
-
-        if (item.kind === "event") {
+        if (item.kind === "class") {
+          const label = itemLabel(item);
           return (
-            <button
-              key={item.id}
-              className={cls}
-              style={{ top, height, left: `${leftPct}%`, width: `${widthPct}%` }}
-              onClick={() => onDetail(item.id)}
-              aria-label={label}
-              title={titleAttr}
-            >
+            <div key={item.id} className="gcal-event-block gcal-class" style={style} role="note" aria-label={label} title={label}>
               <strong>{item.title}</strong>
-              <span>{isCancelled ? "Cancelled" : `${time(item.start)}–${time(item.end)}`}</span>
-            </button>
-          );
-        } else {
-          return (
-            <div
-              key={item.id}
-              className={cls}
-              style={{ top, height, left: `${leftPct}%`, width: `${widthPct}%` }}
-              role="note"
-              aria-label={label}
-              title={titleAttr}
-            >
-              <strong>{item.title}</strong>
-              <span>{time(item.start)}–{time(item.end)}</span>
+              <span>{timeText}</span>
             </div>
           );
         }
+
+        const status = statuses.get(item.id);
+        const attention = !item.cancelled && status?.tag;
+        const label = itemLabel(item, status);
+        const cls = [
+          "gcal-event-block",
+          "gcal-chosen",
+          item.cancelled ? "gcal-cancelled" : "",
+          attention ? "gcal-attention" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return (
+          <button key={item.id} className={cls} style={style} onClick={() => onDetail(item.id)} aria-label={label} title={label}>
+            <strong>{item.title}</strong>
+            <span>{item.cancelled ? "Cancelled" : timeText}</span>
+            {(attention || item.moved) && !item.cancelled ? (
+              <span className="gcal-tags">
+                {attention ? (
+                  <em className="gcal-tag gcal-tag-attention">
+                    <span className="gcal-tag-icon" aria-hidden="true">⚠</span>
+                    <span className="gcal-tag-label">{status!.tag}</span>
+                  </em>
+                ) : null}
+                {item.moved ? (
+                  <em className="gcal-tag">
+                    <span className="gcal-tag-icon" aria-hidden="true">↻</span>
+                    <span className="gcal-tag-label">Time changed</span>
+                  </em>
+                ) : null}
+              </span>
+            ) : null}
+          </button>
+        );
       })}
 
-      {/* "Now" line */}
-      {isToday && nowMinute >= GRID_START * 60 && nowMinute <= GRID_END * 60 && (
-        <div
-          className="gcal-now-line"
-          style={{ top: `${nowPct}%` }}
-          aria-hidden="true"
-        />
-      )}
+      {showNow && DEMO_NOW_MINUTE >= grid.start * 60 && DEMO_NOW_MINUTE <= grid.end * 60 ? (
+        <div className="gcal-now-line" style={{ top: `${nowPct}%` }} aria-hidden="true" />
+      ) : null}
     </div>
   );
 }
 
 /**
- * Shared time-grid scaffold (used by both Day and Week views).
- *
- * Layout (fix for header/body alignment):
- *  .gcal-scroll-host   — horizontal scroll for phones (overflow-x: auto)
- *    .gcal-time-grid-wrap  — vertical scroll (overflow-y: auto, scrollbar-gutter: stable)
- *      .gcal-col-headers   — sticky top:0 INSIDE the vertical scroller, so it
- *                             sits in the same box and shares the exact same width
- *                             (scrollbar-gutter lane included).
- *      .gcal-time-grid     — day columns
+ * Shared time-grid scaffold (Day and Week views).
+ *  .gcal-scroll-host       horizontal scroll for phones
+ *    .gcal-time-grid-wrap  vertical scroll; the sticky header lives inside it
+ *      .gcal-col-headers   so header and columns share one width
+ *      .gcal-time-grid     day columns
  */
 function TimeGrid({
   dates,
   state,
+  events,
+  grid,
   today,
+  statuses,
   onDetail,
   onDay,
 }: {
   dates: string[];
   state: DemoState;
-  today: string;
+  events: CampusEvent[];
+  grid: { start: number; end: number };
+  today: string | null;
+  statuses: Map<string, ItemStatus>;
   onDetail: (id: string) => void;
   onDay: (dayIndex: number) => void;
 }) {
-  const demoWeek = demoWeekDates();
+  const hours = Array.from({ length: grid.end - grid.start }, (_, i) => grid.start + i);
+  // The grid is in campus time, so the demo clock (Mon 9:00 AM campus time)
+  // sits on the campus demo date; draw it only when that is also "today".
+  const nowDate = DEMO.week_start;
 
   return (
-    /* Horizontal scroll for phones */
     <div className="gcal-scroll-host">
-      {/* Vertical scroll — header lives INSIDE here so they share the same width */}
       <div className="gcal-time-grid-wrap">
-        {/* Sticky column-header row */}
         <div className="gcal-col-headers">
           <div className="gcal-gutter" aria-hidden="true" />
           {dates.map((iso) => {
             const wdi = isoWeekdayIndex(iso);
             const isToday = iso === today;
             const demoIdx = demoDayIndex(iso);
-            const showAdd = demoWeek.includes(iso) && isWeekday(iso);
+            const showAdd = demoIdx >= 0 && isWeekday(iso);
             return (
               <div key={iso} className={`gcal-col-head ${isToday ? "gcal-today-head" : ""}`}>
-                <span className="gcal-dow">
-                  {dates.length === 1 ? DAY_NAMES_FULL[wdi] : DAY_NAMES_SHORT[wdi]}
-                </span>
-                <span className={`gcal-dom ${isToday ? "gcal-today-dot" : ""}`}>
-                  {dayOfMonth(iso)}
-                </span>
-                {/* "+" find-an-event button in the header */}
-                {showAdd && (
-                  <button
-                    className="gcal-add-header-btn"
-                    aria-label={`Find an event on ${DAY_NAMES_FULL[wdi]}`}
-                    onClick={() => onDay(demoIdx)}
-                  >
+                <span className="gcal-dow">{dates.length === 1 ? DAY_NAMES_FULL[wdi] : DAY_NAMES_SHORT[wdi]}</span>
+                <span className={`gcal-dom ${isToday ? "gcal-today-dot" : ""}`}>{dayOfMonth(iso)}</span>
+                {showAdd ? (
+                  <button className="gcal-add-header-btn" aria-label={`Find an event on ${DAY_NAMES_FULL[wdi]}`} onClick={() => onDay(demoIdx)}>
                     <Icon name="plus" />
                   </button>
-                )}
+                ) : null}
               </div>
             );
           })}
         </div>
 
-        {/* Time-grid body */}
         <div className="gcal-time-grid">
-          {/* Gutter with hour labels */}
           <div className="gcal-gutter">
-            {HOURS.map((h) => (
+            {hours.map((h) => (
               <div key={h} className="gcal-hour-label">
-                {fmtHour(h)}
+                {time(h * 60)}
               </div>
             ))}
           </div>
-
-          {/* Hour grid lines (behind columns) */}
           <div className="gcal-grid-lines" aria-hidden="true">
-            {HOURS.map((h) => (
+            {hours.map((h) => (
               <div key={h} className="gcal-grid-line" />
             ))}
           </div>
-
-          {/* Day columns */}
-          {dates.map((iso) => {
-            const items = itemsForDate(iso, state, true);
-            return (
-              <DayColumn
-                key={iso}
-                iso={iso}
-                items={items}
-                isToday={iso === today}
-                onDetail={onDetail}
-              />
-            );
-          })}
+          {dates.map((iso) => (
+            <DayColumn
+              key={iso}
+              iso={iso}
+              items={itemsForDate(iso, state, events, EVENTS, true)}
+              grid={grid}
+              showNow={iso === nowDate && iso === today}
+              statuses={statuses}
+              onDetail={onDetail}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -310,72 +289,97 @@ function TimeGrid({
 function MonthView({
   anchor,
   state,
+  events,
   today,
+  statuses,
   onDayClick,
+  onDetail,
 }: {
   anchor: string;
   state: DemoState;
-  today: string;
+  events: CampusEvent[];
+  today: string | null;
+  statuses: Map<string, ItemStatus>;
   onDayClick: (iso: string) => void;
+  onDetail: (id: string) => void;
 }) {
   const dates = monthGridDates(anchor);
-  const demoWeek = demoWeekDates();
-  const demoMon = demoWeek[0];
-  const demoFri = demoWeek[4];
+  const demoWeek = weekDates();
 
   return (
     <div className="gcal-month">
-      {/* Weekday header — Fix #1: same grid-template-columns as the grid */}
       <div className="gcal-month-header">
         {DAY_NAMES_SHORT.map((d) => (
-          <div key={d} className="gcal-month-dow">{d}</div>
+          <div key={d} className="gcal-month-dow">
+            {d}
+          </div>
         ))}
       </div>
 
-      {/* Grid cells — Fix #1: every column equal width */}
       <div className="gcal-month-grid">
         {dates.map((iso) => {
-          const isThisMonth = sameMonth(iso, anchor);
           const isToday = iso === today;
-          const isDemoWeekRange = iso >= demoMon && iso <= demoFri;
-          const dayIdx = demoDayIndex(iso);
-          const chosenEvents = sortByStart(
-            dayIdx >= 0
-              ? EVENTS.filter((e) => e.day === dayIdx && state.plan.includes(e.id))
-              : []
+          const inDemoWeek = demoWeek.includes(iso);
+          const chosen = itemsForDate(iso, state, events, EVENTS, false).filter(
+            (i): i is Extract<CalendarItem, { kind: "event" }> => i.kind === "event",
           );
-          const MAX_CHIPS = 3;
-          const overflow = chosenEvents.length - MAX_CHIPS;
-          // "Demo week" label only on the Monday cell
-          const showDemoLabel = isDemoWeekRange && isoWeekdayIndex(iso) === 0;
+          const overflow = chosen.length - MAX_CHIPS;
+          const dayName = `${DAY_NAMES_FULL[isoWeekdayIndex(iso)]}, ${shortDate(iso)}`;
 
           return (
-            <button
+            // The whole cell opens Day view for mouse users; the date button is
+            // the keyboard/screen-reader route. Chips are separate buttons.
+            <div
               key={iso}
               className={[
                 "gcal-month-cell",
-                !isThisMonth ? "gcal-other-month" : "",
+                !sameMonth(iso, anchor) ? "gcal-other-month" : "",
                 isToday ? "gcal-today-cell" : "",
-                isDemoWeekRange ? "gcal-demo-week-cell" : "",
-              ].filter(Boolean).join(" ")}
+                inDemoWeek ? "gcal-demo-week-cell" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               onClick={() => onDayClick(iso)}
-              aria-label={`${DAY_NAMES_FULL[isoWeekdayIndex(iso)]}, ${shortDate(iso)}${isToday ? ", Today" : ""}`}
             >
-              <span className={`gcal-month-day-num ${isToday ? "gcal-today-dot" : ""}`}>
+              <button
+                className={`gcal-month-day-num ${isToday ? "gcal-today-dot" : ""}`}
+                aria-label={`${dayName}${isToday ? ", Today" : ""}${chosen.length ? `, ${chosen.length} event${chosen.length === 1 ? "" : "s"}` : ""}. Open day`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDayClick(iso);
+                }}
+              >
                 {dayOfMonth(iso)}
-              </span>
-              {showDemoLabel && (
-                <span className="gcal-demo-week-label">Demo week</span>
-              )}
-              {chosenEvents.slice(0, MAX_CHIPS).map((e) => (
-                <span key={e.id} className={`gcal-month-chip ${state.cancelled.includes(e.id) ? "gcal-chip-cancelled" : ""}`}>
-                  {time(e.start)} {e.title}
-                </span>
-              ))}
-              {overflow > 0 && (
-                <span className="gcal-month-more">+{overflow} more</span>
-              )}
-            </button>
+              </button>
+              {inDemoWeek && isoWeekdayIndex(iso) === 0 ? <span className="gcal-demo-week-label">Demo week</span> : null}
+              {chosen.slice(0, MAX_CHIPS).map((item) => {
+                const status = statuses.get(item.id);
+                const attention = !item.cancelled && status?.tag;
+                return (
+                  <button
+                    key={item.id}
+                    className={[
+                      "gcal-month-chip",
+                      item.cancelled ? "gcal-chip-cancelled" : "",
+                      attention ? "gcal-chip-attention" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    aria-label={itemLabel(item, status)}
+                    title={itemLabel(item, status)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDetail(item.id);
+                    }}
+                  >
+                    <span className="gcal-chip-text">
+                      {time(item.start)} {item.title}
+                    </span>
+                  </button>
+                );
+              })}
+              {overflow > 0 ? <span className="gcal-month-more">+{overflow}</span> : null}
+            </div>
           );
         })}
       </div>
@@ -390,54 +394,52 @@ function MiniMonth({
   state,
   today,
   onDayClick,
+  monthRef,
 }: {
   monthIso: string;
   state: DemoState;
-  today: string;
+  today: string | null;
   onDayClick: (iso: string) => void;
+  monthRef?: Ref<HTMLDivElement>;
 }) {
   const dates = monthGridDates(monthIso);
-  const demoWeek = demoWeekDates();
-  const demoMon = demoWeek[0];
-  const demoFri = demoWeek[4];
-  const d = new Date(`${monthIso}T12:00:00Z`);
-  const monthName = new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(d);
+  const demoWeek = weekDates();
+  const monthName = new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(
+    new Date(`${monthIso}T12:00:00Z`),
+  );
 
   return (
-    <div className="gcal-mini-month">
+    <div className="gcal-mini-month" ref={monthRef}>
       <div className="gcal-mini-month-title">{monthName}</div>
       <div className="gcal-mini-header">
         {DAY_NAMES_SHORT.map((n) => (
-          <div key={n} className="gcal-mini-dow">{n.slice(0, 1)}</div>
+          <div key={n} className="gcal-mini-dow">
+            {n.slice(0, 1)}
+          </div>
         ))}
       </div>
       <div className="gcal-mini-grid">
         {dates.map((iso) => {
           const isThisMonth = sameMonth(iso, monthIso);
           const isToday = iso === today;
-          const isDemoRange = iso >= demoMon && iso <= demoFri;
           const dayIdx = demoDayIndex(iso);
-          const hasEvent = dayIdx >= 0 && EVENTS.some(
-            (e) => e.day === dayIdx && state.plan.includes(e.id),
-          );
-
-          // Fix #3: today wins over demo-range: put gcal-mini-today LAST so
-          // it overrides gcal-mini-demo in CSS specificity (and we also add a
-          // more-specific CSS rule to be sure).
+          const hasEvent = dayIdx >= 0 && state.plan.some((id) => EVENTS.find((e) => e.id === id)?.day === dayIdx);
           return (
             <button
               key={iso}
               className={[
                 "gcal-mini-cell",
                 !isThisMonth ? "gcal-mini-other" : "",
-                isDemoRange && isThisMonth ? "gcal-mini-demo" : "",
+                demoWeek.includes(iso) && isThisMonth ? "gcal-mini-demo" : "",
                 isToday ? "gcal-mini-today" : "",
-              ].filter(Boolean).join(" ")}
+              ]
+                .filter(Boolean)
+                .join(" ")}
               onClick={() => onDayClick(iso)}
-              aria-label={`${shortDate(iso)}${isToday ? ", Today" : ""}`}
+              aria-label={`${shortDate(iso)}${isToday ? ", Today" : ""}${hasEvent ? ", has events" : ""}`}
             >
               {dayOfMonth(iso)}
-              {hasEvent && <span className="gcal-event-dot" aria-hidden="true" />}
+              {hasEvent ? <span className="gcal-event-dot" aria-hidden="true" /> : null}
             </button>
           );
         })}
@@ -454,10 +456,16 @@ function YearView({
 }: {
   anchor: string;
   state: DemoState;
-  today: string;
+  today: string | null;
   onDayClick: (iso: string) => void;
 }) {
   const months = yearMonthStarts(anchor);
+  const focusMonth = monthStart(anchor);
+  const focusRef = useRef<HTMLDivElement>(null);
+  // Bring the current month into view (on phones the year is one long column).
+  useEffect(() => {
+    focusRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [focusMonth]);
   return (
     <div className="gcal-year">
       {months.map((m) => (
@@ -467,6 +475,7 @@ function YearView({
           state={state}
           today={today}
           onDayClick={onDayClick}
+          monthRef={m === focusMonth ? focusRef : undefined}
         />
       ))}
     </div>
@@ -475,95 +484,51 @@ function YearView({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function CalendarView({
-  state,
-  onDetail,
-  onDay,
-  onEditAvailability,
-  onExportCalendar,
-}: CalendarViewProps) {
-  const today = demoToday(); // "2026-11-02"
-  const [view, setView] = useState<CalView>("week");
-  const [anchor, setAnchor] = useState<string>(today);
+export function CalendarView({ state, onDetail, onDay, onEditAvailability, onExportCalendar }: CalendarViewProps) {
+  const zone = isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone;
+  const today = todayIso(zone);
+  const home = today ?? DEMO.week_start;
 
-  // Check if the current view window contains the demo week
-  function isShowingDemoWeek(): boolean {
-    const demoWeek = demoWeekDates();
-    switch (view) {
-      case "day":
-        return demoWeek.includes(anchor);
-      case "week": {
-        const wDates = weekDatesFor(anchor);
-        return demoWeek.some((d) => wDates.includes(d));
-      }
-      case "month":
-        return demoWeek.some((d) => sameMonth(d, anchor));
-      case "year":
-        return demoWeek.some((d) => d.startsWith(anchor.slice(0, 4)));
-    }
-  }
+  const [position, setPosition] = useState(() => parseSavedPosition(readSavedPosition(), home));
+  const { view, anchor } = position;
+  useEffect(() => writeSavedPosition(position), [position]);
+  const setView = (v: CalView) => setPosition((p) => ({ ...p, view: v }));
+  const setAnchor = (a: string) => setPosition((p) => ({ ...p, anchor: a }));
 
-  // Fix #10: remove the duplicate setAnchor call
-  function goToToday() {
-    setAnchor(today);
-  }
+  const events = useMemo(() => effectiveEvents(state.appliedUpdateIds ?? []), [state.appliedUpdateIds]);
+  // Size the grid from the whole catalog plus busy times, so it never clips
+  // an item and keeps the same height in every week.
+  const grid = useMemo(() => gridHours([...events, ...state.blocks]), [events, state.blocks]);
+  const statuses = useStatuses(state, events);
 
-  function goToDemoWeek() {
-    setView("week");
-    setAnchor(today);
-  }
+  const demoWeek = weekDates();
+  const showingDemoWeek =
+    view === "day"
+      ? demoWeek.includes(anchor)
+      : view === "week"
+        ? demoWeek.some((d) => weekDatesFor(anchor).includes(d))
+        : view === "month"
+          ? demoWeek.some((d) => sameMonth(d, anchor))
+          : demoWeek.some((d) => d.startsWith(anchor.slice(0, 4)));
 
-  function handleDayClick(iso: string) {
-    setView("day");
-    setAnchor(iso);
-  }
+  const goToDemoWeek = () => setPosition({ view: "week", anchor: home });
+  const openDay = (iso: string) => setPosition({ view: "day", anchor: iso });
 
-  const viewDates: string[] = view === "day"
-    ? [anchor]
-    : view === "week"
-    ? weekDatesFor(anchor)
-    : [];
-
-  const prevLabel = view === "day" ? "Previous day"
-    : view === "week" ? "Previous week"
-    : view === "month" ? "Previous month"
-    : "Previous year";
-
-  const nextLabel = view === "day" ? "Next day"
-    : view === "week" ? "Next week"
-    : view === "month" ? "Next month"
-    : "Next year";
+  const viewDates = view === "day" ? [anchor] : view === "week" ? weekDatesFor(anchor) : [];
+  const unit = view === "day" ? "day" : view === "week" ? "week" : view === "month" ? "month" : "year";
+  const timeGridView = view === "day" || view === "week";
 
   return (
     <div className="gcal-root">
-      {/*
-        Fix #8: two-row toolbar layout at ≥ 1024 px:
-        Row 1: Today ‹ › title | switcher
-        Row 2:                 | Edit availability  Export calendar
-        This keeps the switcher anchored to the top-right and prevents
-        the Day/Week/Month/Year buttons from moving when the title changes.
-      */}
       <div className="gcal-toolbar">
         <div className="gcal-toolbar-left">
-          <button
-            className="btn small gcal-today-btn"
-            onClick={goToToday}
-            aria-label="Go to today"
-          >
+          <button className="btn small gcal-today-btn" onClick={() => setAnchor(home)} aria-label="Go to today">
             Today
           </button>
-          <button
-            className="gcal-nav-btn"
-            onClick={() => setAnchor(navigate(anchor, view, -1))}
-            aria-label={prevLabel}
-          >
+          <button className="gcal-nav-btn" onClick={() => setAnchor(navigate(anchor, view, -1))} aria-label={`Previous ${unit}`}>
             ‹
           </button>
-          <button
-            className="gcal-nav-btn"
-            onClick={() => setAnchor(navigate(anchor, view, 1))}
-            aria-label={nextLabel}
-          >
+          <button className="gcal-nav-btn" onClick={() => setAnchor(navigate(anchor, view, 1))} aria-label={`Next ${unit}`}>
             ›
           </button>
           <span className="gcal-title">{viewTitle(anchor, view)}</span>
@@ -575,12 +540,7 @@ export function CalendarView({
               {(["Day", "Week", "Month", "Year"] as const).map((v) => {
                 const val = v.toLowerCase() as CalView;
                 return (
-                  <button
-                    key={v}
-                    className={`gcal-switch-btn ${view === val ? "active" : ""}`}
-                    aria-pressed={view === val}
-                    onClick={() => setView(val)}
-                  >
+                  <button key={v} className={`gcal-switch-btn ${view === val ? "active" : ""}`} aria-pressed={view === val} onClick={() => setView(val)}>
                     {v}
                   </button>
                 );
@@ -599,58 +559,65 @@ export function CalendarView({
         </div>
       </div>
 
-      {/* Legend */}
       <div className="legend gcal-legend">
-        <span><i className="dot" />Busy commitments</span>
-        <span><i className="dot green" />Chosen events</span>
-        <span>{DEMO.time_zone} · {state.buffer}-minute travel buffer</span>
+        {timeGridView ? (
+          <span>
+            <i className="dot" />
+            Busy commitments
+          </span>
+        ) : null}
+        <span>
+          <i className="dot green" />
+          Chosen events
+        </span>
+        <span>
+          <i className="dot amber" />
+          Needs attention
+        </span>
+        {!timeGridView ? <span>Classes appear in Day and Week view.</span> : null}
+        <span>
+          Times in campus time ({DEMO.time_zone}) · {state.buffer}-minute travel buffer
+        </span>
       </div>
 
-      {/* Demo-week note (when outside demo week) */}
-      {!isShowingDemoWeek() && (view === "day" || view === "week") && (
-        <DemoWeekBanner onGoToDemo={goToDemoWeek} />
-      )}
+      {!showingDemoWeek && timeGridView ? <DemoWeekBanner onGoToDemo={goToDemoWeek} /> : null}
 
-      {/* Calendar body */}
-      {(view === "day" || view === "week") && (
+      {timeGridView ? (
         <div className="gcal-body panel">
           <TimeGrid
             dates={viewDates}
             state={state}
+            events={events}
+            grid={grid}
             today={today}
+            statuses={statuses}
             onDetail={onDetail}
             onDay={onDay}
           />
         </div>
-      )}
+      ) : null}
 
-      {view === "month" && (
+      {view === "month" ? (
         <div className="gcal-body panel">
-          {!isShowingDemoWeek() && (
-            <DemoWeekBanner onGoToDemo={goToDemoWeek} />
-          )}
+          {!showingDemoWeek ? <DemoWeekBanner onGoToDemo={goToDemoWeek} /> : null}
           <MonthView
             anchor={monthStart(anchor)}
             state={state}
+            events={events}
             today={today}
-            onDayClick={handleDayClick}
+            statuses={statuses}
+            onDayClick={openDay}
+            onDetail={onDetail}
           />
         </div>
-      )}
+      ) : null}
 
-      {view === "year" && (
+      {view === "year" ? (
         <div className="gcal-body panel">
-          {!isShowingDemoWeek() && (
-            <DemoWeekBanner onGoToDemo={goToDemoWeek} />
-          )}
-          <YearView
-            anchor={anchor}
-            state={state}
-            today={today}
-            onDayClick={handleDayClick}
-          />
+          {!showingDemoWeek ? <DemoWeekBanner onGoToDemo={goToDemoWeek} /> : null}
+          <YearView anchor={anchor} state={state} today={today} onDayClick={openDay} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
