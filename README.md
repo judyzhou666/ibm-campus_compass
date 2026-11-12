@@ -214,12 +214,11 @@ Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher
 - **Phones:** Month shows dots instead of cut-off text; Year shows one month per row with 44×36 px day targets and scrolls the current month into view.
 - **Cleanup:** one shared `findOnDay` handler in `App.tsx`; `calendarGrid.ts` reuses `weekDates` / `demoTodayIndex` from `config.ts`; unused helpers removed.
 
-**Related fixes outside the calendar (same "moved event" bug class, plus the forum):**
+**Related fixes outside the calendar (same "moved event" bug class):**
 - Event details: "Starts … in your time zone" and the side panel date/room now use the moved time and changed room.
 - Calendar export (.ics) uses moved times and changed rooms.
 - Dashboard / AI Planner week strip, AI Planner agenda and suggestion cards use moved times.
 - Profile: adding a busy time checks conflicts against moved times.
-- Forum: likes are saved with the browser-local demo state (they used to reset when you left the page), and comment counts show the comments that actually exist (they used to add a hidden padding number).
 
 **Test results:**
 - `npm test`: 175 TypeScript tests (33 calendar tests), 5 Wiki tests — all pass.

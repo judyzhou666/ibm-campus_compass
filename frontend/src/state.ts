@@ -44,7 +44,6 @@ export const fresh = (): DemoState => ({
   joinedCommunities: [],
   posts: [],
   comments: [],
-  likes: [],
   postDraft: null,
   draft: [],
   constraints: {},
@@ -187,11 +186,6 @@ export function restore(): DemoState {
         ? value.joinedCommunities.filter((id: unknown) =>
             COMMUNITIES.some((c) => c.id === id),
           )
-        : [],
-      likes: Array.isArray(value.likes)
-        ? value.likes
-            .filter((k: unknown) => typeof k === "string" && /^(post|comment):/.test(k))
-            .slice(0, 500)
         : [],
       joined: Array.isArray(value.joined)
         ? value.joined.filter((s: unknown) => typeof s === "string")

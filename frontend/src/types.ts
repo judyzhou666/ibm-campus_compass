@@ -127,8 +127,6 @@ export interface DemoState extends Schedule {
   joinedCommunities: string[];
   posts: Post[];
   comments: ForumComment[];
-  /** Forum likes saved in this browser: "post:<id>" or "comment:<postId>:<index>". */
-  likes: string[];
   postDraft: PostDraft | null;
   draft: string[];
   constraints: Constraints;
