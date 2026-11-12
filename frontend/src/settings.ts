@@ -1,3 +1,7 @@
+import { EVENTS } from "./data.ts";
+import { issue } from "./planner.ts";
+import type { DemoState } from "./types.ts";
+
 /**
  * Settings page structure: the sections in its left bar and the settings in
  * each, with the words "Search settings" matches against. Settings.tsx renders
@@ -184,4 +188,22 @@ export function searchSettings(query: string, sections = SETTINGS_SECTIONS) {
       }),
     }))
     .filter((s) => s.items.length);
+}
+
+/**
+ * The planned event that turning the 15-minute travel buffer on would put
+ * into a new clash, if any. Turning it off never needs a check, and events
+ * that already have a problem (full, cancelled, already clashing) are not the
+ * buffer's doing, so they never block the switch.
+ */
+export function bufferBlocker(state: DemoState, minutes = 15) {
+  if (minutes <= state.buffer) return undefined;
+  const next = { ...state, buffer: minutes };
+  return EVENTS.find(
+    (e) =>
+      state.plan.includes(e.id) &&
+      !state.cancelled.includes(e.id) &&
+      !issue(e, state) &&
+      issue(e, next)?.startsWith("Conflicts with"),
+  );
 }

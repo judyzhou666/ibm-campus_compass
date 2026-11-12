@@ -4278,6 +4278,11 @@ button.gcal-event-block {
   border: 1px solid #ffffff40;
   backdrop-filter: blur(4px);
   transition: background 0.15s;
+}
+/* Only a visible arrow takes clicks: on touch screens (no hover) the edges
+   stay part of the slide, so a tap there opens the event as expected. */
+.announce-arrow.show span,
+.announce-arrow:focus-visible span {
   pointer-events: auto;
 }
 .announce-arrow span:hover {

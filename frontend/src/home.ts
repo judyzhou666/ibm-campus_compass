@@ -7,7 +7,9 @@
  * No AI is involved; the ranking is a simple, explainable score.
  */
 import { EVENTS } from "./data.ts";
+import { matchesFilter } from "./filters.ts";
 import { issue } from "./planner.ts";
+import { effectiveEvents, effectiveUpdate, hasConflict } from "./updates.ts";
 import { fresh } from "./state.ts";
 import type { AppNotification } from "./notifications.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
@@ -38,9 +40,24 @@ export const HOME_CATEGORIES: HomeCategory[] = [
 
 /** Number of catalog events an Explore filter would show. */
 export function categoryCount(filter: string, events = EVENTS) {
-  return events.filter((e) =>
-    filter === "Free Food" ? e.food === "Free meal" : e.category === filter,
-  ).length;
+  return events.filter((e) => matchesFilter(e, filter)).length;
+}
+
+/**
+ * Start time and room after applied synthetic updates, read the same way as
+ * the event cards: conflicting notices leave the catalog values in place.
+ */
+export function withUpdates(e: CampusEvent, appliedIds: string[]) {
+  const upd = hasConflict(e.id, appliedIds)
+    ? null
+    : effectiveUpdate(e.id, appliedIds);
+  return {
+    start:
+      upd?.kind === "time_moved" && upd.new_start != null
+        ? upd.new_start
+        : e.start,
+    location: upd?.new_location ?? e.location,
+  };
 }
 
 /** Notifications that point at a catalog event, newest first. */
@@ -116,8 +133,11 @@ export function homeRecommendations(
   limit = 8,
   events = EVENTS,
 ): HomeRecommendations {
+  // Fold applied updates in once rather than once per issue() call.
+  const applied = state.appliedUpdateIds ?? [];
+  const effective = applied.length ? effectiveEvents(applied) : undefined;
   const open = events.filter(
-    (e) => !state.plan.includes(e.id) && !issue(e, state),
+    (e) => !state.plan.includes(e.id) && !issue(e, state, effective),
   );
   if (hasPreferences(state)) {
     const ranked = [...open].sort(
@@ -146,7 +166,8 @@ export function homeRecommendations(
 
 /** One-line explanation of what the recommendations are based on. */
 export function recommendationBasis(state: DemoState, personalized: boolean) {
-  if (!personalized) return "Popular picks across campus this demo week.";
+  if (!personalized)
+    return "A mix of events from every category this demo week.";
   const parts: string[] = [];
   if (state.interests.length)
     parts.push(`your interests (${state.interests.join(", ")})`);

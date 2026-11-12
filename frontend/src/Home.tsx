@@ -1,13 +1,14 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DEMO, dayLabel } from "./config.ts";
 import { DAYS, EVENTS, time } from "./data.ts";
-import { Button, EventCard, Icon } from "./components.tsx";
+import { Button, EventCard, Icon, posterTone } from "./components.tsx";
 import {
   HOME_CATEGORIES,
   announcements,
   categoryCount,
   homeRecommendations,
   recommendationBasis,
+  withUpdates,
 } from "./home.ts";
 import type { AppNotification } from "./notifications.ts";
 import type { DemoState } from "./types.ts";
@@ -17,9 +18,6 @@ const kicker = (n: AppNotification) => {
   const lead = n.title.includes(":") ? n.title.split(":")[0] : "Announcement";
   return n.kind === "update" ? `${lead} · Synthetic update` : lead;
 };
-
-const tone = (category: string, topic: string) =>
-  topic === "Arts & culture" ? "arts" : category.toLowerCase();
 
 /** Width in px of the hover zone on each side that reveals an arrow. */
 const EDGE = 64;
@@ -38,11 +36,13 @@ const reducedMotion = () =>
 function Announcements({
   list,
   readIds,
+  appliedIds,
   onOpen,
   onViewAll,
 }: {
   list: AppNotification[];
   readIds: string[];
+  appliedIds: string[];
   onOpen: (n: AppNotification) => void;
   onViewAll: () => void;
 }) {
@@ -97,6 +97,7 @@ function Announcements({
         >
           {list.map((n, i) => {
             const e = EVENTS.find((x) => x.id === n.eventId)!;
+            const now = withUpdates(e, appliedIds);
             const current = i === at;
             return (
               <div
@@ -123,16 +124,16 @@ function Announcements({
                     <span className="announce-body">{n.body}</span>
                     <span className="announce-meta">
                       <Icon name="calendar" />
-                      {DAYS[e.day]}, {dayLabel(e.day)} · {time(e.start)}
+                      {DAYS[e.day]}, {dayLabel(e.day)} · {time(now.start)}
                       <Icon name="pin" />
-                      {e.location}
+                      {now.location}
                     </span>
                     <span className="announce-cta">
                       View event details <Icon name="arrow" />
                     </span>
                   </span>
                   <span
-                    className={`announce-art poster ${tone(e.category, e.topic)}`}
+                    className={`announce-art poster ${posterTone(e)}`}
                     aria-hidden="true"
                   >
                     <small>
@@ -215,20 +216,26 @@ export function Home({
   onDetail: (id: string) => void;
   onCalendar: () => void;
 }) {
-  const recs = homeRecommendations(state);
+  // Recommendations and counts only change with the demo state.
+  const recs = useMemo(() => homeRecommendations(state), [state]);
+  const counts = useMemo(
+    () => HOME_CATEGORIES.map((c) => categoryCount(c.filter)),
+    [],
+  );
   return (
     <div className="home">
       <h1 className="visually-hidden">Home</h1>
       <Announcements
         list={announcements(notifications)}
         readIds={state.readNotificationIds}
+        appliedIds={state.appliedUpdateIds}
         onOpen={onOpenAnnouncement}
         onViewAll={onViewNotifications}
       />
       <section className="home-categories" aria-labelledby="home-cat-title">
         <h2 id="home-cat-title">Browse by category</h2>
         <ul>
-          {HOME_CATEGORIES.map((c) => (
+          {HOME_CATEGORIES.map((c, i) => (
             <li key={c.label}>
               <button
                 className={`cat-entry ${c.tone}`}
@@ -238,7 +245,7 @@ export function Home({
                   <Icon name={c.icon} />
                 </span>
                 <strong>{c.label}</strong>
-                <small>{categoryCount(c.filter)} events</small>
+                <small>{counts[i]} events</small>
               </button>
             </li>
           ))}

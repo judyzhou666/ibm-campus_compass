@@ -32,7 +32,8 @@ test("a fresh profile has no stated preferences and gets the default mix", () =>
   assert.equal(recs.events.length, 8);
   // The default mix spans several categories rather than one.
   assert.ok(new Set(recs.events.map((e) => e.category)).size >= 4);
-  assert.match(recommendationBasis(state, false), /Popular picks/);
+  assert.match(recommendationBasis(state, false), /every category/);
+  assert.doesNotMatch(recommendationBasis(state, false), /popular/i);
 });
 
 test("stated preferences rank matching events first", () => {

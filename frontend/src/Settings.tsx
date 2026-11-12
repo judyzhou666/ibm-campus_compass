@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { DEMO, TIME_ZONES } from "./config.ts";
-import { EVENTS } from "./data.ts";
-import { issue } from "./planner.ts";
 import { relativeTime } from "./updates.ts";
 import { Button, Icon } from "./components.tsx";
 import {
   SETTINGS_SECTIONS,
+  bufferBlocker,
   searchSettings,
   type SettingItem,
 } from "./settings.ts";
@@ -65,19 +64,12 @@ export function Settings(p: Props) {
     : SETTINGS_SECTIONS.filter((s) => s.id === section);
 
   function setBuffer(on: boolean) {
-    const next = { ...state, buffer: on ? 15 : 0 };
-    const conflict = EVENTS.find(
-      (x) =>
-        next.plan.includes(x.id) &&
-        !next.cancelled.includes(x.id) &&
-        issue(x, next),
-    );
-    if (conflict) {
-      notify(
-        `Remove ${conflict.title} before enabling a longer travel buffer.`,
-      );
+    const blocker = on ? bufferBlocker(state) : undefined;
+    if (blocker) {
+      notify(`Remove ${blocker.title} before enabling a longer travel buffer.`);
       return;
     }
+    const next = { ...state, buffer: on ? 15 : 0 };
     update(() => next);
     notify("Travel buffer updated.");
   }

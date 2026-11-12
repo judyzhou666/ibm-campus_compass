@@ -2,6 +2,18 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## PR #17 review fixes — November 12, 2026
+
+- **Home banner** shows an event's updated time and room after synthetic updates (same rule as the event cards; conflicting notices keep the catalog values).
+- **Hidden announcement arrows** no longer take clicks: on touch screens, tapping near a slide's edge opens the event instead of silently changing slide.
+- **Event Buffer Time switch** only refuses to turn on when the 15 minutes would create a new clash; a planned event that is full, cancelled or already clashing no longer locks it, and turning it off is never blocked (`bufferBlocker` in `frontend/src/settings.ts`).
+- **Updates toast:** when an update affects your plan it now offers **Open AI Planner** (where "Find a replacement" lives) as well as View notifications, and the text says where to find it.
+- **Arts and Wellbeing** (Home entries and Explore chips) now also include events with that topic filed under another category, e.g. Film club evening and Wednesday noon run (Arts 2 → 7 events, Wellbeing 3 → 5). Explore and Home share one filter (`frontend/src/filters.ts`) and one poster-colour helper (`posterTone`).
+- **Honest label:** default recommendations read "A mix of events from every category this demo week." instead of "Popular picks".
+- **README** instructions that pointed at the removed Briefing were updated in place.
+- Home recommendations fold applied updates in once per render and are memoized.
+- **Verification:** `npm test` (200 TypeScript tests, including 5 in `tests/pr17-fixes.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass.
+
 ## My Dashboard: News — November 12, 2026
 
 - **News** now sits under the Weekly Calendar on My Dashboard (`frontend/src/News.tsx`, posts in `frontend/src/news.ts`). Each post is a card with poster art on the left (in the event-card colours) and, on the right, the title, date ("Updated …" for newsletters), "Posted by … for …" in italics, a short summary and "View event". Four posts show first; **Show more news** reveals the rest. On phones the art sits above the text.
@@ -64,8 +76,8 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 - **Notifications page:** reached only from the bell (not in the sidebar). It lists every notification, with unread titles in bold, and a filter panel: show only unread, sort newest/oldest, type, and sent on/after and on/before dates (campus time). Filters stay set while you open a message and come back.
 - **Back / swipe-back:** from a message, Back shows the Notifications page; Back again returns to the page the student was on.
 - **Data:** 8 fictional demo notifications (two start read), plus one notification per applied synthetic event update, labelled "Synthetic update". Read state is stored in the browser (`readNotificationIds`); older saved demos start with the default read set.
-- **Synthetic updates:** the bell no longer applies the next update batch on click. Use the "New synthetic event updates are available" row at the top of the dropdown, or "Check for updates" in This Week's Briefing.
-- **Dashboard:** the "A few things you might love" section (heading, category filters and three suggested cards) was removed. This Week's Briefing stays on My Dashboard.
+- **Synthetic updates:** the bell no longer applies the next update batch on click. Use the "New synthetic event updates are available" row at the top of the dropdown, Settings › Notifications, or the AI Planner's Event updates panel. (This Week's Briefing, mentioned here originally, was removed on November 12, 2026.)
+- **Dashboard:** the "A few things you might love" section (heading, category filters and three suggested cards) was removed. This Week's Briefing stayed on My Dashboard until it was removed on November 12, 2026; News now sits under the Weekly Calendar.
 - **To demo:** click the bell, open a notification, swipe or press Back to reach the Notifications page, filter to unread, then Back again to return.
 - **Verification:** `npm test` (150 TypeScript tests including 8 new ones in `tests/notifications.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in the browser at 1280px and 375px: dropdown, message page, Back to the list and then to the dashboard, unread filter kept across a message, bold unread titles, synthetic updates arriving as notifications, and no sideways scrolling. Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
 - **Limitation:** notifications are fixed fictional data; nothing is sent or received, and read state lives only in this browser.
@@ -91,7 +103,7 @@ A "full" synthetic update (u2 marks Community dinner & story exchange full) was 
 
 ## Visible synthetic update loop — November 12, 2026
 
-A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces "What changed" details in the Briefing panel and bell menu, and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.
+A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces each change in the bell menu and on the Notifications page (originally also in the Briefing panel, removed November 12, 2026), and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.
 
 ### What was added
 
@@ -104,7 +116,7 @@ A clearly synthetic "Check for updates" demo loop has been added. It applies pre
 
 **Types (`frontend/src/types.ts`)** — `EventUpdate`, `UpdateBatch` interfaces; `DemoState` gains `appliedUpdateIds` and `lastUpdateCheck`.
 
-**Briefing panel (`frontend/src/Briefing.tsx`)** — "Check for updates" button, timestamp, `UpdateFeed` component listing each change with kind badges, conflict notice, and "In your plan" highlight.
+**Briefing panel (`frontend/src/Briefing.tsx`)** — removed November 12, 2026. It had a "Check for updates" button, timestamp and an `UpdateFeed` listing each change; changes now appear as notifications.
 
 **Bell button and Planner panel (`frontend/src/App.tsx`)** — bell now calls `checkForUpdates`, shows a `!` badge when a new batch is available, replaces the static toast. A new "Event updates" section in the Planner sidebar provides the same action.
 
@@ -124,8 +136,8 @@ A clearly synthetic "Check for updates" demo loop has been added. It applies pre
 
 ### Demo usage
 
-1. Open the app; click the **bell** (topbar) or **Check for updates** in the Briefing panel or the Planner sidebar.
-2. Each click applies the next batch. The briefing shows "What changed since your last check" with kind badges.
+1. Open the app; click the **bell** (topbar), **Check for updates** in Settings › Notifications, or the Planner sidebar's Event updates panel.
+2. Each click applies the next batch. The message offers **View notifications**, where each change is listed; if a planned event is affected it also offers **Open AI Planner** for "Find a replacement".
 3. After batch 3, e5 shows "Needs confirmation" — two conflicting notices, no choice made.
 4. Planning and enrollment reject events marked cancelled or full by the applied updates.
 
@@ -597,7 +609,7 @@ The Rust planner now returns structured recommendation evidence: interest releva
 
 Event details now show campus identity, intended audience, eligibility, capacity/availability, food category, source URL, last-checked timestamp and verification status. All 30 records remain fictional. External source URLs and check timestamps are deliberately absent, displayed as Unknown / Not verified. The existing `checked` date records internal authoring review only. Open access in a fictional record does not establish real university eligibility or available seats.
 
-Dashboard **This Week's Briefing** uses deterministic planning for interest and cross-topic suggestions, lists saved-but-not-added events, highlights uncertainty and current plan conflicts/cancellations, and links to details, Planner and Calendar. Cross-disciplinary means topics beyond selected interests; verified department information is unavailable. The digest updates from local state, never background scraping.
+Dashboard **This Week's Briefing** (removed November 12, 2026) used deterministic planning for interest and cross-topic suggestions, lists saved-but-not-added events, highlights uncertainty and current plan conflicts/cancellations, and links to details, Planner and Calendar. Cross-disciplinary means topics beyond selected interests; verified department information is unavailable. The digest updates from local state, never background scraping.
 
 First-time demo users can personalize, choose Default Preference, or close the welcome prompt (top-right ×, or Escape) to go straight to the default preferences. Profile supports optional major/interdisciplinary notes, optional research/career goals, academic/social/cultural topic selections and preferred times. Topic selections and preferred time affect ranking; free-text notes are stored locally but are not semantically interpreted. Busy commitments and travel buffer remain editable. A career goal is never required.
 
@@ -610,7 +622,7 @@ Cancellation replanning identifies the cancelled record, names retained choices,
 From the repository root: `npm ci`, `npm run build`, then `cargo run --locked`. For frontend development, also run `npm run dev`. Rust serves the built frontend and API; see [backend setup](docs/backend.md).
 
 1. In a fresh browser profile (or Settings → Reset demo), select **Personalize my demo**. Choose topics and a preferred time; leave career goals blank. Save and reload to check persistence.
-2. On Dashboard, inspect **This Week's Briefing**, saved events, uncertainty notices and the links to details, Planner and Calendar.
+2. On My Dashboard, inspect the Weekly Calendar and News; open Saved Events for saved items and an event's details for uncertainty notices, then follow the links to Planner and Calendar.
 3. In Planner, choose the AI Tuesday/Thursday afternoon prompt. Inspect interest, schedule, practical and trade-off evidence; open details and verify fictional source labels and Unknown / Not verified fields.
 4. Add the learning lab: cancel RSVP once and confirm nothing is added; then enter a fictional name, approve attendance and complete RSVP. Confirm calendar updates, reload persistence and calendar export.
 5. Hide the planner calendar if needed, simulate cancellation, and select **Find a replacement**. Check that other choices remain, the cancelled record is removed, and the replacement stays a suggestion until explicitly added. For no-match behavior, request AI on Tuesday after 3 PM before 4:30 PM with coffee before finding a replacement.
