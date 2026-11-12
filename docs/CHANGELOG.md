@@ -1,0 +1,824 @@
+# Campus Compass — Development Log
+
+This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
+
+## README: judge-facing overview; development log moved to docs/CHANGELOG.md — November 12, 2026
+
+README.md rewritten as a concise judge-facing project overview (under 15 KB). All 40 development-log sections moved verbatim to this file. AGENTS.md updated so future changes are logged here rather than in the README. "October 19–23" demo week references updated to Nov 2–6, 2026.
+
+Work done with IBM Bob.
+
+## AI Planner: move Demo Scenario Launcher into a collapsed presenter section — November 12, 2026
+
+DemoLauncher moved from above the chat (judges' first view) to below the planner layout, inside a `<details>` disclosure element closed by default. Summary reads "Demo tools (for presenters)". Open/closed state persisted in sessionStorage (reads/writes in try/catch). All buttons and behaviour unchanged. `docs/demo-script.md` updated to say "open Demo tools (for presenters)".
+
+Work done with IBM Bob.
+
+## AI Planner: PR #18 review fixes — November 12, 2026
+
+Small fixes from the PR #18 review, made with Claude Code (not IBM Bob):
+
+- **Honest no-match wording.** When events match every filter but are already in the plan, conflict with it, or aren't open, the reply now says "The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open." It no longer says "No AI & education events match that time window." The nearest alternatives are still offered. Same wording in Rust and the TypeScript fallback.
+- **Excluded topics are visible.** A "not career" filter now shows as a `Not Career ×` chip. "Also at the same time" alternatives no longer include excluded topics.
+- **"zero budget"** sets the free-admission filter again, as it did before this PR.
+
+Verification: `npm test` 244/244 + 5/5 Wiki, `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` 58/58, `cargo build`, `npm run test:api` all pass.
+
+## AI Planner: free/availability rule, grammar, no-match wording, chip-removal lead — November 12, 2026 (round 3)
+
+Four small fixes on top of round 2 (commit `4444022`).
+
+### What was fixed (round 3)
+
+1. **"free" vs availability rule (regression fix).** The round-2 rule (`\bfree\b` not before/after a person → free admission) was too broad: "ceramics free on Wednesday evening" no longer set `free: true`. The new rule: "free" means **availability** only when it follows a person pronoun or forms "free time/slot/period/hour/day" (e.g. "I'm free", "I'm only free Friday", "free slot on Thursday"). "free" next to or after an event or topic word means **free admission** ("free ceramics", "ceramics free", "free workshops"). "free food/meal/…" continues to set the food filter only. Updated in both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs`. The frozen evaluation scenario H04 ("ceramics free on Wednesday evening") is confirmed restored: it no longer returns the $12 ceramics workshop.
+
+2. **Grammar — "3 options that **fit** together".** Plurals now correctly say "fit"; singular is still "1 option that **fits** together". Same for "1 alternative" vs "2 alternatives". Updated in `frontend/src/conversation.ts`.
+
+3. **No-match wording — topic included, "Here are N" not "Here N".** The no-match messages now name the topic and use correct verb agreement, e.g. "No AI & education events on Monday match that time window. Here are 4 options at other times." The helper function is `buildNoMatchAlts` (TypeScript) and `no_match_reason` (Rust); both updated in lock-step. A "free admission" relaxation step was added as step 2 (after food).
+
+4. **Chip-removal reply starts with "Removed [label]."** When a chip is removed, the planner result message now starts with "Removed Thursday. I found 3 options…" instead of "I found 3 options…". Implemented by passing a `replyPrefix` to `run()` in `conversation.ts`. The separate "Here's what fits now:" prefix message was removed to avoid two consecutive assistant messages.
+
+### New tests (round 3)
+
+`tests/planner-round2.test.ts` adds 17 more TypeScript tests (total 47 new since round 1): free vs availability tests ("ceramics free", "free ceramics", "I'm free", "I'm only free on Friday", "free food", "free slot"), grammar tests, no-match topic inclusion, and chip-removal lead. `backend/src/interpreter.rs` adds 3 more Rust tests (total 15 new): `free_ceramics_sets_free_admission`, `ceramics_free_on_wednesday_sets_free_admission`, `im_only_free_on_friday_no_admission`.
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **225 TypeScript tests**
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **56 Rust tests**
+- `npm run build` (tsc + Vite) — clean
+- `npm run test:api` — PASS
+- `npm run evaluate` + `git diff --stat evaluation docs/evaluation-report.md`: `docs/evaluation-report.md` is **clean** (zero diff). `evaluation/results.json` has annotation-only changes for scenarios D03/D09 where "social free food" previously set a spurious `free: true` flag — the event IDs selected and all quality scores are identical, and H04 is fully restored. The frozen file was restored after verification; the annotation improvement would be correct if the baseline were refreshed.
+
+### Limitations
+
+Same as round 2. Additionally: the chip-removal reply prefix ("Removed X.") appears after the browser-fallback unavailability notice when Rust is offline; in normal operation (Rust running) it appears first.
+
+## AI Planner: chip removal re-runs search, free-admission wording, alternatives, fuzzy phrases, overlap cards — November 12, 2026 (round 2)
+
+Six issues found in hands-on testing of commit `1ede074` have been addressed in this second round.
+
+### What was fixed (round 2)
+
+1. **Clicking a filter chip × re-runs the search.** Previously the chip disappeared but the suggestion cards did not change. Now `conversation.removeFilter()` posts a short confirmation line ("Removed Wednesday filter. Here's what fits now:") and immediately re-runs the planner with the remaining constraints. "Clear all" posts "Filters cleared. Tell me what you're looking for." The chip-building logic is extracted into `frontend/src/filterChips.ts` (`filterChips()` / `removeChip()`) for unit testing.
+
+2. **"free" no longer means free admission.** "I'm free Wednesday evening" and "anything with free food?" no longer add a "Free admission" chip. Free admission is now set only for explicit phrases: "free admission", "free entry", "free to attend", "free of charge", "no cost", "costs nothing", "without paying", "zero cost". Both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` were updated in lock-step. "Free meal/lunch/dinner/snacks/coffee/pizza" sets the food filter only.
+
+3. **No-match duplication fixed; alternative events shown as cards.** The no-match text was appearing twice (once from the Rust diagnostic in `plan.notice`, once from the TypeScript fallback). The fix: when the Rust planner returns a no-match diagnostic, use it as the response text and build the local alternative list (IDs only) for the suggestion cards. The no-match function (`buildNoMatchAlts`) now returns both `{ text, ids }` so the cards are populated. The browser-fallback path shows the unavailability notice followed by the plain-language no-match text.
+
+4. **Fuzzy phrase matching.** "practice **my** English", "make **some/new** friends", "meet **new** people", "find **an** internship", "get **a** job" now work. Both interpreters use flexible regexes that allow one or two small words between key terms. The "limited demo" reply now shows 3 clickable example-request buttons (rendered as `<button>` elements that send that text into the chat). A new `examples` field on `Message` carries these; a new `LimitedDemoHint` error class in `api.ts` carries them to `conversation.ts`.
+
+5. **Overlap alternatives shown as "Also at the same time" cards.** When the planner finds 1 conflict-free pick but there are other eligible events at the same time (e.g. Wednesday evening: 3 eligible, 1 conflict-free), the message says "I found 1 option that fits together, plus 2 alternatives at the same time" and shows them below a labelled "Also at the same time:" section. They are clearly separate from the main pick. A new `overlapIds` field on `Message` carries them.
+
+6. **New tests.** `tests/planner-round2.test.ts` adds 30 TypeScript tests covering all five items above: free-admission wording, phrase synonyms, `filterChips` labels, fresh-search carry-over, no-match plain-language fallback (browser mode), and overlap detection. `backend/src/interpreter.rs` adds 12 Rust tests covering the same free-admission and synonym rules, the no-match diagnostic wording, and fresh-parse carry-over.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173 → AI Planner. Start with "New chat" and try:
+
+1. "is there anything with free food?" — 3 results, **Free food chip** appears (no "Free admission" chip this time)
+2. "I'm free Wednesday evening, what can I do?" — "Wednesday" and "Evening" chips appear; results show 1 conflict-free pick + "Also at the same time: 2 alternatives"
+3. "any internship or job events?" — Career events across the whole week (new question = fresh search)
+4. "I want to practice my English" / "make some friends" — understood as Social
+5. Click "Wednesday ×" — planner re-runs without that filter and posts new cards
+6. "arts events with free food on Monday morning" — plain-language "Nothing on Monday morning has free food. Here are N options without that filter." with suggestion cards
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **215 TypeScript tests** (185 from merge + 30 new in `tests/planner-round2.test.ts`)
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **53 Rust tests** (41 from before + 12 new in `backend/src/interpreter.rs`)
+- `npm run build` (`tsc --noEmit` + Vite) — clean
+- `npm run test:api` — PASS
+
+`npm run evaluate`: the frozen results changed only in the `constraints_satisfied` annotation for scenarios whose input previously triggered the spurious `free: true` flag (e.g. "social with free food" no longer sets free-admission). The selected event IDs and `understood` flags are identical. The frozen `evaluation/results.json` was restored after verification; the change would be a correct improvement if the baseline were refreshed.
+
+### Limitations
+
+- Follow-up detection remains heuristic (keyword-based). Unusual follow-up phrasings without a keyword start fresh.
+- Chips show `state.constraints`, updated after each complete query; mid-clarification constraints are not shown as chips.
+- Overlap alternatives are limited to ≤ 3 and only appear when the user's constraints match eligible events; they are for reference, not added to the draft plan automatically.
+- Only simulated mode was tested locally; watsonx mode shares the same carry-over and synonym logic.
+
+## AI Planner: fresh search, visible filters, plain-language replies, and more synonyms — November 12, 2026 (round 1)
+
+Four bugs in the AI Planner that a judge or new student would hit in the first few questions have been fixed.
+
+### What was fixed
+
+1. **Fresh search by default.** A new question ("any internship or job events?") now starts a clean search. Filters from the previous question only carry over when the message clearly builds on it — phrases like "only", "also", "instead", "what about", "but", "without" or a leading "and"/"or" count as follow-ups. Earlier, every question silently inherited all previous filters, so a "Wednesday evening" question would fail to find results if the previous question had asked for "free food".
+
+2. **Active filter chips above the input box.** When the planner is filtering by topic, day, time, food or free admission, labelled chips now appear above the chat input: e.g. `Free food ×` `Wednesday ×` `Evening ×`. Clicking a chip removes that filter; "Clear all" removes all of them at once. Previously there was no way to see which filters were active without reading back through the chat history.
+
+3. **No more dead ends — plain-language replies with alternatives.** When nothing matches, the planner no longer says "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically." Instead it explains which filter produced no results and immediately offers the nearest alternatives, e.g. "Nothing on Wednesday evening has free food. Here are 4 options without that filter." The same logic runs in both Rust (`backend/src/planner.rs`) and TypeScript (`frontend/src/conversation.ts`).
+
+4. **Everyday synonyms understood.** "internship" and "job" now map to Career; "practice English", "make friends", "meet people" and "language exchange" now map to Social. Both the Rust interpreter (`backend/src/interpreter.rs`) and the TypeScript fallback (`frontend/src/interpretation.ts`) were updated together. The "limited demo" guidance message also mentions these phrasings by example.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173. In the AI Planner, try:
+
+1. "is there anything with free food?" — three results, Free food chip appears
+2. "I'm free Wednesday evening, what can I do?" — now shows 4 Wednesday-evening results (Fresh search; no longer inherits the free-food filter)
+3. "any internship or job events?" — now shows career events (new synonym; no longer filtered to Wednesday)
+4. "something to help me find an internship" — understood as Career
+
+### Verification
+
+`npm test` (185 TypeScript tests and 5 Wiki tests), `node --import tsx --test tests/*.test.ts` (185 tests), `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (41 tests), `npm run build` (`tsc --noEmit` + Vite), and `npm run test:api` all pass. The integration test's diagnostic assertion was updated from `/scheduling conflicts/` to `/Nothing matches that time window/` to match the new plain-language reply. Checked in the browser at 1280px and 375px: filter chips appear and dismiss correctly, Wednesday-evening questions return results without a prior free-food filter, career queries return multiple events, and "start over" clears all chips. Only simulated mode was tested; watsonx mode uses the same carry-over and synonym logic and should benefit from the same changes.
+
+### Limitations
+
+- The follow-up detection is heuristic (keyword-based). A message like "but make it on Tuesday" carries over previous filters as intended, but an unusual phrasing without a follow-up keyword starts fresh. Watsonx mode sends the full `previous` constraints to the model, so the model can decide; this fix only changes the browser's default.
+- Filter chips show the constraints stored in `state.constraints`, which are updated after each successful query. They do not reflect mid-clarification constraints (pending clarification state).
+
+## PR #17 review fixes — November 12, 2026
+
+- **Home banner** shows an event's updated time and room after synthetic updates (same rule as the event cards; conflicting notices keep the catalog values).
+- **Hidden announcement arrows** no longer take clicks: on touch screens, tapping near a slide's edge opens the event instead of silently changing slide.
+- **Event Buffer Time switch** only refuses to turn on when the 15 minutes would create a new clash; a planned event that is full, cancelled or already clashing no longer locks it, and turning it off is never blocked (`bufferBlocker` in `frontend/src/settings.ts`).
+- **Updates toast:** when an update affects your plan it now offers **Open AI Planner** (where "Find a replacement" lives) as well as View notifications, and the text says where to find it.
+- **Arts and Wellbeing** (Home entries and Explore chips) now also include events with that topic filed under another category, e.g. Film club evening and Wednesday noon run (Arts 2 → 7 events, Wellbeing 3 → 5). Explore and Home share one filter (`frontend/src/filters.ts`) and one poster-colour helper (`posterTone`).
+- **Honest label:** default recommendations read "A mix of events from every category this demo week." instead of "Popular picks".
+- **README** instructions that pointed at the removed Briefing were updated in place.
+- Home recommendations fold applied updates in once per render and are memoized.
+- **Verification:** `npm test` (200 TypeScript tests, including 5 in `tests/pr17-fixes.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass.
+
+## My Dashboard: News — November 12, 2026
+
+- **News** now sits under the Weekly Calendar on My Dashboard (`frontend/src/News.tsx`, posts in `frontend/src/news.ts`). Each post is a card with poster art on the left (in the event-card colours) and, on the right, the title, date ("Updated …" for newsletters), "Posted by … for …" in italics, a short summary and "View event". Four posts show first; **Show more news** reveals the rest. On phones the art sits above the text.
+- **All six posts are fictional**, written by invented people for the demo's own communities and schools, and the section is labelled "Fictional campus news". Each post links to a catalog event (clicking opens its detail page) and most also to a demo community; summaries were checked against the linked event records (time, food, RSVP, eligibility).
+- **To demo:** My Dashboard → scroll to News → click "Volunteers wanted for the Friday community lunch" → the Friday community lunch detail opens.
+- **Verification:** `npm test` (195 TypeScript tests, including 3 new ones in `tests/news.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px and 390px: four cards, Show more → six, the first card opens the Friday community lunch, no sideways scrolling.
+- **Limitation:** news is a fixed demo list; there is no posting, editing or live news feed.
+
+## My Dashboard: "This Week's Briefing" removed — November 12, 2026
+
+- The briefing panel (update feed, interest and cross-discipline suggestions, saved-not-added, uncertainties, plan warnings) is gone from My Dashboard; the dashboard now shows the hero, Weekly Calendar and the right-hand rail. `Briefing.tsx` is renamed `Welcome.tsx` and keeps only the first-visit dialog; the briefing's unused styles are deleted.
+- Synthetic updates still work from the bell, Settings › Notifications and the AI Planner's Event updates panel. Applying a batch no longer jumps to My Dashboard: you stay on the current page and the message offers **View notifications**, where each update is listed. Event cards still show "Updated" / "Needs confirmation" badges, and My Calendar still flags unavailable plans.
+- Docs that pointed at the Briefing (`docs/demo-script.md`, `docs/backend.md`) were updated.
+- **Verification:** `npm test` (192 TypeScript tests and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px: My Dashboard has no briefing and no sideways scrolling; Check for updates in Settings applied "Monday morning check: 2 updates applied", stayed on Settings and offered View notifications.
+- **Limitation:** the dashboard no longer lists cross-discipline suggestions or saved-but-not-added events in one place; Home's recommendations and Saved Events cover most of that.
+
+## Settings page: section bar and search — November 12, 2026
+
+- **New layout** (`frontend/src/Settings.tsx`, sections in `frontend/src/settings.ts`): a left bar with the "Settings" title, a **Search settings…** box and eight sections, each with its own icon — General, Notifications, Sync, AI Assistant, Time Zone, Event Buffer Time, Reset Demo and About. The right side shows the chosen section as a card of rows; on phones and tablets the sections become a horizontally scrolling row above the content.
+- **Every earlier setting is kept:** time zone, the 15-minute travel buffer (now an on/off switch, still refusing to turn on if it would create a conflict), AI connection mode, Reset demo with its confirmation, About, and the Team tools link to the synthetic-data review (moved from a separate panel into General).
+- **New rows use only features that already exist:** demo profile with Sign in / Edit profile; compact sidebar switch; unread notifications with Mark all read / Open; Check for synthetic updates with last-checked time; calendar (.ics) export; open the AI Planner. Sync states plainly that no external calendar is connected and that demo data stays in this browser. The AI connection tag shows "IBM watsonx (Granite)" when the server is in watsonx mode, otherwise "Simulated · Demo mode".
+- **Search** matches every typed word against section names, titles, descriptions and hidden keywords (for example "ics", "watsonx", "travel"); results are grouped under their section, sections with no match are dimmed, and clicking a section clears the search.
+- **To demo:** Settings → type "time" → clear it → Event Buffer Time → toggle the switch → Reset Demo → Reset demo shows the confirmation.
+- **Verification:** `npm test` (192 TypeScript tests, including 3 new ones in `tests/settings.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px, 800px and 390px: section switching, search for "time", buffer switch (toast "Travel buffer updated."), reset confirmation, no sideways scrolling on any width.
+- "Check for updates" from Settings applies the next synthetic batch and stays on Settings; the message offers "View notifications".
+
+## Top bar: search box centred — November 12, 2026
+
+- The top-bar search box now sits centred between the Campus Compass logo and the quick links (Find events … Plan with AI), using equal auto margins; the logo, links and actions are otherwise unchanged. On phones the quick links are hidden and the search box still fills the space between the logo and the bell.
+- **Verification:** `npm run build` passes. Measured in headless Chrome: equal space on both sides of the search box at 1440px (100px | 100px), 1280px, 1100px and 900px (20px | 20px, where the box shrinks to fit) and 390px (12px | 12px), with no sideways scrolling.
+
+## Larger text across the site — November 12, 2026
+
+- Every fixed font size in `frontend/src/styles.css` (236 values) and the one inline size in `Pages.tsx` is 1px larger than before this change; the page base goes from 14px to 15px, and the smallest 8–10px labels become 9–11px. (A first pass added 2px; it read too large and was eased back to 1px.)
+- **Verification:** `npm test` and `npm run build` pass. Checked in headless Chrome at 1440px (Home, My Dashboard; at +2px also Explore, My Calendar, AI Planner, Forum) and 390px (Home): no sideways scrolling and no clipped controls. On phones the top-bar search box shows only the start of its placeholder, and week-view event titles in My Calendar are truncated in the narrow day columns, both as before.
+
+## Home page — November 12, 2026
+
+- **New Home tab** (first in the sidebar) is now the landing page; the Campus Compass logo and "Reset demo" also go there. My Dashboard is unchanged and gets its own grid icon. The top bar is unchanged.
+- **Announcements:** a banner carousel of the notifications that point at an event (invitations, "Coming up this week", and synthetic event updates once applied). Clicking a slide opens that event's detail page and marks the notification read; "All notifications" opens the Notifications page. To switch slides: the slides sit in the browser's own horizontal scroller with scroll snapping, so a Mac two-finger swipe (or a finger swipe on touch screens) moves the banner with your fingers straight away, keeps the system's momentum and settles on the next slide; swipes can be repeated freely either way, and a swipe at either end does not trigger the browser's back/forward gesture. Full-height arrow zones on the left and right edges show a translucent arrow only while the mouse is over them (or it has keyboard focus); swipes over those zones still move the slides. Dots sit at the bottom centre and follow the current slide.
+- **Browse by category:** round quick entries for Academic, Career, Social, Workshops, Wellbeing, Arts and Free food, the opportunity types in the proposal. Each opens Explore Events with that filter active. Explore Events gained the missing **Wellbeing** and **Arts** filter chips.
+- **Recommendations for you:** eight of the same event cards Explore Events shows. If the student has set preferences in Profile (interests other than the starting set, goal types, preferred time, major or goals), events are ranked by a simple, explainable score. Otherwise a default mix shows the earliest free-first event from each category in turn. Only events that can still be added appear (not planned, full, cancelled or clashing). The ranking is labelled "Simple preference ranking · No live AI · Fictional events".
+- **Search box polish:** the green search button now fills the right end of the top-bar search pill with no white gap.
+- **To demo:** open the site (Home), click the banner to open the event, go back, click Wellbeing, then set interests in Profile and return to Home to see "Based on your interests…".
+- **Verification:** `npm test` (189 TypeScript tests, including 5 new ones in `tests/home.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px and 390px: banner click opens the event detail, the arrows stay hidden until their zone is hovered, simulated swipes move the slides smoothly with the gesture (also when started over the edge zones), the arrows and dots move one slide and update the dots, while vertical page scrolling still works, a category opens Explore with its chip active, and phones have no sideways scrolling (categories scroll horizontally). Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+- **Limitations:** the default recommendations are a fixed mix, not real popularity data; the cards' "Matches your interests" line still uses the starting interests for guests. Headless Chrome cannot send macOS trackpad momentum, so the snap to the next slide after a real flick still needs checking on a real Mac trackpad.
+
+## Dashboard Weekly Calendar and My Calendar sub-page — November 12, 2026
+
+- **My Calendar is no longer a sidebar tab.** It is a sub-page: open it with **Full Calendar** on My Dashboard (or the top bar's "My calendar" link). My Dashboard stays highlighted in the sidebar, the page has a "Back to …" link, and Back or swipe-back returns to the page it was opened from. All of its Day/Week/Month/Year features are unchanged.
+- **Weekly Calendar:** the dashboard's "Your week, at a glance" section is now "Weekly Calendar", and its link "View My Calendar" is now "Full Calendar".
+- **Week arrows:** ‹ and › beside the date range step the strip a week at a time. Classes repeat every week; campus events exist only in the demo week (Nov 2–6), so other weeks show classes only, no "+" find-event buttons, and a "Back to demo week" link. On phones the arrows sit on their own row.
+- **To demo:** on My Dashboard press › to see next week, "Back to demo week", then Full Calendar and swipe back.
+- **Verification:** `npm test` (184 TypeScript tests, including a new week-label test in `tests/calendar-view.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in the browser at 1280px and 375px: sidebar without My Calendar, renamed section and link, previous/next week and back, Full Calendar opening My Calendar with My Dashboard highlighted, Back returning to the dashboard, and no sideways scrolling. Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+
+## Notifications: bell dropdown, Notifications page and messages — November 11, 2026
+
+- **Bell:** a red dot shows when there are unread notifications (or synthetic updates waiting). Clicking it opens a dropdown of unread notifications with "Mark all as read" and "View all". The bell now also shows on phones.
+- **Messages:** clicking a notification opens its full message and marks it read. Depending on the notification it offers View event, Open community or Explore events, plus Mark as unread.
+- **Notifications page:** reached only from the bell (not in the sidebar). It lists every notification, with unread titles in bold, and a filter panel: show only unread, sort newest/oldest, type, and sent on/after and on/before dates (campus time). Filters stay set while you open a message and come back.
+- **Back / swipe-back:** from a message, Back shows the Notifications page; Back again returns to the page the student was on.
+- **Data:** 8 fictional demo notifications (two start read), plus one notification per applied synthetic event update, labelled "Synthetic update". Read state is stored in the browser (`readNotificationIds`); older saved demos start with the default read set.
+- **Synthetic updates:** the bell no longer applies the next update batch on click. Use the "New synthetic event updates are available" row at the top of the dropdown, Settings › Notifications, or the AI Planner's Event updates panel. (This Week's Briefing, mentioned here originally, was removed on November 12, 2026.)
+- **Dashboard:** the "A few things you might love" section (heading, category filters and three suggested cards) was removed. This Week's Briefing stayed on My Dashboard until it was removed on November 12, 2026; News now sits under the Weekly Calendar.
+- **To demo:** click the bell, open a notification, swipe or press Back to reach the Notifications page, filter to unread, then Back again to return.
+- **Verification:** `npm test` (150 TypeScript tests including 8 new ones in `tests/notifications.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in the browser at 1280px and 375px: dropdown, message page, Back to the list and then to the dashboard, unread filter kept across a message, bold unread titles, synthetic updates arriving as notifications, and no sideways scrolling. Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+- **Limitation:** notifications are fixed fictional data; nothing is sent or received, and read state lives only in this browser.
+
+## Sidebar and top bar layout — November 11, 2026
+
+- **Collapsible sidebar:** a round chevron button on the sidebar's right edge shrinks it to a 76px icon rail and back. Hovering an icon shows the tab name, and the Saved Events count stays as a small badge. The choice is remembered in this browser only. Phones keep the slide-out menu instead.
+- **My Dashboard:** the Dashboard tab is renamed My Dashboard, and My Calendar is shown indented under it as a sub-tab. My Calendar is still its own page, so links and the top bar's "My calendar" shortcut work as before.
+- **Logo in the top bar:** the Campus Compass logo moved from the sidebar to the left end of the top bar, which now spans the full width and stays visible when scrolling. The sidebar starts below it. On phones only the logo mark shows.
+- **Follow-up polish:** the top bar is shorter (64px on desktop, 56px on phones), the My Calendar hover highlight no longer spills past the sidebar's edge, and the dashboard's week card link now reads "View My Calendar". A two-finger pull past the top or bottom of the page no longer stretches the page and drags the top bar (vertical overscroll is turned off; horizontal swipe-back still works). This was checked in the browser's computed styles only, not with a real trackpad pull.
+- **To demo:** open the app on a desktop-width window, press the chevron beside My Dashboard, then scroll the page.
+- **Verification:** `npm test` (142 TypeScript and 5 Wiki tests) and `npm run build` pass. Checked in the browser at 1280px (expanded, collapsed and scrolled) and 375px: no sideways scrolling, and the event-details panel and forum community list now stay below the fixed top bar. Rust code was not changed, so the Rust checks were not rerun.
+
+## PR #11 review fix: events marked full by an update — November 11, 2026
+
+A "full" synthetic update (u2 marks Community dinner & story exchange full) was only honoured by the browser's fallback planner. Elsewhere in the browser the event still looked available.
+
+- **Fixed:** after the first update batch, a full event no longer appears in dashboard picks, its event card shows "Event is full" and disables adding it, and a planned full event now triggers "One of your plans has changed". "Find a replacement" says the event is "now full" instead of "moved into a conflict".
+- **How:** `effectiveEvents` (TypeScript) and `apply_event_updates` (Rust) now fold a full update into the event's `access`, and `issue()` applies the state's update IDs itself, so every caller (cards, enrollment, replanning) uses moved times and full status. The server's `/api/validate` and `/api/enroll` now report "Event is full" instead of "Cancelled in demo". The three Rust handlers share one `effective_inputs` helper.
+- **To demo:** sign in, add Community dinner & story exchange, press the bell, then open AI Planner.
+- **Verification:** `npm test` (142 TypeScript and 5 Wiki tests, including two new regression tests), `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, `cargo build --locked` and `npm run test:api` pass. Checked in the browser: the banner appears, the replacement message says "now full", and the event card shows "Event is full".
+- **Limitation:** the server still only blocks events from update IDs the browser sends; it does not track updates on its own.
+
+## Visible synthetic update loop — November 12, 2026
+
+A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces each change in the bell menu and on the Notifications page (originally also in the Briefing panel, removed November 12, 2026), and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.
+
+### What was added
+
+**`data/updates.json`** — three timestamped batches of synthetic updates covering every kind:
+- Batch 1: e3 cancelled, e6 marked full
+- Batch 2: e1 time moved, e9 room changed
+- Batch 3: e5 cancelled + e5 room changed (conflicting notices → "Needs confirmation")
+
+**Frontend (`frontend/src/updates.ts`)** — new module with `applyNextBatch`, `hasConflict`, `effectiveUpdate`, `updateBadge`, `relativeTime`, `isUnavailableByUpdate`, and related helpers. All logic is deterministic and uses only the embedded JSON.
+
+**Types (`frontend/src/types.ts`)** — `EventUpdate`, `UpdateBatch` interfaces; `DemoState` gains `appliedUpdateIds` and `lastUpdateCheck`.
+
+**Briefing panel (`frontend/src/Briefing.tsx`)** — removed November 12, 2026. It had a "Check for updates" button, timestamp and an `UpdateFeed` listing each change; changes now appear as notifications.
+
+**Bell button and Planner panel (`frontend/src/App.tsx`)** — bell now calls `checkForUpdates`, shows a `!` badge when a new batch is available, replaces the static toast. A new "Event updates" section in the Planner sidebar provides the same action.
+
+**Event cards and details (`frontend/src/components.tsx`)** — cards show "Needs confirmation" or kind badge, new location for room changes, "Last checked" relative time. Details show the full update notice inline in the hero and body.
+
+**Backend (`backend/src/model.rs`, `backend/src/lib.rs`)** — `Schedule` accepts `applied_update_ids`; `Schedule::validate_with_updates` checks them against `data/updates.json` (embedded at compile time). All three handlers (`/api/plan`, `/api/validate`, `/api/enroll`) build an effective cancelled set from applied updates before selection, validation, or enrollment. The watsonx ranking step receives the effective state so only available events are ranked.
+
+**TypeScript fallback (`frontend/src/api.ts`)** — `schedulePayload` sends `applied_update_ids`; the browser fallback also respects update-cancelled/full events.
+
+**CSS (`frontend/src/styles.css`)** — `badge--conflict`, `badge--updated`, `badge--planned`, `event-card--conflict`, `event-card--updated`, `update-feed`, `update-list`, `update-item`, `notice--conflict`, `notice--updated`.
+
+### Tests
+
+**Frontend** — `tests/updates.test.ts`: 18 new tests covering batch traversal, conflict detection, badge computation, relativeTime, isUnavailableByUpdate, and state mutation invariants.
+
+**Rust** — six new integration tests in `backend/src/lib.rs`: cancelled event excluded from plan, full event excluded from plan, unknown update ID rejected with 400, validate returns unavailable for cancelled/full, time/room updates do not break plan.
+
+### Demo usage
+
+1. Open the app; click the **bell** (topbar), **Check for updates** in Settings › Notifications, or the Planner sidebar's Event updates panel.
+2. Each click applies the next batch. The message offers **View notifications**, where each change is listed; if a planned event is affected it also offers **Open AI Planner** for "Find a replacement".
+3. After batch 3, e5 shows "Needs confirmation" — two conflicting notices, no choice made.
+4. Planning and enrollment reject events marked cancelled or full by the applied updates.
+
+### Verification
+
+`npm test` (TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
+## Honest AI attribution, separate evidence fields, dynamic mode labels — November 12, 2026
+
+The backend and frontend were updated to separate AI-written evidence from template evidence, and to derive all honest mode labels from the live API rather than hardcoding them.
+
+### What was changed
+
+**Backend (`backend/src/lib.rs`):** when watsonx ranking succeeds, `interest_match` is no longer appended with `" (AI)"`. Instead, the model's reason is placed in a new `ai_reason` field and `cited_fields` (the catalog fields cited by the model) is kept alongside it. Template evidence from the simulated planner has neither field.
+
+**Frontend types (`frontend/src/types.ts`):** `RecommendationEvidence` gains two optional fields: `ai_reason?: string` and `cited_fields?: string[]`.
+
+**Chat event cards (`frontend/src/PlannerPanels.tsx`, `ChatEvents`):** when a recommendation has `ai_reason`, the "Why this fits" line shows the model's reason followed by a small attribution label ("Written by IBM watsonx (Granite) from this event's record") and the cited fields as small inline tags. When `ai_reason` is absent the existing `reasons()` template text is used. "How the planner checked this" is unchanged (no more "(AI)" suffix in `interest_match`).
+
+**Honest mode labels (`frontend/src/App.tsx`, `frontend/src/DemoLauncher.tsx`):** the chat header status (before first reply), the fineprint under the chat input, and the Demo Scenario Launcher subtitle are now derived from `/api/health` on page load and updated from each `/api/plan` reply. In watsonx mode they name IBM watsonx (Granite) and note that events are fictional; in simulated mode the existing wording is preserved.
+
+### Tests
+
+14 new tests added in `tests/mode-labels.test.ts`:
+- `ai_reason` shown when present, template reasons used when absent, neither when no evidence object
+- `chatStatusLabel` derivation in both modes before and after first reply
+- `chatFineprint` wording in simulated and watsonx mode
+- `DemoLauncher` subtitle in simulated and watsonx mode
+- `planModeLabel` for all combinations (browser fallback, watsonx + AI explanations, watsonx + template, simulated)
+
+### Verification
+
+`npm test` (111 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
+## Cross-school discovery, goal-balanced plans, access conditions — November 11, 2026
+
+The fictional event catalog was extended for cross-school discovery and realistic access conditions.
+
+### What was added
+
+**New fields on every event** (`data/events.json`, `backend/src/model.rs`, `frontend/src/types.ts`):
+- `host_school` — hosting school, department, or club name (e.g. "School of Education", "Business School", "Arts Collective").
+- `goal_type` — one or more of "research", "industry", "social connection", "cultural exploration".
+- `access_conditions` — object with `membership`, `min_age`, `ticket`, `capacity`; each is a concrete value or `"unknown"`.
+- `source_url` — fictional URL under `https://example.edu/` (was null for all records; now populated).
+- `last_checked_at` — ISO timestamp within the demo week (was null; now populated).
+
+**10 new fictional events (e39–e48):**
+- AI and pedagogy cross-school dialogue (Monday, School of Education)
+- Engineering + Education: building adaptive tools (Tuesday, School of Engineering)
+- Industry panel: AI careers in education tech (Wednesday, Business School)
+- Education school welcome mixer (Monday, School of Education)
+- Business school welcome reception (Tuesday, Business School)
+- Engineering club social night — members-only (Wednesday, School of Engineering)
+- Night at the grad bar (21+, ticketed) — Thursday, Graduate Student Center
+- Interdisciplinary AI futures talk (Thursday, Graduate Student Center)
+- Business analytics and AI: industry conversation (Friday, Business School)
+- Research skills bootcamp: AI tools (Friday, School of Education)
+
+**Food filtering** — all five food states (Free meal, Coffee & snacks, Paid food, None, Unknown) are now selectable in the Explore filter chips. Constraints food validation extended in both Rust and TypeScript.
+
+**Event cards and details** now show `host_school` and `goal_type` inline, and the Record & evidence panel shows `last checked` as a formatted date, `source URL` as a clickable link (or "Not confirmed"), all `access_conditions` fields ("Not confirmed" for `"unknown"` values — never shown as open), and `host_school` / `goal_type`.
+
+**Data review** (`Settings → Team tools`) flags `Missing host school` and `Missing goal type` as new quality categories.
+
+### Evaluation results after catalog expansion
+
+`npm run evaluate` was run after these changes. The evaluation scenarios (`evaluation/scenarios.json`) are frozen and unchanged. The expanded catalog changes which events the planner recommends for several scenarios:
+
+- **D01** (cross-disciplinary AI/career/social): new events e36, e41, e42, e47 now rank for this query.
+- **D02** (Tuesday/Thursday afternoon AI): e46 (Interdisciplinary AI futures, Thu) now ranks above e5.
+- **D06** (membership): e48 (Research skills bootcamp) now covers the AI slot instead of e12.
+- **D07** (cancelled/full exclusions): e31 and e46 now rank for AI queries.
+- **H01** (arts/social free admission): e42 now appears.
+- **H05** (replacement): e46 now qualifies for this slot.
+- **H07** (five results): updated with new options.
+
+Rules/Rust/Context adapters remain at 0 eligibility violations and 0 conflict violations. The evaluation report was regenerated and written to `docs/evaluation-report.md`.
+
+### Verification
+
+`npm test` (92 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+## Start here (teammates)
+
+**New to coding? Use the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki).** It has copy-and-paste, step-by-step guides:
+
+| Wiki page | Use it to |
+| --- | --- |
+| [Getting started](https://github.com/judyzhou666/ibm-campus_compass/wiki/Getting-Started) | Install the tools, download the project and run the website on your own computer. No IBM key needed. |
+| [Using watsonx](https://github.com/judyzhou666/ibm-campus_compass/wiki/Using-watsonx) | Optionally connect the AI Planner to IBM watsonx (Granite) with your own API key. |
+| [IBM Bob](https://github.com/judyzhou666/ibm-campus_compass/wiki/IBM-Bob) | Set up Bob IDE and export your Bob sessions, which the lab requires from every teammate. |
+| [Team workflow](https://github.com/judyzhou666/ibm-campus_compass/wiki/Team-Workflow) | Update your branch, save your work and open a pull request. |
+
+Quick start, once Node.js 22.12+ and Rust are installed:
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
+
+## Update — November 12, 2026: Discussion Forum likes and comment counts
+
+Split out of the calendar PR (#12) so each PR covers one feature.
+
+- **Likes are saved.** Post and comment likes used to live in component state and reset as soon as you left the forum. They are now saved with the rest of the browser-local demo state (`state.likes`, validated on restore), so they survive leaving the page and reloading.
+- **Comment counts are real.** Seed posts added a hidden `commentCount` on top of the comments shown (e.g. "10 comments" with 2 visible). Counts now show the comments that exist, with singular "1 comment". This is a visible change on seed posts.
+
+How to try it: `npm run build`, `cargo run --locked`, open http://127.0.0.1:4173/#forum, like a post, go to another page and back (or reload), and compare each post's count with its comments.
+
+Verification: `npm test` 176 TypeScript tests (one new restore test for likes) and 5 Wiki tests, `npm run build` clean; checked in the browser. Written with Claude Code, not IBM Bob.
+
+## Update — November 12, 2026: Calendar Day/Week/Month/Year views
+
+**What changed:** The My Calendar page now has a Google-Calendar-style calendar with Day, Week, Month, and Year views, replacing the fixed Mon–Fri cards-only layout.
+
+- **New files:**
+  - `frontend/src/CalendarView.tsx` — Day/Week/Month/Year views with time grids, overlapping-event columns, "now" line, and navigation toolbar.
+  - `frontend/src/calendarGrid.ts` — Pure date-math helpers (week/month/year grids, overlap layout, item position, sortByStart). No React, no DOM.
+  - `tests/calendar-view.test.ts` — 23 unit tests for the date-math helpers.
+- **Changed files:**
+  - `frontend/src/App.tsx` — Calendar page now renders `<CalendarView>` instead of the `week(true)` strip. Dashboard strip and AI Planner panel are **unchanged**.
+  - `frontend/src/styles.css` — New `.gcal-*` CSS classes appended at the end.
+
+**Round-2 polish fixes (commit e95156f):**
+1. Month-view columns now use `repeat(7, minmax(0,1fr))` on both header and grid — day numbers always align with the weekday labels.
+2. Week/Day view header and time grid share a single horizontal-scroll container so they always scroll together.
+3. Year/Month view "today" circle (dark-green fill, white number) wins over the pale demo-week background via CSS specificity.
+4. "Find an event" `+` button moved to the column header so it is always visible without scrolling.
+5. Month chips are sorted by start time (using `sortByStart` helper, with 2 new unit tests).
+6. Chosen events have a stronger green fill and solid green left border; classes remain grey with a grey border.
+7. Event block titles wrap up to 2 lines; full title + time shown on `title` attribute hover.
+8. Toolbar uses a 2-row right-side layout at ≥ 760 px so the Day/Week/Month/Year switcher never moves when the title changes.
+9. "Demo week" label shown only on the Monday cell in Month view; green background still covers all 5 demo-week days.
+10. Removed duplicate `setAnchor(today)` in `goToToday`.
+
+**Round-3 fixes (commit af7fe72):**
+- Week/Day column header placed inside `.gcal-time-grid-wrap` (vertical scroller) so both share the same `scrollbar-gutter: stable` lane. Desktop (1024 px, 1280 px) verified: console check all true.
+- `.gcal-dom` fixed `height: 32px` / `display: inline-flex` so all five "+" buttons sit on one row.
+- Removed stale `isInDemo` variable from `MonthView`.
+
+**Round-4 fix (commit after round-3):**
+- Restored `min-width` on `.gcal-col-headers` (accidentally removed in round 3 with an incorrect "inherited" comment — CSS `min-width` is not inherited). Both `.gcal-col-headers` and `.gcal-time-grid` now share a single CSS custom property `--gcal-min-w: 500px` so they can never drift apart. Console check all true at 375 px (before and after horizontal scroll), 1024 px, and 1280 px.
+
+**How to try it:**
+```sh
+npm run build
+cargo run --locked
+```
+Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher, the ‹ › and Today buttons, and click any event to open its details. Clicking a day in Month/Year view opens Day view for that date.
+
+**Review fixes for PR #12 (Judy's review plus hands-on testing):**
+- **Today follows the chosen time zone** like the Dashboard strip and page heading (e.g. Auckland shows Tuesday). The grid stays in campus time, so the now line is drawn only on the campus demo date when that is also today.
+- **The grid fits every item.** Hours are computed from the whole catalog plus busy times (`gridHours`), so the 8–10 PM grad-bar event and a 7:00 AM busy time are drawn at their real times instead of being clipped.
+- **Moved events show their new time** in Day, Week, Month and Year view and in "Your campus plans" (`effectiveEvents`). Moved blocks get a "Time changed" tag; a chosen event that now overlaps something (same `issue()` rule as the rest of the app, including the travel buffer) gets an amber "Conflict" tag. Narrow side-by-side blocks show ⚠ / ↻ symbols; the full wording is in the tooltip and accessible name.
+- **Legend:** the grey "Busy commitments" key only appears in Day/Week; Month/Year say "Classes appear in Day and Week view."
+- **The calendar remembers its view and date** for the browser session (sessionStorage, with a safe fallback to Week / today).
+- **Month chips are buttons** that open the event; clicking the rest of a day opens Day view (no nested buttons).
+- **Phones:** Month shows dots instead of cut-off text; Year shows one month per row with 44×36 px day targets and scrolls the current month into view.
+- **Cleanup:** one shared `findOnDay` handler in `App.tsx`; `calendarGrid.ts` reuses `weekDates` / `demoTodayIndex` from `config.ts`; unused helpers removed.
+
+**Related fixes outside the calendar (same "moved event" bug class):**
+- Event details: "Starts … in your time zone" and the side panel date/room now use the moved time and changed room.
+- Calendar export (.ics) uses moved times and changed rooms.
+- Dashboard / AI Planner week strip, AI Planner agenda and suggestion cards use moved times.
+- Profile: adding a busy time checks conflicts against moved times.
+
+**Test results:**
+- `npm test`: 175 TypeScript tests (33 calendar tests), 5 Wiki tests — all pass.
+- `npm run build`: clean. `cargo test --locked`: 41 pass. `npm run test:api`: pass.
+- Browser checks at 375 px, 1024 px and 1280 px: header/column alignment, Auckland today, update u3 move + conflict, 7:00 AM busy time, Month chip click, view memory across pages and reload, phone Month/Year.
+
+**Known limits:**
+- The "now" line uses the demo clock (Mon Nov 2, 9:00 AM campus time), not the real time.
+- Month/Year views don't show busy classes (they repeat weekly; see Day/Week).
+
+**Authorship:** rounds 1–4 of the calendar (commits up to "restore week header min-width") were written with [IBM Bob](https://www.ibm.com/products/bob); Tingting is adding the Bob task-history export to `bob_sessions/Tingting/` before merge. The merge with main, the PR #12 review fixes and the related fixes above were written with Claude Code, not IBM Bob.
+
+## Update — November 11, 2026: watsonx ranking and explanations
+
+### What was added
+
+**`rank_candidates` in `backend/src/watsonx.rs`** — a second watsonx step runs after deterministic filtering. The model receives the feasible event candidates (title, host school, goal type, description) and the student's goal types, then returns a ranked list of picks with a short reason for each. Each reason must cite only fields that exist on the event; invented fields or IDs are rejected and fall back to the template explanation.
+
+**`"explanations": "watsonx" | "template"` in `/api/plan` response** — the JSON response now includes an `explanations` field so the frontend can label where each recommendation reason came from. The TypeScript API client and state types were updated to match.
+
+**Goal types in Profile** — students can now select their goal types (research, industry, social connection, cultural exploration) in the Profile page. The selected goals are sent to the Rust server with every planning request.
+
+**Watsonx chat forwarding** — when `PLANNER_PROVIDER=watsonx`, unrecognised chat messages (those that would previously show the "limited demo planner" fallback reply) are forwarded to the Rust server for interpretation instead.
+
+**Rust post-checks** (`backend/src/lib.rs`) — two new post-check rules run after candidate selection:
+- If a candidate's `goal_type` is not yet represented in the plan, a matching event is appended (up to the five-result cap).
+- If the hosting school differs from the student's major school, "Hosted by \<school\>." is appended to the recommendation reason.
+
+**Template-evidence fallback** — a single `template_reason` helper in `backend/src/lib.rs` produces the deterministic explanation used whenever the watsonx ranking step is skipped or returns an invalid response.
+
+### How to try it
+
+With `PLANNER_PROVIDER=watsonx` and valid `WATSONX_API_KEY`, `WATSONX_PROJECT_ID`, and `WATSONX_MODEL_ID` set:
+
+```sh
+PLANNER_PROVIDER=watsonx \
+  WATSONX_API_KEY=<your-key> \
+  WATSONX_PROJECT_ID=<your-project> \
+  WATSONX_MODEL_ID=<your-model> \
+  cargo run --locked
+```
+
+Open the AI Planner. The chat label shows **Rust planner · IBM watsonx** when live. Planning responses include model-written reasons for each recommended event; the `explanations` field in the API response will be `"watsonx"`. With no key set, the planner falls back to `"template"` explanations and the label shows **Rust planner · Simulated**.
+
+### Verification results
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 102 TypeScript tests pass (97 unit + 5 Wiki) |
+| `npm run build` | Clean — tsc and vite both pass |
+| `cargo fmt --check` | Clean |
+| `cargo clippy --locked --all-targets -- -D warnings` | Clean |
+| `cargo test --locked` | 31 Rust tests pass |
+| `npm run test:api` | Rust API parity, follow-ups, validation, conflicts, cancellations, body limits, and static serving — all pass |
+
+### Limitations
+
+- Tested only against a local mock server. Live watsonx behaviour (latency, model output quality, explanation coherence, cost) has not yet been evaluated.
+- The `rank_candidates` prompt sends event title, host school, goal type, and description. No student names, RSVP lists, or browser history are included.
+- Ranking step failure (timeout, malformed JSON, invented field) is handled with a silent fallback to template reasons; the `explanations` field distinguishes the two modes.
+- `npm run evaluate` (deterministic frozen scenarios) was not re-run for this change; ranking is a post-filter step and does not affect eligibility or conflict checks.
+
+## Top bar: search, quick links and demo sign-in — November 11, 2026
+
+The top bar follows a familiar events-site layout:
+
+- **Search box** has a visible rounded border, a leading search icon and a round green search button. Press Enter or the button to search Explore Events.
+- **Quick links** on the right: Find events, My calendar, Forum, plus a green **Plan with AI** button. The link for the current page is underlined.
+- **Sign in** sits at the far right. Signing in asks only for a display name, then the profile circle replaces it; the circle opens Profile, which has **Sign out**. Signed out, the dashboard says "Welcome to Campus Compass." and the sidebar shows Guest.
+- The breadcrumb and campus-name label were removed from the top bar. The campus name still appears in the footer.
+
+The demo sign-in is fictional: there is no account, password or email, and the name stays in this browser (`signedIn` in the saved demo state). A new demo starts signed out. Profiles saved before this change also show as signed out until you sign in.
+
+Layout by width:
+- **Above 1060px:** all quick links show.
+- **1060px down to phone width:** only Plan with AI shows; the sidebar still has every page.
+- **Phone:** the links and the bell are hidden, and the search box and Sign in or the profile circle stay.
+
+Verification: `npm test` (92 TypeScript tests, including a new one in `tests/sign-in.test.ts`, and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In the browser at 1440px, 1024px and 375px I checked the layout, signed in through the dialog, searched for "film" with the round button, saw the current-page underline on Find events and Plan with AI, opened Profile from the circle and signed out. There was no sideways scrolling on the phone.
+
+## Back and swipe-back between tabs — November 10, 2026
+
+Back (and the swipe-back gesture) no longer steps through tabs you visited before. Sidebar tabs (Dashboard, My Calendar, Explore Events, Discussion Forum, AI Planner, Saved Events, Profile, Settings) are on the same level, so on any of them Back is blocked and you stay where you are. Back only closes sub-pages, innermost first:
+
+| Sub-page | Back returns to |
+| --- | --- |
+| Event details (from any page) | The page underneath |
+| A community in the forum (also from an event's "Related communities" link or a `#forum?community=…` URL) | All forum posts |
+| A forum post or the Create post editor | The post list (or the open community) |
+| Synthetic-data review (Settings → Team tools) | Settings |
+
+How it works (`frontend/src/navigation.ts`): switching tabs replaces the browser history entry instead of adding one. Back closes the innermost open sub-page; on a tab, nothing happens. Forward is ignored. The logo link no longer adds a history entry on each click.
+
+**Why the first version still let a real swipe leave the site (fixed November 11):** Chrome and Safari skip history entries that a page adds without a user gesture, so a site can't trap visitors. The app used to add its guard entry on page load and re-add it inside the Back handler. Neither counts as a gesture, so a real swipe or Back press went straight past the guard and left the website. Scripted `history.back()` doesn't apply that skipping, which is why the earlier checks passed. Now the app adds entries only while you're tapping, clicking or typing: each interaction tops up a cushion of 3 Back presses, and each Back uses one.
+
+Verification:
+- `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+- In a fresh browser tab with another page in its history before the app, I used real clicks and recorded every history entry the app added: all of them were added during a user gesture.
+- After clicking Explore Events, three Backs in a row stayed on Explore Events.
+- Event details: Back closed them, then the next Backs were absorbed.
+- Forum: community → post, then Back, Back, Back closed the post, then the community, then was absorbed.
+- Forward changed nothing.
+
+Limitations:
+- **No protection before the first interaction.** A Back or swipe before you tap, click or type anything leaves the site, because browsers ignore entries added without a gesture.
+- **At most 3 Backs absorbed.** A fourth Back in a row without touching the page leaves.
+- **Not tried with a real swipe.** I checked with real clicks plus `history.back()` in Chromium; a real swipe on a Mac trackpad, iPhone or Android device wasn't tried.
+
+## PR #9 review fixes — November 10, 2026
+
+Fixes from the code review of the presentation-polish pull request, one commit each:
+
+- **Undo** after adding an event now also puts it back in the planner's draft ideas, in its original position.
+- **"Why this fits"** on planner results uses the topics the student asked for in chat, so it agrees with the folded evidence. Evidence times also convert "24:00" to "12:00 AM".
+- **Toast:** the browser-storage warning no longer shows the previous toast's buttons. After pressing View calendar or Undo, keyboard focus moves to the page heading. Screen readers announce only the message, not the buttons.
+- **Today marker** follows the chosen time zone. In Auckland or Sydney the demo clock falls on Tuesday, and the week strip now marks Tuesday to match the heading. The Settings note says what the time zone changes.
+- **Styles:** the amber notice colors are defined once as `--notice-bg` and `--notice-ink`.
+
+Verification: `npm test` (91 TypeScript tests, including 3 new ones in `tests/planner-display.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked RSVP → add → Undo restoring the draft, View calendar moving focus to the calendar heading, the live region holding only the message, and the Auckland heading and today marker both showing Tue Nov 3.
+
+## Presentation polish — November 10, 2026
+
+A design critique of the prototype (saved in `.impeccable/critique/`, not committed) found problems that show during a live demo. Fixed, one commit each:
+
+- **Dates agree.** The page heading used the real date (Nov 10) while the week strip showed Nov 2–6 with Monday marked today. The heading now shows the demo clock, **Mon, Nov 2, 9:00 AM · Demo week**, in the chosen time zone. The "today" marker on the week strip is a pill wide enough for "Nov 2".
+- **Planner answers read as plain language.** Each result starts with "Why this fits: …" (interest, schedule, cost). The full planner evidence is folded under "How the planner checked this", with readable labels and 12-hour times. "Name coming soon" is gone from the status line; the honest **Rust planner / Browser fallback · Simulated** label stays.
+- **Adding to the calendar ends well.** The confirmation toast offers **View calendar** and **Undo**. It stays up for 9 seconds and stays open while you hover over it or focus it.
+- **Blocked events say so up front.** Event cards that conflict, are full, cancelled or need membership show the reason in amber and a **Can't add · See why** button that opens the details, instead of an "Add to calendar" button that fails.
+- **Forum posts match the catalog.** Seed posts now name the right days for the Learning with AI lab, community dinner, sketchbook walk and resume peer review.
+- **Copy:** "Welcome, Judy." on a first visit (then "Welcome back"), and "1 event" instead of "1 events".
+
+**Demo tip:** to show the first-visit flow again, clear this site's storage in the browser (or run `localStorage.clear()` in the console) and reload.
+
+Verification: `npm test` (88 TypeScript tests and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app I checked the heading date and today pill, a planner reply with the folded evidence, Add → Undo from the toast, the ten blocked cards on Explore, the forum post days and the first-visit greeting. Limitations: accessibility and mobile items from the critique (small text, tap targets, screen-reader structure) are deferred because this is a presentation prototype; the Rust planner's evidence text itself is unchanged, only how it is shown.
+
+## PR #8 review fixes — November 5, 2026
+
+Fixes from the review of the forum redesign, event-detail overlay and time zone setting:
+
+- **Create Post** now uses the community picked in its dropdown. Posts without one show as "Local demo post" instead of being filed under Campus explorers. Each post gets a stable id, so likes no longer move to another post when you add one. Posts saved before this change get ids when they load.
+- **Save Draft** really saves the title, body and community in this browser, and Create Post reopens with the draft. Posting clears it.
+- **Comments** are saved in this browser (up to 200) and appear in the thread and comment counts after reload. No message is sent.
+- **Join conversation** is back on each post's detail page, and choosing a community shows its details panel again: topics, related fictional events, Join/Leave and Close. README's earlier manual join checks work again.
+- **Time zone setting** now says exactly what it changes: the heading date (now the demo clock, see Presentation polish above), plus a "Starts … in your time zone" line in event details. Schedules, the planner and calendar export stay in campus time. A stored zone the browser doesn't recognize is ignored instead of blanking every page.
+- **Back button / swipe-back** moves between tabs again and closes forum sub-pages. Only a Back press at the app's first page is absorbed, so you can't swipe out of the app. *(Superseded: Back is now blocked on every tab and only closes sub-pages; see "Back and swipe-back between tabs" above.)*
+- **Saved state** from the old Oct 19 demo week stays under the legacy storage key. The Nov 2 week starts with its own clean state, so old plans and RSVPs aren't moved onto new dates.
+- **Event details** again moves focus to Close when it opens, keeps Tab inside the overlay, and returns focus to the event you opened when it closes.
+
+Verification: `npm test` (88 TypeScript tests, including 4 new ones in `tests/forum-settings.test.ts`, and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass. In the built app in a browser I checked: draft save and reopen, posting to a chosen community, a comment and a conversation join surviving in storage, Back across tabs and at the first page, and event-detail focus, Tab wrapping, Escape and the Tokyo time line. Limitations: forum likes still reset on reload, the editor toolbar and "Add tags" buttons do nothing yet, and the Rust planner is unchanged.
+
+## CI fix — November 5, 2026: API integration expectation after new events
+
+The "Rust and React checks" workflow failed on the `Judy` branch at `npm run test:api`. The November 2 catalog update added fictional event `e34` (Graduate school info night, Career, Tuesday 6:00–7:30 PM), which correctly matches the "career after 3" → "PM" / "after 3 PM" follow-up. Rust and the browser fallback both returned `e20, e34, e28`; only the test's hardcoded draft (`e20, e28`) was stale. Updated `tests/backend-integration.ts`; no application behavior changed.
+
+Verification: `npm test` (planner assertions, TypeScript and 5 Wiki tests), `npm run build`, `cargo fmt --check`, Clippy with `-D warnings`, 18 Rust tests, `cargo build --locked` and `npm run test:api` all pass locally.
+
+## Update — November 4, 2026: Doris's PR #4 merged with watsonx; teammate guides
+
+`main` (Doris's PR #4: clarifications, recommendation evidence, demo configuration and evaluation) was merged into `Judy` together with the watsonx interpreter, then into `main`.
+
+| Area | What changed |
+| --- | --- |
+| Planner API | `/api/plan` keeps Doris's `understood`, `clarification`, `recommendations` and `diagnostic` fields and adds `mode`, `provider` and the watsonx fallback `notice`. `/api/health` reports watsonx status; `/api/config` is unchanged. |
+| Order of checks | The deterministic rules run first. Clarifications such as "Numeric budgets are not supported" never depend on the model. Only then is watsonx asked (in watsonx mode). |
+| Unrecognised messages | As in Doris's design, a message the rules do not recognise at all (no interest, day, time, "event", "plan" or "week") is answered "I'm a limited demo planner…" in the browser and is **not** sent to watsonx. Most real requests contain one of these words. |
+| Chat label | Doris moved chat logic into `frontend/src/conversation.ts`; it now shows the watsonx label too. |
+| Teammate guides | The Wiki was rewritten for teammates without a coding background: new **Using watsonx** and **IBM Bob** pages, a step-by-step **Getting started**, and a simpler **Team workflow**. |
+
+Verification on the merged code: Rust fmt, Clippy, build and 18 tests (including a new one confirming a numeric-budget request is answered by the rules without calling watsonx); 84 TypeScript tests and 5 Wiki tests; frontend type check and build; API integration. A live check with the team sandbox (`ibm/granite-4-h-small`) returned watsonx-mode suggestions on the requested Tuesday/Thursday with Doris's recommendation evidence, and the rules-based budget clarification. The Chromium browser journey from PR #4 was not rerun. The frozen evaluation results were not regenerated and do not cover watsonx.
+
+## Update — November 4, 2026: optional IBM watsonx interpreter
+
+The AI Planner can now use IBM watsonx.ai (Granite, Dallas `us-south`) to understand chat messages. It is **off by default**: without configuration the app runs the simulated planner exactly as before, and no credentials are needed.
+
+| Change | What teammates should expect |
+| --- | --- |
+| Live interpreter option | Starting Rust with `PLANNER_PROVIDER=watsonx` makes `/api/plan` send the student's message and the previous filters to watsonx.ai. The model returns only search filters (topics, days, times, food, cost, number of options). The schedule, profile, names and chat history are not sent. |
+| Trusted matching unchanged | Model output must be a JSON object with only known fields and must pass `Constraints::validate`. Rust's deterministic planner still picks every event, so the model cannot invent event IDs, eligibility or food. Adding an event still needs the student's click and a fresh validation. |
+| Honest labels | The chat status shows **Rust planner · IBM watsonx** only when watsonx actually answered. If watsonx times out (6 s), rejects authentication, errors or returns invalid output, that request uses the simulated planner, the label reads **Rust planner · Simulated**, and the reply starts with "IBM watsonx was unavailable…". The offline browser fallback is unchanged. |
+| Secrets stay on the server | The API key is read from the server environment, is exchanged for an IBM IAM token server-side, and never appears in API responses, logs or browser code. `.env` files are git-ignored. |
+| Health endpoint | `GET /api/health` now also reports `watsonx_configured`. `watsonx_connected` is true only after the most recent live call succeeded. |
+
+### Run with watsonx
+
+```sh
+cp .env.example .env    # then fill in WATSONX_API_KEY and WATSONX_PROJECT_ID
+set -a; source .env; set +a
+npm run build
+cargo run --locked
+```
+
+The startup line says which planner is active. `WATSONX_URL` defaults to `https://us-south.ml.cloud.ibm.com` and `WATSONX_MODEL_ID` to `ibm/granite-4-h-small`, the Granite chat model offered in the lab's watsonx Challenge Sandbox. If your project lists a different Granite chat model, set its ID instead. Leave `PLANNER_PROVIDER` unset (or `simulated`) for the credential-free classroom demo. Details: [docs/backend.md](docs/backend.md#ibm-watsonx-interpreter).
+
+### Implementation notes
+
+- `backend/src/watsonx.rs`: `WatsonxInterpreter` (IAM token caching, `POST /ml/v1/text/chat`, JSON-only parsing, validation, timeout) and its mock-server tests.
+- `backend/src/interpreter.rs`: the `Interpreter` trait now returns `Result<Constraints, InterpretError>`; `SimulatedInterpreter::parse` is the deterministic rules.
+- `backend/src/lib.rs`: `Provider` selection, per-request labelled fallback, and `app_with(provider)`. `backend/src/main.rs` reads `PLANNER_PROVIDER` and refuses to start watsonx mode without `WATSONX_API_KEY` and `WATSONX_PROJECT_ID`.
+- `frontend/src/api.ts`: accepts `mode: "watsonx"` and the server's fallback `notice`; `planModeLabel` drives the chat status label.
+- New dependency: `reqwest` 0.13 (rustls, no OpenSSL). The local dev machine also needed a Rust toolchain installed via rustup for this work.
+
+### Verification and limitations for this update
+
+All checks listed under [Verification](#verification) passed on November 4, 2026 (Rust: 12 unit tests; npm: 10 API/fallback tests and 5 Wiki publisher tests; API integration suite passed). Rust tests run against a local mock IAM and watsonx.ai server and cover: valid output, fenced JSON, token reuse, IAM and chat authentication failures, upstream errors, timeouts, non-object or unknown-field output (such as `event_ids`), out-of-range constraints, key redaction, and the labelled fallback through `/api/plan`.
+
+**First live run (November 4, 2026, team sandbox, Dallas).** The API key and project ID authenticated. Two problems surfaced and were fixed:
+
+- `ibm/granite-3-3-8b-instruct` is not offered in the sandbox (HTTP 404). The default is now `ibm/granite-4-h-small`, the Granite chat model listed there.
+- Granite numbered weekdays from Monday = 1, so "Tuesday or Thursday" became Wednesday and Friday. The model now returns weekday **names** and Rust converts them; numeric days from the model are rejected and the request falls back to the labelled simulated planner. Two new Rust tests cover all seven names and name-based follow-ups (14 tests in total).
+
+After the fix, live answers were correct for "AI and a social event, Tuesday or Thursday only", "career events on Monday", "something on Wednesday or Friday afternoon", "weekend events" (no weekend events exist in the catalog) and "arts on Thursday" (none exist). Known differences from the simulated planner: Granite read "afternoon" as noon–midnight rather than noon–5 PM, and the follow-up "actually only Thursday" kept Thursday but dropped the earlier Social topic. The remaining prompts in `WATSONX-NEXT-STEPS.md` have not been run live. This change was written with Claude Code, not IBM Bob.
+
+### IBM Bob lab requirements (added November 4, 2026)
+
+A check against the lab guide found that the project does not yet meet the guide's mandatory Bob IDE requirement. To prepare:
+
+- `.bobignore` keeps `.env`, keys and credential files (plus `node_modules/`, `target/`, `dist/`) out of Bob's context.
+- `bob_sessions/README.md` explains how **each teammate** exports Bob task histories and consumption-summary screenshots into `bob_sessions/<name>/`. The folder contains no reports yet; only real Bob IDE exports belong there.
+- `docs/ibm-bob-setup.md` now lists this evidence requirement and no longer says watsonx is deferred.
+
+Still to do by the team: real Bob IDE work and its exported sessions, the 3-minute video, problem/solution and technology statements, and naming Campus Compass as your own challenge statement (education is not one of the listed themes).
+
+## PR #4 final clarification review — October 22, 2026
+
+Verified Doris’s multi-part clarification revision, then fixed one remaining partial-reply merge gap. Pending context now keeps every newly introduced clock bound, including ambiguous ones, carries forward safe topic changes, and promotes newly introduced weekday/location ambiguity to a full-restatement requirement. Unsupported day conditions never become a positive day filter. Partial answers generate no suggestions or calendar/RSVP changes until all pending requirements are resolved.
+
+The fix is in `frontend/src/conversation.ts`. Shared `tests/clarification-fixtures.ts` cases run through workflow tests and the real Rust integration suite, online and offline. Examples include “career on Thursday after 3” → “before 5” → “PM”, and the same original request → “not Thursday after 3 PM” → “PM”: both remain blocked until a complete supported answer. A partial reply changing Career to Social also retains that topic change.
+
+Validation: planner assertions, 83 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust formatting/Clippy/build, 6 Rust tests, real API integration and unchanged frozen evaluation results all pass. The independent targeted review found no further blockers. No visual interface or browser journey changes were made in this follow-up. Run the usual commands in `docs/backend.md`; use AI Planner to reproduce the sequences above, then supply a complete supported request or choose New chat.
+
+## PR #4 multi-part clarification fixes — October 22, 2026
+
+Clock clarification no longer hides an unresolved weekday exclusion or location condition. Mixed requests such as “social but not Tuesday after 3” now require a complete restatement with the topic, days the student CAN attend and explicit times. A reply of “PM” or “after 3 PM” cannot turn the excluded Tuesday into an allowed day. Rust and TypeScript mirror this policy and omit unsafe positively parsed days from mixed-ambiguity output.
+
+For “career on Thursday after 3 before 5”, answering only “after 3 PM” or only “before 5 PM” keeps planning blocked and retains pending requirements. A complete answer such as “after 3 PM before 5 PM” resolves both bounds while preserving Career/Thursday. Even a new bound introduced by a partial reply must appear in the final restatement. Existing single-clock AM/PM resolution, new-chat/reset cancellation and explicit RSVP/calendar approval are retained.
+
+The reviewer's `1544cc3` result-count fix and `9e52a88` invalid-date inspection fix are preserved. Validation: catalog/planner assertions, 73 TypeScript tests, 5 Wiki tests, frontend type check/build, Rust fmt/Clippy/build, 6 Rust tests and API integration passed. Actual online/offline conversation integration covers both partial-clock orderings, exclusions and proximity. Chromium passed eight online/offline mobile clarification journeys plus the complete 1280px/390px guided demo journey. The frozen 20-scenario report/results are unchanged; they are not a substitute for these multi-turn regressions. Run `npm ci`, `npm run build`, `cargo run --locked` and reproduce the quoted sequences in AI Planner; no calendar additions occur during clarification.
+
+## PR #4 second review — October 22, 2026
+
+Verified Doris’s original fixes: “career after 3” followed by “PM” or “after 3 PM” keeps Career filters, and explicit numeric budgets return no budget-filtered plan. Fixed a small regression in monetary detection: supported result-count requests such as “career up to 3 events”, “at most 2 options” and “no more than 1 choices” now retain their existing 1–5 result limits in both Rust and TypeScript. A count combined with “under $5” is still rejected as an unsupported budget. Changed the two interpreters and added offline/API parity regressions.
+
+Validation passed: planner assertions, 61 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust fmt/Clippy/build, 6 Rust tests, API integration and reproduction of the unchanged frozen evaluation files. No browser journey was rerun for this parser-only fix. To check it manually, request “career up to 3 events” and then try the same request with “under $5”.
+
+Two conversation revisions remain before merging: combined weekday/location ambiguity must not be lost when AM/PM is resolved, and a partial answer must not discard another unresolved clock bound. The review comments include “social but not Tuesday after 3” → “PM” and “career after 3 before 5” → “after 3 PM” reproductions. The single-request evaluation does not exercise these multi-turn cases.
+
+## PR #4 clarification fixes — October 21, 2026
+
+- AM/PM questions now retain non-ambiguous topic/day filters in pending conversation context. “career after 3” followed by either “PM” or “after 3 PM” produces only Career suggestions after 15:00. The ambiguous time is omitted from constraints until resolved; asking or answering a clarification never adds events or confirms RSVP. New chat/reset discards pending context. With multiple ambiguous times, a bare AM/PM answer requires a complete restatement rather than guessing.
+- Numeric budgets are explicitly unsupported in both Rust and browser interpretation. “arts on Wednesday evening under $5” produces no suggestions and explains the supported free-admission option instead of silently returning the $12 ceramics workshop. Generic clarification no longer asks for a maximum budget; location/weekday questions request a complete restatement.
+- Rust recommendation, comparison and no-match diagnostics now share the same constraint predicate. The reviewer's invalid-weekday detail fix (`9e52a88`) is preserved.
+
+Validation: all required commands passed: catalog/planner assertions, 60 TypeScript tests, 5 Wiki tests, frontend build/type checking, Rust fmt/Clippy/build, 6 Rust tests, and API integration. Integration also runs actual online/offline conversation follow-ups. Chromium verified both AM/PM answer forms and numeric-budget rejection online/offline with no calendar additions. The frozen 20-scenario report/results remain unchanged; follow-up regressions are separate from that single-request evaluation. Run with `npm ci`, `npm run build`, `cargo run --locked`; in AI Planner try the quoted requests above. No live watsonx or real enrollment is claimed.
+
+## PR #4 review follow-up — October 19, 2026
+
+Fixed an invalid-date inspection crash: Team Data Review can flag a record with an out-of-range or fractional weekday, and opening it now shows “Unknown day, Date needs review” instead of throwing a date-formatting error. `frontend/src/config.ts` guards weekday formatting, `frontend/src/data.ts` keeps the label readable, and `tests/final-alignment.test.ts` covers invalid weekdays plus an unchanged valid date. No catalog records were modified.
+
+Review verification: planner assertions, 50 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust unit tests and API integration passed. Re-running the 20-scenario evaluation reproduced the committed report and raw results without differences. The date fix was checked through formatting/regression tests; the previously documented Chromium journey was not rerun for this review.
+
+Two clarification revisions remain for Doris before merging: retain the requested topics/day when resolving an AM/PM question, and either implement maximum-budget filtering consistently in Rust/TypeScript or ask only for supported free-admission requirements while rejecting unsupported budgets. Reproductions and suggested acceptance checks are recorded on PR #4. The current synthetic evaluation does not exercise these follow-up conversations.
+
+## Final proposal alignment — October 19, 2026
+
+This iteration refines the existing MVP rather than recreating onboarding, communities, briefing or enrollment. Backend services and future watsonx integration remain Rust/Axum/Tokio/Serde; frontend source remains React/TypeScript built to JavaScript with Vite. No Python backend, real registrations or live university/IBM services were added.
+
+- **More balanced planning:** diversity-aware ranking covers expressed topics when feasible; strict cost/time/access/travel filters remain authoritative. Evidence includes trusted-record comparisons, topic/category discovery context, satisfied filters and remaining trade-offs. Free-text major/goals are explicitly not interpreted.
+- **Clarification and honest empty states:** ambiguous location/cost, weekday exclusions and AM/PM prompt questions. Unsupported requests, no catalog matches, conflicts, participation restrictions and missing requirements have distinct responses.
+- **One demo configuration:** edit `data/demo.json` for fictional campus identity, Monday week start and IANA time zone; rebuild both sides. Dates and ICS UTC timestamps follow the configuration. Another campus/week/zone uses a separate storage namespace, preserving earlier local plans.
+- **Team review:** Settings → Team tools → Open synthetic-data review shows counts/filters for missing sources/URLs, missing/stale verification, unknown access/RSVP/food and invalid metadata. It is read-only and never fabricates a source or verification claim.
+- **Guided journey:** AI Planner → Demo Scenario Launcher prepares a fictional graduate profile and limited availability, then keeps recommendations, cancellation, replacement and export in one workflow. Prior state is archived once; additions and RSVP always require student action. Restore previous demo returns to the archive.
+
+### Measured value and limits
+
+Run `cargo build --locked` then `npm run evaluate` from the repository root. It measures 20 frozen synthetic scenarios (12 development, 8 held-out) across keyword/category search, deterministic rules and the actual Rust context planner. Raw outputs and denominators are saved in `evaluation/results.json`; [the generated report](docs/evaluation-report.md) includes failure cases and [metric definitions](docs/evaluation-methodology.md).
+
+The context planner has zero measured conflict/eligibility violations on this suite and improves development topic coverage over chronological rules. The rule baseline ties it on held-out retrieval/coverage. This is a small visible synthetic benchmark, not proof of live AI value, external source truth, user benefit or generalization. Template explanation checks are not human usefulness ratings. **Live watsonx: Not yet evaluated.**
+
+Verified on this revision: all seven required commands passed, including 49 TypeScript tests, 5 Wiki fixture tests, 6 Rust unit tests, frontend build/type check, Rust formatting/Clippy/build and API integration. The 20-scenario × 3-adapter evaluation reproduced byte-identical report/result files on two runs. The checked-in Chromium journey passed at 1280px and 390px, covering manual RSVP/replacement approval, ICS, archive restore, clarification, review filters and seven-view overflow. No real student or organizer research is claimed.
+
+Run locally with `npm ci`, `npm run build`, `cargo run --locked`; use `npm run dev` alongside Rust for frontend development. Follow [the three-minute demo script](docs/demo-script.md). [The proposal checklist](docs/proposal-alignment.md) maps implemented, partial, missing and out-of-MVP requirements and lists student/organizer research still needed. The original proposal document was unavailable in the workspace, so alignment uses the supplied requirements.
+
+## Integrated update — October 18, 2026
+
+The architecture changes are merged with the latest teammate discovery, evidence, personalization and community work. Conversation ownership retains strict replacement filters and preserves Rust evidence in chat; preferred-time changes invalidate pending suggestions. Weekly briefing and targeted community navigation remain available. Engineering skills now use GitHub Issues, default triage labels and the domain conventions in `docs/agents/`.
+
+### Doris synchronization — October 19, 2026
+
+Doris incorporates main at `cfe617a` without conflicts, preserving the latest community fixes and workflow refactoring. The backend remains Rust/Axum/Tokio/Serde, including the future watsonx interpreter interface; the frontend remains React/TypeScript compiled to JavaScript. No tracked Python files or Python dependency manifests are present, so no additional language migration was needed.
+
+Validation after synchronization: catalog/planner assertions, all 43 TypeScript tests, 5 Wiki fixture tests, frontend type checking/build, Rust formatting, Clippy with warnings denied, 4 Rust unit tests, Rust build and API integration passed. Run with `npm ci`, `npm run build`, and `cargo run --locked`; use `npm run dev` alongside Rust for frontend development. Live watsonx remains deferred and requires a Rust adapter; the current planner and all registrations remain explicitly simulated.
+
+## PR #3 review fixes — October 18, 2026
+
+Two community interaction bugs found during review have been fixed on the PR branch:
+
+- Community memberships now persist in `joinedCommunities`, independently of conversation joins in `joined`. A conversation named `ai` can no longer join or leave the AI community accidentally. Existing conversation joins remain intact. Legacy `joined` values are not inferred as community memberships because post titles can match community IDs; rejoin any groups tested on the earlier PR preview once.
+- Related-community links in event details now carry a validated community ID, such as `#forum?community=ai`. They open the selected group's details, scroll it into view and move keyboard focus there. Reloading or using Back/Forward retains the group in the URL. Unknown IDs safely show the general forum.
+
+Files changed for these fixes: `communities.ts` (membership operations and community links), `state.ts` / `types.ts` (separate persisted membership field), and `App.tsx` / `Pages.tsx` / `components.tsx` (selected-community navigation). `tests/communities.test.ts` covers name collisions, persistence and valid/invalid links.
+
+Verification: `npm test` passes the planner assertions, 18 TypeScript tests and 5 Wiki tests; `npm run build` passes. The reviewed Rust code passes its 4 unit tests and API integration suite. Browser checks verify named event-to-community navigation, independent conversation/community joins and leave actions, reload persistence, and a 390px mobile layout without horizontal page overflow. To reproduce the collision regression check, create a local post titled `ai`, join its conversation, and confirm **AI & learning circle** still offers **Join locally**. Join and leave that community; the conversation must remain joined.
+
+## Proposal-aligned MVP improvements — Doris
+
+The Rust planner now returns structured recommendation evidence: interest relevance using the event description, schedule fit including travel buffer, practical requirements, and trade-offs. Chat cards display backend evidence; unavailable-backend suggestions carry an explicit browser simulation notice and do not invent Rust evidence. Evidence describes the recommendation-time snapshot; add actions always check current availability again. Reloaded chat retains event links but does not restore evidence as fresh verification.
+
+Event details now show campus identity, intended audience, eligibility, capacity/availability, food category, source URL, last-checked timestamp and verification status. All 30 records remain fictional. External source URLs and check timestamps are deliberately absent, displayed as Unknown / Not verified. The existing `checked` date records internal authoring review only. Open access in a fictional record does not establish real university eligibility or available seats.
+
+Dashboard **This Week's Briefing** (removed November 12, 2026) used deterministic planning for interest and cross-topic suggestions, lists saved-but-not-added events, highlights uncertainty and current plan conflicts/cancellations, and links to details, Planner and Calendar. Cross-disciplinary means topics beyond selected interests; verified department information is unavailable. The digest updates from local state, never background scraping.
+
+First-time demo users can personalize, choose Default Preference, or close the welcome prompt (top-right ×, or Escape) to go straight to the default preferences. Profile supports optional major/interdisciplinary notes, optional research/career goals, academic/social/cultural topic selections and preferred times. Topic selections and preferred time affect ranking; free-text notes are stored locally but are not semantically interpreted. Busy commitments and travel buffer remain editable. A career goal is never required.
+
+Discussion Forum includes searchable **All Communities**, category filters, individual details, local Join/Leave states, and topic-related events. Event details link to matching fictional communities. Posts and memberships stay in this browser; nothing is sent to other students.
+
+Cancellation replanning identifies the cancelled record, names retained choices, shows a replacement with evidence and RSVP requirements, and never adds it automatically. It preserves all existing filters. If those cannot be satisfied, it lists them and asks the student to change day/time, food or topic explicitly; it does not silently relax constraints.
+
+### Run and manually check this update
+
+From the repository root: `npm ci`, `npm run build`, then `cargo run --locked`. For frontend development, also run `npm run dev`. Rust serves the built frontend and API; see [backend setup](docs/backend.md).
+
+1. In a fresh browser profile (or Settings → Reset demo), select **Personalize my demo**. Choose topics and a preferred time; leave career goals blank. Save and reload to check persistence.
+2. On My Dashboard, inspect the Weekly Calendar and News; open Saved Events for saved items and an event's details for uncertainty notices, then follow the links to Planner and Calendar.
+3. In Planner, choose the AI Tuesday/Thursday afternoon prompt. Inspect interest, schedule, practical and trade-off evidence; open details and verify fictional source labels and Unknown / Not verified fields.
+4. Add the learning lab: cancel RSVP once and confirm nothing is added; then enter a fictional name, approve attendance and complete RSVP. Confirm calendar updates, reload persistence and calendar export.
+5. Hide the planner calendar if needed, simulate cancellation, and select **Find a replacement**. Check that other choices remain, the cancelled record is removed, and the replacement stays a suggestion until explicitly added. For no-match behavior, request AI on Tuesday after 3 PM before 4:30 PM with coffee before finding a replacement.
+6. Open Discussion Forum. Search Global, filter categories, open community details, Join/Leave, and create a local post. Event details also link to related communities.
+7. Check keyboard Tab/Escape, dialogs and navigation, and desktop/tablet/mobile layouts. Disconnect the backend to verify explicitly labelled browser fallback and absence of fabricated backend evidence.
+
+### Verification and limits
+
+All required commands passed: `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, `cargo build --locked`, `npm run test:api`. Node runs catalog/planner assertions, 15 API/preference/replanning tests and 5 Wiki fixture tests; Rust runs 4 unit tests. API integration covers new evidence, preferred-time parity, eligibility, RSVP, validation and static boundaries.
+
+Headless Chromium checks covered onboarding, preferences, briefing, evidence, provenance, RSVP cancel/approve, communities and persistence, plus overflow checks on six pages at 1280/820/390px. These checks are smoke tests, not a full accessibility audit. The app remains a browser-local simulation with fixed October 19–23, 2026 data; no live watsonx, production authentication, real registrations, external calendars or verified university sources are implemented.
+
+## Architecture update — October 18, 2026
+
+Enrollment, planning conversations and request interpretation now own their rules in separate modules. This keeps the calendar beside chat and mandatory demo RSVP flow while making asynchronous behavior testable through the same interfaces the UI uses.
+
+| Change | What teammates should expect |
+| --- | --- |
+| Enrollment ownership | One module owns RSVP gating, pending additions, current-schedule checks and calendar/RSVP updates. Reset discards obsolete confirmations and errors; removing an event clears its RSVP. |
+| Conversation ownership | Chat and replacement share request validity and busy-state handling. New chat/reset discard old results; changed schedules reject outdated suggestions. Replacement preserves every filter until the student explicitly changes it. |
+| Consistent interpretation | “Professional”, “ceramics”, “balance”, “snack” and “refreshment” reach the interpreter. Rust and browser simulation distinguish unsupported requests from understood requests with no matches, and reject invalid clock input such as “before 11:99 am”. |
+| Calendar beside chat | The **My calendar** button at the top right of AI Planner toggles a calendar panel on the right without leaving the conversation. It replaces the draft sidebar while open. On narrow screens it stacks below chat. |
+| Actions in AI responses | New recommendation messages contain event cards with **View details** and **Add to calendar** buttons. Added events show a disabled confirmation button. Unavailable events show the reason. |
+| Mandatory RSVP | Adding an event marked **RSVP required** opens a registration dialog. A demo attendee name and an explicit attendance checkbox are required before **Complete RSVP & add** can succeed. Cancelling or pressing Escape leaves the calendar unchanged. |
+| Automatic calendar updates | A successful addition immediately updates the planner panel, dashboard and main calendar. Drop-in events can be added directly. Removing an event also clears its demo RSVP confirmation. |
+| Shared enrollment validation | Every Add entry point—chat, draft plan, dashboard, Explore Events and event details—uses the same flow. Rust and the offline TypeScript fallback both enforce RSVP and current availability. |
+
+The registration dialog is a **demo RSVP page** inside the app. It does not contact an organizer, reserve a real seat, charge a fee, or send a confirmation email. Use a fictional display name. There is no external registration website or live calendar integration.
+
+### Implementation notes for the team
+
+- `frontend/src/PlannerPanels.tsx` contains the chat event cards, side calendar, and RSVP form.
+- `frontend/src/enrollment.ts` owns approved additions and removal, including latest-schedule validation and reset invalidation. `frontend/src/conversation.ts` owns chat and replacement lifecycle; suggestions never add events automatically.
+- `frontend/src/App.tsx` renders views and handles navigation, notifications and dialogs. It subscribes to shared demo state and read-only workflow status through `useSyncExternalStore`.
+- `frontend/src/interpretation.ts` owns browser request recognition, parsing and constraint validation. The Rust interpreter returns constraints plus recognition status; `POST /api/plan` now includes `understood`. Rebuild frontend and backend together.
+- `frontend/src/api.ts` sends enrollment requests and supplies the explicitly labelled offline simulation. Backend request rejections are never treated as offline success.
+- `backend/src/lib.rs` exposes `POST /api/enroll`. The Rust event model reads each record’s RSVP requirement from `data/events.json`; the client cannot override it.
+- Browser-local state now records confirmed demo RSVP event IDs and event IDs attached to new chat responses. Existing saved schedules are preserved. Old chat messages remain readable but do not gain buttons retroactively; send a fresh prompt to see the new cards.
+- `tests/workflows.test.ts` exercises complete enrollment and conversation outcomes with controlled request completion. Domain terms are documented in `docs/GLOSSARY.md`.

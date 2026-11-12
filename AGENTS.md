@@ -19,7 +19,7 @@ Install with `npm ci`. Build with `npm run build`; start with `cargo run --locke
 
 ## Documentation and Bob
 
-Before each push, update README.md with the completed changes, teammate run/demo instructions, verification results, and material limitations. Commit completed work with a descriptive message.
+Before each push, add a dated entry at the top of `docs/CHANGELOG.md` describing the change, tools used, and verification results. Keep README.md's overview accurate when a change affects the project description, run instructions, or current limits. Commit completed work with a descriptive message.
 
 Place new project documentation in `docs/`, except GitHub Wiki sources in `wiki/`. Edit existing documents in place unless the user requests reorganization. Keep agent instruction entrypoints at their tool-required paths.
 
