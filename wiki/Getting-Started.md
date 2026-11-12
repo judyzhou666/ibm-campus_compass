@@ -110,7 +110,7 @@ Now open **http://127.0.0.1:4173** in Chrome, Safari or Edge.
 5. For a guided story, use **AI Planner → Demo Scenario Launcher**.
 6. Try **Simulate event cancellation → Find a replacement**, then export your calendar from **My Calendar**.
 
-Everything is fictional: the events, the students and the demo week (October 19–23, 2026, Eastern Time). Nothing is sent to a real calendar, and no real RSVP is made.
+Everything is fictional: the events, the students and the demo week (Nov 2–6, 2026, Eastern Time). Nothing is sent to a real calendar, and no real RSVP is made.
 
 ---
 

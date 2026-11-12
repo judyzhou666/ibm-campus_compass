@@ -2,6 +2,10 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## README follow-up: accurate Bob attribution, demo week, repository layout — November 12, 2026
+
+Five small README fixes: Bob technology line rewritten to match recorded evidence (calendar views four rounds, AI Planner filter fix three rounds, README/Demo-tools cleanup; review fixes noted as Claude Code per CHANGELOG); stale "October 19–23" demo week in wiki/Getting-Started.md updated to Nov 2–6, 2026; tool-note line removed from Data and assets register; pitch line widened beyond first-semester students; Repository layout section added before More. Work done with IBM Bob.
+
 ## README: judge-facing overview; development log moved to docs/CHANGELOG.md — November 12, 2026
 
 README.md rewritten as a concise judge-facing project overview (under 15 KB). All 40 development-log sections moved verbatim to this file. AGENTS.md updated so future changes are logged here rather than in the README. "October 19–23" demo week references updated to Nov 2–6, 2026.

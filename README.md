@@ -1,6 +1,6 @@
 # Campus Compass
 
-A conversational campus-event planner that helps university students discover and coordinate academic, career and social opportunities during their first semester — built as a demonstration for the IBM AI Experiential Learning Lab.
+A campus opportunity planner that helps university students — starting with first-semester graduate students — discover academic, career and social events and fit them into a realistic week. Built for the IBM AI Experiential Learning Lab.
 
 ## Challenge track
 
@@ -48,7 +48,7 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 
 ## Technology
 
-- **IBM Bob** — used to build features in this project; see [`bob_sessions/`](bob_sessions/) for exported task histories. (The Calendar Day/Week/Month/Year views, the AI Planner improvements, and this README rewrite were done with IBM Bob; earlier work was done with Claude Code or Codex as noted in [`docs/CHANGELOG.md`](docs/CHANGELOG.md).)
+- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and this README/Demo-tools cleanup; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/) (Tingting's exports are being added).
 - **IBM watsonx.ai Granite** — optional live interpreter and ranker via `PLANNER_PROVIDER=watsonx`. Default is the deterministic simulated planner. Every reply is labelled with the mode that produced it.
 - **Rust** (Axum, Tokio, Serde) — backend API, typed validation, deterministic scheduling logic.
 - **React + TypeScript + Vite** — frontend; browser-local state; explicitly labelled simulation fallback when the backend is unavailable.
@@ -126,6 +126,19 @@ git switch Judy
 
 Replace `Judy` with your assigned branch name.
 
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `backend/src/` | Rust API, interpreters, planner, watsonx |
+| `frontend/src/` | React + TypeScript UI, browser fallback |
+| `data/` | Fictional catalog, demo week config, synthetic updates |
+| `tests/` and `evaluation/` | API, fallback, scheduling, Wiki, and frozen evaluation scenarios |
+| `docs/` and `wiki/` | Backend guide, demo script, evaluation, proposal alignment, Wiki sources |
+| `bob_sessions/` | Exported IBM Bob task histories (required for judging) |
+| `.env.example` | Server-side watsonx settings template |
+| `WATSONX-NEXT-STEPS.md` | Live watsonx verification checklist |
+
 ## More
 
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — full development log (40 entries moved from this README)
@@ -141,7 +154,7 @@ All 48 event records were originally authored for this prototype. No campus webs
 
 The cat image was supplied by the user for this website and is used unchanged. Its original third-party authorship/license has not been independently verified. Before public distribution beyond the team's intended demo, the team should record the original asset provenance/permission. No external images or fonts are loaded. Compass and interface icons are original SVG geometry; poster panels are original HTML/CSS typographic artwork.
 
-Names in the team credit were supplied or inferred from the user's account context. Demo profile fields are editable and are stored only in the viewer's browser.
+Demo profile fields are editable and are stored only in the viewer's browser.
 
 ## Verification
 
