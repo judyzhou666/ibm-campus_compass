@@ -492,11 +492,15 @@ export function EventDetails({
     return `${h}.${Math.round((m / 60) * 10)} hours`;
   }
 
-  // Access label
+  // Access label. Read access after applied updates, so an event a notice
+  // marked full says "At capacity" here, matching the RSVP card.
+  const currentAccess = (
+    effectiveEvents(appliedIds).find((x) => x.id === e.id) ?? e
+  ).access;
   function accessLabel(): string {
-    if (e.access === "open") return "Open to all";
-    if (e.access === "members") return "Members only";
-    if (e.access === "full") return "At capacity";
+    if (currentAccess === "open") return "Open to all";
+    if (currentAccess === "members") return "Members only";
+    if (currentAccess === "full") return "At capacity";
     return "Eligibility not confirmed";
   }
 
@@ -504,6 +508,11 @@ export function EventDetails({
   // (conflicts included), so a blocked event gets a disabled "Can't add"
   // button and the issue strip explains why, matching the event cards.
   const blocked = !planned && !!problem;
+  // Reason shown beside the button. Conflicting notices get a short pointer to
+  // the full notice above, so a disabled button is never left unexplained.
+  const rsvpReason = conflict
+    ? "Needs confirmation: conflicting notices for this event. See the notice above."
+    : problem;
   function rsvpButtonLabel(): string {
     if (planned) return "Remove from calendar";
     if (blocked) return "Can't add";
@@ -1031,10 +1040,10 @@ export function EventDetails({
                 <p className="ed-rsvp-when">{shortWhen}</p>
 
                 {/* Issue strip */}
-                {problem && !conflict ? (
+                {rsvpReason ? (
                   <div className="ed-issue-strip" role="status">
                     <Icon name="warning" />
-                    <span>{problem}</span>
+                    <span>{rsvpReason}</span>
                   </div>
                 ) : null}
 
@@ -1071,8 +1080,10 @@ export function EventDetails({
             {e.cost ? `$${e.cost}` : "Free"}
             {e.rsvp === "RSVP required" ? " · RSVP required" : ""}
           </span>
-          {problem && !conflict ? (
-            <span className="ed-mobile-issue">{problem}</span>
+          {rsvpReason ? (
+            <span className="ed-mobile-issue">
+              {conflict ? "Needs confirmation" : rsvpReason}
+            </span>
           ) : null}
         </div>
         <Button
