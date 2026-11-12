@@ -1,6 +1,7 @@
 import type { CampusEvent, Schedule, Constraints, TimeSlot } from "./types.ts";
 import { EVENTS } from "./data.ts";
 import { effectiveEvents } from "./updates.ts";
+import { busyBlocks } from "./personalEvents.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
   a.day === b.day && a.start < b.end + buffer && b.start < a.end + buffer;
 /**
@@ -31,7 +32,7 @@ export function issue(
   if (!["open", "members", "full"].includes(e.access))
     return "Eligibility not confirmed";
   const conflict = [
-    ...state.blocks,
+    ...busyBlocks(state),
     ...planEvents.filter(
       (x) =>
         state.plan.includes(x.id) &&

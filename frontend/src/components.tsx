@@ -13,6 +13,7 @@ import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
+import { busyBlocks } from "./personalEvents.ts";
 import {
   updateBadge,
   hasConflict,
@@ -293,7 +294,7 @@ export function Week({
       <div className="week">
         {DAYS.map((day, i) => {
           const items = [
-            ...state.blocks
+            ...busyBlocks(state)
               .filter((b) => b.day === i)
               .map((b) => ({ ...b, kind: "class" })),
             // Effective times: a time_moved update moves the block.

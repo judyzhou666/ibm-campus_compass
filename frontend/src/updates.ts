@@ -12,6 +12,7 @@
 
 import type { CampusEvent, DemoState, EventUpdate, UpdateBatch } from "./types.ts";
 import { EVENTS } from "./data.ts";
+import { busyBlocks } from "./personalEvents.ts";
 import updatesJson from "../../data/updates.json";
 
 export const ALL_BATCHES: UpdateBatch[] = updatesJson as UpdateBatch[];
@@ -116,7 +117,7 @@ export function applyNextBatch(state: DemoState): {
         x.id !== u.event_id &&
         !newCancelled.includes(x.id),
     );
-    const conflicting = [...state.blocks, ...planEvents].some(
+    const conflicting = [...busyBlocks(state), ...planEvents].some(
       (x) =>
         x.day === eff.day &&
         eff.start < x.end + state.buffer &&

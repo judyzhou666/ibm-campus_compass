@@ -30,7 +30,7 @@ What the app does today, from the student's view:
 - **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
 - **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
 - **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
-- **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views.
+- **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views, personal event creation/editing/dragging (blue items), and campus events (green, fixed time).
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
 - **Notifications** — bell dropdown, unread badge, filterable Notifications page, per-notification messages.
 - **Settings** — time zone, 15-minute travel buffer, AI connection mode, demo reset, synthetic-data review (Team tools).

@@ -4,6 +4,7 @@ import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
 import { issue, reasons } from "./planner.ts";
 import { effectiveEvents } from "./updates.ts";
+import { busyBlocks } from "./personalEvents.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
 type EvidenceKey = Exclude<
@@ -163,7 +164,7 @@ export function PlannerCalendar({
       <div className="planner-agenda">
         {DAYS.map((day, index) => {
           const entries = [
-            ...state.blocks
+            ...busyBlocks(state)
               .filter((b) => b.day === index)
               .map((b) => ({
                 ...b,

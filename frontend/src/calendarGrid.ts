@@ -317,27 +317,65 @@ export type CalendarItem =
       cancelled: boolean;
       /** A time_moved update changed this event's start or end. */
       moved: boolean;
+    }
+  | {
+      kind: "personal";
+      id: string;
+      title: string;
+      day: number;
+      start: number;
+      end: number;
+      location?: string;
+      /** True for weekly-repeating items */
+      weekly: boolean;
     };
 
 /**
  * Items for one date. Chosen events use the effective (update-applied) times
  * from `events` and appear only on their demo-week date; busy classes repeat
  * weekly on their weekday when `includeClasses` is true (Day/Week view).
+ * Personal events (from state.personalEvents) are included when present.
  */
 export function itemsForDate(
   iso: string,
-  state: Pick<DemoState, "blocks" | "plan" | "cancelled">,
+  state: Pick<DemoState, "blocks" | "plan" | "cancelled"> & { personalEvents?: DemoState["personalEvents"] },
   events: readonly CampusEvent[],
   original: readonly CampusEvent[],
   includeClasses: boolean,
 ): CalendarItem[] {
   const items: CalendarItem[] = [];
+  const wd = isoWeekdayIndex(iso);
   if (includeClasses) {
-    const wd = isoWeekdayIndex(iso);
     if (wd < 5) {
       for (const b of state.blocks) {
         if (b.day === wd) items.push({ kind: "class", ...b });
       }
+    }
+  }
+  // Personal events: one-off on this exact date, or weekly on this weekday
+  for (const pe of state.personalEvents ?? []) {
+    let onThisDate = false;
+    if (pe.repeat === "none") {
+      onThisDate = pe.date === iso;
+    } else if (pe.repeat === "weekly" && wd < 5) {
+      // weekly: matches if the same weekday (compare weekday of pe.date to wd)
+      const peWd = (() => {
+        const d = isoToNoonUTC(pe.date).getUTCDay();
+        return d === 0 ? 6 : d - 1;
+      })();
+      onThisDate = peWd === wd;
+    }
+    if (onThisDate) {
+      items.push({
+        kind: "personal",
+        id: pe.id,
+        title: pe.title,
+        day: wd,
+        start: pe.start,
+        end: pe.end,
+        location: pe.location,
+        weekly: pe.repeat === "weekly",
+      });
     }
   }
   const dayIdx = demoDayIndex(iso);
@@ -390,6 +428,66 @@ export function parseSavedPosition(
   } catch {
     return fallback;
   }
+}
+
+// ── Drag helpers (pure, no DOM) ────────────────────────────────────────────
+
+/**
+ * Convert a pixel offset from the top of the time grid to a minute value,
+ * snapped to 15-minute intervals.
+ *
+ * @param pixelY   - pixels from top of the grid area
+ * @param gridH    - total height of the grid area in pixels
+ * @param gridStart - first hour displayed (inclusive)
+ * @param gridEnd   - last hour displayed (exclusive)
+ */
+export function pixelToMins(
+  pixelY: number,
+  gridH: number,
+  gridStart: number,
+  gridEnd: number,
+): number {
+  const totalMin = (gridEnd - gridStart) * 60;
+  const raw = (pixelY / gridH) * totalMin + gridStart * 60;
+  return Math.round(raw / 15) * 15;
+}
+
+/**
+ * Clamp a start time so the event fits within the grid and has at least
+ * `minDuration` minutes.
+ */
+export function clampStart(
+  start: number,
+  duration: number,
+  gridStart: number,
+  gridEnd: number,
+  minDuration = 15,
+): number {
+  const dur = Math.max(duration, minDuration);
+  const lo = gridStart * 60;
+  const hi = gridEnd * 60 - dur;
+  return Math.max(lo, Math.min(hi, start));
+}
+
+/**
+ * Clamp an end time so it is at least `minDuration` minutes after `start`
+ * and does not exceed `gridEnd`.
+ */
+export function clampEnd(
+  end: number,
+  start: number,
+  gridEnd: number,
+  minDuration = 15,
+): number {
+  return Math.min(gridEnd * 60, Math.max(start + minDuration, end));
+}
+
+/**
+ * True when dropping a block (from state.blocks) on a weekend day is
+ * disallowed.
+ */
+export function blockDropAllowed(targetIso: string): boolean {
+  return isWeekday(targetIso);
 }
 
 function noonUTCToIsoSafe(iso: string): string | null {

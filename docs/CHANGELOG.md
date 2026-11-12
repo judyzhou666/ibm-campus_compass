@@ -2,6 +2,28 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+
+## Calendar: create, edit, delete and drag your own items — November 12, 2026
+
+Added Canvas-style personal calendar entries alongside existing busy-time blocks and campus events. Work done with IBM Bob.
+
+**Data model:** `PersonalEvent { id, title, date, start, end, repeat, location? }` added to `DemoState` (cap 200, validated in `restore()`). New `busyBlocks()` helper in `frontend/src/personalEvents.ts` combines `state.blocks` and personal-event demo-week occurrences; wired into `planner.ts` `issue()` and `recommend()`, `api.ts` `schedulePayload`, `updates.ts` conflict detection, `PlannerPanels.tsx` agenda, `components.tsx` WeekStrip, and `CalendarView.tsx` grid-hours computation.
+
+**Calendar interactions (My Calendar):**
+- "+" New event button in the toolbar; clicking empty time-grid space pre-fills the dialog; clicking empty month-cell creates for that date.
+- `PersonalEventDialog` (new `frontend/src/PersonalEventDialog.tsx`): Title, Date, From/To (15-min steps), Frequency (Does not repeat / Weekly), Location, Calendar (Personal or Class / busy time). Validation: end > start required, class+weekly+weekday → `state.blocks` entry. Delete with confirm step. Escape/× close; focus returns to opener.
+- Click own items in Day/Week/Month to open dialog. Click campus events unchanged (opens detail).
+- Drag own items with pointer events (no library): vertical move/resize in time grid, horizontal column change; Month view date drag. Snaps to 15 min. Preview shown during drag. After drop: toast "Moved X to Day, time. Undo" with Undo button.
+- Campus events: no drag, title="Campus event — time set by the organizer".
+- Blocks can only be dropped Mon–Fri; weekend drop shows message and cancels.
+
+**Visual:** personal items blue (`--personal: #1a6fb8`), classes grey, campus events green. Legend updated. Resize handle on own blocks.
+
+**Tests:** 22 new tests in `tests/personal-events.test.ts` covering state validation, `busyBlocks`, planner conflict, `recommend()` skipping, drag math helpers (`pixelToMins`, `clampStart`, `clampEnd`, `blockDropAllowed`), and `personalEventToBlock`.
+
+**Verification:** `npm test` (5/5 Wiki), TypeScript tests 264/264, `npm run build` clean, `cargo fmt --check` clean, `cargo clippy` 0 warnings, `cargo test` 58/58, `npm run test:api` PASS.
+
+
 ## Merge main (PR #19 event detail, PR #20 planner cleanup) into Tingting — November 12, 2026
 
 PR #20 removed the Demo Scenario Launcher, so the earlier change on this branch that only moved it into a collapsed "Demo tools (for presenters)" section is superseded: `frontend/src/App.tsx` and `docs/demo-script.md` now match main. README.md overview updated to match main (AI Planner is "Mimi", no "What I'm working with" panel, demo starts from Settings → Reset demo). PR #19/#20 README update sections moved verbatim to this file. Merge resolved with Claude Code, not IBM Bob.
