@@ -3,7 +3,7 @@
  *
  * Loads data/updates.json (embedded at build time via Vite ?raw import),
  * applies the next unapplied batch to browser-local demo state, and derives
- * display information for the Briefing panel and bell menu.
+ * display information for event cards, notifications and the bell menu.
  *
  * All changes are purely local; no server call is made for the update itself.
  * The applied update IDs are sent to /api/plan so the backend can treat

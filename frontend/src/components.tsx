@@ -13,7 +13,18 @@ import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
-import { updateBadge, hasConflict, effectiveUpdate, effectiveEvents, relativeTime, kindLabel } from "./updates.ts";
+import {
+  updateBadge,
+  hasConflict,
+  effectiveUpdate,
+  effectiveEvents,
+  relativeTime,
+  kindLabel,
+} from "./updates.ts";
+
+/** Colour class for an event's poster and tag: arts topics read as arts. */
+export const posterTone = (e: Pick<CampusEvent, "topic" | "category">) =>
+  e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
 
 export function Icon({ name }: { name: string }) {
   return (
@@ -80,11 +91,7 @@ export function Heading({
         <h1>{title}</h1>
         <p className="sub">{description}</p>
       </div>
-      {children || (
-        <span className="date">
-          {todayLabel} · Demo week
-        </span>
-      )}
+      {children || <span className="date">{todayLabel} · Demo week</span>}
     </div>
   );
 }
@@ -103,6 +110,8 @@ export function Filters({
         "Career",
         "Social",
         "Workshops",
+        "Wellbeing",
+        "Arts",
         "Free Food",
         "Coffee & snacks",
         "Paid food",
@@ -139,14 +148,15 @@ export function EventCard({
   const inPlan = state.plan.includes(e.id),
     problem = issue(e, state),
     saved = state.saved.includes(e.id);
-  const category =
-    e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const category = posterTone(e);
   const appliedIds = (state as DemoState).appliedUpdateIds ?? [];
   const badge = updateBadge(e.id, appliedIds);
   const conflict = hasConflict(e.id, appliedIds);
   const upd = !conflict ? effectiveUpdate(e.id, appliedIds) : null;
   return (
-    <article className={`event-card${badge === "needs-confirmation" ? " event-card--conflict" : badge === "updated" ? " event-card--updated" : ""}`}>
+    <article
+      className={`event-card${badge === "needs-confirmation" ? " event-card--conflict" : badge === "updated" ? " event-card--updated" : ""}`}
+    >
       <div className={`poster ${category}`}>
         <small>
           {DEMO.campus_name} / {dayLabel(e.day)}
@@ -182,14 +192,23 @@ export function EventCard({
         </button>
         <div className="meta">
           <Icon name="calendar" />
-          {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null
-            ? <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} <span className="badge badge--updated">Time changed</span></>
-            : when(e)}
+          {upd?.kind === "time_moved" &&
+          upd.new_start != null &&
+          upd.new_end != null ? (
+            <>
+              {formatTime(upd.new_start)}–{formatTime(upd.new_end)}{" "}
+              <span className="badge badge--updated">Time changed</span>
+            </>
+          ) : (
+            when(e)
+          )}
         </div>
         <div className="meta">
           <Icon name="pin" />
           {upd?.new_location ?? e.location}
-          {upd?.new_location ? <span className="badge badge--updated">Room changed</span> : null}
+          {upd?.new_location ? (
+            <span className="badge badge--updated">Room changed</span>
+          ) : null}
         </div>
         <div className="meta">
           <Icon name="food" />
@@ -265,7 +284,9 @@ export function Week({
   const demoWeek = weekOffset === 0;
   // Mark the same day the heading shows for the chosen time zone.
   const today = demoWeek
-    ? demoTodayIndex(isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone)
+    ? demoTodayIndex(
+        isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone,
+      )
     : -1;
   return (
     <div className="week-scroll">
@@ -349,8 +370,7 @@ export function EventDetails({
   const problem = issue(e, state),
     planned = state.plan.includes(e.id),
     saved = state.saved.includes(e.id);
-  const category =
-    e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const category = posterTone(e);
   const appliedIds = (state as DemoState).appliedUpdateIds ?? [];
   const badge = updateBadge(e.id, appliedIds);
   const conflict = hasConflict(e.id, appliedIds);
@@ -362,8 +382,11 @@ export function EventDetails({
       : "";
   // Convert the same start time the panel shows (the moved time after a
   // time_moved update), not the original catalog time.
-  const moved = upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null;
-  const shown = moved ? { ...e, start: upd!.new_start!, end: upd!.new_end! } : e;
+  const moved =
+    upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null;
+  const shown = moved
+    ? { ...e, start: upd!.new_start!, end: upd!.new_end! }
+    : e;
   const shownStart = shown.start;
   let viewerTime = "";
   if (viewerZone) {
@@ -386,7 +409,9 @@ export function EventDetails({
   // Lock body scroll while detail is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   // Keyboard close
@@ -417,17 +442,26 @@ export function EventDetails({
   }, [onClose]);
 
   return (
-    <div ref={overlayRef} className="event-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div
+      ref={overlayRef}
+      className="event-detail-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-title"
+    >
       {/* Sticky close bar */}
       <div className="event-detail-bar">
-        <button className="event-detail-close icon-btn" aria-label="Close details" onClick={onClose}>
+        <button
+          className="event-detail-close icon-btn"
+          aria-label="Close details"
+          onClick={onClose}
+        >
           <Icon name="close" />
         </button>
       </div>
 
       {/* Scrollable page content */}
       <div className="event-detail-scroll">
-
         {/* Hero banner */}
         <div className={`event-detail-hero poster ${category}`}>
           <div className="event-detail-hero-inner">
@@ -435,15 +469,18 @@ export function EventDetails({
             {badge === "needs-confirmation" ? (
               <span className="badge badge--conflict">Needs confirmation</span>
             ) : badge === "updated" && upd ? (
-              <span className="badge badge--updated">{kindLabel(upd.kind)}</span>
+              <span className="badge badge--updated">
+                {kindLabel(upd.kind)}
+              </span>
             ) : null}
-            <h1 id="detail-title" className="event-detail-hero-title">{e.title}</h1>
+            <h1 id="detail-title" className="event-detail-hero-title">
+              {e.title}
+            </h1>
           </div>
         </div>
 
         {/* Body */}
         <div className="event-detail-body">
-
           {/* Left: details */}
           <div className="event-detail-main">
             <p className="event-detail-desc">{e.description}</p>
@@ -452,10 +489,23 @@ export function EventDetails({
               <div className="event-detail-info-row">
                 <Icon name="calendar" />
                 <span>
-                  {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null ? (
-                    <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} · {DEMO.time_zone} <span className="badge badge--updated" style={{ marginLeft: "0.25rem" }}>Time changed</span></>
+                  {upd?.kind === "time_moved" &&
+                  upd.new_start != null &&
+                  upd.new_end != null ? (
+                    <>
+                      {formatTime(upd.new_start)}–{formatTime(upd.new_end)} ·{" "}
+                      {DEMO.time_zone}{" "}
+                      <span
+                        className="badge badge--updated"
+                        style={{ marginLeft: "0.25rem" }}
+                      >
+                        Time changed
+                      </span>
+                    </>
                   ) : (
-                    <>{when(e)} · {DEMO.time_zone}</>
+                    <>
+                      {when(e)} · {DEMO.time_zone}
+                    </>
                   )}
                 </span>
               </div>
@@ -471,12 +521,22 @@ export function EventDetails({
                 <Icon name="pin" />
                 <span>
                   {upd?.new_location ?? e.location}
-                  {upd?.new_location ? <span className="badge badge--updated" style={{ marginLeft: "0.5rem" }}>Room changed</span> : null}
+                  {upd?.new_location ? (
+                    <span
+                      className="badge badge--updated"
+                      style={{ marginLeft: "0.5rem" }}
+                    >
+                      Room changed
+                    </span>
+                  ) : null}
                 </span>
               </div>
               <div className="event-detail-info-row">
                 <Icon name="food" />
-                <span>{foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free admission"}</span>
+                <span>
+                  {foodLabel(e.food)} ·{" "}
+                  {e.cost ? `$${e.cost}` : "Free admission"}
+                </span>
               </div>
               <div className="event-detail-info-row">
                 <Icon name="users" />
@@ -487,8 +547,8 @@ export function EventDetails({
                       ? "Membership required"
                       : e.access === "full"
                         ? "At capacity"
-                        : "Eligibility not confirmed"
-                  } · {e.rsvp}
+                        : "Eligibility not confirmed"}{" "}
+                  · {e.rsvp}
                 </span>
               </div>
               {e.host_school && (
@@ -507,8 +567,8 @@ export function EventDetails({
                 <div className="event-detail-info-row">
                   <Icon name="settings" />
                   <span>
-                    Membership: {conditionLabel(e.access_conditions.membership)} ·{" "}
-                    Min age: {conditionLabel(e.access_conditions.min_age)} ·{" "}
+                    Membership: {conditionLabel(e.access_conditions.membership)}{" "}
+                    · Min age: {conditionLabel(e.access_conditions.min_age)} ·{" "}
                     Ticket: {conditionLabel(e.access_conditions.ticket)} ·{" "}
                     Capacity: {conditionLabel(e.access_conditions.capacity)}
                   </span>
@@ -519,7 +579,12 @@ export function EventDetails({
             {conflict ? (
               <div className="notice notice--conflict">
                 <strong>Needs confirmation</strong>
-                <p>Conflicting notices were received for this event — one says it was cancelled, another says the room changed. The organizer has not clarified. Do not make plans based on either notice alone.</p>
+                <p>
+                  Conflicting notices were received for this event — one says it
+                  was cancelled, another says the room changed. The organizer
+                  has not clarified. Do not make plans based on either notice
+                  alone.
+                </p>
               </div>
             ) : badge === "updated" && upd ? (
               <div className="notice notice--updated">
@@ -529,7 +594,8 @@ export function EventDetails({
             ) : null}
             {e.last_checked_at ? (
               <p className="fineprint" style={{ marginTop: "0.5rem" }}>
-                <Icon name="clock" /> Last checked {relativeTime(e.last_checked_at)}
+                <Icon name="clock" /> Last checked{" "}
+                {relativeTime(e.last_checked_at)}
               </p>
             ) : null}
             {problem && !conflict ? (
@@ -537,28 +603,36 @@ export function EventDetails({
             ) : !problem ? (
               <div className="event-detail-reasons">
                 {reasons(e, state).map((reason) => (
-                  <div key={reason} className="event-detail-reason-item">✓ {reason}</div>
+                  <div key={reason} className="event-detail-reason-item">
+                    ✓ {reason}
+                  </div>
                 ))}
               </div>
             ) : null}
 
             <section className="event-detail-section">
-              <h2 className="event-detail-section-title">Related communities</h2>
-              <p className="fineprint">Fictional local groups matching this record's topic.</p>
+              <h2 className="event-detail-section-title">
+                Related communities
+              </h2>
+              <p className="fineprint">
+                Fictional local groups matching this record's topic.
+              </p>
               <div className="event-detail-communities">
-                {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map((c) => (
-                  <a
-                    key={c.id}
-                    href={communityHash(c.id)}
-                    onClick={(ev) => {
-                      ev.preventDefault();
-                      onCommunity(c.id);
-                    }}
-                    className="event-detail-community-link"
-                  >
-                    {c.name}
-                  </a>
-                ))}
+                {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map(
+                  (c) => (
+                    <a
+                      key={c.id}
+                      href={communityHash(c.id)}
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        onCommunity(c.id);
+                      }}
+                      className="event-detail-community-link"
+                    >
+                      {c.name}
+                    </a>
+                  ),
+                )}
               </div>
             </section>
 
@@ -567,7 +641,9 @@ export function EventDetails({
               <dl className="evidence">
                 {Object.entries({
                   "Host school": e.host_school || "Not confirmed",
-                  "Goal type": e.goal_type?.length ? e.goal_type.join(", ") : "Not confirmed",
+                  "Goal type": e.goal_type?.length
+                    ? e.goal_type.join(", ")
+                    : "Not confirmed",
                   Campus: e.campus_id || "Unknown",
                   Source: e.source || "Unknown",
                   "Last checked": e.last_checked_at
@@ -589,7 +665,11 @@ export function EventDetails({
                   <div>
                     <dt>Original source URL</dt>
                     <dd>
-                      <a href={e.source_url} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={e.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {e.source_url}
                       </a>
                     </dd>
@@ -602,8 +682,10 @@ export function EventDetails({
                 )}
               </dl>
               <p className="fineprint">
-                Authored for this prototype · Internal authoring review (not external verification) {e.checked}.
-                RSVP-required events use a mandatory demo registration step. No organiser is contacted and no real place is reserved.
+                Authored for this prototype · Internal authoring review (not
+                external verification) {e.checked}. RSVP-required events use a
+                mandatory demo registration step. No organiser is contacted and
+                no real place is reserved.
               </p>
             </details>
           </div>
@@ -612,13 +694,20 @@ export function EventDetails({
           <aside className="event-detail-aside">
             <div className="event-detail-aside-inner">
               <div className={`event-detail-aside-banner poster ${category}`}>
-                <b>{e.poster.split(" / ").map((part, i) => (
-                  <span key={part}>{i > 0 ? " / " : ""}{part}</span>
-                ))}</b>
+                <b>
+                  {e.poster.split(" / ").map((part, i) => (
+                    <span key={part}>
+                      {i > 0 ? " / " : ""}
+                      {part}
+                    </span>
+                  ))}
+                </b>
               </div>
               <div className="event-detail-aside-body">
                 <p className="event-detail-aside-date">{when(shown)}</p>
-                <p className="event-detail-aside-loc"><Icon name="pin" /> {upd?.new_location ?? e.location}</p>
+                <p className="event-detail-aside-loc">
+                  <Icon name="pin" /> {upd?.new_location ?? e.location}
+                </p>
                 <Button
                   className="primary"
                   onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
@@ -635,12 +724,15 @@ export function EventDetails({
               </div>
             </div>
           </aside>
-
         </div>
       </div>
 
       {/* Backdrop click to close */}
-      <div className="event-detail-backdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        className="event-detail-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
     </div>
   );
 }
@@ -683,7 +775,13 @@ export function SignInDialog({
       >
         <label className="rsvp-name">
           Display name
-          <input name="name" autoFocus required maxLength={30} defaultValue={name} />
+          <input
+            name="name"
+            autoFocus
+            required
+            maxLength={30}
+            defaultValue={name}
+          />
         </label>
         <p className="fineprint">
           Demo sign-in only: there is no account or password, and no email is

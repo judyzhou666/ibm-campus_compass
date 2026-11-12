@@ -25,8 +25,12 @@ import {
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { filterChips, removeChip } from "./filterChips.ts";
-import { Briefing, Welcome } from "./Briefing.tsx";
-import { Forum, Profile, Settings } from "./Pages.tsx";
+import { Welcome } from "./Welcome.tsx";
+import { Forum, Profile } from "./Pages.tsx";
+import { Settings } from "./Settings.tsx";
+import { Home } from "./Home.tsx";
+import { matchesFilter } from "./filters.ts";
+import { News } from "./News.tsx";
 import {
   NotificationDetail,
   NotificationMenu,
@@ -39,10 +43,16 @@ import {
   type NotificationFilter,
 } from "./notifications.ts";
 import type { Constraints, Message, Rsvp } from "./types.ts";
-import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./updates.ts";
+import {
+  applyNextBatch,
+  nextBatch,
+  relativeTime,
+  effectiveEvents,
+} from "./updates.ts";
 
 const labels = {
   review: "Team data review",
+  home: "Home",
   dashboard: "My Dashboard",
   calendar: "My Calendar",
   explore: "Explore Events",
@@ -60,7 +70,8 @@ interface ToastAction {
 }
 const navIcons: Record<Page, string> = {
   review: "settings",
-  dashboard: "home",
+  home: "home",
+  dashboard: "dashboard",
   calendar: "calendar",
   explore: "search",
   forum: "chat",
@@ -82,7 +93,7 @@ const prompts = [
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
-  return page in labels ? (page as Page) : "dashboard";
+  return page in labels ? (page as Page) : "home";
 };
 export default function App() {
   const [demo] = useState(() => createStore(restore()));
@@ -107,7 +118,12 @@ export default function App() {
   }, []);
   const [enrollment] = useState(() => createEnrollment(demo));
   const [conversation] = useState(() =>
-    createConversation(demo, enrollment.remove, globalThis.fetch, () => watsonxModeRef.current),
+    createConversation(
+      demo,
+      enrollment.remove,
+      globalThis.fetch,
+      () => watsonxModeRef.current,
+    ),
   );
   const { busy, mode } = useSyncExternalStore(
     conversation.subscribe,
@@ -263,7 +279,8 @@ export default function App() {
   const appUrlRef = useRef(appUrl);
   appUrlRef.current = appUrl;
   useEffect(() => {
-    if (location.hash !== appUrl) history.replaceState(history.state, "", appUrl);
+    if (location.hash !== appUrl)
+      history.replaceState(history.state, "", appUrl);
   }, [appUrl]);
   // Back / swipe-back: close the innermost sub-page; on a top-level tab,
   // nothing happens.
@@ -299,7 +316,8 @@ export default function App() {
   }, [menu]);
   function checkForUpdates() {
     const current = demo.read();
-    const { nextState, applied, batch, movedConflicts } = applyNextBatch(current);
+    const { nextState, applied, batch, movedConflicts } =
+      applyNextBatch(current);
     if (!applied.length) {
       notify(
         "No more update batches. All synthetic updates have been applied. · Synthetic update",
@@ -307,23 +325,23 @@ export default function App() {
       return;
     }
     update(() => nextState);
-    nav("dashboard");
-    const planned = applied.filter((u) =>
-      current.plan.includes(u.event_id),
-    );
+    const planned = applied.filter((u) => current.plan.includes(u.event_id));
     const planNotice =
       planned.length > 0
         ? ` ${planned.length} of your planned event${planned.length > 1 ? "s" : ""} ${planned.length > 1 ? "are" : "is"} affected.`
         : "";
     const conflictNotice =
       movedConflicts.length > 0
-        ? ` A time change now conflicts with your schedule — use "Find a replacement" to update your plan.`
+        ? ` A time change now conflicts with your schedule — use "Find a replacement" in the AI Planner to update your plan.`
         : "";
     notify(
-      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} See Briefing for details. · Synthetic update`,
-      planned.length > 0
-        ? [{ label: "View briefing", run: () => nav("dashboard") }]
-        : [],
+      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} · Synthetic update`,
+      planned.length > 0 || movedConflicts.length > 0
+        ? [
+            { label: "Open AI Planner", run: () => nav("planner") },
+            { label: "View notifications", run: () => openNotifications() },
+          ]
+        : [{ label: "View notifications", run: () => openNotifications() }],
     );
   }
 
@@ -462,20 +480,10 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     notify("Exported chosen events. Cancelled events were excluded.");
   }
-  const FOOD_FILTERS: Record<string, string> = {
-    "Free Food": "Free meal",
-    "Coffee & snacks": "Coffee & snacks",
-    "Paid food": "Paid food",
-    "No food": "None",
-    "Food unknown": "Unknown",
-  };
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        (filter === "All" ||
-          (filter in FOOD_FILTERS
-            ? e.food === FOOD_FILTERS[filter]
-            : e.category === filter)) &&
+        matchesFilter(e, filter) &&
         (!query ||
           `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
             .toLowerCase()
@@ -529,7 +537,9 @@ export default function App() {
         })(),
     );
   const detailEvent = EVENTS.find((e) => e.id === detail);
-  const campusZone = isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone;
+  const campusZone = isTimeZone(state.timezone)
+    ? state.timezone
+    : DEMO.time_zone;
   const notifications = allNotifications(state.appliedUpdateIds);
   const unreadNotes = unreadOf(notifications, state.readNotificationIds);
   const updatesWaiting = nextBatch(state.appliedUpdateIds) !== null;
@@ -563,10 +573,10 @@ export default function App() {
         </button>
         <a
           className="brand"
-          href="#dashboard"
+          href="#home"
           onClick={(e) => {
             e.preventDefault();
-            nav("dashboard");
+            nav("home");
           }}
         >
           <span className="logo">
@@ -743,6 +753,27 @@ export default function App() {
       </aside>
       <div className="shell">
         <main id="main">
+          {page === "home" ? (
+            <Home
+              state={state}
+              notifications={notifications}
+              onOpenAnnouncement={(n) => {
+                markRead([n.id]);
+                setDetail(n.eventId ?? null);
+              }}
+              onViewNotifications={() => openNotifications()}
+              onCategory={(f) => {
+                nav("explore");
+                setFilter(f);
+              }}
+              onExplore={() => nav("explore")}
+              onProfile={() => nav("profile")}
+              onAdd={add}
+              onSave={save}
+              onDetail={setDetail}
+              onCalendar={openCalendar}
+            />
+          ) : null}
           {page === "dashboard" ? (
             <>
               <Heading
@@ -787,7 +818,8 @@ export default function App() {
                           <Icon name="chevronLeft" />
                         </button>
                         <span className="week-nav-label" aria-live="polite">
-                          {weekDayLabel(0, weekOffset)} – {weekDayLabel(4, weekOffset)}
+                          {weekDayLabel(0, weekOffset)} –{" "}
+                          {weekDayLabel(4, weekOffset)}
                         </span>
                         <button
                           className="icon-btn"
@@ -831,15 +863,10 @@ export default function App() {
                       </span>
                     </div>
                   </section>
-                  <section>
-                    <Briefing
-                      state={state}
-                      onDetail={setDetail}
-                      onPlanner={() => nav("planner")}
-                      onCalendar={openCalendar}
-                      onCheckUpdates={checkForUpdates}
-                    />
-                  </section>
+                  <News
+                    onEvent={setDetail}
+                    onCommunity={(id) => nav("forum", id)}
+                  />
                 </div>
                 <aside className="stack rail">
                   <section className="panel planner-teaser">
@@ -939,7 +966,8 @@ export default function App() {
               <div className="section-bar">
                 <Filters value={filter} onChange={setFilter} />
                 <span className="date">
-                  {list.length} fictional {list.length === 1 ? "event" : "events"}
+                  {list.length} fictional{" "}
+                  {list.length === 1 ? "event" : "events"}
                 </span>
               </div>
               {query ? (
@@ -1077,7 +1105,9 @@ export default function App() {
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
                   <p>
-                    An event in your plan is now unavailable — cancelled, full, or moved into a conflict. Your other choices will stay in place.
+                    An event in your plan is now unavailable — cancelled, full,
+                    or moved into a conflict. Your other choices will stay in
+                    place.
                   </p>
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
@@ -1339,18 +1369,17 @@ export default function App() {
                         <Icon name="bell" />
                       </div>
                       <p className="sub">
-                        Apply the next batch of synthetic demo updates — cancellations, capacity, time or room changes.
+                        Apply the next batch of synthetic demo updates —
+                        cancellations, capacity, time or room changes.
                       </p>
-                      <Button
-                        className="small"
-                        onClick={checkForUpdates}
-                      >
+                      <Button className="small" onClick={checkForUpdates}>
                         <Icon name="bell" />
                         Check for updates
                       </Button>
                       {state.lastUpdateCheck ? (
                         <p className="fineprint">
-                          Last checked {relativeTime(state.lastUpdateCheck)} · Synthetic update
+                          Last checked {relativeTime(state.lastUpdateCheck)} ·
+                          Synthetic update
                         </p>
                       ) : null}
                     </section>
@@ -1390,7 +1419,10 @@ export default function App() {
           ) : null}
           {page === "calendar" ? (
             <>
-              <button className="text-btn sub-page-back" onClick={closeCalendar}>
+              <button
+                className="text-btn sub-page-back"
+                onClick={closeCalendar}
+              >
                 <span className="flip">
                   <Icon name="arrow" />
                 </span>
@@ -1404,7 +1436,8 @@ export default function App() {
 
               {cancelled ? (
                 <div className="notice">
-                  A planned event is now unavailable — cancelled, full, or moved into a conflict.{" "}
+                  A planned event is now unavailable — cancelled, full, or moved
+                  into a conflict.{" "}
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
                   </Button>
@@ -1427,26 +1460,33 @@ export default function App() {
                   </button>
                 </div>
                 {state.plan.length ? (
-                  effEvents.filter((e) => state.plan.includes(e.id)).map((e) => (
-                    <div className="block-row" key={e.id}>
-                      <div>
-                        <strong>
-                          {e.title}
-                          {state.cancelled.includes(e.id) ? " · Cancelled" : ""}
-                        </strong>
-                        <small>
-                          {when(e)} · {e.location}
-                          {(() => {
-                            const o = EVENTS.find((x) => x.id === e.id);
-                            return o && (o.start !== e.start || o.end !== e.end) ? " · Time changed" : "";
-                          })()}
-                        </small>
+                  effEvents
+                    .filter((e) => state.plan.includes(e.id))
+                    .map((e) => (
+                      <div className="block-row" key={e.id}>
+                        <div>
+                          <strong>
+                            {e.title}
+                            {state.cancelled.includes(e.id)
+                              ? " · Cancelled"
+                              : ""}
+                          </strong>
+                          <small>
+                            {when(e)} · {e.location}
+                            {(() => {
+                              const o = EVENTS.find((x) => x.id === e.id);
+                              return o &&
+                                (o.start !== e.start || o.end !== e.end)
+                                ? " · Time changed"
+                                : "";
+                            })()}
+                          </small>
+                        </div>
+                        <Button className="small" onClick={() => remove(e.id)}>
+                          Remove
+                        </Button>
                       </div>
-                      <Button className="small" onClick={() => remove(e.id)}>
-                        Remove
-                      </Button>
-                    </div>
-                  ))
+                    ))
                 ) : (
                   <Empty title="Your week is waiting">
                     Choose an event or ask the planner to help you get started.
@@ -1464,7 +1504,12 @@ export default function App() {
             </>
           ) : null}
           {page === "profile" ? (
-            <Profile state={state} update={update} notify={notify} watsonxMode={watsonxMode} />
+            <Profile
+              state={state}
+              update={update}
+              notify={notify}
+              watsonxMode={watsonxMode}
+            />
           ) : null}
           {page === "forum" ? (
             <Forum
@@ -1476,28 +1521,32 @@ export default function App() {
             />
           ) : null}
           {page === "settings" ? (
-            <section className="panel briefing">
-              <h2>Team tools</h2>
-              <p>
-                Read-only review of fictional event quality, separate from
-                student planning.
-              </p>
-              <Button onClick={() => nav("review")}>
-                Open synthetic-data review
-              </Button>
-            </section>
-          ) : null}
-          {page === "settings" ? (
             <Settings
               state={state}
               update={update}
               notify={notify}
+              watsonxMode={watsonxMode}
+              sidebarCollapsed={collapsed}
+              onSidebarCollapsed={setCollapsed}
+              unreadCount={unreadNotes.length}
+              updatesWaiting={updatesWaiting}
+              onProfile={() => nav("profile")}
+              onSignIn={() => setSigningIn(true)}
+              onReview={() => nav("review")}
+              onNotifications={() => openNotifications()}
+              onMarkAllRead={() => {
+                markRead(unreadNotes.map((n) => n.id));
+                notify("All notifications marked as read.");
+              }}
+              onCheckUpdates={checkForUpdates}
+              onExport={exportCalendar}
+              onPlanner={() => nav("planner")}
               onReset={() => {
                 conversation.reset();
                 enrollment.reset();
                 setCalendarOpen(false);
                 update(fresh);
-                nav("dashboard");
+                nav("home");
                 notify("Demo restored. You’re ready to present.");
               }}
             />
@@ -1552,7 +1601,9 @@ export default function App() {
           onSignIn={(name) => {
             update((s) => ({ ...s, name, signedIn: true }));
             setSigningIn(false);
-            notify(`Signed in as ${name}. Demo only; nothing leaves this browser.`);
+            notify(
+              `Signed in as ${name}. Demo only; nothing leaves this browser.`,
+            );
           }}
         />
       ) : null}
