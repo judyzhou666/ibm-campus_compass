@@ -1626,6 +1626,7 @@ export default function App() {
           onAdd={add}
           onRemove={remove}
           onSave={save}
+          onDetail={setDetail}
         />
       ) : null}
     </>

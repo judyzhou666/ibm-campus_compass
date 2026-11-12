@@ -39,4 +39,5 @@ export const paths: Record<string, string> = {
   refresh: "M20 7a9 9 0 1 0 1 8 M20 2v5h-5",
   users:
     "M9 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z M3 20v-4a6 6 0 0 1 12 0v4 M17 4a3 3 0 0 1 0 6 M18 13a4 4 0 0 1 3 4v3",
+  warning: "M12 2L2 21h20L12 2Z M12 9v5 M12 17.5h.01",
 };
