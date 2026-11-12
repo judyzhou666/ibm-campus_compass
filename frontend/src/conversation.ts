@@ -1,7 +1,7 @@
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
 import { requestPlan, planningKey, planModeLabel } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
-import { issue } from "./planner.ts";
+import { issue, recommend } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
 import type { CampusEvent, Constraints, DemoState } from "./types.ts";
 import {
@@ -92,9 +92,12 @@ export function createConversation(
           ? `${availabilityChangeSummary}\n\nI found ${matches.length} ${matches.length === 1 ? "option" : "options"} on your remaining available days. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : `${availabilityChangeSummary}\n\nI couldn't find an eligible, conflict-free match for those days in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear all filters.`;
       } else {
-        response = matches.length
-          ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-          : `I couldn't find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear time and food filters. Only Monday\u2013Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.`;
+        if (matches.length) {
+          response = `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
+        } else {
+          // Build a plain-language no-match response with nearest alternatives.
+          response = buildNoMatchResponse(plan.constraints, snapshot);
+        }
       }
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
@@ -153,6 +156,57 @@ export function createConversation(
   }
 
   /**
+   * Build a plain-language no-match message. When a filter combination yields nothing, offer
+   * the closest alternatives by relaxing the most-restrictive filter first.
+   */
+  function buildNoMatchResponse(constraints: Constraints, snapshot: DemoState): string {
+    const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    // 1. Drop food constraint and retry
+    if (constraints.food) {
+      const noFood = { ...constraints };
+      delete noFood.food;
+      const alt = recommend(snapshot, noFood, 4, true);
+      if (alt.length) {
+        const label = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
+        const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
+        const timeStr = constraints.after === 1020 ? " in the evening" : constraints.after === 720 ? " in the afternoon" : constraints.before === 720 ? " in the morning" : "";
+        return `Nothing${dayStr}${timeStr} has ${label}. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} without that filter — tap one to see details.`;
+      }
+    }
+    // 2. Drop day constraint and retry
+    if (constraints.days?.length) {
+      const noDay = { ...constraints };
+      delete noDay.days;
+      const alt = recommend(snapshot, noDay, 4, true);
+      if (alt.length) {
+        const dayNames = constraints.days.map((d) => DAY_NAMES[d]).filter(Boolean).join("/");
+        return `I didn't find anything on ${dayNames || "that day"} that matches. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} similar ${alt.length === 1 ? "option" : "options"} on other days.`;
+      }
+    }
+    // 3. Drop time constraint
+    if (constraints.after !== undefined || constraints.before !== undefined) {
+      const noTime = { ...constraints };
+      delete noTime.after;
+      delete noTime.before;
+      const alt = recommend(snapshot, noTime, 4, true);
+      if (alt.length) {
+        return `Nothing matches that time window. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} at other times.`;
+      }
+    }
+    // 4. Drop topic constraint
+    if (constraints.topics?.length) {
+      const noTopic = { ...constraints };
+      delete noTopic.topics;
+      const alt = recommend(snapshot, noTopic, 4, true);
+      if (alt.length) {
+        const topicStr = constraints.topics.join(" or ");
+        return `I couldn't find any ${topicStr} events that fit. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} from other areas.`;
+      }
+    }
+    return `Nothing matched in this demo week. Try a different day, topic, or time, or say "start over" to clear all filters.`;
+  }
+
+  /**
    * Find a planned event that is now unavailable: cancelled, full by update, or moved into a conflict.
    * Returns the first such event from the plan, or undefined if none.
    */
@@ -205,6 +259,12 @@ export function createConversation(
       text = text.trim();
       if (previous !== undefined || /\b(reset|start over)\b/i.test(text))
         pending = undefined;
+      // Detect follow-up intent. Only carry over previous filters when the message
+      // explicitly builds on the last search. Fresh questions start a new search.
+      const isFollowUp =
+        previous !== undefined ||
+        /\b(only|also|instead|what about|and also|but|as well|too|more|another|different|except|without|rather|add|include|exclude)\b/i.test(text) ||
+        /^(and |or |but )\b/i.test(text);
       let resolvedText = text;
       let context = pending?.constraints;
       if (
@@ -321,13 +381,13 @@ export function createConversation(
 
       demo.update((s) => ({
         ...s,
-        constraints: previous ?? s.constraints,
+        constraints: previous ?? (isFollowUp ? s.constraints : {}),
         messages: [...s.messages, { role: "user", text }],
       }));
       await run((snapshot) =>
         requestPlan(
           resolvedText,
-          context ?? snapshot.constraints,
+          context ?? (isFollowUp ? snapshot.constraints : {}),
           snapshot,
           fetcher,
           isWatsonxMode(),

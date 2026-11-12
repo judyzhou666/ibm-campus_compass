@@ -52,8 +52,8 @@ export function validateConstraints(
 
 const keywords = {
   "AI & education": /\b(ai|education|research|learning|tech|coding|data)\b/i,
-  Career: /\b(career|job|industry|alumni|networking|resume|professional)\b/i,
-  Social: /\b(social|friend|friends|meet|people|dinner|lunch|community)\b/i,
+  Career: /\b(career|job|jobs|internship|internships|industry|alumni|networking|resume|professional|work experience|hiring)\b/i,
+  Social: /\b(social|friend|friends|meet|people|dinner|lunch|community|practice english|make friends|meet people|talk to people|language exchange)\b/i,
   "Arts & culture":
     /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics)\b/i,
   Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance)\b/i,

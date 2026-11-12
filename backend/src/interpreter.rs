@@ -99,8 +99,8 @@ impl SimulatedInterpreter {
         }
         let keywords = [
             "ai|education|research|learning|tech|coding|data",
-            "career|job|industry|alumni|networking|resume|professional",
-            "social|friend|friends|meet|people|dinner|lunch|community",
+            "career|job|jobs|internship|internships|industry|alumni|networking|resume|professional|work experience|hiring",
+            "social|friend|friends|meet|people|dinner|lunch|community|practice english|make friends|meet people|talk to people|language exchange",
             "art|arts|culture|cultural|film|museum|creative|sketch|ceramics",
             "wellbeing|wellness|relax|mindful|movement|quiet|balance",
         ];

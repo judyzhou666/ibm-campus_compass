@@ -137,7 +137,8 @@ try {
       state: schedulePayload(state),
     })
   ).json();
-  assert.match(impossible.diagnostic, /scheduling conflicts/);
+  // New plain-language diagnostic: offers nearest alternatives instead of jargon.
+  assert.match(impossible.diagnostic, /Nothing matches that time window/);
   const diverse = await (
     await post("/api/plan", {
       message: "AI career social events",

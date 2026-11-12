@@ -2,6 +2,44 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## AI Planner: fresh search, visible filters, plain-language replies, and more synonyms — November 12, 2026
+
+Four bugs in the AI Planner that a judge or new student would hit in the first few questions have been fixed.
+
+### What was fixed
+
+1. **Fresh search by default.** A new question ("any internship or job events?") now starts a clean search. Filters from the previous question only carry over when the message clearly builds on it — phrases like "only", "also", "instead", "what about", "but", "without" or a leading "and"/"or" count as follow-ups. Earlier, every question silently inherited all previous filters, so a "Wednesday evening" question would fail to find results if the previous question had asked for "free food".
+
+2. **Active filter chips above the input box.** When the planner is filtering by topic, day, time, food or free admission, labelled chips now appear above the chat input: e.g. `Free food ×` `Wednesday ×` `Evening ×`. Clicking a chip removes that filter; "Clear all" removes all of them at once. Previously there was no way to see which filters were active without reading back through the chat history.
+
+3. **No more dead ends — plain-language replies with alternatives.** When nothing matches, the planner no longer says "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically." Instead it explains which filter produced no results and immediately offers the nearest alternatives, e.g. "Nothing on Wednesday evening has free food. Here are 4 options without that filter." The same logic runs in both Rust (`backend/src/planner.rs`) and TypeScript (`frontend/src/conversation.ts`).
+
+4. **Everyday synonyms understood.** "internship" and "job" now map to Career; "practice English", "make friends", "meet people" and "language exchange" now map to Social. Both the Rust interpreter (`backend/src/interpreter.rs`) and the TypeScript fallback (`frontend/src/interpretation.ts`) were updated together. The "limited demo" guidance message also mentions these phrasings by example.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173. In the AI Planner, try:
+
+1. "is there anything with free food?" — three results, Free food chip appears
+2. "I'm free Wednesday evening, what can I do?" — now shows 4 Wednesday-evening results (Fresh search; no longer inherits the free-food filter)
+3. "any internship or job events?" — now shows career events (new synonym; no longer filtered to Wednesday)
+4. "something to help me find an internship" — understood as Career
+
+### Verification
+
+`npm test` (185 TypeScript tests and 5 Wiki tests), `node --import tsx --test tests/*.test.ts` (185 tests), `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (41 tests), `npm run build` (`tsc --noEmit` + Vite), and `npm run test:api` all pass. The integration test's diagnostic assertion was updated from `/scheduling conflicts/` to `/Nothing matches that time window/` to match the new plain-language reply. Checked in the browser at 1280px and 375px: filter chips appear and dismiss correctly, Wednesday-evening questions return results without a prior free-food filter, career queries return multiple events, and "start over" clears all chips. Only simulated mode was tested; watsonx mode uses the same carry-over and synonym logic and should benefit from the same changes.
+
+### Limitations
+
+- The follow-up detection is heuristic (keyword-based). A message like "but make it on Tuesday" carries over previous filters as intended, but an unusual phrasing without a follow-up keyword starts fresh. Watsonx mode sends the full `previous` constraints to the model, so the model can decide; this fix only changes the browser's default.
+- Filter chips show the constraints stored in `state.constraints`, which are updated after each successful query. They do not reflect mid-clarification constraints (pending clarification state).
+
 ## Dashboard Weekly Calendar and My Calendar sub-page — November 12, 2026
 
 - **My Calendar is no longer a sidebar tab.** It is a sub-page: open it with **Full Calendar** on My Dashboard (or the top bar's "My calendar" link). My Dashboard stays highlighted in the sidebar, the page has a "Back to …" link, and Back or swipe-back returns to the page it was opened from. All of its Day/Week/Month/Year features are unchanged.

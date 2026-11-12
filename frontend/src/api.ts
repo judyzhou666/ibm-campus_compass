@@ -87,7 +87,7 @@ export async function requestPlan(
   const locallyUnderstood = interpreted.understood;
   if (!locallyUnderstood && !watsonxMode) {
     throw new InputError(
-      "I\u2019m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: \u201CAI events on Tuesday after 1 PM.\u201D",
+      "I\u2019m a limited demo planner. Try interests like AI, career, internship, social, arts, or wellbeing, plus a day or time. For example: \u201CCareer events on Wednesday\u201D or \u201CSomething to help me find an internship.\u201D",
     );
   }
   try {
@@ -121,7 +121,7 @@ export async function requestPlan(
       throw new InputError(
         locallyUnderstood
           ? "The simulated planner did not understand this request. Try an interest, day or time."
-          : "I\u2019m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: \u201CAI events on Tuesday after 1 PM.\u201D",
+          : "I\u2019m a limited demo planner. Try interests like AI, career, internship, social, arts, or wellbeing, plus a day or time. For example: \u201CCareer events on Wednesday\u201D or \u201CSomething to help me find an internship.\u201D",
       );
     }
     return {
