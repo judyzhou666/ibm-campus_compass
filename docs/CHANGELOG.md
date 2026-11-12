@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Sidebar Edit Profile entry point — November 12, 2026
+
+Added an Edit Profile button below the signed-in sidebar user information. The button navigates to the existing Profile route; no new profile editing form or edit-mode behavior was added. The rest of the user card remains non-clickable, and the existing Profile and Settings navigation entries are unchanged. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `node --import tsx --test tests/navigation.test.ts`, plus desktop and mobile browser checks pass.
+
 ## AI Planner: demo-week dates and relevance to the student's words — November 12, 2026
 
 Fixes irrelevant answers to requests such as "AI in education relevant events for week Nov 6-12". Made with Claude Code (not IBM Bob). The code landed in commit `20f7fca`, whose message only mentions the bookmark icon; this entry describes it.

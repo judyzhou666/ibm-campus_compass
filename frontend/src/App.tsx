@@ -729,12 +729,20 @@ export default function App() {
             time. Your next great discovery.
           </div>
           {state.signedIn ? (
-            <div className="user">
-              <span className="avatar">{state.name[0] || "J"}</span>
-              <div>
-                <strong>{state.name}’s campus</strong>
-                <small>Graduate student · Demo profile</small>
+            <div className="user user-profile-card">
+              <div className="user-profile-info">
+                <span className="avatar">{state.name[0] || "J"}</span>
+                <div>
+                  <strong>{state.name}’s campus</strong>
+                  <small>Graduate student · Demo profile</small>
+                </div>
               </div>
+              <button
+                className="btn primary user-profile-edit"
+                onClick={() => nav("profile")}
+              >
+                Edit Profile
+              </button>
             </div>
           ) : (
             <div className="user">

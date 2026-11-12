@@ -94,6 +94,7 @@ textarea {
   width: 226px;
   position: fixed;
   inset: 0 auto 0 0;
+  overflow-y: auto;
   background: white;
   border-right: 1px solid var(--line);
   z-index: 20;
@@ -170,6 +171,9 @@ textarea {
 .side-bottom {
   margin-top: auto;
 }
+.sidebar:has(.user-profile-card) .demo-note {
+  margin: 12px 0 8px;
+}
 .demo-note {
   padding: 17px 13px;
   border-radius: 12px;
@@ -190,6 +194,20 @@ textarea {
   align-items: center;
   border-top: 1px solid var(--line);
   padding: 18px 6px 0;
+}
+.user-profile-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.user-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.user-profile-edit {
+  width: 100%;
 }
 .avatar {
   width: 36px;
@@ -2272,6 +2290,35 @@ p {
   }
   .calendar-full .week {
     min-width: 650px;
+  }
+}
+@media (max-height: 760px) and (min-width: 701px) {
+  .sidebar {
+    padding-top: 18px;
+    padding-bottom: 12px;
+  }
+  .brand {
+    padding-bottom: 22px;
+  }
+  .nav {
+    gap: 3px;
+  }
+  .nav button {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .nav .break {
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+  .sidebar:has(.user-profile-card) .demo-note {
+    margin-top: 8px;
+    margin-bottom: 6px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .user-profile-card {
+    gap: 8px;
   }
 }
 @media (max-width: 700px) {
@@ -4452,7 +4499,8 @@ button.gcal-event-block {
   }
   .sidebar.collapsed .nav-label,
   .sidebar.collapsed .demo-note,
-  .sidebar.collapsed .user > div {
+  .sidebar.collapsed .user > div:not(.user-profile-info),
+  .sidebar.collapsed .user-profile-info > div {
     display: none;
   }
   .sidebar.collapsed .nav button {
@@ -4475,6 +4523,18 @@ button.gcal-event-block {
   .sidebar.collapsed .user {
     justify-content: center;
     padding: 18px 0 0;
+  }
+  .sidebar.collapsed .user-profile-card {
+    gap: 8px;
+  }
+  .sidebar.collapsed .user-profile-info {
+    justify-content: center;
+  }
+  .sidebar.collapsed .user-profile-edit {
+    padding: 5px 3px;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: normal;
   }
 }
 @media (max-width: 700px) {
