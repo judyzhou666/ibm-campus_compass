@@ -1,12 +1,13 @@
-//! Live IBM watsonx.ai interpreter. It sends only the student's message and the previous
-//! structured constraints to watsonx.ai, and accepts only a `Constraints` object back.
-//! The returned object must pass `deny_unknown_fields` and `Constraints::validate`;
-//! deterministic matching in `planner.rs` still chooses every event.
+//! Live IBM watsonx.ai interpreter. Step 1 turns a student message into structured filter
+//! constraints. Step 2 (rank_candidates) receives the deterministic candidate list and the
+//! fictional profile, and returns narrative reasons + field citations for 3-5 picks.
+//! Deterministic matching and conflict checks in planner.rs remain authoritative;
+//! the model never fabricates event IDs or eligibility.
 //!
 //! Credentials come from server-side environment variables and never reach the browser,
 //! API responses or logs.
 use crate::interpreter::{InterpretError, Interpretation, Interpreter};
-use crate::model::{Constraints, TOPICS};
+use crate::model::{Constraints, Event, PlanProfile, TOPICS};
 use serde::Deserialize;
 use serde_json::json;
 use std::{
@@ -117,7 +118,7 @@ Reply with exactly one JSON object and nothing else. Allowed keys (omit any that
 - "days": array of full English weekday names, e.g. ["Tuesday", "Thursday"]
 - "after": earliest start, minutes after midnight (0-1440)
 - "before": latest end, minutes after midnight (0-1440)
-- "food": "Free meal" or "Coffee & snacks"
+- "food": one of "Free meal", "Coffee & snacks", "Paid food", "None", "Unknown"
 - "free": true when the student wants no-cost events
 - "limit": number of suggestions, 1-5
 Start from "previous" and return the complete updated object: keep earlier constraints the
@@ -125,6 +126,33 @@ student did not change, and remove a key when the student lifts that preference.
 "start over" or "reset" means return {{}}. Never include event names, IDs or other keys."#,
         topics = serde_json::to_string(&TOPICS).unwrap_or_default()
     )
+}
+
+fn ranking_system_prompt() -> &'static str {
+    r#"You help a student choose campus events from a pre-filtered list of feasible options.
+The list was produced by a deterministic planner that already checked schedules, access and
+cancellations. Every event on the list is genuinely eligible.
+
+Your task:
+1. Pick 3-5 events from the list that best match the student's message, major, goals and
+   goal types. Cover goal types where possible (e.g. one research, one industry, one social).
+2. For each pick write ONE short reason (under 60 words) that explains why THIS event suits
+   THIS student. When the event's host_school differs from the student's major, say so
+   explicitly to show cross-school discovery.
+3. Cite the event fields you actually used as evidence. Allowed cited_fields values:
+   title, description, host_school, goal_type, food, access_conditions.
+4. NEVER claim access is confirmed or eligibility is open when any access_conditions value
+   is "unknown". State "access not confirmed" or similar.
+5. When min_age, ticket or membership apply (non-false, non-"unknown"), mention them in the
+   reason.
+6. If the student's request is too vague to choose (e.g. "surprise me"), return a single
+   short clarification question as: {"clarification":"Your question here"}.
+
+Reply with exactly one JSON object. No markdown. Either:
+  {"picks":[{"id":"<id>","reason":"<reason>","cited_fields":["<field>",...]}, ...]}
+or
+  {"clarification":"<one short question>"}
+Never include event IDs that are not in the candidate list."#
 }
 
 /// Weekday names exchanged with the model. The app numbers days Monday = 0 ... Sunday = 6;
@@ -253,14 +281,14 @@ impl WatsonxInterpreter {
         Ok(body.access_token)
     }
 
-    async fn call(
+    /// Low-level POST to /ml/v1/text/chat; returns the raw content string.
+    async fn call_inner(
         &self,
-        message: &str,
-        previous: &Constraints,
-    ) -> Result<Constraints, InterpretError> {
+        system: &str,
+        user: &str,
+        max_tokens: u32,
+    ) -> Result<String, InterpretError> {
         let token = self.token().await?;
-        let user =
-            json!({"previous": previous_for_model(previous), "message": message}).to_string();
         let response = self
             .client
             .post(format!("{}/ml/v1/text/chat", self.config.url))
@@ -270,10 +298,10 @@ impl WatsonxInterpreter {
                 "model_id": self.config.model_id,
                 "project_id": self.config.project_id,
                 "messages": [
-                    {"role": "system", "content": system_prompt()},
+                    {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                "max_tokens": 300,
+                "max_tokens": max_tokens,
                 "temperature": 0,
                 "response_format": {"type": "json_object"},
                 "time_limit": self.config.timeout.as_millis() as u64,
@@ -291,14 +319,205 @@ impl WatsonxInterpreter {
             .json()
             .await
             .map_err(|_| InterpretError::Malformed)?;
-        let content = body
-            .choices
+        body.choices
             .into_iter()
             .next()
             .and_then(|c| c.message.content)
-            .ok_or(InterpretError::Malformed)?;
+            .ok_or(InterpretError::Malformed)
+    }
+
+    /// Step-1 call: message → constraints. Wrapped in the shared timeout.
+    async fn call_constraints(
+        &self,
+        message: &str,
+        previous: &Constraints,
+    ) -> Result<Constraints, InterpretError> {
+        let prompt = system_prompt();
+        let user =
+            json!({"previous": previous_for_model(previous), "message": message}).to_string();
+        let content =
+            tokio::time::timeout(self.config.timeout, self.call_inner(&prompt, &user, 300))
+                .await
+                .unwrap_or(Err(InterpretError::Timeout))?;
         parse_constraints(&content)
     }
+
+    /// Step-2 call: ranked picks with narrative reasons.
+    pub async fn rank_candidates(
+        &self,
+        message: &str,
+        candidates: &[&Event],
+        profile: &PlanProfile,
+        _all_events: &[Event],
+    ) -> Result<Vec<RankedPick>, RankError> {
+        if candidates.is_empty() {
+            return Ok(vec![]);
+        }
+        let candidate_json: Vec<_> = candidates
+            .iter()
+            .map(|e| {
+                json!({
+                    "id": e.id,
+                    "title": e.title,
+                    "description": e.description,
+                    "host_school": e.host_school,
+                    "goal_type": e.goal_type,
+                    "food": e.food,
+                    "access_conditions": e.access_conditions,
+                })
+            })
+            .collect();
+        let user = serde_json::to_string(&json!({
+            "message": message,
+            "major": profile.major,
+            "goals": profile.goals,
+            "goal_types": profile.goal_types,
+            "candidates": candidate_json,
+        }))
+        .unwrap_or_default();
+        let content = tokio::time::timeout(
+            self.config.timeout,
+            self.call_inner(ranking_system_prompt(), &user, 800),
+        )
+        .await
+        .unwrap_or(Err(InterpretError::Timeout))
+        .map_err(RankError::Upstream)?;
+        parse_ranking(&content, candidates)
+    }
+}
+
+/// A validated pick from the ranking step.
+#[derive(Debug, Clone)]
+pub struct RankedPick {
+    pub id: String,
+    pub reason: String,
+    pub cited_fields: Vec<String>,
+}
+
+/// Why the ranking step could not produce a valid response.
+#[derive(Debug)]
+pub enum RankError {
+    /// The model returned a clarification question (not an error).
+    Clarification(String),
+    /// Invalid, malformed or security-violating output.
+    Invalid,
+    /// Network/auth/upstream failure; caller falls back to template evidence.
+    Upstream(InterpretError),
+}
+
+const ALLOWED_CITED: &[&str] = &[
+    "title",
+    "description",
+    "host_school",
+    "goal_type",
+    "food",
+    "access_conditions",
+];
+
+/// Validates the ranking JSON and maps model picks to `RankedPick`.
+fn parse_ranking(content: &str, candidates: &[&Event]) -> Result<Vec<RankedPick>, RankError> {
+    let text = content.trim();
+    let text = text
+        .strip_prefix("```json")
+        .or_else(|| text.strip_prefix("```"))
+        .and_then(|t| t.strip_suffix("```"))
+        .unwrap_or(text)
+        .trim();
+    let value: serde_json::Value = serde_json::from_str(text).map_err(|_| RankError::Invalid)?;
+    if !value.is_object() {
+        return Err(RankError::Invalid);
+    }
+    // Clarification response.
+    if let Some(q) = value.get("clarification") {
+        let q = q.as_str().ok_or(RankError::Invalid)?.trim();
+        if q.is_empty() || q.len() > 300 {
+            return Err(RankError::Invalid);
+        }
+        return Err(RankError::Clarification(q.to_string()));
+    }
+    let picks = value
+        .get("picks")
+        .and_then(|p| p.as_array())
+        .ok_or(RankError::Invalid)?;
+    if picks.is_empty() || picks.len() > 5 {
+        return Err(RankError::Invalid);
+    }
+    let mut result = Vec::with_capacity(picks.len());
+    for pick in picks {
+        let id = pick
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(RankError::Invalid)?;
+        // Every id must be in the candidate list.
+        let event = candidates
+            .iter()
+            .find(|e| e.id == id)
+            .ok_or(RankError::Invalid)?;
+        let reason = pick
+            .get("reason")
+            .and_then(|v| v.as_str())
+            .ok_or(RankError::Invalid)?
+            .trim();
+        if reason.is_empty() || reason.len() > 500 {
+            return Err(RankError::Invalid);
+        }
+        // cited_fields must all be in the allowed list and exist on this event.
+        let cited: Vec<String> = pick
+            .get("cited_fields")
+            .and_then(|v| v.as_array())
+            .ok_or(RankError::Invalid)?
+            .iter()
+            .map(|v| v.as_str().ok_or(RankError::Invalid).map(|s| s.to_string()))
+            .collect::<Result<_, _>>()?;
+        for field in &cited {
+            if !ALLOWED_CITED.contains(&field.as_str()) {
+                return Err(RankError::Invalid);
+            }
+            // Verify the field actually exists and has a non-empty value on this event.
+            let present = match field.as_str() {
+                "title" => !event.title.is_empty(),
+                "description" => !event.description.is_empty(),
+                "host_school" => !event.host_school.is_empty(),
+                "goal_type" => !event.goal_type.is_empty(),
+                "food" => !event.food.is_empty(),
+                "access_conditions" => !event.access_conditions.is_null(),
+                _ => false,
+            };
+            if !present {
+                return Err(RankError::Invalid);
+            }
+        }
+        // Security: reason must not claim access is open/confirmed when any
+        // access_conditions value is "unknown".
+        if has_unknown_conditions(event) {
+            let lower = reason.to_lowercase();
+            let forbidden = [
+                "access is open",
+                "open access",
+                "access confirmed",
+                "eligibility confirmed",
+                "eligibility is open",
+            ];
+            if forbidden.iter().any(|f| lower.contains(f)) {
+                return Err(RankError::Invalid);
+            }
+        }
+        result.push(RankedPick {
+            id: id.to_string(),
+            reason: reason.to_string(),
+            cited_fields: cited,
+        });
+    }
+    Ok(result)
+}
+
+/// Returns true when any access_conditions field is the string "unknown".
+fn has_unknown_conditions(event: &Event) -> bool {
+    if let Some(obj) = event.access_conditions.as_object() {
+        return obj.values().any(|v| v.as_str() == Some("unknown"));
+    }
+    // Non-object or null access_conditions are treated as unknown.
+    true
 }
 
 impl Interpreter for WatsonxInterpreter {
@@ -307,9 +526,7 @@ impl Interpreter for WatsonxInterpreter {
         message: &str,
         previous: Constraints,
     ) -> Result<Interpretation, InterpretError> {
-        let result = tokio::time::timeout(self.config.timeout, self.call(message, &previous))
-            .await
-            .unwrap_or(Err(InterpretError::Timeout));
+        let result = self.call_constraints(message, &previous).await;
         self.connected.store(result.is_ok(), Ordering::Relaxed);
         // The model either produced valid constraints (understood) or the call failed and the
         // handler falls back; it never asks for clarification itself.
@@ -569,5 +786,177 @@ pub(crate) mod tests {
             timeout: DEFAULT_TIMEOUT,
         };
         assert!(!format!("{config:?}").contains(TEST_KEY));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Ranking step tests
+    // ──────────────────────────────────────────────────────────────────────
+
+    fn make_event(id: &str) -> Event {
+        use crate::model::Event;
+        use serde_json::json;
+        Event {
+            id: id.into(),
+            title: "Sample event".into(),
+            day: 1,
+            start: 900,
+            end: 990,
+            topic: "Career".into(),
+            category: "Career".into(),
+            food: "Coffee & snacks".into(),
+            cost: 0,
+            access: "open".into(),
+            rsvp: "Drop-in welcome".into(),
+            location: "Room 1".into(),
+            description: "A sample event description.".into(),
+            source: "CC-test".into(),
+            verification_status: "Fictional record; not externally verified".into(),
+            eligibility: "Open".into(),
+            host_school: "School of Engineering".into(),
+            goal_type: vec!["industry".into()],
+            access_conditions: json!({"membership":false,"min_age":"unknown","ticket":false,"capacity":"unknown"}),
+        }
+    }
+
+    async fn run_ranking(
+        behavior: Behavior,
+        events: &[Event],
+    ) -> Result<Vec<RankedPick>, RankError> {
+        let (config, _) = mock(behavior).await;
+        let interpreter = WatsonxInterpreter::new(config).unwrap();
+        let refs: Vec<&Event> = events.iter().collect();
+        interpreter
+            .rank_candidates("career events", &refs, &PlanProfile::default(), events)
+            .await
+    }
+
+    #[tokio::test]
+    async fn ranking_invented_id_is_rejected() {
+        let events = vec![make_event("e1")];
+        // Model returns an id not in the candidate list.
+        let result = run_ranking(
+            Behavior::Reply(
+                r#"{"picks":[{"id":"e999","reason":"Looks good.","cited_fields":["title"]}]}"#,
+            ),
+            &events,
+        )
+        .await;
+        assert!(matches!(result, Err(RankError::Invalid)));
+    }
+
+    #[tokio::test]
+    async fn ranking_cited_field_not_on_event_is_rejected() {
+        let mut e = make_event("e1");
+        e.host_school = String::new(); // clear host_school
+        let events = vec![e];
+        // Model cites host_school but the event has an empty string for it.
+        let result = run_ranking(
+            Behavior::Reply(r#"{"picks":[{"id":"e1","reason":"From the engineering school.","cited_fields":["host_school"]}]}"#),
+            &events,
+        )
+        .await;
+        assert!(matches!(result, Err(RankError::Invalid)));
+    }
+
+    #[tokio::test]
+    async fn ranking_unknown_access_claimed_open_is_rejected() {
+        // Event has "unknown" capacity, so the reason must not claim open/confirmed access.
+        let events = vec![make_event("e1")]; // access_conditions has capacity:"unknown"
+        let result = run_ranking(
+            Behavior::Reply(r#"{"picks":[{"id":"e1","reason":"This event has open access for all.","cited_fields":["title"]}]}"#),
+            &events,
+        )
+        .await;
+        assert!(matches!(result, Err(RankError::Invalid)));
+    }
+
+    #[tokio::test]
+    async fn ranking_malformed_json_is_rejected() {
+        let events = vec![make_event("e1")];
+        for bad in [
+            "not json at all",
+            r#"["e1","e2"]"#,
+            r#"{"picks":"e1"}"#,
+            r#"{"picks":[{"id":"e1","reason":"ok"}]}"#, // missing cited_fields
+            r#"{"picks":[{"id":"e1","cited_fields":["title"]}]}"#, // missing reason
+            r#"{"picks":[{"id":"e1","reason":"ok","cited_fields":["invented_field"]}]}"#,
+        ] {
+            let result = run_ranking(Behavior::Reply(bad), &events).await;
+            assert!(
+                matches!(result, Err(RankError::Invalid)),
+                "expected Invalid for: {bad}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn ranking_timeout_returns_upstream_error() {
+        let events = vec![make_event("e1")];
+        let (config, _) = mock(Behavior::Slow).await;
+        let interpreter = WatsonxInterpreter::new(config).unwrap();
+        let refs: Vec<&Event> = events.iter().collect();
+        let result = interpreter
+            .rank_candidates("career events", &refs, &PlanProfile::default(), &events)
+            .await;
+        assert!(matches!(result, Err(RankError::Upstream(_))));
+    }
+
+    #[tokio::test]
+    async fn ranking_clarification_returned_as_variant() {
+        let events = vec![make_event("e1")];
+        let result = run_ranking(
+            Behavior::Reply(r#"{"clarification":"What kind of events do you prefer?"}"#),
+            &events,
+        )
+        .await;
+        match result {
+            Err(RankError::Clarification(q)) => {
+                assert!(q.contains("prefer") || q.len() > 3);
+            }
+            other => panic!("expected Clarification, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn ranking_valid_picks_pass_through() {
+        let events = vec![make_event("e1"), make_event("e2")];
+        // Valid: id in list, cited field present, access not falsely claimed.
+        let result = run_ranking(
+            Behavior::Reply(r#"{"picks":[{"id":"e1","reason":"Matches your industry goal; access not confirmed.","cited_fields":["title","goal_type"]}]}"#),
+            &events,
+        )
+        .await;
+        let picks = result.expect("should be valid");
+        assert_eq!(picks.len(), 1);
+        assert_eq!(picks[0].id, "e1");
+        assert!(picks[0].cited_fields.contains(&"goal_type".to_string()));
+    }
+
+    #[tokio::test]
+    async fn ranking_profile_and_candidates_sent_to_model() {
+        let events = vec![make_event("e1")];
+        let (config, mock_handle) = mock(Behavior::Reply(
+            r#"{"picks":[{"id":"e1","reason":"Suits your goals; access not confirmed.","cited_fields":["title"]}]}"#,
+        ))
+        .await;
+        let interpreter = WatsonxInterpreter::new(config).unwrap();
+        let refs: Vec<&Event> = events.iter().collect();
+        let profile = PlanProfile {
+            major: "Education".into(),
+            goals: "research".into(),
+            goal_types: vec!["research".into()],
+        };
+        let _ = interpreter
+            .rank_candidates("show me events", &refs, &profile, &events)
+            .await;
+        let bodies = mock_handle.chat_bodies.lock().unwrap();
+        let user_str = bodies[0]["messages"][1]["content"].as_str().unwrap();
+        let user: Value = serde_json::from_str(user_str).unwrap();
+        assert_eq!(user["major"], "Education");
+        assert_eq!(user["goal_types"][0], "research");
+        // Name, calendar and history must NOT be sent.
+        assert!(user.get("name").is_none());
+        assert!(user.get("plan").is_none());
+        assert!(user.get("messages").is_none());
     }
 }

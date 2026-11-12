@@ -70,9 +70,23 @@ export default function App() {
   // visit greets with "Welcome" rather than "Welcome back".
   const [firstVisit] = useState(() => !state.onboarded);
   const update = demo.update;
+  // Check whether the backend is in watsonx mode to hide simulated-only UI and
+  // forward unrecognised messages to the server for model interpretation.
+  const watsonxModeRef = useRef(false);
+  const [watsonxMode, setWatsonxMode] = useState(false);
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h: { mode?: string }) => {
+        const isWatsonx = h.mode === "watsonx";
+        watsonxModeRef.current = isWatsonx;
+        setWatsonxMode(isWatsonx);
+      })
+      .catch(() => {});
+  }, []);
   const [enrollment] = useState(() => createEnrollment(demo));
   const [conversation] = useState(() =>
-    createConversation(demo, enrollment.remove),
+    createConversation(demo, enrollment.remove, globalThis.fetch, () => watsonxModeRef.current),
   );
   const { busy, mode } = useSyncExternalStore(
     conversation.subscribe,
@@ -1141,7 +1155,7 @@ export default function App() {
             </>
           ) : null}
           {page === "profile" ? (
-            <Profile state={state} update={update} notify={notify} />
+            <Profile state={state} update={update} notify={notify} watsonxMode={watsonxMode} />
           ) : null}
           {page === "forum" ? (
             <Forum

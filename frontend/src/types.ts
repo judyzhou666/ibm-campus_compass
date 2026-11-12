@@ -81,6 +81,15 @@ export interface PostDraft {
   body: string;
   communityId: string;
 }
+/** Goal-type categories that the student can select in their profile. */
+export const GOAL_TYPES = [
+  "research",
+  "industry",
+  "social connection",
+  "cultural exploration",
+] as const;
+export type GoalType = (typeof GOAL_TYPES)[number];
+
 export interface DemoState extends Schedule {
   name: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
@@ -88,6 +97,8 @@ export interface DemoState extends Schedule {
   onboarded: boolean;
   major: string;
   goals: string;
+  /** Goal-type interests selected in profile; used by watsonx ranking. */
+  goal_types: string[];
   timezone: string;
   saved: string[];
   rsvps: string[];
@@ -110,6 +121,8 @@ export interface PlanResponse {
   event_ids: string[];
   notice?: string;
   recommendations?: RecommendationEvidence[];
+  /** "watsonx" when AI narrative reasons were used; "template" when template evidence. */
+  explanations?: "watsonx" | "template";
 }
 
 export interface Rsvp {

@@ -72,6 +72,56 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Update — November 11, 2026: watsonx ranking and explanations
+
+### What was added
+
+**`rank_candidates` in `backend/src/watsonx.rs`** — a second watsonx step runs after deterministic filtering. The model receives the feasible event candidates (title, host school, goal type, description) and the student's goal types, then returns a ranked list of picks with a short reason for each. Each reason must cite only fields that exist on the event; invented fields or IDs are rejected and fall back to the template explanation.
+
+**`"explanations": "watsonx" | "template"` in `/api/plan` response** — the JSON response now includes an `explanations` field so the frontend can label where each recommendation reason came from. The TypeScript API client and state types were updated to match.
+
+**Goal types in Profile** — students can now select their goal types (research, industry, social connection, cultural exploration) in the Profile page. The selected goals are sent to the Rust server with every planning request.
+
+**Watsonx chat forwarding** — when `PLANNER_PROVIDER=watsonx`, unrecognised chat messages (those that would previously show the "limited demo planner" fallback reply) are forwarded to the Rust server for interpretation instead.
+
+**Rust post-checks** (`backend/src/lib.rs`) — two new post-check rules run after candidate selection:
+- If a candidate's `goal_type` is not yet represented in the plan, a matching event is appended (up to the five-result cap).
+- If the hosting school differs from the student's major school, "Hosted by \<school\>." is appended to the recommendation reason.
+
+**Template-evidence fallback** — a single `template_reason` helper in `backend/src/lib.rs` produces the deterministic explanation used whenever the watsonx ranking step is skipped or returns an invalid response.
+
+### How to try it
+
+With `PLANNER_PROVIDER=watsonx` and valid `WATSONX_API_KEY`, `WATSONX_PROJECT_ID`, and `WATSONX_MODEL_ID` set:
+
+```sh
+PLANNER_PROVIDER=watsonx \
+  WATSONX_API_KEY=<your-key> \
+  WATSONX_PROJECT_ID=<your-project> \
+  WATSONX_MODEL_ID=<your-model> \
+  cargo run --locked
+```
+
+Open the AI Planner. The chat label shows **Rust planner · IBM watsonx** when live. Planning responses include model-written reasons for each recommended event; the `explanations` field in the API response will be `"watsonx"`. With no key set, the planner falls back to `"template"` explanations and the label shows **Rust planner · Simulated**.
+
+### Verification results
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 102 TypeScript tests pass (97 unit + 5 Wiki) |
+| `npm run build` | Clean — tsc and vite both pass |
+| `cargo fmt --check` | Clean |
+| `cargo clippy --locked --all-targets -- -D warnings` | Clean |
+| `cargo test --locked` | 31 Rust tests pass |
+| `npm run test:api` | Rust API parity, follow-ups, validation, conflicts, cancellations, body limits, and static serving — all pass |
+
+### Limitations
+
+- Tested only against a local mock server. Live watsonx behaviour (latency, model output quality, explanation coherence, cost) has not yet been evaluated.
+- The `rank_candidates` prompt sends event title, host school, goal type, and description. No student names, RSVP lists, or browser history are included.
+- Ranking step failure (timeout, malformed JSON, invented field) is handled with a silent fallback to template reasons; the `explanations` field distinguishes the two modes.
+- `npm run evaluate` (deterministic frozen scenarios) was not re-run for this change; ranking is a post-filter step and does not affect eligibility or conflict checks.
+
 ## Top bar: search, quick links and demo sign-in — November 11, 2026
 
 The top bar follows a familiar events-site layout:

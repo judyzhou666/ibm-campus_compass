@@ -6,13 +6,15 @@ import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
+import { GOAL_TYPES } from "./types.ts";
 
 type Props = {
   state: DemoState;
   update: (change: (s: DemoState) => DemoState) => void;
   notify: (text: string) => void;
+  watsonxMode?: boolean;
 };
-export function Profile({ state, update, notify }: Props) {
+export function Profile({ state, update, notify, watsonxMode = false }: Props) {
   const [error, setError] = useState("");
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +23,7 @@ export function Profile({ state, update, notify }: Props) {
       ...s,
       name: String(f.get("name")).trim() || "Judy",
       interests: f.getAll("topics").map(String),
+      goal_types: f.getAll("goal_types").map(String),
       onboarded: true,
       major: String(f.get("major") || "").trim(),
       goals: String(f.get("goals") || "").trim(),
@@ -124,10 +127,34 @@ export function Profile({ state, update, notify }: Props) {
               Research / career exploration goals (optional)
               <input name="goals" maxLength={240} defaultValue={state.goals} />
             </label>
-            <p className="fineprint">
-              These notes stay local. Select topics above to influence matching;
-              free-text goals are not interpreted.
-            </p>
+            {!watsonxMode && (
+              <p className="fineprint" data-simulated-only>
+                These notes stay local. Select topics above to influence matching;
+                free-text goals are not interpreted in the simulated planner.
+              </p>
+            )}
+            <div>
+              <p className="sub" style={{ marginBottom: 4 }}>
+                What are you hoping to get out of events? (optional)
+              </p>
+              <div className="topic-options">
+                {GOAL_TYPES.map((g) => (
+                  <label key={g}>
+                    <input
+                      type="checkbox"
+                      name="goal_types"
+                      value={g}
+                      defaultChecked={state.goal_types?.includes(g)}
+                    />
+                    {g.charAt(0).toUpperCase() + g.slice(1)}
+                  </label>
+                ))}
+              </div>
+              <p className="fineprint">
+                Goal types help the AI planner explain cross-school matches.
+                Not used in simulated mode.
+              </p>
+            </div>
             <label className="field">
               Preferred event time
               <select

@@ -2,6 +2,7 @@ import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
+import { GOAL_TYPES } from "./types.ts";
 
 export function createStore<T>(initial: T) {
   let value = initial;
@@ -29,6 +30,7 @@ export const fresh = (): DemoState => ({
   onboarded: false,
   major: "",
   goals: "",
+  goal_types: [],
   timezone: "",
   preferred_time: "any",
   plan: [],
@@ -64,6 +66,13 @@ export function restore(): DemoState {
       signedIn: value.signedIn === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
+      goal_types: Array.isArray(value.goal_types)
+        ? value.goal_types.filter(
+            (t: unknown) =>
+              typeof t === "string" &&
+              (GOAL_TYPES as readonly string[]).includes(t),
+          )
+        : [],
       timezone: isTimeZone(value.timezone) ? value.timezone : "",
       preferred_time: ["any", "morning", "afternoon", "evening"].includes(
         value.preferred_time,

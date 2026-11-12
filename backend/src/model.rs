@@ -1,5 +1,18 @@
 use serde::{Deserialize, Serialize};
 
+/// Profile context passed from the browser to guide watsonx ranking.
+/// Never contains the student's real name, chat history or display name.
+#[derive(Deserialize, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct PlanProfile {
+    #[serde(default)]
+    pub major: String,
+    #[serde(default)]
+    pub goals: String,
+    #[serde(default)]
+    pub goal_types: Vec<String>,
+}
+
 pub const TOPICS: [&str; 5] = [
     "AI & education",
     "Career",

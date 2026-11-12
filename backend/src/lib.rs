@@ -2,6 +2,7 @@ pub mod interpreter;
 pub mod model;
 pub mod planner;
 pub mod watsonx;
+use watsonx::RankError;
 
 use axum::{
     Json, Router,
@@ -10,7 +11,7 @@ use axum::{
     routing::{get, post},
 };
 use interpreter::{Interpreter, SimulatedInterpreter};
-use model::{Constraints, Event, Schedule};
+use model::{Constraints, Event, PlanProfile, Schedule};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{path::PathBuf, sync::Arc};
@@ -49,6 +50,8 @@ struct PlanRequest {
     #[serde(default)]
     previous: Constraints,
     state: Schedule,
+    #[serde(default)]
+    profile: PlanProfile,
 }
 
 #[derive(Deserialize)]
@@ -56,6 +59,108 @@ struct PlanRequest {
 struct ValidateRequest {
     event_id: String,
     state: Schedule,
+}
+
+/// Builds template-evidence (ids + evidence) from the deterministic candidate list.
+fn template_evidence(
+    selected: &[&Event],
+    state: &model::Schedule,
+    constraints: &model::Constraints,
+    events: &[Event],
+) -> (Vec<String>, Vec<Value>) {
+    let ids: Vec<_> = selected.iter().map(|e| e.id.clone()).collect();
+    let evidence: Vec<_> = selected
+        .iter()
+        .map(|e| planner::evidence(e, state, constraints, events))
+        .collect();
+    (ids, evidence)
+}
+
+/// Post-checks applied after a successful watsonx ranking step.
+///
+/// 1. Goal-type coverage: if the student selected goal types and a type is not
+///    covered by the ranked picks but a feasible candidate has it, append that
+///    candidate with a template reason (total ≤ 5 picks).
+/// 2. Host-school disclosure: if an event's host_school differs from the
+///    student's major and the reason does not already mention it, append
+///    "Hosted by <host_school>." to the reason.
+fn apply_post_checks(
+    ranked: &[watsonx::RankedPick],
+    candidates: &[&Event],
+    profile: &model::PlanProfile,
+    events: &[Event],
+) -> Vec<watsonx::RankedPick> {
+    let mut result = ranked.to_vec();
+
+    // 1. Goal-type coverage gap: add one candidate per missing type (max 5 total).
+    if !profile.goal_types.is_empty() {
+        for goal in &profile.goal_types {
+            if result.len() >= 5 {
+                break;
+            }
+            let already_covered = result.iter().any(|r| {
+                candidates
+                    .iter()
+                    .find(|e| e.id == r.id)
+                    .map(|e| e.goal_type.contains(goal))
+                    .unwrap_or(false)
+            });
+            if already_covered {
+                continue;
+            }
+            // Find a feasible candidate with this goal_type not already picked.
+            let picked_ids: Vec<_> = result.iter().map(|r| r.id.as_str()).collect();
+            if let Some(extra) = candidates
+                .iter()
+                .find(|e| !picked_ids.contains(&e.id.as_str()) && e.goal_type.contains(goal))
+            {
+                let reason = format!(
+                    "{}: {} — {}",
+                    if extra.goal_type.contains(goal) {
+                        "Covers your goal type"
+                    } else {
+                        "Added for goal coverage"
+                    },
+                    goal,
+                    extra.description
+                );
+                result.push(watsonx::RankedPick {
+                    id: extra.id.clone(),
+                    reason,
+                    cited_fields: vec!["goal_type".into(), "description".into()],
+                });
+            }
+        }
+    }
+
+    // 2. Host-school disclosure: append "Hosted by <school>." when needed.
+    let major_lower = profile.major.to_lowercase();
+    for pick in &mut result {
+        let event_ref: Option<&Event> = candidates
+            .iter()
+            .find(|e| e.id == pick.id)
+            .copied()
+            .or_else(|| events.iter().find(|e| e.id == pick.id));
+        if let Some(event) = event_ref {
+            if event.host_school.is_empty() {
+                continue;
+            }
+            let school_lower = event.host_school.to_lowercase();
+            // Differ: host_school does not match major, and reason doesn't mention it.
+            if !major_lower.is_empty()
+                && school_lower != major_lower
+                && !pick.reason.to_lowercase().contains(&school_lower)
+            {
+                pick.reason = format!(
+                    "{} Hosted by {}.",
+                    pick.reason.trim_end_matches('.'),
+                    event.host_school
+                );
+            }
+        }
+    }
+
+    result
 }
 
 async fn plan(
@@ -98,27 +203,72 @@ async fn plan(
     } else {
         Vec::new()
     };
-    let evidence: Vec<_> = selected
-        .iter()
-        .map(|e| planner::evidence(e, &request.state, &constraints, events))
-        .collect();
-    let ids: Vec<_> = selected.iter().map(|e| &e.id).collect();
-    let diagnostic = if interpretation.understood
-        && interpretation.clarification.is_none()
-        && selected.is_empty()
-    {
-        Some(planner::no_match_reason(
-            &request.state,
-            &constraints,
-            events,
-        ))
-    } else {
-        None
-    };
+
+    // Second watsonx step: rank feasible candidates and produce narrative reasons.
+    // Falls back to template evidence with an honest label when unavailable or invalid.
+    let (ranked_ids, evidence, ranking_clarification, explanations) =
+        if let Provider::Watsonx(live) = &app.provider {
+            if interpretation.understood && interpretation.clarification.is_none() {
+                match live
+                    .rank_candidates(&request.message, &selected, &request.profile, events)
+                    .await
+                {
+                    Ok(ranked) => {
+                        let ranked =
+                            apply_post_checks(&ranked, &selected, &request.profile, events);
+                        let ids: Vec<_> = ranked.iter().map(|r| r.id.clone()).collect();
+                        let evidence: Vec<_> = ranked
+                            .iter()
+                            .filter_map(|r| {
+                                selected.iter().find(|e| e.id == r.id).map(|e| {
+                                    let mut ev =
+                                        planner::evidence(e, &request.state, &constraints, events);
+                                    ev["interest_match"] = json!(format!("{} (AI)", r.reason));
+                                    ev["cited_fields"] = json!(r.cited_fields);
+                                    ev
+                                })
+                            })
+                            .collect();
+                        (ids, evidence, None, "watsonx")
+                    }
+                    Err(RankError::Clarification(q)) => {
+                        let (ids, ev) =
+                            template_evidence(&selected, &request.state, &constraints, events);
+                        (ids, ev, Some(q), "template")
+                    }
+                    Err(_) => {
+                        // Ranking unavailable: fall back to template evidence (labelled).
+                        let (ids, ev) =
+                            template_evidence(&selected, &request.state, &constraints, events);
+                        (ids, ev, None, "template")
+                    }
+                }
+            } else {
+                let (ids, ev) = template_evidence(&selected, &request.state, &constraints, events);
+                (ids, ev, None, "template")
+            }
+        } else {
+            let (ids, ev) = template_evidence(&selected, &request.state, &constraints, events);
+            (ids, ev, None, "template")
+        };
+
+    // Ranking clarification takes precedence over an empty result diagnostic.
+    let clarification = interpretation.clarification.or(ranking_clarification);
+    let diagnostic =
+        if interpretation.understood && clarification.is_none() && ranked_ids.is_empty() {
+            Some(planner::no_match_reason(
+                &request.state,
+                &constraints,
+                events,
+            ))
+        } else {
+            None
+        };
     let mut body = json!({
         "mode":mode, "provider":provider, "constraints":constraints,
-        "understood":interpretation.understood, "clarification":interpretation.clarification,
-        "event_ids":ids, "recommendations":evidence, "diagnostic":diagnostic
+        "understood":interpretation.understood, "clarification":clarification,
+        "event_ids":ranked_ids, "recommendations":evidence, "diagnostic":diagnostic,
+        "explanations":explanations
     });
     if let Some(notice) = notice {
         body["notice"] = json!(notice);
@@ -357,5 +507,133 @@ mod tests {
             .validate()
             .is_err()
         );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // apply_post_checks unit tests
+    // ──────────────────────────────────────────────────────────────────────
+
+    fn make_pick(id: &str, reason: &str) -> watsonx::RankedPick {
+        watsonx::RankedPick {
+            id: id.into(),
+            reason: reason.into(),
+            cited_fields: vec!["title".into()],
+        }
+    }
+
+    fn make_event_with(id: &str, goal_type: Vec<&str>, host_school: &str) -> Event {
+        Event {
+            id: id.into(),
+            title: "Event".into(),
+            day: 1,
+            start: 900,
+            end: 990,
+            topic: "Career".into(),
+            category: "Career".into(),
+            food: "None".into(),
+            cost: 0,
+            access: "open".into(),
+            rsvp: "Drop-in welcome".into(),
+            location: "Room 1".into(),
+            description: "Sample description.".into(),
+            source: "test".into(),
+            verification_status: "Fictional".into(),
+            eligibility: "Open".into(),
+            host_school: host_school.into(),
+            goal_type: goal_type.into_iter().map(|s| s.into()).collect(),
+            access_conditions: serde_json::json!(null),
+        }
+    }
+
+    #[test]
+    fn post_check_appends_missing_goal_type_candidate() {
+        // Ranked pick covers "industry" but not "research".
+        let e1 = make_event_with("e1", vec!["industry"], "Engineering");
+        let e2 = make_event_with("e2", vec!["research"], "Science");
+        let ranked = vec![make_pick("e1", "Good industry event.")];
+        let candidates: Vec<&Event> = vec![&e1, &e2];
+        let profile = model::PlanProfile {
+            major: "Engineering".into(),
+            goals: "".into(),
+            goal_types: vec!["industry".into(), "research".into()],
+        };
+        let result = apply_post_checks(&ranked, &candidates, &profile, &[e1.clone(), e2.clone()]);
+        // Should append e2 for research coverage.
+        assert_eq!(
+            result.len(),
+            2,
+            "should have appended e2 for research coverage"
+        );
+        assert_eq!(result[1].id, "e2");
+        assert!(result[1].reason.contains("research"));
+    }
+
+    #[test]
+    fn post_check_does_not_exceed_five_picks() {
+        let events: Vec<Event> = (0..6)
+            .map(|i| make_event_with(&format!("e{i}"), vec!["research"], "Science"))
+            .collect();
+        // Start with 5 already ranked.
+        let ranked: Vec<_> = (0..5)
+            .map(|i| make_pick(&format!("e{i}"), "good"))
+            .collect();
+        let candidates: Vec<&Event> = events.iter().collect();
+        let profile = model::PlanProfile {
+            major: "".into(),
+            goals: "".into(),
+            goal_types: vec!["research".into()],
+        };
+        let result = apply_post_checks(&ranked, &candidates, &profile, &events);
+        // Already ≥5 picks — must not grow.
+        assert_eq!(result.len(), 5);
+    }
+
+    #[test]
+    fn post_check_appends_host_school_to_reason() {
+        let e1 = make_event_with("e1", vec!["industry"], "School of Design");
+        let candidates: Vec<&Event> = vec![&e1];
+        let ranked = vec![make_pick("e1", "Great career event.")];
+        let profile = model::PlanProfile {
+            major: "Engineering".into(),
+            goals: "".into(),
+            goal_types: vec![],
+        };
+        let result = apply_post_checks(&ranked, &candidates, &profile, std::slice::from_ref(&e1));
+        assert!(
+            result[0].reason.contains("School of Design"),
+            "reason should mention host_school; got: {}",
+            result[0].reason,
+        );
+    }
+
+    #[test]
+    fn post_check_skips_host_school_when_already_mentioned() {
+        let e1 = make_event_with("e1", vec!["industry"], "School of Design");
+        let candidates: Vec<&Event> = vec![&e1];
+        let ranked = vec![make_pick("e1", "From the School of Design, great event.")];
+        let profile = model::PlanProfile {
+            major: "Engineering".into(),
+            goals: "".into(),
+            goal_types: vec![],
+        };
+        let result = apply_post_checks(&ranked, &candidates, &profile, std::slice::from_ref(&e1));
+        // Reason already contains school name — must not be appended again.
+        let count = result[0].reason.match_indices("School of Design").count();
+        assert_eq!(count, 1, "host_school should not be duplicated");
+    }
+
+    #[test]
+    fn post_check_skips_host_school_when_matches_major() {
+        let e1 = make_event_with("e1", vec!["industry"], "Engineering");
+        let candidates: Vec<&Event> = vec![&e1];
+        let ranked = vec![make_pick("e1", "Good event.")];
+        let profile = model::PlanProfile {
+            major: "Engineering".into(),
+            goals: "".into(),
+            goal_types: vec![],
+        };
+        let result = apply_post_checks(&ranked, &candidates, &profile, std::slice::from_ref(&e1));
+        // host_school matches major (case-insensitive) — no need to disclose.
+        assert!(!result[0].reason.contains("Hosted by"));
     }
 }

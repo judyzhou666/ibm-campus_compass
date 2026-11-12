@@ -10,6 +10,8 @@ export function createConversation(
   demo: DemoStore,
   remove: (id: string) => void,
   fetcher = globalThis.fetch,
+  /** Returns true when the backend is configured in watsonx mode. */
+  isWatsonxMode: () => boolean = () => false,
 ) {
   const status = createStore({ busy: false, mode: "Simulated planner" });
   let version = 0;
@@ -237,6 +239,7 @@ export function createConversation(
           context ?? snapshot.constraints,
           snapshot,
           fetcher,
+          isWatsonxMode(),
         ),
       );
     },
