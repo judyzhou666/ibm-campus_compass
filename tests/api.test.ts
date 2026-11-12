@@ -136,7 +136,10 @@ test("malformed server constraints use a validated labelled simulation", async (
     });
   const result = await requestPlan("AI", {}, fresh(), fetcher);
   assert.equal(result.source, "browser-fallback");
-  assert.deepEqual(result.constraints, { topics: ["AI & education"] });
+  assert.deepEqual(result.constraints, {
+    topics: ["AI & education"],
+    focus: ["ai"],
+  });
   assert.match(result.notice, /simulated demo planner/);
 });
 test("payload omits history; offline validation checks access", async () => {

@@ -77,6 +77,8 @@ export interface Constraints {
   food?: string;
   free?: boolean;
   limit?: number;
+  /** Request words that chose the topics; events mentioning them rank first. */
+  focus?: string[];
 }
 export interface Message {
   role: "user" | "assistant";

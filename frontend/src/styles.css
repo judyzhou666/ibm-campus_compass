@@ -265,6 +265,10 @@ textarea::placeholder {
   color: var(--green);
   background: var(--mint);
 }
+.icon-btn.selected .icon {
+  fill: currentColor;
+  stroke: currentColor;
+}
 main {
   max-width: 1600px;
   margin: auto;
@@ -1445,6 +1449,10 @@ p {
   background: var(--mint);
   border-color: var(--green);
   color: var(--green);
+}
+.ed-icon-btn.selected .icon {
+  fill: currentColor;
+  stroke: currentColor;
 }
 /* ── Two-column layout ── */
 .event-detail-body {
