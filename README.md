@@ -2,6 +2,140 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## PR #11 review fix: events marked full by an update — November 11, 2026
+
+A "full" synthetic update (u2 marks Community dinner & story exchange full) was only honoured by the browser's fallback planner. Elsewhere in the browser the event still looked available.
+
+- **Fixed:** after the first update batch, a full event no longer appears in dashboard picks, its event card shows "Event is full" and disables adding it, and a planned full event now triggers "One of your plans has changed". "Find a replacement" says the event is "now full" instead of "moved into a conflict".
+- **How:** `effectiveEvents` (TypeScript) and `apply_event_updates` (Rust) now fold a full update into the event's `access`, and `issue()` applies the state's update IDs itself, so every caller (cards, enrollment, replanning) uses moved times and full status. The server's `/api/validate` and `/api/enroll` now report "Event is full" instead of "Cancelled in demo". The three Rust handlers share one `effective_inputs` helper.
+- **To demo:** sign in, add Community dinner & story exchange, press the bell, then open AI Planner.
+- **Verification:** `npm test` (142 TypeScript and 5 Wiki tests, including two new regression tests), `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, `cargo build --locked` and `npm run test:api` pass. Checked in the browser: the banner appears, the replacement message says "now full", and the event card shows "Event is full".
+- **Limitation:** the server still only blocks events from update IDs the browser sends; it does not track updates on its own.
+
+## Visible synthetic update loop — November 12, 2026
+
+A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces "What changed" details in the Briefing panel and bell menu, and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.
+
+### What was added
+
+**`data/updates.json`** — three timestamped batches of synthetic updates covering every kind:
+- Batch 1: e3 cancelled, e6 marked full
+- Batch 2: e1 time moved, e9 room changed
+- Batch 3: e5 cancelled + e5 room changed (conflicting notices → "Needs confirmation")
+
+**Frontend (`frontend/src/updates.ts`)** — new module with `applyNextBatch`, `hasConflict`, `effectiveUpdate`, `updateBadge`, `relativeTime`, `isUnavailableByUpdate`, and related helpers. All logic is deterministic and uses only the embedded JSON.
+
+**Types (`frontend/src/types.ts`)** — `EventUpdate`, `UpdateBatch` interfaces; `DemoState` gains `appliedUpdateIds` and `lastUpdateCheck`.
+
+**Briefing panel (`frontend/src/Briefing.tsx`)** — "Check for updates" button, timestamp, `UpdateFeed` component listing each change with kind badges, conflict notice, and "In your plan" highlight.
+
+**Bell button and Planner panel (`frontend/src/App.tsx`)** — bell now calls `checkForUpdates`, shows a `!` badge when a new batch is available, replaces the static toast. A new "Event updates" section in the Planner sidebar provides the same action.
+
+**Event cards and details (`frontend/src/components.tsx`)** — cards show "Needs confirmation" or kind badge, new location for room changes, "Last checked" relative time. Details show the full update notice inline in the hero and body.
+
+**Backend (`backend/src/model.rs`, `backend/src/lib.rs`)** — `Schedule` accepts `applied_update_ids`; `Schedule::validate_with_updates` checks them against `data/updates.json` (embedded at compile time). All three handlers (`/api/plan`, `/api/validate`, `/api/enroll`) build an effective cancelled set from applied updates before selection, validation, or enrollment. The watsonx ranking step receives the effective state so only available events are ranked.
+
+**TypeScript fallback (`frontend/src/api.ts`)** — `schedulePayload` sends `applied_update_ids`; the browser fallback also respects update-cancelled/full events.
+
+**CSS (`frontend/src/styles.css`)** — `badge--conflict`, `badge--updated`, `badge--planned`, `event-card--conflict`, `event-card--updated`, `update-feed`, `update-list`, `update-item`, `notice--conflict`, `notice--updated`.
+
+### Tests
+
+**Frontend** — `tests/updates.test.ts`: 18 new tests covering batch traversal, conflict detection, badge computation, relativeTime, isUnavailableByUpdate, and state mutation invariants.
+
+**Rust** — six new integration tests in `backend/src/lib.rs`: cancelled event excluded from plan, full event excluded from plan, unknown update ID rejected with 400, validate returns unavailable for cancelled/full, time/room updates do not break plan.
+
+### Demo usage
+
+1. Open the app; click the **bell** (topbar) or **Check for updates** in the Briefing panel or the Planner sidebar.
+2. Each click applies the next batch. The briefing shows "What changed since your last check" with kind badges.
+3. After batch 3, e5 shows "Needs confirmation" — two conflicting notices, no choice made.
+4. Planning and enrollment reject events marked cancelled or full by the applied updates.
+
+### Verification
+
+`npm test` (TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
+## Honest AI attribution, separate evidence fields, dynamic mode labels — November 12, 2026
+
+The backend and frontend were updated to separate AI-written evidence from template evidence, and to derive all honest mode labels from the live API rather than hardcoding them.
+
+### What was changed
+
+**Backend (`backend/src/lib.rs`):** when watsonx ranking succeeds, `interest_match` is no longer appended with `" (AI)"`. Instead, the model's reason is placed in a new `ai_reason` field and `cited_fields` (the catalog fields cited by the model) is kept alongside it. Template evidence from the simulated planner has neither field.
+
+**Frontend types (`frontend/src/types.ts`):** `RecommendationEvidence` gains two optional fields: `ai_reason?: string` and `cited_fields?: string[]`.
+
+**Chat event cards (`frontend/src/PlannerPanels.tsx`, `ChatEvents`):** when a recommendation has `ai_reason`, the "Why this fits" line shows the model's reason followed by a small attribution label ("Written by IBM watsonx (Granite) from this event's record") and the cited fields as small inline tags. When `ai_reason` is absent the existing `reasons()` template text is used. "How the planner checked this" is unchanged (no more "(AI)" suffix in `interest_match`).
+
+**Honest mode labels (`frontend/src/App.tsx`, `frontend/src/DemoLauncher.tsx`):** the chat header status (before first reply), the fineprint under the chat input, and the Demo Scenario Launcher subtitle are now derived from `/api/health` on page load and updated from each `/api/plan` reply. In watsonx mode they name IBM watsonx (Granite) and note that events are fictional; in simulated mode the existing wording is preserved.
+
+### Tests
+
+14 new tests added in `tests/mode-labels.test.ts`:
+- `ai_reason` shown when present, template reasons used when absent, neither when no evidence object
+- `chatStatusLabel` derivation in both modes before and after first reply
+- `chatFineprint` wording in simulated and watsonx mode
+- `DemoLauncher` subtitle in simulated and watsonx mode
+- `planModeLabel` for all combinations (browser fallback, watsonx + AI explanations, watsonx + template, simulated)
+
+### Verification
+
+`npm test` (111 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
+## Cross-school discovery, goal-balanced plans, access conditions — November 11, 2026
+
+The fictional event catalog was extended for cross-school discovery and realistic access conditions.
+
+### What was added
+
+**New fields on every event** (`data/events.json`, `backend/src/model.rs`, `frontend/src/types.ts`):
+- `host_school` — hosting school, department, or club name (e.g. "School of Education", "Business School", "Arts Collective").
+- `goal_type` — one or more of "research", "industry", "social connection", "cultural exploration".
+- `access_conditions` — object with `membership`, `min_age`, `ticket`, `capacity`; each is a concrete value or `"unknown"`.
+- `source_url` — fictional URL under `https://example.edu/` (was null for all records; now populated).
+- `last_checked_at` — ISO timestamp within the demo week (was null; now populated).
+
+**10 new fictional events (e39–e48):**
+- AI and pedagogy cross-school dialogue (Monday, School of Education)
+- Engineering + Education: building adaptive tools (Tuesday, School of Engineering)
+- Industry panel: AI careers in education tech (Wednesday, Business School)
+- Education school welcome mixer (Monday, School of Education)
+- Business school welcome reception (Tuesday, Business School)
+- Engineering club social night — members-only (Wednesday, School of Engineering)
+- Night at the grad bar (21+, ticketed) — Thursday, Graduate Student Center
+- Interdisciplinary AI futures talk (Thursday, Graduate Student Center)
+- Business analytics and AI: industry conversation (Friday, Business School)
+- Research skills bootcamp: AI tools (Friday, School of Education)
+
+**Food filtering** — all five food states (Free meal, Coffee & snacks, Paid food, None, Unknown) are now selectable in the Explore filter chips. Constraints food validation extended in both Rust and TypeScript.
+
+**Event cards and details** now show `host_school` and `goal_type` inline, and the Record & evidence panel shows `last checked` as a formatted date, `source URL` as a clickable link (or "Not confirmed"), all `access_conditions` fields ("Not confirmed" for `"unknown"` values — never shown as open), and `host_school` / `goal_type`.
+
+**Data review** (`Settings → Team tools`) flags `Missing host school` and `Missing goal type` as new quality categories.
+
+### Evaluation results after catalog expansion
+
+`npm run evaluate` was run after these changes. The evaluation scenarios (`evaluation/scenarios.json`) are frozen and unchanged. The expanded catalog changes which events the planner recommends for several scenarios:
+
+- **D01** (cross-disciplinary AI/career/social): new events e36, e41, e42, e47 now rank for this query.
+- **D02** (Tuesday/Thursday afternoon AI): e46 (Interdisciplinary AI futures, Thu) now ranks above e5.
+- **D06** (membership): e48 (Research skills bootcamp) now covers the AI slot instead of e12.
+- **D07** (cancelled/full exclusions): e31 and e46 now rank for AI queries.
+- **H01** (arts/social free admission): e42 now appears.
+- **H05** (replacement): e46 now qualifies for this slot.
+- **H07** (five results): updated with new options.
+
+Rules/Rust/Context adapters remain at 0 eligibility violations and 0 conflict violations. The evaluation report was regenerated and written to `docs/evaluation-report.md`.
+
+### Verification
+
+`npm test` (92 TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
 ## Start here (teammates)
 
 **New to coding? Use the [project Wiki](https://github.com/judyzhou666/ibm-campus_compass/wiki).** It has copy-and-paste, step-by-step guides:
@@ -23,6 +157,74 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Update — November 11, 2026: watsonx ranking and explanations
+
+### What was added
+
+**`rank_candidates` in `backend/src/watsonx.rs`** — a second watsonx step runs after deterministic filtering. The model receives the feasible event candidates (title, host school, goal type, description) and the student's goal types, then returns a ranked list of picks with a short reason for each. Each reason must cite only fields that exist on the event; invented fields or IDs are rejected and fall back to the template explanation.
+
+**`"explanations": "watsonx" | "template"` in `/api/plan` response** — the JSON response now includes an `explanations` field so the frontend can label where each recommendation reason came from. The TypeScript API client and state types were updated to match.
+
+**Goal types in Profile** — students can now select their goal types (research, industry, social connection, cultural exploration) in the Profile page. The selected goals are sent to the Rust server with every planning request.
+
+**Watsonx chat forwarding** — when `PLANNER_PROVIDER=watsonx`, unrecognised chat messages (those that would previously show the "limited demo planner" fallback reply) are forwarded to the Rust server for interpretation instead.
+
+**Rust post-checks** (`backend/src/lib.rs`) — two new post-check rules run after candidate selection:
+- If a candidate's `goal_type` is not yet represented in the plan, a matching event is appended (up to the five-result cap).
+- If the hosting school differs from the student's major school, "Hosted by \<school\>." is appended to the recommendation reason.
+
+**Template-evidence fallback** — a single `template_reason` helper in `backend/src/lib.rs` produces the deterministic explanation used whenever the watsonx ranking step is skipped or returns an invalid response.
+
+### How to try it
+
+With `PLANNER_PROVIDER=watsonx` and valid `WATSONX_API_KEY`, `WATSONX_PROJECT_ID`, and `WATSONX_MODEL_ID` set:
+
+```sh
+PLANNER_PROVIDER=watsonx \
+  WATSONX_API_KEY=<your-key> \
+  WATSONX_PROJECT_ID=<your-project> \
+  WATSONX_MODEL_ID=<your-model> \
+  cargo run --locked
+```
+
+Open the AI Planner. The chat label shows **Rust planner · IBM watsonx** when live. Planning responses include model-written reasons for each recommended event; the `explanations` field in the API response will be `"watsonx"`. With no key set, the planner falls back to `"template"` explanations and the label shows **Rust planner · Simulated**.
+
+### Verification results
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 102 TypeScript tests pass (97 unit + 5 Wiki) |
+| `npm run build` | Clean — tsc and vite both pass |
+| `cargo fmt --check` | Clean |
+| `cargo clippy --locked --all-targets -- -D warnings` | Clean |
+| `cargo test --locked` | 31 Rust tests pass |
+| `npm run test:api` | Rust API parity, follow-ups, validation, conflicts, cancellations, body limits, and static serving — all pass |
+
+### Limitations
+
+- Tested only against a local mock server. Live watsonx behaviour (latency, model output quality, explanation coherence, cost) has not yet been evaluated.
+- The `rank_candidates` prompt sends event title, host school, goal type, and description. No student names, RSVP lists, or browser history are included.
+- Ranking step failure (timeout, malformed JSON, invented field) is handled with a silent fallback to template reasons; the `explanations` field distinguishes the two modes.
+- `npm run evaluate` (deterministic frozen scenarios) was not re-run for this change; ranking is a post-filter step and does not affect eligibility or conflict checks.
+
+## Top bar: search, quick links and demo sign-in — November 11, 2026
+
+The top bar follows a familiar events-site layout:
+
+- **Search box** has a visible rounded border, a leading search icon and a round green search button. Press Enter or the button to search Explore Events.
+- **Quick links** on the right: Find events, My calendar, Forum, plus a green **Plan with AI** button. The link for the current page is underlined.
+- **Sign in** sits at the far right. Signing in asks only for a display name, then the profile circle replaces it; the circle opens Profile, which has **Sign out**. Signed out, the dashboard says "Welcome to Campus Compass." and the sidebar shows Guest.
+- The breadcrumb and campus-name label were removed from the top bar. The campus name still appears in the footer.
+
+The demo sign-in is fictional: there is no account, password or email, and the name stays in this browser (`signedIn` in the saved demo state). A new demo starts signed out. Profiles saved before this change also show as signed out until you sign in.
+
+Layout by width:
+- **Above 1060px:** all quick links show.
+- **1060px down to phone width:** only Plan with AI shows; the sidebar still has every page.
+- **Phone:** the links and the bell are hidden, and the search box and Sign in or the profile circle stay.
+
+Verification: `npm test` (92 TypeScript tests, including a new one in `tests/sign-in.test.ts`, and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In the browser at 1440px, 1024px and 375px I checked the layout, signed in through the dialog, searched for "film" with the round button, saw the current-page underline on Find events and Plan with AI, opened Profile from the circle and signed out. There was no sideways scrolling on the phone.
+
 ## Back and swipe-back between tabs — November 10, 2026
 
 Back (and the swipe-back gesture) no longer steps through tabs you visited before. Sidebar tabs (Dashboard, My Calendar, Explore Events, Discussion Forum, AI Planner, Saved Events, Profile, Settings) are on the same level, so on any of them Back is blocked and you stay where you are. Back only closes sub-pages, innermost first:
@@ -34,9 +236,22 @@ Back (and the swipe-back gesture) no longer steps through tabs you visited befor
 | A forum post or the Create post editor | The post list (or the open community) |
 | Synthetic-data review (Settings → Team tools) | Settings |
 
-How it works: switching tabs replaces the browser history entry instead of adding one, and each open sub-page owns one entry (`frontend/src/navigation.ts`). Each entry records its position, so the browser's Forward button is ignored instead of being mistaken for Back. The logo link no longer adds a history entry on each click. In-page Close / "Back to posts" buttons use up that entry, so a later Back doesn't land on a stale one. The old `hashchange` listener is gone; links and typed `#page` URLs are handled in the same `popstate` listener.
+How it works (`frontend/src/navigation.ts`): switching tabs replaces the browser history entry instead of adding one. Back closes the innermost open sub-page; on a tab, nothing happens. Forward is ignored. The logo link no longer adds a history entry on each click.
 
-Verification: `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass. In a fresh browser tab I pressed Back on every sidebar tab (all stayed put, three Backs in a row on Settings too), and checked event details (Back and Close button), the event → community link, community → post → Back → Back, switching communities, Create post with Back / "Back to posts" / Save Draft, the logo link, the search box, a typed `#calendar`, reloading on `#forum?community=ai`, and the data review returning to Settings. After review, a scripted run of 31 checks also covers Forward (community → post → Back → Forward changes nothing) and reloading partway through a session. Limitation: checked with `history.back()` in Chromium; the real iOS/macOS swipe gesture triggers the same browser Back but was not tried on a device.
+**Why the first version still let a real swipe leave the site (fixed November 11):** Chrome and Safari skip history entries that a page adds without a user gesture, so a site can't trap visitors. The app used to add its guard entry on page load and re-add it inside the Back handler. Neither counts as a gesture, so a real swipe or Back press went straight past the guard and left the website. Scripted `history.back()` doesn't apply that skipping, which is why the earlier checks passed. Now the app adds entries only while you're tapping, clicking or typing: each interaction tops up a cushion of 3 Back presses, and each Back uses one.
+
+Verification:
+- `npm test` (91 TypeScript tests and 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+- In a fresh browser tab with another page in its history before the app, I used real clicks and recorded every history entry the app added: all of them were added during a user gesture.
+- After clicking Explore Events, three Backs in a row stayed on Explore Events.
+- Event details: Back closed them, then the next Backs were absorbed.
+- Forum: community → post, then Back, Back, Back closed the post, then the community, then was absorbed.
+- Forward changed nothing.
+
+Limitations:
+- **No protection before the first interaction.** A Back or swipe before you tap, click or type anything leaves the site, because browsers ignore entries added without a gesture.
+- **At most 3 Backs absorbed.** A fourth Back in a row without touching the page leaves.
+- **Not tried with a real swipe.** I checked with real clicks plus `history.back()` in Chromium; a real swipe on a Mac trackpad, iPhone or Android device wasn't tried.
 
 ## PR #9 review fixes — November 10, 2026
 

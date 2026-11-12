@@ -17,13 +17,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/learning-with-ai-lab",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e2",
@@ -43,13 +51,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/conversations-beyond-major",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Full meal"
+    "food_status": "Full meal",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection", "cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e3",
@@ -69,13 +85,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/responsible-tech-career",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Engineering",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e4",
@@ -95,13 +119,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/education-research-roundtable",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e5",
@@ -121,13 +153,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/ai-classroom-open-studio",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Education",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e6",
@@ -147,13 +187,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/community-dinner-story-exchange",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Full meal"
+    "food_status": "Full meal",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection", "cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e7",
@@ -173,13 +221,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/designing-career-story",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e8",
@@ -199,13 +255,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/autumn-sketchbook-walk",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Unknown"
+    "food_status": "Unknown",
+    "host_school": "Arts Collective",
+    "goal_type": ["social connection", "cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e9",
@@ -225,13 +289,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/graduate-makers-night",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Paid food"
+    "food_status": "Paid food",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e10",
@@ -251,13 +323,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/mindful-movement-lawn",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e11",
@@ -277,13 +357,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/international-tea-table",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection", "cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e12",
@@ -303,13 +391,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/data-science-members-lab",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Unknown",
     "eligibility": "Membership required; membership not verified",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Engineering",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": true,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e13",
@@ -329,13 +425,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/film-club-evening",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Paid food"
+    "food_status": "Paid food",
+    "host_school": "Arts Collective",
+    "goal_type": ["cultural exploration", "social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e14",
@@ -355,13 +459,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/student-research-lightning-talks",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e15",
@@ -381,13 +493,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/coffee-with-alumni",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Unknown",
     "eligibility": "Unknown",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": "unknown",
+      "min_age": "unknown",
+      "ticket": "unknown",
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e16",
@@ -407,13 +527,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/friday-community-lunch",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Full meal"
+    "food_status": "Full meal",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e17",
@@ -433,13 +561,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/student-wellbeing-circle",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e18",
@@ -459,13 +595,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/creative-coding-intro",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Engineering",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e19",
@@ -485,13 +629,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/museum-conversations",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Arts Collective",
+    "goal_type": ["cultural exploration", "social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e20",
@@ -511,13 +663,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/networking-without-awkwardness",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Business School",
+    "goal_type": ["industry", "social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e21",
@@ -537,13 +697,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/learning-analytics-reading-group",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Unknown"
+    "food_status": "Unknown",
+    "host_school": "School of Education",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e22",
@@ -563,13 +731,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/picnic-lawn-games",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Full meal"
+    "food_status": "Full meal",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e23",
@@ -589,13 +765,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/arts-collective-welcome",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Arts Collective",
+    "goal_type": ["social connection", "cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e24",
@@ -615,13 +799,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/resume-peer-review",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e25",
@@ -641,13 +833,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/quiet-writing-hour",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e26",
@@ -667,13 +867,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/ai-ethics-debate",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Education",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e27",
@@ -693,13 +901,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/weekend-connections-mixer",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Unknown"
+    "food_status": "Unknown",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e28",
@@ -719,13 +935,21 @@
     "checked": "October 15, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/social-impact-project-fair",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Business School",
+    "goal_type": ["industry", "social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e29",
@@ -745,13 +969,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/ceramics-beginner-workshop",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Demo students",
     "eligibility": "Open to demo students",
     "availability": "Unknown",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Arts Collective",
+    "goal_type": ["cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e30",
@@ -771,13 +1003,21 @@
     "checked": "October 15, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/research-methods-clinic",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "Unknown",
     "eligibility": "At capacity",
     "availability": "Full",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "School of Education",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "full"
+    }
   },
   {
     "id": "e31",
@@ -797,13 +1037,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/ai-ethics-roundtable",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e32",
@@ -823,13 +1071,21 @@
     "checked": "November 1, 2026",
     "rsvp": "RSVP required",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/career-storytelling-workshop",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e33",
@@ -849,13 +1105,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/wednesday-noon-run",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e34",
@@ -875,13 +1139,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/graduate-school-info-night",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e35",
@@ -901,13 +1173,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/generative-art-studio",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Arts Collective",
+    "goal_type": ["cultural exploration"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e36",
@@ -927,13 +1207,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/mindfulness-focus-session",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "None"
+    "food_status": "None",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e37",
@@ -953,13 +1241,21 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/friday-campus-film-screening",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "All students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Refreshments"
+    "food_status": "Refreshments",
+    "host_school": "Arts Collective",
+    "goal_type": ["cultural exploration", "social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   },
   {
     "id": "e38",
@@ -979,12 +1275,360 @@
     "checked": "November 1, 2026",
     "rsvp": "Drop-in welcome",
     "campus_id": "fictional-campus",
-    "source_url": null,
-    "last_checked_at": null,
+    "source_url": "https://example.edu/events/first-generation-student-meetup",
+    "last_checked_at": "2026-11-01T14:00:00Z",
     "intended_audience": "First-generation students",
     "eligibility": "Open to demo students",
     "availability": "Available",
     "verification_status": "Fictional record; not externally verified",
-    "food_status": "Full meal"
+    "food_status": "Full meal",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e39",
+    "title": "AI and pedagogy: cross-school dialogue",
+    "category": "Academic",
+    "day": 0,
+    "start": 900,
+    "end": 990,
+    "location": "Innovation Hub, Room 1",
+    "topic": "AI & education",
+    "food": "Coffee & snacks",
+    "cost": 0,
+    "access": "open",
+    "description": "Faculty and students from Education, Engineering and Business share how AI is reshaping their disciplines. Bring your questions.",
+    "poster": "CROSS / THINK",
+    "source": "Original fictional record CC-039",
+    "checked": "November 1, 2026",
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/ai-pedagogy-cross-school",
+    "last_checked_at": "2026-11-04T09:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e40",
+    "title": "Engineering + Education: building adaptive tools",
+    "category": "Academic",
+    "day": 1,
+    "start": 720,
+    "end": 810,
+    "location": "Tech Hub, Lab 4",
+    "topic": "AI & education",
+    "food": "None",
+    "cost": 0,
+    "access": "open",
+    "description": "School of Engineering students demo adaptive learning tools in collaboration with School of Education peers. Discussion and feedback welcome.",
+    "poster": "BUILD / BRIDGE",
+    "source": "Original fictional record CC-040",
+    "checked": "November 1, 2026",
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/engineering-education-adaptive-tools",
+    "last_checked_at": "2026-11-03T10:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None",
+    "host_school": "School of Engineering",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e41",
+    "title": "Industry panel: AI careers in education tech",
+    "category": "Career",
+    "day": 2,
+    "start": 900,
+    "end": 990,
+    "location": "Main Hall Auditorium",
+    "topic": "Career",
+    "food": "Light refreshments",
+    "cost": 0,
+    "access": "open",
+    "description": "Four industry practitioners from edtech, government research and non-profit sectors discuss AI-adjacent career paths for new graduates. Q&A included.",
+    "poster": "INDUSTRY / FUTURES",
+    "source": "Original fictional record CC-041",
+    "checked": "November 1, 2026",
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/industry-panel-ai-careers-edtech",
+    "last_checked_at": "2026-11-04T11:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e42",
+    "title": "Education school welcome mixer",
+    "category": "Social",
+    "day": 0,
+    "start": 1020,
+    "end": 1080,
+    "location": "Education Building Atrium",
+    "topic": "Social",
+    "food": "Coffee & snacks",
+    "cost": 0,
+    "access": "open",
+    "description": "New and returning School of Education students meet over coffee. An informal way to find study partners and hear about upcoming events.",
+    "poster": "WELCOME / ED",
+    "source": "Original fictional record CC-042",
+    "checked": "November 1, 2026",
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/education-school-welcome-mixer",
+    "last_checked_at": "2026-11-02T10:00:00Z",
+    "intended_audience": "School of Education students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments",
+    "host_school": "School of Education",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e43",
+    "title": "Business school welcome reception",
+    "category": "Social",
+    "day": 1,
+    "start": 1080,
+    "end": 1170,
+    "location": "Business School Commons",
+    "topic": "Social",
+    "food": "Free meal",
+    "cost": 0,
+    "access": "open",
+    "description": "Light dinner and introductions for incoming Business School students. Meet your cohort and connect with second-year mentors.",
+    "poster": "WELCOME / BIZ",
+    "source": "Original fictional record CC-043",
+    "checked": "November 1, 2026",
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/business-school-welcome-reception",
+    "last_checked_at": "2026-11-03T10:00:00Z",
+    "intended_audience": "Business School students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Full meal",
+    "host_school": "Business School",
+    "goal_type": ["social connection", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e44",
+    "title": "Engineering club social night",
+    "category": "Social",
+    "day": 2,
+    "start": 1080,
+    "end": 1200,
+    "location": "Engineering Lounge, Floor 2",
+    "topic": "Social",
+    "food": "Paid food",
+    "cost": 6,
+    "access": "members",
+    "description": "Members-only social for the Engineering Student Association. Pizza, games, and a short project showcase. Non-members may apply for associate membership at the door.",
+    "poster": "ENG / SOCIAL",
+    "source": "Original fictional record CC-044",
+    "checked": "November 1, 2026",
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/engineering-club-social-night",
+    "last_checked_at": "2026-11-04T09:00:00Z",
+    "intended_audience": "Engineering Student Association members",
+    "eligibility": "Membership required; membership not verified",
+    "availability": "Unknown",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Paid food",
+    "host_school": "School of Engineering",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": true,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e45",
+    "title": "Night at the grad bar (21+)",
+    "category": "Social",
+    "day": 3,
+    "start": 1200,
+    "end": 1320,
+    "location": "The Campus Tap, Lower Level",
+    "topic": "Social",
+    "food": "Paid food",
+    "cost": 10,
+    "access": "open",
+    "description": "A ticketed 21-and-over social night hosted by the Graduate Student Center. DJ set, drinks at cost, light bar snacks. Ticket required; sold at the GSC office.",
+    "poster": "GRAD / NIGHT",
+    "source": "Original fictional record CC-045",
+    "checked": "November 1, 2026",
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/night-at-the-grad-bar",
+    "last_checked_at": "2026-11-04T11:00:00Z",
+    "intended_audience": "Graduate students aged 21+",
+    "eligibility": "21+ and ticket required",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Paid food",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["social connection"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": 21,
+      "ticket": true,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e46",
+    "title": "Interdisciplinary AI futures talk",
+    "category": "Academic",
+    "day": 3,
+    "start": 840,
+    "end": 930,
+    "location": "Innovation Hub, Room 2",
+    "topic": "AI & education",
+    "food": "Coffee & snacks",
+    "cost": 0,
+    "access": "open",
+    "description": "Researchers from the Schools of Education, Engineering and Business present three contrasting visions for AI in higher education in 2030. Panel Q&A follows.",
+    "poster": "FUTURES / PANEL",
+    "source": "Original fictional record CC-046",
+    "checked": "November 1, 2026",
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/interdisciplinary-ai-futures-talk",
+    "last_checked_at": "2026-11-04T11:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments",
+    "host_school": "Graduate Student Center",
+    "goal_type": ["research", "industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e47",
+    "title": "Business analytics and AI: industry conversation",
+    "category": "Career",
+    "day": 4,
+    "start": 840,
+    "end": 930,
+    "location": "Business School, Seminar B",
+    "topic": "Career",
+    "food": "Coffee & snacks",
+    "cost": 0,
+    "access": "open",
+    "description": "A practitioner from a consulting firm shares how AI is changing analytics workflows. Case discussion and student Q&A. Cross-school attendance welcome.",
+    "poster": "ANALYTICS / MEET",
+    "source": "Original fictional record CC-047",
+    "checked": "November 1, 2026",
+    "rsvp": "Drop-in welcome",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/business-analytics-ai-industry",
+    "last_checked_at": "2026-11-05T09:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "Refreshments",
+    "host_school": "Business School",
+    "goal_type": ["industry"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
+  },
+  {
+    "id": "e48",
+    "title": "Research skills bootcamp: AI tools",
+    "category": "Academic",
+    "day": 4,
+    "start": 720,
+    "end": 810,
+    "location": "Library Research Suite",
+    "topic": "AI & education",
+    "food": "None",
+    "cost": 0,
+    "access": "open",
+    "description": "A practical session on using AI-assisted search and synthesis tools responsibly for academic research. Hosted by the library in partnership with the School of Education.",
+    "poster": "RESEARCH / TOOLS",
+    "source": "Original fictional record CC-048",
+    "checked": "November 1, 2026",
+    "rsvp": "RSVP required",
+    "campus_id": "fictional-campus",
+    "source_url": "https://example.edu/events/research-skills-bootcamp-ai",
+    "last_checked_at": "2026-11-05T09:00:00Z",
+    "intended_audience": "All students",
+    "eligibility": "Open to demo students",
+    "availability": "Available",
+    "verification_status": "Fictional record; not externally verified",
+    "food_status": "None",
+    "host_school": "School of Education",
+    "goal_type": ["research"],
+    "access_conditions": {
+      "membership": false,
+      "min_age": "unknown",
+      "ticket": false,
+      "capacity": "unknown"
+    }
   }
 ]

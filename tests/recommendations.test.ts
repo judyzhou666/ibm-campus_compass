@@ -12,8 +12,14 @@ import {
 test("synthetic provenance never claims external verification", () => {
   for (const e of EVENTS) {
     assert.equal(e.campus_id, DEMO.campus_id);
-    assert.equal(e.source_url, null);
-    assert.equal(e.last_checked_at, null);
+    // source_url is now populated with fictional example.edu URLs; external verification
+    // is still not claimed — each record carries the disclaimer below.
+    assert.ok(
+      e.source_url === null ||
+        (typeof e.source_url === "string" &&
+          e.source_url.startsWith("https://example.edu/")),
+      `source_url must be null or a fictional example.edu URL: ${e.source_url}`,
+    );
     assert.match(e.verification_status!, /not externally verified/);
     assert.ok(
       ["Full meal", "Refreshments", "Paid food", "None", "Unknown"].includes(

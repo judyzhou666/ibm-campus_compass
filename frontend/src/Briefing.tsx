@@ -5,6 +5,15 @@ import { requestPlan, planningKey } from "./api.ts";
 import { issue } from "./planner.ts";
 import { Button, Icon } from "./components.tsx";
 import type { DemoState } from "./types.ts";
+import {
+  nextBatch,
+  updatesInLatestBatch,
+  hasConflict,
+  effectiveUpdate,
+  kindLabel,
+  relativeTime,
+} from "./updates.ts";
+
 export function Welcome({
   onStart,
   onSkip,
@@ -46,16 +55,72 @@ export function Welcome({
     </dialog>
   );
 }
+
+/** What-changed feed shown in the Briefing panel and bell menu after a check. */
+export function UpdateFeed({
+  state,
+  onDetail,
+}: {
+  state: DemoState;
+  onDetail: (id: string) => void;
+}) {
+  const { updates } = updatesInLatestBatch(state.appliedUpdateIds);
+  if (!updates.length) return null;
+  return (
+    <div className="update-feed" aria-live="polite">
+      <h3>
+        <Icon name="bell" /> What changed since your last check
+      </h3>
+      <ul className="update-list">
+        {updates.map((u) => {
+          const event = EVENTS.find((e) => e.id === u.event_id);
+          const conflict = hasConflict(u.event_id, state.appliedUpdateIds);
+          const affected = state.plan.includes(u.event_id);
+          return (
+            <li
+              key={u.id}
+              className={`update-item${affected ? " update-item--planned" : ""}${conflict ? " update-item--conflict" : ""}`}
+            >
+              <span className={`tag update-tag update-tag--${u.kind}`}>
+                {kindLabel(u.kind)}
+              </span>
+              {event ? (
+                <button className="text-btn" onClick={() => onDetail(event.id)}>
+                  {event.title}
+                </button>
+              ) : (
+                <span>{u.event_id}</span>
+              )}
+              {conflict ? (
+                <span className="badge badge--conflict" role="status">
+                  Needs confirmation — conflicting notices received
+                </span>
+              ) : null}
+              {affected && !conflict ? (
+                <span className="badge badge--planned">In your plan</span>
+              ) : null}
+              <p className="update-detail">{u.details}</p>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="fineprint">Synthetic update · Last checked {relativeTime(state.lastUpdateCheck!)}</p>
+    </div>
+  );
+}
+
 export function Briefing({
   state,
   onDetail,
   onPlanner,
   onCalendar,
+  onCheckUpdates,
 }: {
   state: DemoState;
   onDetail: (id: string) => void;
   onPlanner: () => void;
   onCalendar: () => void;
+  onCheckUpdates: () => void;
 }) {
   const [result, setResult] = useState<{
     key: string;
@@ -98,24 +163,53 @@ export function Briefing({
   }, [key]);
   const links = (ids: string[]) =>
     ids.length ? (
-      ids.map((id) => (
-        <li key={id}>
-          <button className="text-btn" onClick={() => onDetail(id)}>
-            {EVENTS.find((e) => e.id === id)?.title}
-          </button>
-        </li>
-      ))
+      ids.map((id) => {
+        const ev = EVENTS.find((e) => e.id === id);
+        if (!ev) return null;
+        const conflict = hasConflict(id, state.appliedUpdateIds);
+        const upd = !conflict ? effectiveUpdate(id, state.appliedUpdateIds) : null;
+        return (
+          <li key={id} className={conflict ? "item--conflict" : upd ? "item--updated" : ""}>
+            <button className="text-btn" onClick={() => onDetail(id)}>
+              {ev.title}
+            </button>
+            {conflict ? (
+              <span className="badge badge--conflict">Needs confirmation</span>
+            ) : upd ? (
+              <span className="badge badge--updated">{kindLabel(upd.kind)}</span>
+            ) : null}
+          </li>
+        );
+      })
     ) : (
       <li>No items this demo week.</li>
     );
   const ready = result?.key === key,
     ids = ready ? result.ids : [];
+  const hasPending = !!nextBatch(state.appliedUpdateIds);
+  const hasChanges = state.lastUpdateCheck !== null && updatesInLatestBatch(state.appliedUpdateIds).updates.length > 0;
   return (
     <section className="panel briefing">
       <h2>This Week&apos;s Briefing</h2>
       <p className="fineprint">
         {WEEK_LABEL} · Deterministic simulation · No live updates
       </p>
+      <div className="row" style={{ marginBottom: "0.75rem" }}>
+        <Button onClick={onCheckUpdates} className={hasPending ? "primary" : ""}>
+          <Icon name="bell" />
+          {hasPending
+            ? "Check for updates"
+            : "No more batches · Synthetic update"}
+        </Button>
+        {state.lastUpdateCheck ? (
+          <span className="fineprint" style={{ alignSelf: "center" }}>
+            Last checked {relativeTime(state.lastUpdateCheck)}
+          </span>
+        ) : null}
+      </div>
+      {hasChanges && (
+        <UpdateFeed state={state} onDetail={onDetail} />
+      )}
       {!ready ? (
         <p role="status">Checking availability…</p>
       ) : (

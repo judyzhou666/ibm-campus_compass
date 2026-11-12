@@ -3,25 +3,32 @@ import { useEffect, useRef } from "react";
 /**
  * Back / swipe-back navigation.
  *
- * Sidebar tabs (Dashboard, My Calendar, Explore Events, …) are siblings, so
- * switching tabs replaces the current history entry instead of adding one.
- * Only sub-pages — event details, a forum community, a forum post or the post
- * editor, the data review — push an entry. Back closes the innermost open
- * sub-page; on a top-level tab it is absorbed, so it neither jumps to another
- * tab nor leaves the app. Forward is ignored.
+ * Sidebar tabs (Dashboard, My Calendar, Explore Events, …) are siblings: on a
+ * tab, Back does nothing. Back only closes the innermost open sub-page (event
+ * details, a forum community, a forum post or the post editor, the data
+ * review). Forward is ignored.
  *
- * Every entry the app owns carries `cc` (its kind) and `idx` (its position),
- * so a popstate can tell Back from Forward.
+ * Browsers skip history entries that a page adds without a user gesture
+ * (Chrome's history-manipulation intervention; WebKit does the same), so an
+ * entry pushed on load or inside a popstate handler cannot hold the user on
+ * the page — a real swipe goes straight past it and leaves the site. Instead
+ * the app keeps a small cushion of entries above the first one and tops it up
+ * only while the user is actually tapping, clicking or typing. Each Back uses
+ * one entry: it closes a sub-page if one is open, otherwise nothing happens.
+ *
+ * Every entry the app owns carries `cc` (its kind) and `idx` (its distance
+ * from the first entry), so a popstate can tell Back from Forward.
  */
 interface SubPage {
   id: number;
   close: () => void;
 }
 interface Entry {
-  cc: "root" | "tab" | "sub";
+  cc: "root" | "tab";
   idx: number;
-  id?: number;
 }
+/** How many Backs in a row are absorbed after the last interaction. */
+export const CUSHION = 3;
 const stack: SubPage[] = [];
 let nextId = 1;
 let currentIdx = 0;
@@ -35,30 +42,46 @@ const entryOf = (state: unknown): Entry | null =>
     ? (state as Entry)
     : null;
 
-function push(cc: Entry["cc"], url?: string, id?: number) {
-  currentIdx += 1;
-  history.pushState({ cc, idx: currentIdx, id }, "", url ?? location.href);
+/**
+ * True while the browser treats this event as a user gesture. Browsers
+ * without `navigator.userActivation` (e.g. Safari before 16.4) get a
+ * conservative fallback: only a click or a non-Escape key press counts, never
+ * a pointer-down, which on touch screens is not a gesture.
+ */
+export function isGesture(event: Pick<Event, "type"> & { key?: string }) {
+  const activation = (
+    navigator as Navigator & { userActivation?: { isActive: boolean } }
+  ).userActivation;
+  if (activation) return activation.isActive;
+  return (
+    event.type === "click" ||
+    (event.type === "keydown" && event.key !== "Escape")
+  );
+}
+
+/** Refill the cushion; only ever acts during a user gesture. */
+function topUp(event: Event) {
+  if (!isGesture(event as KeyboardEvent)) return;
+  while (currentIdx < CUSHION) {
+    currentIdx += 1;
+    history.pushState({ cc: "tab", idx: currentIdx }, "", location.href);
+  }
 }
 
 /**
- * Run once before anything pushes: mark the first entry as the root and add
- * one tab entry above it, so the first Back stays inside the app. After a
- * reload the existing entries are reused.
+ * Run once on startup: mark the first entry and start refilling the cushion on
+ * every tap, click or key press (capture phase, before the app handles it).
+ * Nothing is pushed until the user interacts.
  */
 export function initHistory() {
   const entry = entryOf(history.state);
-  if (entry) {
-    currentIdx = entry.idx;
-    return;
+  if (entry) currentIdx = entry.idx;
+  else {
+    currentIdx = 0;
+    history.replaceState({ cc: "root", idx: 0 }, "");
   }
-  currentIdx = 0;
-  history.replaceState({ cc: "root", idx: 0 }, "");
-  push("tab");
-}
-
-function release(id: number) {
-  const at = stack.findIndex((s) => s.id === id);
-  return at >= 0 ? stack.splice(at, 1)[0] : undefined;
+  for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"])
+    window.addEventListener(type, topUp, { capture: true });
 }
 
 /**
@@ -77,7 +100,7 @@ export function handlePopState(
     return;
   }
   if (!entry) {
-    // A link or typed URL changed the hash: a new entry, treated as a tab.
+    // A link or typed URL changed the hash (a new entry): treat as a tab.
     currentIdx += 1;
     history.replaceState({ cc: "tab", idx: currentIdx }, "");
     onLink();
@@ -89,49 +112,35 @@ export function handlePopState(
     history.go(currentIdx - entry.idx);
     return;
   }
+  // Back: close the innermost sub-page, or absorb it on a top-level tab.
   currentIdx = entry.idx;
-  const top = stack.pop();
-  if (top) top.close();
-  else push("tab", currentUrl());
+  stack.pop()?.close();
+  history.replaceState(history.state, "", currentUrl());
 }
 
-/** Number of registered sub-pages (for tests and debugging). */
+/** Number of registered sub-pages. */
 export const openSubPageCount = () => stack.length;
 
+/** Registers a sub-page so Back closes it; returns the unregister function. */
+export function registerSubPage(close: () => void) {
+  const page = { id: nextId++, close };
+  stack.push(page);
+  return () => {
+    const at = stack.indexOf(page);
+    if (at >= 0) stack.splice(at, 1);
+  };
+}
+
 /**
- * Registers a sub-page while `open` is true and pushes one history entry for
- * it, optionally at `url`. Returns a close function for in-page Back/Close
- * buttons: it consumes the history entry, so a later Back doesn't land on a
- * stale one.
+ * Registers a sub-page while `open` is true, so Back closes it. Returns the
+ * function in-page Close / Back buttons should call.
  */
-export function useSubPage(open: boolean, close: () => void, url?: string) {
+export function useSubPage(open: boolean, close: () => void) {
   const closeRef = useRef(close);
   closeRef.current = close;
-  const idRef = useRef<number | null>(null);
   useEffect(() => {
     if (!open) return;
-    const id = nextId++;
-    stack.push({ id, close: () => closeRef.current() });
-    push("sub", url, id);
-    idRef.current = id;
-    return () => {
-      release(id);
-      if (idRef.current === id) idRef.current = null;
-    };
-    // An open sub-page whose URL changes is updated in place below.
+    return registerSubPage(() => closeRef.current());
   }, [open]);
-  useEffect(() => {
-    if (open && url && idRef.current !== null && location.hash !== url)
-      history.replaceState(history.state, "", url);
-  }, [open, url]);
-  return () => {
-    const id = idRef.current;
-    const top = stack.at(-1);
-    if (id !== null && top?.id === id && entryOf(history.state)?.id === id) {
-      history.back(); // the popstate handler closes it
-    } else {
-      if (id !== null) release(id);
-      closeRef.current();
-    }
-  };
+  return () => closeRef.current();
 }

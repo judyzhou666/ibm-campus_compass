@@ -2,6 +2,7 @@ import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import type { DemoState } from "./types.ts";
+import { GOAL_TYPES } from "./types.ts";
 
 export function createStore<T>(initial: T) {
   let value = initial;
@@ -25,9 +26,11 @@ export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 
 export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
+  signedIn: false,
   onboarded: false,
   major: "",
   goals: "",
+  goal_types: [],
   timezone: "",
   preferred_time: "any",
   plan: [],
@@ -46,6 +49,8 @@ export const fresh = (): DemoState => ({
   constraints: {},
   messages: [],
   name: "Judy",
+  appliedUpdateIds: [],
+  lastUpdateCheck: null,
 });
 
 export function restore(): DemoState {
@@ -60,8 +65,16 @@ export function restore(): DemoState {
     return {
       ...base,
       onboarded: value.onboarded === true,
+      signedIn: value.signedIn === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
+      goal_types: Array.isArray(value.goal_types)
+        ? value.goal_types.filter(
+            (t: unknown) =>
+              typeof t === "string" &&
+              (GOAL_TYPES as readonly string[]).includes(t),
+          )
+        : [],
       timezone: isTimeZone(value.timezone) ? value.timezone : "",
       preferred_time: ["any", "morning", "afternoon", "evening"].includes(
         value.preferred_time,
@@ -179,6 +192,13 @@ export function restore(): DemoState {
         : [],
       // Chat filters restart after reload; saved plans and availability are retained.
       constraints: {},
+      appliedUpdateIds: Array.isArray(value.appliedUpdateIds)
+        ? value.appliedUpdateIds.filter((id: unknown) => typeof id === "string")
+        : [],
+      lastUpdateCheck:
+        typeof value.lastUpdateCheck === "string"
+          ? value.lastUpdateCheck
+          : null,
     };
   } catch {
     return fresh();

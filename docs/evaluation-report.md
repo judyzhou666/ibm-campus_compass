@@ -10,30 +10,30 @@ Each cell is numerator/denominator (micro-aggregated across the stated split). N
 
 | Metric | A Keyword/category | B Rules | C Context/Rust |
 |---|---|---|---|
-| precision | 11/24 (45.8%) | 15/15 (100.0%) | 15/15 (100.0%) |
-| recall | 11/15 (73.3%) | 15/15 (100.0%) | 15/15 (100.0%) |
-| conflict_violations | 4/27 (14.8%) | 0/15 (0.0%) | 0/15 (0.0%) |
-| eligibility_violations | 4/27 (14.8%) | 0/15 (0.0%) | 0/15 (0.0%) |
-| constraint_satisfaction | 18/27 (66.7%) | 15/15 (100.0%) | 15/15 (100.0%) |
-| source_faithfulness | N/A (0 observations) | N/A (0 observations) | 15/15 (100.0%) |
-| food_accuracy | 27/27 (100.0%) | 15/15 (100.0%) | 15/15 (100.0%) |
-| diversity | 8/10 (80.0%) | 9/10 (90.0%) | 10/10 (100.0%) |
+| precision | 9/26 (34.6%) | 14/17 (82.4%) | 14/17 (82.4%) |
+| recall | 9/15 (60.0%) | 14/15 (93.3%) | 14/15 (93.3%) |
+| conflict_violations | 4/29 (13.8%) | 0/17 (0.0%) | 0/17 (0.0%) |
+| eligibility_violations | 4/29 (13.8%) | 0/17 (0.0%) | 0/17 (0.0%) |
+| constraint_satisfaction | 18/29 (62.1%) | 17/17 (100.0%) | 17/17 (100.0%) |
+| source_faithfulness | N/A (0 observations) | N/A (0 observations) | 17/17 (100.0%) |
+| food_accuracy | 29/29 (100.0%) | 17/17 (100.0%) | 17/17 (100.0%) |
+| diversity | 6/10 (60.0%) | 9/10 (90.0%) | 10/10 (100.0%) |
 | replanning_validity | 1/1 (100.0%) | 1/1 (100.0%) | 1/1 (100.0%) |
-| explanation_quality | 0/135 (0.0%) | 0/75 (0.0%) | 75/75 (100.0%) |
+| explanation_quality | 0/145 (0.0%) | 0/85 (0.0%) | 85/85 (100.0%) |
 | request_handling | 0/2 (0.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
 
 ### held-out
 
 | Metric | A Keyword/category | B Rules | C Context/Rust |
 |---|---|---|---|
-| precision | 6/20 (30.0%) | 10/10 (100.0%) | 10/10 (100.0%) |
-| recall | 6/10 (60.0%) | 10/10 (100.0%) | 10/10 (100.0%) |
-| conflict_violations | 2/23 (8.7%) | 0/10 (0.0%) | 0/10 (0.0%) |
+| precision | 6/20 (30.0%) | 9/10 (90.0%) | 9/10 (90.0%) |
+| recall | 6/10 (60.0%) | 9/10 (90.0%) | 9/10 (90.0%) |
+| conflict_violations | 1/23 (4.3%) | 0/10 (0.0%) | 0/10 (0.0%) |
 | eligibility_violations | 1/23 (4.3%) | 0/10 (0.0%) | 0/10 (0.0%) |
-| constraint_satisfaction | 10/23 (43.5%) | 10/10 (100.0%) | 10/10 (100.0%) |
+| constraint_satisfaction | 11/23 (47.8%) | 10/10 (100.0%) | 10/10 (100.0%) |
 | source_faithfulness | N/A (0 observations) | N/A (0 observations) | 10/10 (100.0%) |
 | food_accuracy | 23/23 (100.0%) | 10/10 (100.0%) | 10/10 (100.0%) |
-| diversity | 3/7 (42.9%) | 7/7 (100.0%) | 7/7 (100.0%) |
+| diversity | 4/7 (57.1%) | 6/7 (85.7%) | 6/7 (85.7%) |
 | replanning_validity | 0/1 (0.0%) | 1/1 (100.0%) | 1/1 (100.0%) |
 | explanation_quality | 0/115 (0.0%) | 0/50 (0.0%) | 50/50 (100.0%) |
 | request_handling | 0/1 (0.0%) | 1/1 (100.0%) | 1/1 (100.0%) |
@@ -44,46 +44,49 @@ Outputs are event IDs or a request status. A result can be relevant yet unsafe; 
 
 | Case | Split | Scenario | A | B | C |
 |---|---|---|---|---|---|
-| D01 | development | Cross-disciplinary AI, career and social interests | e28, e1, e2 | e18, e14, e22 | e18, e20, e6 |
-| D02 | development | Restricted Tuesday/Thursday afternoon | e1, e4, e5 | e1, e5 | e1, e5 |
+| D01 | development | Cross-disciplinary AI, career and social interests | e28, e36, e41 | e18, e14, e22 | e18, e42, e7 |
+| D02 | development | Restricted Tuesday/Thursday afternoon | e1, e4, e5 | e1, e46 | e1, e46 |
 | D03 | development | Full meal, not refreshments | e2, e6, e8 | e22, e6, e2 | e22, e6, e2 |
-| D04 | development | Refreshments, not meal | e15 | e11 | e11 |
+| D04 | development | Refreshments, not meal | e15, e42 | e11 | e11 |
 | D05 | development | Class conflict excludes research roundtable | e4, e14, e30 | no_matches | no_matches |
-| D06 | development | Membership cannot be assumed | e12, e16 | e26 | e26 |
-| D07 | development | Cancelled and full records excluded | e1, e4, e5 | e1, e5, e26 | e1, e5, e26 |
+| D06 | development | Membership cannot be assumed | e12, e16, e37 | e48, e26 | e48, e26 |
+| D07 | development | Cancelled and full records excluded | e1, e4, e5 | e31, e1, e46 | e31, e1, e46 |
 | D08 | development | RSVP is a requirement, not completed enrollment | e3, e7, e15 | e7 | e7 |
-| D09 | development | Unknown food does not satisfy a meal preference | e16, e2, e6 | e16 | e16 |
+| D09 | development | Unknown food does not satisfy a meal preference | e16, e2, e6 | e16, e38 | e16, e38 |
 | D10 | development | Unsupported request requires guidance | no_matches | unsupported | unsupported |
 | D11 | development | Ambiguous proximity needs clarification | e1, e6, e8 | clarification | clarification |
 | D12 | development | Existing plan replacement with strict time/food filters | no_matches | no_matches | no_matches |
-| H01 | held-out | Arts/social diversity with free admission | e8, e13, e19 | e22, e23, e19 | e22, e23, e19 |
+| H01 | held-out | Arts/social diversity with free admission | e8, e13, e19 | e42, e23, e19 | e42, e23, e19 |
 | H02 | held-out | Friday late evening unknown-food social record | e16, e2, e6 | e27 | e27 |
 | H03 | held-out | Unknown alumni eligibility excludes sole coffee match | e15, e3, e7 | no_matches | no_matches |
 | H04 | held-out | Paid ceramics excluded by explicit free admission | e13, e22, e29 | no_matches | no_matches |
-| H05 | held-out | Feasible replacement retains another calendar choice | no_matches | e5 | e5 |
+| H05 | held-out | Feasible replacement retains another calendar choice | no_matches | e46 | e46 |
 | H06 | held-out | Contradictory day exclusions need clarification | e2, e6, e8 | clarification | clarification |
-| H07 | held-out | Multiple topics, travel and existing commitments | e28, e1, e3, e4, e5 | e18, e14, e7, e1, e23 | e18, e20, e23, e7, e1 |
+| H07 | held-out | Multiple topics, travel and existing commitments | e28, e35, e41, e47, e1 | e18, e14, e7, e1, e23 | e18, e20, e23, e7, e1 |
 | H08 | held-out | Weekend named event is actually Friday; strict weekend has no match | e27, e2, e6 | no_matches | no_matches |
 
 ## Observed failures
 
-- D01 / A Keyword/category: conflict_violations 1/3; explanation_quality 0/15.
+- D01 / A Keyword/category: precision 1/3; recall 1/3; conflict_violations 1/3; diversity 1/3; explanation_quality 0/15.
 - D01 / B Rules: diversity 2/3; explanation_quality 0/15.
 - D02 / A Keyword/category: precision 2/3; conflict_violations 1/3; explanation_quality 0/15.
-- D02 / B Rules: explanation_quality 0/10.
+- D02 / B Rules: precision 1/2; recall 1/2; explanation_quality 0/10.
+- D02 / C Context/Rust: precision 1/2; recall 1/2.
 - D03 / A Keyword/category: precision 2/3; recall 2/3; explanation_quality 0/15.
 - D03 / B Rules: explanation_quality 0/15.
-- D04 / A Keyword/category: precision 0/1; recall 0/1; eligibility_violations 1/1; diversity 0/1; explanation_quality 0/5.
+- D04 / A Keyword/category: precision 0/2; recall 0/1; eligibility_violations 1/2; diversity 0/1; explanation_quality 0/10.
 - D04 / B Rules: explanation_quality 0/5.
 - D05 / A Keyword/category: precision 0/3; conflict_violations 1/3; eligibility_violations 1/3; explanation_quality 0/15.
-- D06 / A Keyword/category: precision 0/2; recall 0/1; eligibility_violations 1/2; diversity 0/1; explanation_quality 0/10.
-- D06 / B Rules: explanation_quality 0/5.
+- D06 / A Keyword/category: precision 0/3; recall 0/1; eligibility_violations 1/3; diversity 0/1; explanation_quality 0/15.
+- D06 / B Rules: precision 1/2; explanation_quality 0/10.
+- D06 / C Context/Rust: precision 1/2.
 - D07 / A Keyword/category: precision 2/3; recall 2/3; conflict_violations 1/3; explanation_quality 0/15.
 - D07 / B Rules: explanation_quality 0/15.
 - D08 / A Keyword/category: precision 1/3; eligibility_violations 1/3; explanation_quality 0/15.
 - D08 / B Rules: explanation_quality 0/5.
 - D09 / A Keyword/category: precision 1/3; explanation_quality 0/15.
-- D09 / B Rules: explanation_quality 0/5.
+- D09 / B Rules: precision 1/2; explanation_quality 0/10.
+- D09 / C Context/Rust: precision 1/2.
 - D10 / A Keyword/category: request_handling 0/1.
 - D11 / A Keyword/category: explanation_quality 0/15; request_handling 0/1.
 - H01 / A Keyword/category: precision 2/3; recall 2/3; diversity 1/2; explanation_quality 0/15.
@@ -93,9 +96,10 @@ Outputs are event IDs or a request status. A result can be relevant yet unsafe; 
 - H03 / A Keyword/category: precision 0/3; eligibility_violations 1/3; explanation_quality 0/15.
 - H04 / A Keyword/category: precision 0/3; explanation_quality 0/15.
 - H05 / A Keyword/category: recall 0/1; diversity 0/1; replanning_validity 0/1.
-- H05 / B Rules: explanation_quality 0/5.
+- H05 / B Rules: precision 0/1; recall 0/1; diversity 0/1; explanation_quality 0/5.
+- H05 / C Context/Rust: precision 0/1; recall 0/1; diversity 0/1.
 - H06 / A Keyword/category: explanation_quality 0/15; request_handling 0/1.
-- H07 / A Keyword/category: precision 4/5; recall 4/5; conflict_violations 2/5; diversity 2/3; explanation_quality 0/25.
+- H07 / A Keyword/category: precision 4/5; recall 4/5; conflict_violations 1/5; explanation_quality 0/25.
 - H07 / B Rules: explanation_quality 0/25.
 - H08 / A Keyword/category: precision 0/3; explanation_quality 0/15.
 
