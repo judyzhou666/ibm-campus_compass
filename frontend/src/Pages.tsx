@@ -7,9 +7,9 @@ import { issue, overlap } from "./planner.ts";
 import { effectiveEvents } from "./updates.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
+import { GOAL_TYPES } from "./types.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-import { GOAL_TYPES } from "./types.ts";
 
 type Props = {
   state: DemoState;

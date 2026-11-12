@@ -35,6 +35,8 @@ const DAY_NAMES_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 const DAY_NAMES_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const POSITION_KEY = "campus-compass-calendar-position";
 const MAX_CHIPS = 3;
+/** Matches the one-column Year layout in styles.css. */
+const PHONE_QUERY = "(max-width: 480px)";
 
 /** "Nov 2" for any ISO date (config's dayLabel only covers the demo week). */
 function shortDate(iso: string): string {
@@ -462,8 +464,11 @@ function YearView({
   const months = yearMonthStarts(anchor);
   const focusMonth = monthStart(anchor);
   const focusRef = useRef<HTMLDivElement>(null);
-  // Bring the current month into view (on phones the year is one long column).
+  // Phones only: the year is one long column there, so bring the current
+  // month into view. On wider screens the 4×3 grid needs no scrolling, and
+  // scrollIntoView would also scroll the window and hide the toolbar.
   useEffect(() => {
+    if (!window.matchMedia?.(PHONE_QUERY).matches) return;
     focusRef.current?.scrollIntoView?.({ block: "nearest" });
   }, [focusMonth]);
   return (
@@ -500,6 +505,8 @@ export function CalendarView({ state, onDetail, onDay, onEditAvailability, onExp
   // an item and keeps the same height in every week.
   const grid = useMemo(() => gridHours([...events, ...state.blocks]), [events, state.blocks]);
   const statuses = useStatuses(state, events);
+  // Show the amber legend key only when something on the plan needs attention.
+  const anyAttention = [...statuses].some(([id, s]) => s.tag && !state.cancelled.includes(id));
 
   const demoWeek = weekDates();
   const showingDemoWeek =
@@ -570,10 +577,12 @@ export function CalendarView({ state, onDetail, onDay, onEditAvailability, onExp
           <i className="dot green" />
           Chosen events
         </span>
-        <span>
-          <i className="dot amber" />
-          Needs attention
-        </span>
+        {anyAttention ? (
+          <span>
+            <i className="dot amber" />
+            Needs attention
+          </span>
+        ) : null}
         {!timeGridView ? <span>Classes appear in Day and Week view.</span> : null}
         <span>
           Times in campus time ({DEMO.time_zone}) · {state.buffer}-minute travel buffer
