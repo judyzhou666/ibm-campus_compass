@@ -1034,7 +1034,7 @@ export default function App() {
           {page === "planner" ? (
             <>
               <Heading
-                title="Your week, with a little guidance."
+                title="Hi, ask Mimi, your AI Chatbot! What would you like to do this week, and when are you free?"
                 description="Discover opportunities that fit your interests and your actual free time."
                 timezone={state.timezone}
               >
@@ -1066,7 +1066,7 @@ export default function App() {
                   <div className="chat-header">
                     <img src="/assets/mascot.png" alt="AI planner mascot" />
                     <div>
-                      <h2>Chat with your campus guide</h2>
+                      <h2>Chat with Mimi</h2>
                       <span className="status-label">
                         <i className="dot green" />
                         {chatStatusLabel}
