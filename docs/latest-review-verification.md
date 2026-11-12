@@ -113,3 +113,18 @@ Tools: existing stable Rust toolchain via `/workspace/.cargo` and `/workspace/.r
 **Remaining limits:** no genuine IBM credentials/model call, real enrollment, external calendar, production authentication or consent registry was verified. Model/IAM tests use local mocks. The full collection of every historical browser script was not rerun; the listed desktop/mobile journeys were run. The evaluation remains fictional and its frozen relevance expectations do not prove real recommendation quality. There are no known unresolved merge conflicts or failing required checks.
 
 Archive note: checking the entire merge range from the old Doris head also reports pre-existing whitespace and literal conflict examples inside main's archived `bob_sessions/Judy/bob-tasks-ibm-campus_compass-2026-11-12.md` transcript and `.impeccable/critique` record. Both directories match origin/main exactly and are intentionally preserved. These are historical document contents, not unresolved merge-index entries or active-code conflict markers. The diff against main and scoped source/document/test checks pass.
+
+
+## PR #6 follow-up synchronization — November 12, 2026
+
+Starting from clean Doris `1a7d0cf`, fetched main `213d125` and the PR #6 Git head, which matched origin/Doris. The GitHub page identifies main as the PR base; the GraphQL PR-status request was forbidden, so mergeability UI status was not used as evidence.
+
+Resolved three conflicted paths separately:
+
+- `frontend/src/App.tsx`: retain preference summary/proposals, consent confirmation and mode controls; remove only the Demo Scenario Launcher and the planner sections main intentionally retired. Keep main's Mimi title.
+- `frontend/src/components.tsx`: retain main's event-detail Back button and new Share/Follow/Contact/map/travel controls alongside the existing preference presentation and approval checks.
+- `frontend/src/styles.css`: preserve Doris's preference/profile/brief-setup rules while removing obsolete launcher styling and keeping main's event-detail styles.
+
+Adapted the current browser regression to access synthetic updates via Settings → Notifications and exercise new event-detail controls. No planner/backend recommendation behavior was changed by this conflict resolution.
+
+Fresh verification: typecheck/build; planner assertions, **351 TypeScript tests + 5 Wiki tests**; Rust fmt, Clippy with denied warnings, build, **79 Rust tests**; API integration; **43 exact TypeScript/Rust comparisons**; both 1280px simulated-Rust/390px fallback merged-site journeys and 1280px/390px fallback clarification/schedule journeys passed. Main intentionally removed two obsolete launcher tests; no additional test assertions were dropped. Source conflict markers and the merge-index conflict list are cleared. Existing upstream archived transcript marker/whitespace caveats above remain unchanged. Live IBM access was not tested, and no PR merge or review-status action was taken.

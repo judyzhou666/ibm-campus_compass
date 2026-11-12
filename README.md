@@ -2,6 +2,12 @@
 
 A classroom demo with a React/TypeScript frontend, Rust backend, explicitly labelled browser fallback, and fictional events for the configured demo week (**November 2–6, 2026, America/New_York**). No real seat is reserved. The Rust server supports an optional configured IBM watsonx interpreter with labelled simulated fallback.
 
+## PR #6 conflict resolution — November 12, 2026
+
+Doris incorporates main `213d125c84047b9e664d09a8f2c5c5069dab8275` (PR #20) through a normal merge. Resolved App, event-detail and stylesheet conflicts individually: main's Mimi branding, retired Demo Scenario Launcher/planner panels and new event-detail controls are retained; Doris's preference summary, proposal confirmation, discovery/plan controls, Profile and preference styling remain. Synthetic updates are still available through Settings → Notifications; the current browser journey uses that entry.
+
+Fresh checks passed: frontend typecheck/build; planner assertions, **351 TypeScript tests and 5 Wiki tests**; Rust fmt/Clippy/build and **79 tests**; API integration; **43 exact parity comparisons**; desktop/mobile merged-site and conversation-state browser regressions. The TypeScript count reflects two launcher tests intentionally removed by main. Model/fallback tests use local mocks; no live IBM model verification is claimed. Run with `npm run build`, `PLANNER_PROVIDER=simulated cargo run --locked`, then open http://localhost:4173/#planner. For browser checks use `scripts/browser-main-sync.mjs` and `scripts/browser-latest-review.mjs` with the Playwright environment documented below. No PR merge or review-status action is performed.
+
 ## Current Doris/main integration — November 12, 2026
 
 Doris integrates main `346c3e54487f79ae32f8f637ed166957087de90b` with its existing Profile, Preferences and Judy review fixes. Main's Home/News/Settings, calendar views, notifications, synthetic updates, 48-event catalog, planner chips/fresh-search/alternatives, event-detail access fixes and two-stage watsonx interpretation/ranking are retained. Main intentionally removed Dashboard briefing/recommendations; the merged Dashboard keeps News, while Home incorporates structured preferences into its recommendations.
@@ -333,6 +339,40 @@ The implementation keeps React/TypeScript and Rust/Axum/Tokio/Serde, with no Pyt
 Run from the repository root: `npm ci`, `npm run build`, `cargo run --locked`; optionally `npm run dev` alongside Rust. Open My Preferences to test Save/Cancel, confirmed learning, disabled topics, guidance/count and narrow practical constraints. See [design, theory rationale and data flow](docs/preferences-design.md) for SDT/BPNT mapping and the five-step poster walkthrough. These are design hypotheses, not proven theory outcomes or a validated psychological scale.
 
 Historical verification: planner/catalog assertions, 84 TypeScript tests, 5 Wiki tests, frontend type checking/build, Rust formatting/Clippy/build, 6 Rust tests and API integration passed. Chromium exercised the preferences flows at 1280px online and 390px with the API unavailable, including Save/Cancel/reload, consent, temporary searches, RSVP approval, hard constraints and note-payload exclusion. The existing guided demo journey also passed at both widths. The 20-scenario evaluation retains its metrics; raw evidence was refreshed for the new metadata and wording. Personalized behavior is covered separately by the new tests. No live watsonx or real enrollment was tested.
+
+## AI Planner cleanup, Mimi branding, and event detail controls — November 12, 2026
+
+**AI Planner (`frontend/src/App.tsx`)**
+
+- Removed the **Demo Scenario Launcher**, the **What I'm working with** summary panel and the **Event updates** panel from the AI Planner.
+- Synthetic updates are still available from the bell and Settings › Notifications.
+- The planner heading now reads "Hi, Ask Mimi, your AI Chatbot!" and the chat panel is titled "Chat with Mimi".
+
+**Event detail page (`frontend/src/components.tsx`, `styles.css`, `icons.ts`)**
+
+- **Back to events** link above the banner.
+- The banner is now a solid dark-green poster on a light-green band, with a larger date.
+- **Share** copies the event's details as text, labelled as a fictional demo event, and confirms "Event details copied". The detail view has no URL of its own, so Share copies text rather than a link.
+- **Follow / Following** on the host row and the host card. Followed hosts are saved only in this browser.
+- **Contact** shows "Demo only: this fictional host can't be contacted and no message is sent."
+- **Getting there:** Walking, Biking and Public transit buttons. **Show campus map** toggle. Both say plainly that there are no real directions or maps for the fictional campus.
+
+**To demo:** run `npm run build` and `cargo run --locked`, then open http://127.0.0.1:4173. Open AI Planner to see the new heading. Open any event to try Back, Share, Follow, Contact, the travel buttons and the map toggle.
+
+**Launcher clean-up**
+
+- Deleted the unused `DemoLauncher.tsx`, its CSS and the two tests that copied its subtitle text.
+- Removed the unused `guidedScenario` import from `App.tsx`.
+- `docs/demo-script.md`, `docs/backend.md` and `wiki/Getting-Started.md` now start the guided demo by hand: Settings → Reset demo, then type "AI career social 3 events after 1 PM" in the AI Planner.
+- A new assertion in `tests/final-alignment.test.ts` checks that this prompt still returns at least 3 events from the reset state.
+
+**Verification:** `npm test` (242 TypeScript + 5 Wiki tests) and `npm run build` pass. Rust checks were not run because no backend files changed.
+
+**Limitations**
+
+- The optional `scripts/browser-journey.mjs` still clicks the removed "Prepare scenario" buttons and will fail until it is rewritten.
+- Settings → Reset demo does not archive the previous browser state. There is no "Restore previous demo" any more.
+- Share copies text only. Follow does nothing beyond the label. Contact, travel and map are demo placeholders.
 
 ## Event detail page: PR #19 review fixes — November 12, 2026
 

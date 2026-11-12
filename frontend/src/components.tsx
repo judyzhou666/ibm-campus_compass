@@ -9,7 +9,7 @@ import {
   timeIn,
 } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
@@ -401,6 +401,30 @@ function ConditionRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Followed hosts live in this browser only (fictional demo hosts).
+const FOLLOW_KEY = "campus-compass-followed-hosts";
+function readFollowed(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(FOLLOW_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function writeFollowed(list: string[]) {
+  try {
+    localStorage.setItem(FOLLOW_KEY, JSON.stringify(list));
+  } catch {
+    /* storage unavailable: following lasts for this page only */
+  }
+}
+
+const TRAVEL_MODES = [
+  { id: "walk", label: "Walking" },
+  { id: "bike", label: "Biking" },
+  { id: "bus", label: "Public transit" },
+] as const;
+
 export function EventDetails({
   event: e,
   state,
@@ -430,6 +454,27 @@ export function EventDetails({
   const upd = !conflict ? effectiveUpdate(e.id, appliedIds) : null;
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [followed, setFollowed] = useState<string[]>(readFollowed);
+  const following = !!e.host_school && followed.includes(e.host_school);
+  function toggleFollow() {
+    if (!e.host_school) return;
+    const next = following
+      ? followed.filter((h) => h !== e.host_school)
+      : [...followed, e.host_school];
+    setFollowed(next);
+    writeFollowed(next);
+  }
+  // Short status lines for the demo-only controls; cleared per event.
+  const [shareNote, setShareNote] = useState("");
+  const [contactNote, setContactNote] = useState("");
+  const [mapOpen, setMapOpen] = useState(false);
+  const [travel, setTravel] = useState<string | null>(null);
+  useEffect(() => {
+    setShareNote("");
+    setContactNote("");
+    setMapOpen(false);
+    setTravel(null);
+  }, [e.id]);
   const viewerZone =
     isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
       ? state.timezone
@@ -602,6 +647,12 @@ export function EventDetails({
       {/* Scrollable page content */}
       <div className="event-detail-scroll" ref={scrollRef}>
         <div className="event-detail-page">
+
+          <button type="button" className="ed-back" onClick={onClose}>
+            <Icon name="arrow" />
+            Back to events
+          </button>
+
           {/* Poster banner */}
           <div className="ed-banner-wrap">
             <div className={`ed-poster poster ${category}`}>
@@ -632,9 +683,42 @@ export function EventDetails({
             </div>
           </div>
 
-          {/* Save row. No Share button: the detail view has no URL of its
-              own, so a copied link would not open this event. */}
+          {/* Share / Save row. The detail view has no URL of its own, so
+              Share copies the event's details as text instead of a link. */}
           <div className="ed-icon-row">
+            {shareNote && (
+              <span className="ed-demo-note" role="status">
+                {shareNote}
+              </span>
+            )}
+            <button
+              className="icon-btn ed-icon-btn"
+              aria-label="Share event details"
+              onClick={() => {
+                const text = `${e.title} · ${shortWhen}–${formatTime(shown.end)} · ${shownLocation} (fictional demo event)`;
+                // Fallback for browsers that block the async clipboard API.
+                const legacyCopy = () => {
+                  const ta = document.createElement("textarea");
+                  ta.value = text;
+                  ta.style.position = "fixed";
+                  ta.style.opacity = "0";
+                  document.body.appendChild(ta);
+                  ta.select();
+                  const ok = document.execCommand("copy");
+                  ta.remove();
+                  if (!ok) throw new Error("copy blocked");
+                };
+                Promise.resolve()
+                  .then(() => navigator.clipboard.writeText(text))
+                  .catch(legacyCopy)
+                  .then(
+                    () => setShareNote("Event details copied"),
+                    () => setShareNote("Couldn't copy in this browser"),
+                  );
+              }}
+            >
+              <Icon name="share" />
+            </button>
             <button
               className={`icon-btn ed-icon-btn ${saved ? "selected" : ""}`}
               aria-label={saved ? "Saved" : "Save event"}
@@ -682,6 +766,14 @@ export function EventDetails({
                         Fictional host · {e.topic}
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      className="ed-outline-btn ed-host-follow"
+                      aria-pressed={following}
+                      onClick={toggleFollow}
+                    >
+                      {following ? "Following" : "Follow"}
+                    </button>
                   </div>
                 )}
 
@@ -879,18 +971,46 @@ export function EventDetails({
                   <div className="ed-location-text">
                     <strong>{shownLocation}</strong>
                     <span className="ed-location-sub">Fictional campus</span>
-                    {state.buffer > 0 && (
-                      <span className="ed-location-note">
-                        Travel time between rooms counts toward conflict checks.
-                      </span>
-                    )}
+                    <div className="ed-travel">
+                      <h3>Getting there</h3>
+                      {TRAVEL_MODES.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className="ed-travel-btn"
+                          aria-pressed={travel === m.id}
+                          onClick={() => setTravel(m.id)}
+                        >
+                          <Icon name={m.id} />
+                          {m.label}
+                        </button>
+                      ))}
+                      {travel && (
+                        <p className="ed-demo-note" role="status">
+                          Demo only: there are no {TRAVEL_MODES.find((m) => m.id === travel)!.label.toLowerCase()} directions for this fictional campus.
+                        </p>
+                      )}
+                      {state.buffer > 0 && (
+                        <span className="ed-location-note">
+                          Travel time between rooms counts toward conflict checks.
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div
-                    className="ed-map-placeholder"
-                    aria-label="Fictional campus map"
-                    role="img"
-                  >
-                    Fictional campus map
+                  <div className="ed-map-placeholder">
+                    <button
+                      type="button"
+                      className="ed-outline-btn"
+                      aria-expanded={mapOpen}
+                      onClick={() => setMapOpen((v) => !v)}
+                    >
+                      {mapOpen ? "Hide campus map" : "Show campus map"}
+                    </button>
+                    <span>
+                      {mapOpen
+                        ? `Demo only: no real map. ${shownLocation} is on the fictional campus.`
+                        : "Fictional campus map"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -911,6 +1031,32 @@ export function EventDetails({
                       <span className="ed-host-sub">
                         Fictional host department · Topics: {e.topic}
                       </span>
+                      {contactNote && (
+                        <p className="ed-demo-note" role="status">
+                          {contactNote}
+                        </p>
+                      )}
+                    </div>
+                    <div className="ed-host-actions">
+                      <button
+                        type="button"
+                        className="ed-outline-btn"
+                        onClick={() =>
+                          setContactNote(
+                            "Demo only: this fictional host can't be contacted and no message is sent.",
+                          )
+                        }
+                      >
+                        Contact
+                      </button>
+                      <button
+                        type="button"
+                        className="ed-fill-btn"
+                        aria-pressed={following}
+                        onClick={toggleFollow}
+                      >
+                        {following ? "Following" : "Follow"}
+                      </button>
                     </div>
                   </div>
                 ) : (

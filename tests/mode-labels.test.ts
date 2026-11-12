@@ -5,7 +5,6 @@
  *   - ai_reason shown when present, template reasons() used when absent
  *   - chatStatusLabel derivation from health mode (before first reply) and
  *     planModeLabel (after a plan reply)
- *   - DemoLauncher subtitle text in simulated vs watsonx mode
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -139,25 +138,6 @@ test("chatFineprint names watsonx and calls events fictional in watsonx mode", (
   const text = chatFineprint(true);
   assert.ok(text.includes("IBM watsonx (Granite)"), `got: ${text}`);
   assert.ok(text.includes("fictional"), `got: ${text}`);
-});
-
-// ── DemoLauncher subtitle ────────────────────────────────────────────────────
-
-/** Mirror DemoLauncher subtitle logic. */
-function launcherSubtitle(watsonxMode: boolean): string {
-  return watsonxMode
-    ? "IBM watsonx (Granite) ranking · Fictional events"
-    : "No live AI";
-}
-
-test("DemoLauncher subtitle says 'No live AI' in simulated mode", () => {
-  assert.equal(launcherSubtitle(false), "No live AI");
-});
-
-test("DemoLauncher subtitle names watsonx and calls events fictional in watsonx mode", () => {
-  const text = launcherSubtitle(true);
-  assert.ok(text.includes("IBM watsonx (Granite)"), `got: ${text}`);
-  assert.ok(text.includes("Fictional events"), `got: ${text}`);
 });
 
 // ── planModeLabel ─────────────────────────────────────────────────────────────

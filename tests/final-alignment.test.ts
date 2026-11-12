@@ -118,6 +118,10 @@ test("guided scenario is resettable, limited, and never grants enrollment or RSV
   assert.ok(
     recommend(b, interpretRequest(GUIDED_PROMPT).constraints).length >= 3,
   );
+  // docs/demo-script.md now starts from Settings → Reset demo, not the launcher.
+  assert.ok(
+    recommend(fresh(), interpretRequest(GUIDED_PROMPT).constraints).length >= 3,
+  );
 });
 test("evaluation denominators handle five results, abstention, and unsafe keyword retrieval", () => {
   const state = fresh(),

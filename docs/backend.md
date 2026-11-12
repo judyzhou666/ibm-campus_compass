@@ -127,7 +127,7 @@ The interpreter adds optional `clarification`: ambiguous proximity/cost, unsuppo
 
 Settings → Team tools opens a read-only synthetic-data review, with missing source/URL, stale/missing verification, unknown eligibility/RSVP/food and invalid metadata flags. Reference date is the configured week, with a 30-day freshness threshold; this is a reproducible review heuristic, not external verification. No editor mutates trusted catalog state.
 
-The Demo Scenario Launcher uses existing conversation/enrollment interfaces, explicitly archives the prior local demo before reset, and never pre-approves an RSVP or adds events. It keeps cancellation, replacement and export in the Planner view; Reset/Restore are explicit. See `docs/demo-script.md`, `docs/proposal-alignment.md` and `docs/evaluation-methodology.md`.
+The guided demo is run by hand (Settings → Reset demo, then a typed planner request); the former Demo Scenario Launcher was removed from the AI Planner on November 12, 2026. Cancellation, replacement and export stay in the Planner view and never pre-approve an RSVP or add events. See `docs/demo-script.md`, `docs/proposal-alignment.md` and `docs/evaluation-methodology.md`.
 
 ## Optional browser regression
 

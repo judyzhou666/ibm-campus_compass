@@ -66,6 +66,25 @@ try {
       .waitFor();
     await nav("#dashboard");
     await page.getByRole("heading", { name: "News", exact: true }).waitFor();
+    await page.locator(".news-card").first().click();
+    const details = page.getByRole("dialog");
+    await details
+      .getByRole("button", { name: "Back to events", exact: true })
+      .waitFor();
+    await details
+      .getByRole("button", { name: "Follow", exact: true })
+      .first()
+      .click();
+    assert.ok(
+      (await details
+        .getByRole("button", { name: "Following", exact: true })
+        .count()) > 0,
+    );
+    await details.getByRole("button", { name: "Contact", exact: true }).click();
+    await details
+      .getByRole("button", { name: "Back to events", exact: true })
+      .click();
+
     await nav("#settings");
     await page
       .getByRole("heading", { name: "Settings", exact: true })
@@ -195,6 +214,11 @@ try {
       await page
         .getByRole("button", { name: "Close calendar panel", exact: true })
         .click();
+    await nav("#settings");
+    await page
+      .getByRole("navigation", { name: "Settings sections" })
+      .getByRole("button", { name: "Notifications", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "Check for updates", exact: true })
       .click();

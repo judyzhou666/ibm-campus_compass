@@ -16,8 +16,6 @@ import {
 } from "./preferences.ts";
 import { PreferenceProposal } from "./PreferenceProposal.tsx";
 import { DataReview } from "./DataReview.tsx";
-import { DemoLauncher } from "./DemoLauncher.tsx";
-import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
@@ -1170,7 +1168,7 @@ export default function App() {
           {page === "planner" ? (
             <>
               <Heading
-                title="Your week, with a little guidance."
+                title="Hi, Ask Mimi, your AI Chatbot!"
                 description="Discover opportunities that fit your interests and your actual free time."
                 timezone={state.timezone}
               >
@@ -1267,58 +1265,6 @@ export default function App() {
                   Edit My Preferences
                 </Button>
               </div>
-              <DemoLauncher
-                state={state}
-                busy={busy || enrolling}
-                watsonxMode={watsonxMode}
-                onPrepare={() => {
-                  try {
-                    if (
-                      !localStorage.getItem(STORAGE_KEY + ":before-guided-demo")
-                    )
-                      localStorage.setItem(
-                        STORAGE_KEY + ":before-guided-demo",
-                        JSON.stringify(demo.read()),
-                      );
-                  } catch {
-                    notify("Could not archive current demo. Nothing changed.");
-                    return false;
-                  }
-                  enrollment.reset();
-                  conversation.reset();
-                  update(() => guidedScenario());
-                  setCalendarOpen(false);
-                  return true;
-                }}
-                onRestore={() => {
-                  try {
-                    const saved = localStorage.getItem(
-                      STORAGE_KEY + ":before-guided-demo",
-                    );
-                    if (!saved) {
-                      notify("No previous demo has been archived.");
-                      return;
-                    }
-                    localStorage.setItem(STORAGE_KEY, saved);
-                    localStorage.removeItem(
-                      STORAGE_KEY + ":before-guided-demo",
-                    );
-                    location.reload();
-                  } catch {
-                    notify("Could not restore browser storage.");
-                  }
-                }}
-                onPlan={(text) => void chat(text, {})}
-                onCancel={() => {
-                  const id = demo
-                    .read()
-                    .plan.find((id) => !demo.read().cancelled.includes(id));
-                  if (id)
-                    update((s) => ({ ...s, cancelled: [...s.cancelled, id] }));
-                }}
-                onReplace={replan}
-                onExport={exportCalendar}
-              />
               {cancelled ? (
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
@@ -1337,7 +1283,7 @@ export default function App() {
                   <div className="chat-header">
                     <img src="/assets/mascot.png" alt="AI planner mascot" />
                     <div>
-                      <h2>Chat with your campus guide</h2>
+                      <h2>Chat with Mimi</h2>
                       <span className="status-label">
                         <i className="dot green" />
                         {chatStatusLabel}
@@ -1623,55 +1569,6 @@ export default function App() {
                       <p className="fineprint">
                         You choose what makes it into your week.
                       </p>
-                    </section>
-                    <section className="panel">
-                      <div className="section-bar">
-                        <h2>What I’m working with</h2>
-                        <Icon name="settings" />
-                      </div>
-                      {[
-                        ["Demo week", WEEK_LABEL],
-                        ["Busy commitments", state.blocks.length],
-                        ["Travel time", `${state.buffer} minutes`],
-                        [
-                          "Events in your plan",
-                          state.plan.filter(
-                            (id) => !state.cancelled.includes(id),
-                          ).length,
-                        ],
-                      ].map(([key, value]) => (
-                        <div className="summary-line" key={key}>
-                          <span>{key}</span>
-                          <strong>{value}</strong>
-                        </div>
-                      ))}
-                      <p className="sub">{state.interests.join(" · ")}</p>
-                      <button
-                        className="text-btn"
-                        onClick={() => nav("profile")}
-                      >
-                        Edit interests & availability <Icon name="arrow" />
-                      </button>
-                    </section>
-                    <section className="panel">
-                      <div className="section-bar">
-                        <h2>Event updates</h2>
-                        <Icon name="bell" />
-                      </div>
-                      <p className="sub">
-                        Apply the next batch of synthetic demo updates —
-                        cancellations, capacity, time or room changes.
-                      </p>
-                      <Button className="small" onClick={checkForUpdates}>
-                        <Icon name="bell" />
-                        Check for updates
-                      </Button>
-                      {state.lastUpdateCheck ? (
-                        <p className="fineprint">
-                          Last checked {relativeTime(state.lastUpdateCheck)} ·
-                          Synthetic update
-                        </p>
-                      ) : null}
                     </section>
                     {state.plan.some((id) => !state.cancelled.includes(id)) ? (
                       <section className="panel">

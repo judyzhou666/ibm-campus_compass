@@ -1232,17 +1232,42 @@ p {
   padding: 0 0 32px;
 }
 /* ── Poster banner ── */
+.ed-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin: 8px 24px 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+}
+.ed-back:hover {
+  color: var(--green-dark);
+  text-decoration: underline;
+}
+.ed-back .icon {
+  transform: rotate(180deg);
+  width: 16px;
+}
+/* Design: a solid dark-green poster filling a light-green band. */
 .ed-banner-wrap {
-  background: var(--mint);
+  background: #dfeadf;
   border-radius: 20px;
-  padding: clamp(0px, 4vw, 60px) clamp(0px, 8vw, 120px);
-  margin: 24px 24px 0;
+  padding: 0 clamp(0px, 8vw, 120px);
+  margin: 8px 24px 0;
+  overflow: hidden;
 }
 .ed-poster.poster {
-  border-radius: 16px;
+  border-radius: 0;
   height: auto;
   min-height: 340px;
   padding: 44px 48px;
+  background: var(--green);
+  color: #e8f2e9;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -1281,35 +1306,120 @@ p {
   flex-direction: column;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 140px;
-  padding-top: 4px;
-  position: relative;
+  min-width: 220px;
+  text-align: right;
+  border-top: 2px solid #e8f2e9;
+  padding-top: 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 .ed-poster-rule {
-  height: 2px;
-  background: currentColor;
-  opacity: 0.3;
-  margin-bottom: 6px;
+  display: none;
 }
 .ed-poster-date {
-  font-size: 13px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  opacity: 0.85;
 }
 .ed-poster-time {
   font-size: 15px;
-  font-weight: 700;
-  opacity: 0.9;
+  font-weight: 600;
 }
 .ed-poster-loc,
 .ed-poster-host {
-  font-size: 13px;
-  opacity: 0.75;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
+  max-width: 260px;
+}
+/* ── Follow / Contact / map / travel controls ── */
+.ed-outline-btn,
+.ed-fill-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ed-outline-btn {
+  border: 1px solid #cfd8cc;
+  background: white;
+  color: var(--green-dark);
+}
+.ed-outline-btn:hover {
+  background: var(--bg);
+}
+.ed-outline-btn[aria-pressed="true"] {
+  background: var(--mint);
+  border-color: var(--green);
+}
+.ed-fill-btn {
+  border: none;
+  background: var(--green);
+  color: white;
+}
+.ed-fill-btn:hover {
+  background: var(--green-dark);
+}
+.ed-fill-btn[aria-pressed="true"] {
+  background: var(--mint);
+  color: var(--green-dark);
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.ed-host-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.ed-host-follow {
+  margin-left: auto;
+}
+.ed-host-card > .ed-host-actions {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+}
+.ed-demo-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #5b665f;
+}
+.ed-travel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+.ed-travel h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.ed-travel-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+.ed-travel-btn:hover {
+  text-decoration: underline;
+}
+.ed-travel-btn[aria-pressed="true"] {
+  color: var(--green-dark);
+  text-decoration: underline;
+}
+.ed-map-placeholder {
+  flex-direction: column;
+  gap: 8px;
 }
 /* ── Share / Save icon row ── */
 .ed-icon-row {
@@ -1673,7 +1783,8 @@ p {
 /* ── 5. Hosted by ── */
 .ed-host-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
   background: white;
   border: 1px solid var(--line);
@@ -2753,10 +2864,7 @@ p {
 .communities article { padding:16px; border:1px solid #e1e7de; border-radius:12px; }
 .search:focus-within,.composer:focus-within { outline:3px solid #57a77a; outline-offset:3px; }
 @media(max-width:700px) { .row { flex-wrap:wrap; } .text-btn { white-space:normal; text-align:left; } }
-.demo-launcher { margin-bottom:20px; }
-.demo-launcher ol { padding-left:20px; line-height:1.7; }
 .review-record { border-top:1px solid #e1e7de; padding:12px 0; overflow-wrap:anywhere; }
-.demo-launcher .row { display:flex; flex-wrap:wrap; gap:8px; }
 .preferences-layout { display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start; }
 .preference-section { margin-bottom:20px; }
 .preference-section .field { margin:16px 0; }
