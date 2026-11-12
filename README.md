@@ -2,6 +2,11 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Top bar: search box centred — November 12, 2026
+
+- The top-bar search box now sits centred between the Campus Compass logo and the quick links (Find events … Plan with AI), using equal auto margins; the logo, links and actions are otherwise unchanged. On phones the quick links are hidden and the search box still fills the space between the logo and the bell.
+- **Verification:** `npm run build` passes. Measured in headless Chrome: equal space on both sides of the search box at 1440px (100px | 100px), 1280px, 1100px and 900px (20px | 20px, where the box shrinks to fit) and 390px (12px | 12px), with no sideways scrolling.
+
 ## Larger text across the site — November 12, 2026
 
 - Every fixed font size in `frontend/src/styles.css` (236 values) and the one inline size in `Pages.tsx` is 2px larger; the page base goes from 14px to 16px, and the smallest 8–10px labels become 10–12px. Headings grow by proportionally less, so the hierarchy is unchanged.
