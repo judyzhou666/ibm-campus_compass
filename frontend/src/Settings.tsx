@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { DEMO, TIME_ZONES } from "./config.ts";
 import { relativeTime } from "./updates.ts";
 import { Button, Icon } from "./components.tsx";
+import { ROLE_INFO } from "./identity.ts";
 import {
   SETTINGS_SECTIONS,
   bufferBlocker,
@@ -82,7 +83,7 @@ export function Settings(p: Props) {
           <div className="row">
             <span className="settings-value">
               {state.signedIn
-                ? `${state.name} · Signed in`
+                ? `${state.name} · Signed in as ${ROLE_INFO[state.role].label}`
                 : "Guest · Not signed in"}
             </span>
             {state.signedIn ? null : (

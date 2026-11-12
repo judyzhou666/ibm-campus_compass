@@ -49,6 +49,48 @@ Added Canvas-style personal calendar entries alongside existing busy-time blocks
 
 **Verification:** `npm test` (5/5 Wiki), TypeScript tests 264/264, `npm run build` clean, `cargo fmt --check` clean, `cargo clippy` 0 warnings, `cargo test` 58/58, `npm run test:api` PASS.
 
+## Admin: Create Event entry and event drafts — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Top bar.** When signed in as Admin, a **Create Event** button with a plus icon appears before "Plan with AI". Below 1060px wide it shows the icon only, keeping its "Create Event" accessible name. On phones, where the top-bar links are hidden, **Create event** is the first row of the Admin profile menu. Students and guests do not see either entry.
+- **Create an event page.** A form for title, topic, category, demo-week day, start and end time, location, host, description, food, admission, sign-up (drop-in or RSVP) and who can attend.
+  - Problems are explained in plain words, e.g. "The end time must be after the start time."
+  - Saved drafts are listed under **Your drafts** with a "Draft · Not published" tag, and each can be deleted. Up to 20 drafts are kept.
+  - Opening the page as a Student or guest shows "Sign in as Admin to draft a fictional event for team review."
+- **Not published.** Drafts are saved in this browser only. They are not added to `data/events.json`, Explore Events, My Calendar or the AI Planner. The page and the save message say so.
+- The Admin description now reads "Draft fictional events and review the catalog. Drafts stay in this browser."
+
+Files: new `frontend/src/eventDrafts.ts` and `frontend/src/CreateEvent.tsx`; `App.tsx`, `identity.ts`, `ProfileMenu.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in new `tests/event-drafts.test.ts` and `tests/sign-in.test.ts`.
+
+Verification: `npm test` (257 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px, 900px and 390px:
+- The entry is hidden for guests and students.
+- An invalid end time shows its message.
+- A valid draft is listed and survives a reload.
+- No page errors and no sideways scrolling.
+
+Rust checks not run: no backend files changed.
+
+Limitations: drafts cannot be published or shared with teammates. Publishing would need a team-reviewed catalog change and a server rebuild.
+
+## Profile menu with Student and Admin sign-in — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Two demo identities.** The sign-in dialog now asks "Sign in as" **Student** ("Find events, plan your week and RSVP.") or **Admin** ("Review the fictional event catalog. Read-only in this demo."). The button reads "Sign in as Student" or "Sign in as Admin".
+- **Profile dropdown.** Clicking the profile photo (top right) opens a menu instead of going straight to Profile. It shows the name, "Signed in as" with a Student or Admin tag, and what that identity is for. Rows:
+  - Admin only: **Team data review**
+  - Both: **View profile**, **Sign in as** the other identity, **Sign out**
+  - Escape or a click outside closes it. On phones it spans the screen under the top bar.
+- **Labels.** The sidebar reads "Student · Demo profile" or "Admin · Demo profile", and Settings shows "Signed in as Student/Admin". An Admin photo is blue so the two identities are easy to tell apart.
+- **State.** `role` is saved in this browser with the rest of the demo state. It defaults to Student; unknown values restore as Student. It is not sent to the server.
+
+Files: new `frontend/src/identity.ts` and `frontend/src/ProfileMenu.tsx`; `App.tsx`, `components.tsx` (`SignInDialog`), `Settings.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in `tests/sign-in.test.ts`.
+
+Verification: `npm test` (254 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px and 390px: sign in as Admin, open the menu, Escape closes it, switch to Student (the dialog preselects Student), sign out. No page errors and no sideways scrolling. Rust checks not run: no backend files changed.
+
+Limitations: Admin has no extra powers. It only labels the identity and links to the existing read-only data review. There is no password or permission check, and anyone can choose either identity.
+
 ## AI Planner: demo-week dates and relevance to the student's words — November 12, 2026
 
 Fixes irrelevant answers to requests such as "AI in education relevant events for week Nov 6-12". Made with Claude Code (not IBM Bob). The code landed in commit `20f7fca`, whose message only mentions the bookmark icon; this entry describes it.

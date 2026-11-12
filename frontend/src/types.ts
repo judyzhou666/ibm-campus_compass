@@ -1,3 +1,5 @@
+import type { Role } from "./identity.ts";
+import type { EventDraft } from "./eventDrafts.ts";
 /** A single synthetic catalog update from data/updates.json. */
 export interface EventUpdate {
   id: string;
@@ -138,6 +140,8 @@ export interface DemoState extends Schedule {
   name: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
   signedIn: boolean;
+  /** Demo identity chosen at sign-in. Only changes labels and shortcuts. */
+  role: Role;
   onboarded: boolean;
   major: string;
   goals: string;
@@ -164,6 +168,8 @@ export interface DemoState extends Schedule {
   readNotificationIds: string[];
   /** Student-created calendar items (one-off or weekly-repeating). Cap 200. */
   personalEvents: PersonalEvent[];
+  /** Admin event drafts; browser-local and never added to the catalog. */
+  eventDrafts: EventDraft[];
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";

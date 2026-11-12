@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
+import { ROLES, ROLE_INFO, type Role } from "./identity.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
 import { busyBlocks } from "./personalEvents.ts";
 import {
@@ -1247,17 +1248,20 @@ export function EventDetails({
   );
 }
 
-/** Demo sign-in: a display name only. No account, password or email. */
+/** Demo sign-in: a display name and a Student or Admin identity. No account, password or email. */
 export function SignInDialog({
   name,
+  role: initialRole,
   onSignIn,
   onClose,
 }: {
   name: string;
-  onSignIn: (name: string) => void;
+  role: Role;
+  onSignIn: (name: string, role: Role) => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [role, setRole] = useState<Role>(initialRole);
   useEffect(() => {
     const dialog = ref.current!;
     dialog.showModal();
@@ -1280,9 +1284,25 @@ export function SignInDialog({
           const value = String(
             new FormData(e.currentTarget).get("name") || "",
           ).trim();
-          if (value) onSignIn(value.slice(0, 30));
+          if (value) onSignIn(value.slice(0, 30), role);
         }}
       >
+        <fieldset className="role-choice">
+          <legend>Sign in as</legend>
+          {ROLES.map((r) => (
+            <label key={r} className={role === r ? "selected" : undefined}>
+              <input
+                type="radio"
+                name="role"
+                value={r}
+                checked={role === r}
+                onChange={() => setRole(r)}
+              />
+              <strong>{ROLE_INFO[r].label}</strong>
+              <span>{ROLE_INFO[r].summary}</span>
+            </label>
+          ))}
+        </fieldset>
         <label className="rsvp-name">
           Display name
           <input
@@ -1302,7 +1322,7 @@ export function SignInDialog({
             Cancel
           </button>
           <button type="submit" className="btn primary">
-            Sign in
+            Sign in as {ROLE_INFO[role].label}
           </button>
         </div>
       </form>

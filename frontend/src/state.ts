@@ -1,3 +1,5 @@
+import { isRole } from "./identity.ts";
+import { restoreDrafts } from "./eventDrafts.ts";
 import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
@@ -28,6 +30,7 @@ export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
   signedIn: false,
+  role: "student",
   onboarded: false,
   major: "",
   goals: "",
@@ -55,6 +58,7 @@ export const fresh = (): DemoState => ({
   lastUpdateCheck: null,
   readNotificationIds: [...DEFAULT_READ_IDS],
   personalEvents: [],
+  eventDrafts: [],
 });
 
 export function restore(): DemoState {
@@ -70,6 +74,7 @@ export function restore(): DemoState {
       ...base,
       onboarded: value.onboarded === true,
       signedIn: value.signedIn === true,
+      role: isRole(value.role) ? value.role : "student",
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
       goal_types: Array.isArray(value.goal_types)
@@ -235,6 +240,7 @@ export function restore(): DemoState {
             })
             .slice(0, 200)
         : [],
+      eventDrafts: restoreDrafts(value.eventDrafts),
     };
   } catch {
     return fresh();
