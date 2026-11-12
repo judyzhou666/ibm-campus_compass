@@ -4,7 +4,14 @@ import { EVENTS, when } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
 import type { CampusEvent, Constraints, DemoState } from "./types.ts";
-import { replacementConstraints, constraintSummary } from "./replanning.ts";
+import {
+  replacementConstraints,
+  constraintSummary,
+  templateTradeOff,
+  watsonxTradeOff,
+  detectAvailabilityChange,
+} from "./replanning.ts";
+import { effectiveEvents } from "./updates.ts";
 
 export function createConversation(
   demo: DemoStore,
@@ -31,6 +38,7 @@ export function createConversation(
   async function run(
     task: (snapshot: DemoState) => ReturnType<typeof requestPlan>,
     old?: CampusEvent,
+    availabilityChangeSummary?: string,
   ) {
     const token = ++version;
     const snapshot = demo.read(),
@@ -70,11 +78,24 @@ export function createConversation(
         snapshot.plan
           .map((id) => EVENTS.find((e) => e.id === id)?.title)
           .join(", ") || "none";
-      let response = old
-        ? `“${old.title}” was cancelled in this simulation. I removed the cancelled entry and kept all your other calendar choices: ${retained}.\n\n${alternative ? `An alternative is “${alternative.title}” on ${when(alternative)}. Its ${alternative.topic.toLowerCase()} topic matches the replacement filters and it fits your schedule. ${alternative.rsvp}. It’s a suggestion only. Add it if it works for you.` : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`}`
-        : matches.length
+
+      let response: string;
+      if (old) {
+        // Replacement flow: one alternative with explicit trade-off.
+        const alternativeText = alternative
+          ? buildAlternativeText(alternative, old, plan)
+          : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`;
+        response = `"${old.title}" was unavailable (${snapshot.cancelled.includes(old.id) ? "cancelled in demo" : "moved into a conflict"}). I removed the unavailable entry and kept all your other calendar choices: ${retained}.\n\n${alternativeText}`;
+      } else if (availabilityChangeSummary) {
+        // Availability-change re-plan: show "what changed" summary.
+        response = matches.length
+          ? `${availabilityChangeSummary}\n\nI found ${matches.length} ${matches.length === 1 ? "option" : "options"} on your remaining available days. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
+          : `${availabilityChangeSummary}\n\nI couldn't find an eligible, conflict-free match for those days in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear all filters.`;
+      } else {
+        response = matches.length
           ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-          : "I couldn’t find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven’t changed your calendar.\n\nTry a different day or interest, or say “start over” to clear time and food filters. Only Monday–Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.";
+          : `I couldn't find an eligible, conflict-free synthetic match for those constraints in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear time and food filters. Only Monday\u2013Friday events are available. Restricted, full, cancelled, and conflicting events are excluded.`;
+      }
       if (plan.notice) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
         ...s,
@@ -110,14 +131,53 @@ export function createConversation(
     }
   }
 
+  /**
+   * Build the alternative-event text with an explicit trade-off vs the lost event.
+   * Uses watsonx evidence when available, template otherwise.
+   */
+  function buildAlternativeText(
+    alternative: CampusEvent,
+    lost: CampusEvent,
+    plan: Awaited<ReturnType<typeof requestPlan>>,
+  ): string {
+    const evidenceItem = plan.evidence.find((e) => e.event_id === alternative.id);
+    const isWatsonx = plan.mode === "watsonx" && plan.explanations === "watsonx";
+    const tradeOffText =
+      isWatsonx && evidenceItem
+        ? watsonxTradeOff(alternative, lost, evidenceItem)
+        : templateTradeOff(alternative, lost);
+    const attributionLabel = isWatsonx && evidenceItem
+      ? "Written by IBM watsonx (Granite)"
+      : "Template evidence";
+    return `An alternative is "${alternative.title}" on ${when(alternative)}. ${alternative.rsvp}. It's a suggestion only — add it if it works for you.\n\n${tradeOffText}\n\n[${attributionLabel}]`;
+  }
+
+  /**
+   * Find a planned event that is now unavailable: explicitly cancelled OR moved into a conflict.
+   * Returns the first such event from the plan, or undefined if none.
+   */
+  function findUnavailablePlanEvent(state: DemoState): CampusEvent | undefined {
+    // First check explicitly cancelled-and-in-plan.
+    const explicitlyCancelled = EVENTS.find(
+      (e) => state.plan.includes(e.id) && state.cancelled.includes(e.id),
+    );
+    if (explicitlyCancelled) return explicitlyCancelled;
+    // Then check time_moved events that are now in conflict.
+    const eff = effectiveEvents(state.appliedUpdateIds);
+    return eff.find(
+      (e) =>
+        state.plan.includes(e.id) &&
+        !state.cancelled.includes(e.id) &&
+        !!issue(e, state, eff),
+    );
+  }
+
   async function replace() {
     if (status.read().busy) return;
     const state = demo.read();
-    const old = EVENTS.find(
-      (e) => state.plan.includes(e.id) && state.cancelled.includes(e.id),
-    );
+    const old = findUnavailablePlanEvent(state);
     if (!old) {
-      assistant("There are no cancelled events in your plan.");
+      assistant("There are no unavailable events in your plan.");
       return;
     }
     pending = undefined;
@@ -228,6 +288,37 @@ export function createConversation(
         demo.read().cancelled.some((id) => demo.read().plan.includes(id))
       )
         return replace();
+
+      // Availability-change detection: "I'm busy Thursday", "I can't do Tuesday afternoon", etc.
+      // Re-plan only the affected days; keep goal-type balance; show "what changed" summary.
+      const availChange = detectAvailabilityChange(text);
+      if (availChange && !pending) {
+        const { busyDays, summary } = availChange;
+        demo.update((s) => ({
+          ...s,
+          messages: [...s.messages, { role: "user", text }],
+        }));
+        await run((snapshot) => {
+          // Keep all existing constraints, but restrict days to the remaining available days.
+          const allDays = [0, 1, 2, 3, 4];
+          const currentDays = snapshot.constraints.days ?? allDays;
+          const remainingDays = currentDays.filter((d) => !busyDays.includes(d));
+          // If no days remain, keep all (avoid an empty-days constraint that matches nothing).
+          const newConstraints: Constraints = {
+            ...snapshot.constraints,
+            ...(remainingDays.length > 0 ? { days: remainingDays } : {}),
+          };
+          return requestPlan(
+            "Find events",
+            newConstraints,
+            snapshot,
+            fetcher,
+            isWatsonxMode(),
+          );
+        }, undefined, summary);
+        return;
+      }
+
       demo.update((s) => ({
         ...s,
         constraints: previous ?? s.constraints,

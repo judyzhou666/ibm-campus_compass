@@ -120,6 +120,43 @@ pub fn unavailable_by_updates<'a>(
         .collect()
 }
 
+/// Apply `time_moved` updates to a catalog snapshot, returning cloned events with overridden
+/// start/end times for any event that has an applied `time_moved` update.
+/// The returned `Vec<Event>` has the same length and order as `events`.
+pub fn apply_time_moves(
+    applied_ids: &[String],
+    all_updates: &[EventUpdate],
+    events: &[Event],
+) -> Vec<Event> {
+    let applied: HashSet<&str> = applied_ids.iter().map(|s| s.as_str()).collect();
+    events
+        .iter()
+        .map(|e| {
+            // Find the last applied time_moved update for this event (if any).
+            let moved = all_updates.iter().rfind(|u| {
+                u.kind == "time_moved"
+                    && u.event_id == e.id
+                    && applied.contains(u.id.as_str())
+                    && u.new_start.is_some()
+                    && u.new_end.is_some()
+            });
+            if let Some(u) = moved {
+                let new_start = u.new_start.unwrap();
+                let new_end = u.new_end.unwrap();
+                // Only apply if the new times are valid.
+                if new_start < new_end && new_end <= 1440 {
+                    return Event {
+                        start: new_start,
+                        end: new_end,
+                        ..e.clone()
+                    };
+                }
+            }
+            e.clone()
+        })
+        .collect()
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, Default, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct Constraints {

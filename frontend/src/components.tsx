@@ -8,7 +8,7 @@ import {
 } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
-import { DAYS, EVENTS, time, when } from "./data.ts";
+import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
@@ -181,7 +181,9 @@ export function EventCard({
         </button>
         <div className="meta">
           <Icon name="calendar" />
-          {when(e)}
+          {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null
+            ? <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} <span className="badge badge--updated">Time changed</span></>
+            : when(e)}
         </div>
         <div className="meta">
           <Icon name="pin" />
@@ -432,7 +434,13 @@ export function EventDetails({
             <div className="event-detail-info-grid">
               <div className="event-detail-info-row">
                 <Icon name="calendar" />
-                <span>{when(e)} · {DEMO.time_zone}</span>
+                <span>
+                  {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null ? (
+                    <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} · {DEMO.time_zone} <span className="badge badge--updated" style={{ marginLeft: "0.25rem" }}>Time changed</span></>
+                  ) : (
+                    <>{when(e)} · {DEMO.time_zone}</>
+                  )}
+                </span>
               </div>
               {viewerTime && (
                 <div className="event-detail-info-row">

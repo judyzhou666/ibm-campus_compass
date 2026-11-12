@@ -12,7 +12,7 @@ import {
   interpretRequest,
   validateConstraints,
 } from "./interpretation.ts";
-import { isUnavailableByUpdate } from "./updates.ts";
+import { isUnavailableByUpdate, effectiveEvents } from "./updates.ts";
 
 export const schedulePayload = (state: DemoState | Schedule) => {
   const s = state as DemoState;
@@ -153,7 +153,9 @@ export async function requestPlan(
     const { constraints } = interpreted;
     const demoState = state as DemoState;
     const appliedIds = demoState.appliedUpdateIds ?? [];
-    // Browser fallback: build an effective state that respects update-cancelled/full events.
+    // Browser fallback: build an effective state that respects update-cancelled/full events,
+    // and uses time-moved effective event times for conflict checks.
+    const effEvts = effectiveEvents(appliedIds);
     const effectiveCancelled = [
       ...state.cancelled,
       ...EVENTS.filter((e) => isUnavailableByUpdate(e.id, appliedIds))
@@ -163,7 +165,7 @@ export async function requestPlan(
     const effectiveState: Schedule = { ...state, cancelled: effectiveCancelled };
     return {
       constraints,
-      ids: recommend(effectiveState, constraints).map((e) => e.id),
+      ids: recommend(effectiveState, constraints, 3, true, effEvts).map((e) => e.id),
       evidence: [],
       source: "browser-fallback",
       mode: "simulated" as const,

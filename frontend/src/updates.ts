@@ -10,7 +10,8 @@
  * cancelled/full events as unavailable.
  */
 
-import type { DemoState, EventUpdate, UpdateBatch } from "./types.ts";
+import type { CampusEvent, DemoState, EventUpdate, UpdateBatch } from "./types.ts";
+import { EVENTS } from "./data.ts";
 import updatesJson from "../../data/updates.json";
 
 export const ALL_BATCHES: UpdateBatch[] = updatesJson as UpdateBatch[];
@@ -40,13 +41,36 @@ export function nextBatch(appliedIds: string[]): UpdateBatch | null {
 }
 
 /**
+ * Returns a copy of the EVENTS catalog with effective start/end times for any event
+ * that has an applied `time_moved` update. Other events are returned unchanged.
+ */
+export function effectiveEvents(appliedIds: string[]): CampusEvent[] {
+  const applied = new Set(appliedIds);
+  return EVENTS.map((e) => {
+    const moved = ALL_UPDATES.filter(
+      (u) =>
+        u.kind === "time_moved" &&
+        u.event_id === e.id &&
+        applied.has(u.id) &&
+        u.new_start != null &&
+        u.new_end != null,
+    ).at(-1);
+    if (moved && moved.new_start! < moved.new_end! && moved.new_end! <= 1440) {
+      return { ...e, start: moved.new_start!, end: moved.new_end! };
+    }
+    return e;
+  });
+}
+
+/**
  * Apply the next batch of updates to the demo state.
  *
  * - cancelled: adds the event_id to state.cancelled
  * - full:      marks the event as full (tracked in appliedUpdateIds; planner
  *              excludes it via the /api/plan applied_update_ids field)
- * - time_moved: records the update (time changes are validated server-side and
- *               shown as "Needs confirmation" because local event data is immutable)
+ * - time_moved: records the update; if the event is in the plan and the new
+ *               time conflicts with a busy block or another plan event, it is
+ *               treated as unavailable (added to cancelled for plan-checking).
  * - room_changed: recorded in appliedUpdateIds only (display shows new_location)
  *
  * Returns the new state and the list of updates that were applied.
@@ -55,9 +79,10 @@ export function applyNextBatch(state: DemoState): {
   nextState: DemoState;
   applied: EventUpdate[];
   batch: UpdateBatch | null;
+  movedConflicts: string[]; // event_ids that were moved into a conflict
 } {
   const batch = nextBatch(state.appliedUpdateIds);
-  if (!batch) return { nextState: state, applied: [], batch: null };
+  if (!batch) return { nextState: state, applied: [], batch: null, movedConflicts: [] };
 
   const newApplied = [...state.appliedUpdateIds];
   let newCancelled = [...state.cancelled];
@@ -70,6 +95,34 @@ export function applyNextBatch(state: DemoState): {
     }
   }
 
+  // For time_moved updates: check whether any moved event is now in conflict.
+  // Import issue lazily (circular-dep-safe: updates.ts → planner.ts → data.ts).
+  const movedConflicts: string[] = [];
+  const effective = effectiveEvents(newApplied);
+  // Inline conflict check rather than importing issue() to avoid circular imports.
+  for (const u of batch.updates) {
+    if (u.kind !== "time_moved" || !state.plan.includes(u.event_id)) continue;
+    if (newCancelled.includes(u.event_id)) continue;
+    const eff = effective.find((e) => e.id === u.event_id);
+    if (!eff) continue;
+    // Check against blocks and other plan events.
+    const planEvents = effective.filter(
+      (x) =>
+        state.plan.includes(x.id) &&
+        x.id !== u.event_id &&
+        !newCancelled.includes(x.id),
+    );
+    const conflicting = [...state.blocks, ...planEvents].some(
+      (x) =>
+        x.day === eff.day &&
+        eff.start < x.end + state.buffer &&
+        x.start < eff.end + state.buffer,
+    );
+    if (conflicting) {
+      movedConflicts.push(u.event_id);
+    }
+  }
+
   return {
     nextState: {
       ...state,
@@ -79,6 +132,7 @@ export function applyNextBatch(state: DemoState): {
     },
     applied: batch.updates,
     batch,
+    movedConflicts,
   };
 }
 
@@ -164,7 +218,7 @@ export function kindLabel(kind: EventUpdate["kind"]): string {
     case "full":
       return "Now full";
     case "time_moved":
-      return "Time moved";
+      return "Time changed";
     case "room_changed":
       return "Room changed";
   }

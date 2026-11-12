@@ -193,6 +193,10 @@ async fn plan(
         }
         std::borrow::Cow::Owned(s)
     };
+    // Apply time_moved updates so conflict checks use effective times.
+    let effective_events_owned =
+        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let effective_events: &[Event] = &effective_events_owned;
     // Deterministic safety rules (such as refusing unsupported numeric budgets) run before any
     // live model call, so a clarification never depends on the model.
     let simulated = SimulatedInterpreter.parse(&request.message, request.previous.clone());
@@ -219,7 +223,7 @@ async fn plan(
     // Required for every interpreter, including watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
     let selected = if interpretation.understood && interpretation.clarification.is_none() {
-        planner::recommend(&effective_state, &constraints, events)
+        planner::recommend(&effective_state, &constraints, effective_events)
     } else {
         Vec::new()
     };
@@ -230,12 +234,21 @@ async fn plan(
         if let Provider::Watsonx(live) = &app.provider {
             if interpretation.understood && interpretation.clarification.is_none() {
                 match live
-                    .rank_candidates(&request.message, &selected, &request.profile, events)
+                    .rank_candidates(
+                        &request.message,
+                        &selected,
+                        &request.profile,
+                        effective_events,
+                    )
                     .await
                 {
                     Ok(ranked) => {
-                        let ranked =
-                            apply_post_checks(&ranked, &selected, &request.profile, events);
+                        let ranked = apply_post_checks(
+                            &ranked,
+                            &selected,
+                            &request.profile,
+                            effective_events,
+                        );
                         let ids: Vec<_> = ranked.iter().map(|r| r.id.clone()).collect();
                         let evidence: Vec<_> = ranked
                             .iter()
@@ -245,7 +258,7 @@ async fn plan(
                                         e,
                                         &effective_state,
                                         &constraints,
-                                        events,
+                                        effective_events,
                                     );
                                     ev["ai_reason"] = json!(r.reason);
                                     ev["cited_fields"] = json!(r.cited_fields);
@@ -256,24 +269,33 @@ async fn plan(
                         (ids, evidence, None, "watsonx")
                     }
                     Err(RankError::Clarification(q)) => {
-                        let (ids, ev) =
-                            template_evidence(&selected, &effective_state, &constraints, events);
+                        let (ids, ev) = template_evidence(
+                            &selected,
+                            &effective_state,
+                            &constraints,
+                            effective_events,
+                        );
                         (ids, ev, Some(q), "template")
                     }
                     Err(_) => {
                         // Ranking unavailable: fall back to template evidence (labelled).
-                        let (ids, ev) =
-                            template_evidence(&selected, &effective_state, &constraints, events);
+                        let (ids, ev) = template_evidence(
+                            &selected,
+                            &effective_state,
+                            &constraints,
+                            effective_events,
+                        );
                         (ids, ev, None, "template")
                     }
                 }
             } else {
                 let (ids, ev) =
-                    template_evidence(&selected, &effective_state, &constraints, events);
+                    template_evidence(&selected, &effective_state, &constraints, effective_events);
                 (ids, ev, None, "template")
             }
         } else {
-            let (ids, ev) = template_evidence(&selected, &effective_state, &constraints, events);
+            let (ids, ev) =
+                template_evidence(&selected, &effective_state, &constraints, effective_events);
             (ids, ev, None, "template")
         };
 
@@ -284,7 +306,7 @@ async fn plan(
             Some(planner::no_match_reason(
                 &effective_state,
                 &constraints,
-                events,
+                effective_events,
             ))
         } else {
             None
@@ -324,7 +346,11 @@ async fn validate(
         .state
         .validate_with_updates(events, all_updates)
         .map_err(bad_request)?;
-    let event = events
+    // Apply time_moved updates so conflict checks use effective times.
+    let effective_events_owned =
+        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let effective_events: &[Event] = &effective_events_owned;
+    let event = effective_events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
@@ -343,7 +369,7 @@ async fn validate(
         }
         std::borrow::Cow::Owned(s)
     };
-    let issue = planner::issue(event, &effective_state, events);
+    let issue = planner::issue(event, &effective_state, effective_events);
     Ok(Json(json!({"allowed":issue.is_none(),"issue":issue})))
 }
 
@@ -372,7 +398,11 @@ async fn enroll(
         .state
         .validate_with_updates(events, all_updates)
         .map_err(bad_request)?;
-    let event = events
+    // Apply time_moved updates so conflict checks use effective times.
+    let effective_events_owned =
+        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let effective_events: &[Event] = &effective_events_owned;
+    let event = effective_events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
@@ -391,7 +421,7 @@ async fn enroll(
         }
         std::borrow::Cow::Owned(s)
     };
-    if let Some(problem) = planner::issue(event, &effective_state, events) {
+    if let Some(problem) = planner::issue(event, &effective_state, effective_events) {
         return Err((StatusCode::CONFLICT, Json(json!({"error":problem}))));
     }
     let required = event.rsvp == "RSVP required";
@@ -853,5 +883,106 @@ mod tests {
             !ids.is_empty(),
             "should still return results with time/room updates"
         );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Fix A: time_moved effective time tests
+    // ──────────────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn time_moved_event_uses_new_times_for_conflict_detection() {
+        // u3 moves e1 (originally Tue 15:00–16:30, start=900, end=990)
+        // to 10:30–12:00 (start=630, end=720).
+        // A block from 10:00–11:30 (600–690) on Tuesday (day=1) should conflict
+        // with the new slot 630–720 but NOT with the original 900–990.
+        let state = json!({
+            "plan": ["e1"],
+            "cancelled": [],
+            "interests": [],
+            "blocks": [{"title": "Morning seminar", "day": 1, "start": 600, "end": 690}],
+            "buffer": 0,
+            "applied_update_ids": ["u3"]
+        });
+        let resp = validate_with_state("e1", state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        assert_eq!(
+            body["allowed"], false,
+            "e1 after time_moved must conflict with overlapping block; got: {body}"
+        );
+        assert!(
+            body["issue"].as_str().unwrap_or("").contains("Conflicts"),
+            "issue should mention Conflicts; got: {}",
+            body["issue"]
+        );
+    }
+
+    #[tokio::test]
+    async fn time_moved_event_no_conflict_without_block() {
+        // Same u3 update but no overlapping block — e1 should be allowed.
+        let state = json!({
+            "plan": ["e1"],
+            "cancelled": [],
+            "interests": [],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u3"]
+        });
+        let resp = validate_with_state("e1", state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        assert_eq!(
+            body["allowed"], true,
+            "e1 after time_moved with no conflicting block must be allowed; got: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn time_moved_conflict_excludes_event_from_plan() {
+        // u3 moves e1 to 630–720 on Tuesday.
+        // A block 600–690 on Tuesday means e1 is now in conflict,
+        // so the planner must not recommend it.
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": ["AI & education"],
+            "blocks": [{"title": "Morning seminar", "day": 1, "start": 600, "end": 690}],
+            "buffer": 0,
+            "applied_update_ids": ["u3"]
+        });
+        let resp = plan_with_state(state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        let ids = body["event_ids"].as_array().unwrap();
+        assert!(
+            !ids.iter().any(|v| v.as_str() == Some("e1")),
+            "e1 must be excluded after time_moved causes a conflict; got {ids:?}"
+        );
+    }
+
+    // model.rs unit test for apply_time_moves
+    #[test]
+    fn apply_time_moves_overrides_start_end() {
+        use model::{EventUpdate, apply_time_moves};
+        let events: Vec<model::Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let updates: Vec<Vec<EventUpdate>> =
+            serde_json::from_str::<Vec<serde_json::Value>>(include_str!("../../data/updates.json"))
+                .unwrap()
+                .iter()
+                .map(|b| serde_json::from_value::<Vec<EventUpdate>>(b["updates"].clone()).unwrap())
+                .collect();
+        let all_updates: Vec<EventUpdate> = updates.into_iter().flatten().collect();
+        // u3 moves e1: new_start=630, new_end=720
+        let effective = apply_time_moves(&["u3".to_string()], &all_updates, &events);
+        let e1 = effective.iter().find(|e| e.id == "e1").unwrap();
+        assert_eq!(e1.start, 630, "e1 start must be 630 after u3");
+        assert_eq!(e1.end, 720, "e1 end must be 720 after u3");
+        // Without applying u3, original times should be used.
+        let original = apply_time_moves(&[], &all_updates, &events);
+        let e1_orig = original.iter().find(|e| e.id == "e1").unwrap();
+        let catalog_e1 = events.iter().find(|e| e.id == "e1").unwrap();
+        assert_eq!(e1_orig.start, catalog_e1.start);
+        assert_eq!(e1_orig.end, catalog_e1.end);
     }
 }

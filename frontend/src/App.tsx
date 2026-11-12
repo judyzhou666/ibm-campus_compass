@@ -26,7 +26,7 @@ import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
-import { applyNextBatch, nextBatch, relativeTime } from "./updates.ts";
+import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./updates.ts";
 
 const labels = {
   review: "Team data review",
@@ -234,7 +234,7 @@ export default function App() {
   }, [menu]);
   function checkForUpdates() {
     const current = demo.read();
-    const { nextState, applied, batch } = applyNextBatch(current);
+    const { nextState, applied, batch, movedConflicts } = applyNextBatch(current);
     if (!applied.length) {
       notify(
         "No more update batches. All synthetic updates have been applied. · Synthetic update",
@@ -250,8 +250,12 @@ export default function App() {
       planned.length > 0
         ? ` ${planned.length} of your planned event${planned.length > 1 ? "s" : ""} ${planned.length > 1 ? "are" : "is"} affected.`
         : "";
+    const conflictNotice =
+      movedConflicts.length > 0
+        ? ` A time change now conflicts with your schedule — use "Find a replacement" to update your plan.`
+        : "";
     notify(
-      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice} See Briefing for details. · Synthetic update`,
+      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} See Briefing for details. · Synthetic update`,
       planned.length > 0
         ? [{ label: "View briefing", run: () => nav("dashboard") }]
         : [],
@@ -414,7 +418,19 @@ export default function App() {
           text: `Hi ${state.name}! Let’s find a little more of what you love on campus.\n\nTell me your interests, when you’re free, and anything that matters — like free food or a little time between events. I’ll check your demo schedule and suggest a few options.`,
         },
       ];
-  const cancelled = state.cancelled.some((id) => state.plan.includes(id));
+  // A plan event is "unavailable" when explicitly cancelled OR when a time_moved
+  // update has shifted it into a conflict with a busy block or another plan event.
+  const effEvents = effectiveEvents(state.appliedUpdateIds);
+  const cancelled =
+    state.cancelled.some((id) => state.plan.includes(id)) ||
+    state.plan.some(
+      (id) =>
+        !state.cancelled.includes(id) &&
+        (() => {
+          const eff = effEvents.find((e) => e.id === id);
+          return eff ? !!issue(eff, state, effEvents) : false;
+        })(),
+    );
   const detailEvent = EVENTS.find((e) => e.id === detail);
   const list = filterEvents(
     page === "saved"
@@ -422,7 +438,7 @@ export default function App() {
       : EVENTS,
   );
   const recommended = filterEvents(
-    EVENTS.filter((e) => !state.plan.includes(e.id) && !issue(e, state)),
+    effEvents.filter((e) => !state.plan.includes(e.id) && !issue(e, state, effEvents)),
   ).sort(
     (a, b) =>
       Number(state.interests.includes(b.topic)) -
@@ -898,8 +914,7 @@ export default function App() {
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
                   <p>
-                    An event was cancelled in this demonstration. Your other
-                    choices will stay in place.
+                    An event in your plan is now unavailable — cancelled or moved into a conflict. Your other choices will stay in place.
                   </p>
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
@@ -1159,7 +1174,7 @@ export default function App() {
 
               {cancelled ? (
                 <div className="notice">
-                  A planned event was cancelled.{" "}
+                  A planned event is now unavailable — cancelled or moved into a conflict.{" "}
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
                   </Button>

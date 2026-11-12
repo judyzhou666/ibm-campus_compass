@@ -14,8 +14,11 @@ import {
   kindLabel,
   relativeTime,
   isUnavailableByUpdate,
+  effectiveEvents,
 } from "../frontend/src/updates.ts";
 import { fresh } from "../frontend/src/state.ts";
+import { issue, recommend } from "../frontend/src/planner.ts";
+import type { DemoState } from "../frontend/src/types.ts";
 
 test("updates.json loads and has 3 batches with at least 6 updates total", () => {
   assert.equal(ALL_BATCHES.length, 3);
@@ -142,7 +145,7 @@ test("updateBadge returns correct badge", () => {
 test("kindLabel returns human-readable strings", () => {
   assert.equal(kindLabel("cancelled"), "Cancelled");
   assert.equal(kindLabel("full"), "Now full");
-  assert.equal(kindLabel("time_moved"), "Time moved");
+  assert.equal(kindLabel("time_moved"), "Time changed");
   assert.equal(kindLabel("room_changed"), "Room changed");
 });
 
@@ -191,4 +194,108 @@ test("updatesInLatestBatch returns empty when nothing applied", () => {
   const { batch, updates } = updatesInLatestBatch([]);
   assert.equal(batch, null);
   assert.equal(updates.length, 0);
+});
+
+// ── Fix A: time_moved tests ──────────────────────────────────────────────────
+
+test("kindLabel returns 'Time changed' for time_moved", () => {
+  assert.equal(kindLabel("time_moved"), "Time changed");
+});
+
+test("effectiveEvents returns catalog when no updates applied", () => {
+  const eff = effectiveEvents([]);
+  // e1 should have its original start=900, end=990
+  const e1 = eff.find((e) => e.id === "e1");
+  assert.ok(e1, "e1 must exist");
+  assert.equal(e1!.start, 900);
+  assert.equal(e1!.end, 990);
+});
+
+test("effectiveEvents applies time_moved u3 to e1", () => {
+  // u3 moves e1: new_start=630, new_end=720
+  const eff = effectiveEvents(["u3"]);
+  const e1 = eff.find((e) => e.id === "e1");
+  assert.ok(e1, "e1 must exist");
+  assert.equal(e1!.start, 630, "e1 start should be 630 after u3");
+  assert.equal(e1!.end, 720, "e1 end should be 720 after u3");
+  // Other events must be unchanged (spot-check e4)
+  const e4 = eff.find((e) => e.id === "e4");
+  const e4orig = effectiveEvents([]).find((e) => e.id === "e4");
+  assert.equal(e4?.start, e4orig?.start);
+});
+
+test("issue detects conflict using effective times for time_moved event", () => {
+  // u3 moves e1 to 630–720 on Tuesday (day=1).
+  // A block from 600–690 on Tuesday overlaps with the new slot.
+  const eff = effectiveEvents(["u3"]);
+  const e1eff = eff.find((e) => e.id === "e1")!;
+  const stateWithBlock: DemoState = {
+    ...fresh(),
+    plan: ["e1"],
+    blocks: [{ id: "b1", title: "Morning seminar", day: 1, start: 600, end: 690 }],
+    appliedUpdateIds: ["u3"],
+  };
+  const result = issue(e1eff, stateWithBlock, eff);
+  assert.ok(result?.includes("Conflicts"), `expected conflict, got: ${result}`);
+});
+
+test("issue detects no conflict for time_moved event with no overlapping block", () => {
+  const eff = effectiveEvents(["u3"]);
+  const e1eff = eff.find((e) => e.id === "e1")!;
+  const stateNoBlock: DemoState = {
+    ...fresh(),
+    plan: ["e1"],
+    blocks: [],
+    appliedUpdateIds: ["u3"],
+  };
+  const result = issue(e1eff, stateNoBlock, eff);
+  assert.equal(result, null, `expected no conflict, got: ${result}`);
+});
+
+test("recommend excludes time_moved event that conflicts with a block", () => {
+  // u3 moves e1 to 630–720 on Tuesday. A block 600–690 blocks it.
+  const eff = effectiveEvents(["u3"]);
+  const stateWithBlock: DemoState = {
+    ...fresh(),
+    plan: [],
+    interests: ["AI & education"],
+    blocks: [{ id: "b1", title: "Morning seminar", day: 1, start: 600, end: 690 }],
+    appliedUpdateIds: ["u3"],
+  };
+  const selected = recommend(stateWithBlock, {}, 3, true, eff);
+  assert.ok(
+    !selected.some((e) => e.id === "e1"),
+    `e1 must not be recommended after time_moved conflict; got: ${selected.map((e) => e.id).join(", ")}`,
+  );
+});
+
+test("applyNextBatch detects movedConflicts for time_moved into block", () => {
+  // Start from batch 1 applied (so batch 2 with u3 time_moved is next).
+  const batch1Ids = ALL_BATCHES[0].updates.map((u) => u.id);
+  const stateWithBlock: DemoState = {
+    ...fresh(),
+    plan: ["e1"],
+    blocks: [{ id: "b1", title: "Morning seminar", day: 1, start: 600, end: 690 }],
+    appliedUpdateIds: batch1Ids,
+  };
+  const { movedConflicts } = applyNextBatch(stateWithBlock);
+  assert.ok(
+    movedConflicts.includes("e1"),
+    `e1 should be a movedConflict; got: ${movedConflicts.join(", ")}`,
+  );
+});
+
+test("applyNextBatch reports no movedConflicts when moved event has no block overlap", () => {
+  const batch1Ids = ALL_BATCHES[0].updates.map((u) => u.id);
+  const stateNoProblem: DemoState = {
+    ...fresh(),
+    plan: ["e1"],
+    blocks: [], // no blocks → no conflict with new slot 630–720
+    appliedUpdateIds: batch1Ids,
+  };
+  const { movedConflicts } = applyNextBatch(stateNoProblem);
+  assert.ok(
+    !movedConflicts.includes("e1"),
+    `e1 should not be a movedConflict with no blocks; got: ${movedConflicts.join(", ")}`,
+  );
 });
