@@ -8,6 +8,7 @@ import {
   PARTICIPATION,
   suggestedTopics,
 } from "./preferences.ts";
+import { GOAL_TYPES } from "./types.ts";
 import type { Block, TimeSlot } from "./types.ts";
 
 export function DirectionSection({
@@ -46,6 +47,7 @@ export function DirectionSection({
                     : p.goals.includes(id)
                       ? p.goals.filter((g) => g !== id)
                       : [...p.goals.filter((g) => g !== "unsure"), id];
+                if (goals.includes("unsure")) change({ goal_types: [] });
                 pref({
                   goals,
                   primary_goal: goals.includes(p.primary_goal)
@@ -146,9 +148,51 @@ export function DirectionSection({
               onChange={(e) => change({ goals: e.target.value })}
             />
           </label>
+          <fieldset>
+            <legend>
+              Profile goal types for IBM watsonx ranking (optional)
+            </legend>
+            {GOAL_TYPES.map((goal) => (
+              <label key={goal}>
+                <input
+                  type="checkbox"
+                  checked={draft.goal_types.includes(goal)}
+                  onChange={() => {
+                    if (!draft.goal_types.includes(goal))
+                      pref({ goals: p.goals.filter((g) => g !== "unsure") });
+                    change({
+                      goal_types: draft.goal_types.includes(goal)
+                        ? draft.goal_types.filter((g) => g !== goal)
+                        : [...draft.goal_types, goal],
+                    });
+                  }}
+                />
+                {goal}
+              </label>
+            ))}
+          </fieldset>
+          <label>
+            <input
+              type="checkbox"
+              checked={draft.profileRankingConsent}
+              onChange={(e) =>
+                change({ profileRankingConsent: e.target.checked })
+              }
+            />
+            Allow my saved major, free-text goals and profile goal types to be
+            sent to IBM watsonx for profile-based event ranking
+          </label>
           <p className="fineprint">
-            Existing major/goals notes are retained locally; no career goal is
-            required and raw notes do not affect matching.
+            Optional. Save to apply this choice. Turning it off stops future
+            profile transmission; it cannot retract previous requests.
+            Structured preference controls still govern deterministic matching.
+            The planner message itself can be sent to the server and, when
+            configured, IBM watsonx.
+          </p>
+          <p className="fineprint">
+            Major and free-text goals stay local unless you enable profile-based
+            IBM watsonx ranking below. Reflection and learning notes are never
+            included.
           </p>
         </>
       )}
@@ -508,15 +552,16 @@ export function ControlsSection({ editor }: { editor: PreferenceEditor }) {
       </p>
       <p>
         Preferences are saved in this browser. Recommendation requests are
-        processed by the app’s Rust service when it is available. Raw
-        reflection, learning notes, major and free-text goals are not included
-        in those requests. The current planner message, structured search
-        filters, plan/cancellation IDs, interests, practical settings and busy
-        commitment times (without titles) may be sent to that service.
-        Conversation history is not included automatically. If you copy a note
-        into a planner message, that message can be sent. When the service is
-        unavailable, the labelled browser fallback processes recommendations
-        locally.
+        processed by the app’s Rust service when it is available. Reflection and
+        learning notes are never included in those requests. Saved major,
+        free-text goals and profile goal types are included only after you
+        enable profile-based IBM watsonx ranking and Save. The current planner
+        message, structured search filters, plan/cancellation IDs, interests,
+        practical settings and busy commitment times (without titles) may be
+        sent to that service. Conversation history is not included
+        automatically. If you copy a note into a planner message, that message
+        can be sent. When the service is unavailable, the labelled browser
+        fallback processes recommendations locally.
       </p>
       <Button
         onClick={() => {

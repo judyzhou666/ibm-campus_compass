@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "campus-compass",
+      "runtimeExecutable": "/Users/judyzhou/.cargo/bin/cargo",
+      "runtimeArgs": ["run", "--locked"],
+      "port": 4173
+    }
+  ]
+}

@@ -4,9 +4,32 @@ import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
-import { issue, overlappingAlternatives } from "./planner.ts";
+import { issue, reasons, overlappingAlternatives } from "./planner.ts";
+import { effectiveEvents } from "./updates.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
+type EvidenceKey = Exclude<
+  keyof import("./types.ts").RecommendationEvidence,
+  "event_id" | "ai_reason" | "cited_fields" | "constraints_satisfied"
+>;
+/** Student-facing labels, in reading order, for the planner's evidence fields. */
+const EVIDENCE_LABELS: [EvidenceKey, string][] = [
+  ["interest_match", "Interest"],
+  ["schedule_fit", "Timing"],
+  ["practical", "Practical details"],
+  ["trade_offs", "Trade-offs"],
+  ["comparison", "Compared with similar events"],
+  ["discovery_context", "Who it’s for"],
+  ["learning_connection", "Learning connection"],
+  ["participation_fit", "Participation"],
+];
+/** Shows the planner's 24-hour clock times ("15:00", "24:00") as "3:00 PM". */
+export function twelveHour(text: string) {
+  return text.replace(/\b([01]\d|2[0-4]):([0-5]\d)\b/g, (_, h, m) => {
+    const hour = Number(h) % 24;
+    return `${hour % 12 || 12}:${m} ${hour < 12 ? "AM" : "PM"}`;
+  });
+}
 export function ChatEvents({
   ids,
   state,
@@ -35,10 +58,13 @@ export function ChatEvents({
   return (
     <div className="chat-event-list">
       {ids.map((id) => {
-        const event = EVENTS.find((e) => e.id === id);
+        const event = effectiveEvents(state.appliedUpdateIds ?? []).find(
+          (e) => e.id === id,
+        );
         if (!event) return null;
         const added = state.plan.includes(id),
-          problem = issue(event, state);
+          problem = issue(event, state),
+          found = evidence.find((item) => item.event_id === id);
         return (
           <article className="chat-event" key={id} aria-label={event.title}>
             <span className="tag">{event.category}</span>
@@ -47,40 +73,55 @@ export function ChatEvents({
             <p className="meta">
               {event.location} · {event.rsvp}
             </p>
-            <p className="fineprint">
-              Earlier evidence describes the suggestion-time snapshot. Current
-              conflicts and choices are checked again before adding.
-            </p>
-            {evidence.find((item) => item.event_id === id) ? (
+            {problem ? null : found?.ai_reason ? (
+              <div className="why-fits ai-why">
+                <strong>Why this fits:</strong> {found.ai_reason}
+                <span className="ai-attribution">
+                  Written by IBM watsonx (Granite) from this event&apos;s record
+                </span>
+                {found.cited_fields && found.cited_fields.length > 0 && (
+                  <span className="cited-fields">
+                    {found.cited_fields.map((f) => (
+                      <span key={f} className="cited-tag">
+                        {f.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </div>
+            ) : problem ? null : (
+              <p className="why-fits">
+                <strong>Why this fits:</strong>{" "}
+                {reasons(event, state, state.constraints)
+                  .slice(0, 3)
+                  .join(" · ")}
+              </p>
+            )}
+            {found ? (
               <details
-                className="evidence-details"
+                className="evidence-more"
                 open={wirePreferences(state).guidance === "information"}
               >
-                <summary>Recommendation evidence</summary>
+                <summary>How the planner checked this</summary>
                 <dl
                   className="evidence"
                   aria-label="Evidence at recommendation time; current availability is checked again before adding"
                 >
-                  {Object.entries(
-                    evidence.find((item) => item.event_id === id)!,
-                  )
-                    .filter(
-                      ([key]) =>
-                        key !== "event_id" && key !== "constraints_satisfied",
-                    )
-                    .map(([key, value]) => (
+                  {EVIDENCE_LABELS.map(([key, label]) => {
+                    const value = found[key];
+                    return value ? (
                       <div key={key}>
-                        <dt>{key.replaceAll("_", " ")}</dt>
-                        <dd>{value}</dd>
+                        <dt>{label}</dt>
+                        <dd>{twelveHour(value)}</dd>
                       </div>
-                    ))}
+                    ) : null;
+                  })}
                 </dl>
               </details>
             ) : (
               <p className="fineprint">
-                No stored Rust evidence is available for this suggestion. Review
-                the fictional record and current availability in details;
-                browser suggestions are simulated.
+                Simulated browser suggestion. Open details to check the
+                fictional record and current availability.
               </p>
             )}
             <RecommendationInfo
@@ -138,6 +179,7 @@ export function PlannerCalendar({
   onClose: () => void;
   onDetails: (id: string) => void;
 }) {
+  const added = state.plan.filter((id) => !state.cancelled.includes(id)).length;
   return (
     <aside
       className="panel planner-calendar"
@@ -162,8 +204,7 @@ export function PlannerCalendar({
         <span>○ Busy commitments</span>
       </div>
       <p className="fineprint" role="status">
-        {state.plan.filter((id) => !state.cancelled.includes(id)).length} events
-        added · Updates as you plan
+        {added} {added === 1 ? "event" : "events"} added · Updates as you plan
       </p>
       <div className="planner-agenda">
         {DAYS.map((day, index) => {
@@ -174,9 +215,9 @@ export function PlannerCalendar({
                 ...b,
                 event: undefined as CampusEvent | undefined,
               })),
-            ...EVENTS.filter(
-              (e) => e.day === index && state.plan.includes(e.id),
-            ).map((e) => ({ ...e, event: e })),
+            ...effectiveEvents(state.appliedUpdateIds ?? [])
+              .filter((e) => e.day === index && state.plan.includes(e.id))
+              .map((e) => ({ ...e, event: e })),
           ].sort((a, b) => a.start - b.start);
           return (
             <section

@@ -4,6 +4,8 @@ The original documentation pass inspected application commit `2dd93ae` on `Doris
 
 ## Implemented preference flow
 
+Current integration note (November 12, 2026): main's Home, News, Settings, Calendar, Notifications, event updates and two-stage watsonx ranking are integrated with this preference system. The major/free-text-goal/profile-goal-type model context uses a separate explicit opt-in in My Direction. It defaults off on migration. Reflection and learning notes are never model context. See [the combined API contract](backend.md#combined-main-and-doris-contract--november-12-2026).
+
 The single saved source is `DemoState`. `state.ts` restores it with bounded migration; `preferences.ts` defines version **1**, defaults, mappings and minimal projections. Existing interests, major/raw goals, preferred time, busy blocks and buffer remain canonical. Migration preserves legacy/unrelated data and never promotes free text into confirmed topics or invents consent.
 
 The discoverable **My Preferences** destination is `#profile`. `MyPreferences.tsx` owns one controlled draft, Save, Cancel and an unsaved indicator. `PreferenceSections.tsx` supplies the shared sections. The optional first-time dialog uses this same editor in brief mode for direction/interests, participation and guidance. Skip for now is visible before the questions; Escape works. Skipping preserves saved/sample choices, and unsaved skipping/navigation requires confirmation. Full editing stays available later. There is no second form implementation or preference store.
@@ -16,7 +18,7 @@ The discoverable **My Preferences** destination is `#profile`. `MyPreferences.ts
 | Time/practical needs | Busy commitments and buffer 0/15 minutes; soft preferred time; saved hard free-admission and available-only windows. Location/format notes are not filters. Numeric budgets explicitly abstain. |
 | Controls | Separate goal/learning switches stop use without deleting saved entries. Confirmed clear-personalization preserves plans, saved events, RSVP, conversations, memberships and hard scheduling requirements. Clear chat is separate. Not for me/Show another are session-only; legacy saved hidden IDs can be explicitly restored. |
 
-General preference Save preserves latest plans/RSVP/community data and clears obsolete draft/current-search filters. Dashboard/briefing automatically request current suggestions through `useRecommendations`/`requestPlan`. Their keys suppress obsolete responses and expose loading/error/retry states. Planner retains old messages, validated evidence and score snapshots. Changes to relevant structured/time/guidance settings mark earlier suggestions **Based on previous settings** and offer Refresh suggestions without deleting history or plans. Legacy messages without snapshots abstain from reconstructed fit claims.
+General preference Save preserves latest plans/RSVP/community data and clears obsolete draft/current-search filters. Main replaced the Dashboard briefing/recommendation section with News. Home now integrates enabled structured preference bonuses, saved practical filters/dismissals and explicitly saved count into its existing local recommendations, retaining main's default mix and local profile keyword/goal-type behavior. A configured live planner uses `requestPlan` and the second watsonx ranking stage. Their keys suppress obsolete responses and expose loading/error/retry states. Planner retains old messages, validated evidence and score snapshots. Changes to relevant structured/time/guidance settings mark earlier suggestions **Based on previous settings** and offer Refresh suggestions without deleting history or plans. Legacy messages without snapshots abstain from reconstructed fit claims.
 
 ### Explicit chat proposals
 
@@ -94,7 +96,7 @@ Week tiles, Planner agenda and calendar plan rows show conflicts. Event details 
 
 ## Local storage and transmitted data
 
-Default configuration: fictional-campus, week starting `2026-10-19`, time zone `America/New_York`. Its plaintext `localStorage` key is `campus-compass-demo-v1`; alternate configurations use separate keys containing campus/week/time zone. This is not authenticated multi-campus tenancy or an external calendar connection.
+Current configuration: fictional-campus, week starting `2026-11-02`, time zone `America/New_York`. The current plaintext storage namespace includes campus/week/time zone. The original `2026-10-19` configuration retains its legacy `campus-compass-demo-v1` key; configuration namespaces are preserved separately. This is not authenticated multi-campus tenancy or an external calendar connection.
 
 | Data | Stored locally | Sent in current app requests |
 |---|---|---|
@@ -102,7 +104,9 @@ Default configuration: fictional-campus, week starting `2026-10-19`, time zone `
 | Participation, count, preferred time, buffer, free-only/windows | Yes | Required structured settings |
 | Busy commitments | Titles and times | Day/start/end only; titles omitted |
 | Guidance; learning provenance | Yes | No: presentation/provenance stays local; legacy guidance input is still validated by Rust |
-| Reflection/custom/major/raw-goal/learning/next/location/format notes | Yes | Excluded from preference/schedule projection |
+| Reflection/custom/learning/next/location/format notes; biography | Yes | Never included automatically in recommendation/model requests |
+| Saved major, free-text goals, main profile goal types | Yes | Empty by default; included in the optional `profile` object only after the separate profile-ranking opt-in is saved. Model ranking uses these fields when configured. Home retains main's deterministic local keyword/goal-type matching. |
+| Profile-ranking consent and preferencesConfigured | Yes | Consent/configuration flags remain local; the request contains only the allowed approved profile context. Revocation clears that projection for future calls. |
 | Plan/cancellation/saved/RSVP/history/community data | Yes | Schedule uses plan/cancellation IDs; not saved-event lists, history, memberships or posts. Explicit enrollment sends only its event ID, schedule and required demo RSVP. |
 | Demo attendee name | Profile/form state | Only on explicit required demo RSVP submission |
 | Current ordinary planner message/prior constraints | Existing local conversation | Can be sent to Rust; copying private text into that message can transmit it |
@@ -219,3 +223,10 @@ Freshly run for this repair: `npm run build`; `npm test` (117 TypeScript tests, 
 Dashboard category/text selection is applied before the shared recommendation count, using a transient bounded dismissed-ID projection for nonmatching catalog entries. Both Rust and fallback therefore rank only candidates in the selected view. Explore/Saved omit session-skipped cards without changing bookmarks. Ordinary chat follow-ups and replacement requests retain search exclusions; explicit new-search constraint sets, reset/start over, refresh, clear/new chat and preference resets define new boundaries. No skip writes long-term preferences. Confirmed personalization clearing resets canonical and auxiliary editor drafts/errors even when saved personalization is already empty, preserving saved commitments and plan/RSVP records.
 
 Fresh repair checks: build/typecheck; planner assertions, 130 TypeScript and 5 Wiki tests; API integration with online/offline Academic and follow-up regressions; focused desktop/mobile discovery and editor-reset browser scripts. Full browser matrix, frozen evaluation, and Rust unit/Clippy were not rerun for this frontend-only repair.
+
+
+## Main integration compatibility
+
+Main's welcome prompt opens the existing skippable brief editor; full My Preferences remains authoritative. The profile-ranking checkbox grants permission for saved major/free-text goals/main goal types only. It is independent of the structured Direction/confirmed-learning enablement switches, which govern deterministic preference matching. The four main goal types remain available; Not sure yet is exclusive of specific structured goal selections. Disabling or clearing profile personalization revokes future profile transmission without cancelling plans or deleting messages. A request already sent to the service/provider cannot be recalled.
+
+Main's first-stage interpretation and second-stage narrative ranking remain callable with empty profile context when opt-in is absent. Structured matching/reasons remain deterministic, and main's local Home profile keyword bonus is distinguished from model language interpretation. Current model order can differ from deterministic candidate order; these are separate stages, with common real eligibility/time/RSVP safeguards. No arbitrary reflection/learning text is promoted to topics. Historical message/settings snapshots stay local and are never included as request history; approved profile changes invalidate their settings identity.

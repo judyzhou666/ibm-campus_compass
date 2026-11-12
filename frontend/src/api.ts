@@ -18,6 +18,7 @@ import {
   interpretRequest,
   validateConstraints,
 } from "./interpretation.ts";
+import { ALL_UPDATES, effectiveEvents } from "./updates.ts";
 
 // Guidance only changes browser presentation; it is not needed by the server.
 function requestPreferences(state: Schedule) {
@@ -29,6 +30,7 @@ export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
   ...(state.view_excluded?.length
     ? { view_excluded: [...state.view_excluded] }
     : {}),
+  applied_update_ids: [...(state.appliedUpdateIds ?? [])],
   plan: [...state.plan],
   cancelled: [...state.cancelled],
   interests: [...state.interests],
@@ -42,21 +44,53 @@ export const schedulePayload = (state: Schedule): RecommendationSchedule => ({
   })),
 });
 
+/** Saved profile text crosses the model boundary only after explicit opt-in. */
+export const profilePayload = (state: Schedule) => {
+  const s = state as DemoState;
+  return s.profileRankingConsent === true
+    ? {
+        major: s.major || "",
+        goals: s.goals || "",
+        goal_types: s.goal_types || [],
+      }
+    : { major: "", goals: "", goal_types: [] };
+};
+
 export const recommendationSettingsKey = (state: Schedule) =>
-  JSON.stringify(schedulePayload(state));
+  JSON.stringify([schedulePayload(state), profilePayload(state)]);
 // Schedule edits invalidate in-flight results via planningKey, but must not erase
 // conversation clarifications or current-search dismissals.
 export const recommendationPreferenceKey = (state: Schedule) =>
   JSON.stringify({
     interests: state.interests,
     buffer: state.buffer,
+    profile: profilePayload(state),
     preferred_time: state.preferred_time || "any",
     preferences: state.preferences ? requestPreferences(state) : undefined,
   });
 export const planningKey = (state: DemoState) =>
-  JSON.stringify([schedulePayload(state), state.constraints]);
+  JSON.stringify([
+    schedulePayload(state),
+    profilePayload(state),
+    state.constraints,
+  ]);
 
 class InputError extends Error {}
+/** Thrown when the message wasn't understood; carries clickable example prompts. */
+export class LimitedDemoHint extends InputError {
+  constructor(
+    message: string,
+    readonly examples: string[],
+  ) {
+    super(message);
+  }
+}
+
+const DEMO_EXAMPLES = [
+  "Career events on Wednesday",
+  "Something to help me find an internship",
+  "Social events with free food on Thursday",
+];
 
 async function post(
   path: string,
@@ -85,6 +119,7 @@ export async function requestPlan(
   fetcher = globalThis.fetch,
   exactTopics?: readonly string[],
   continuation = false,
+  watsonxMode = false,
 ) {
   const interpreted = interpretRequest(message, previous, continuation);
   // Proposal topics are already reviewed mappings. Parse all safeguards first,
@@ -103,11 +138,16 @@ export async function requestPlan(
       interpreted.clocks || [],
       interpreted.restatement,
     );
-  // Unrecognised messages never reach the server, in either simulated or watsonx mode.
-  if (!interpreted.understood)
-    throw new InputError(
-      "I’m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: “AI events on Tuesday after 1 PM.”",
+  // In simulated mode, unrecognised messages don't reach the server — the browser shows
+  // the limited-demo hint immediately. In watsonx mode, all messages are forwarded so the
+  // model can interpret them; the server's response determines understood/clarification.
+  const locallyUnderstood = interpreted.understood;
+  if (!locallyUnderstood && !watsonxMode) {
+    throw new LimitedDemoHint(
+      "I\u2019m a limited demo planner. Try an interest like AI, career, social, arts, or wellbeing, plus a day or time:",
+      DEMO_EXAMPLES,
     );
+  }
   try {
     const result = (await post(
       "/api/plan",
@@ -116,6 +156,7 @@ export async function requestPlan(
         previous: exactTopics ? interpreted.constraints : previous,
         ...(continuation ? { continuation: true } : {}),
         state: schedulePayload(state),
+        profile: profilePayload(state),
       },
       fetcher,
     )) as PlanResponse;
@@ -138,11 +179,26 @@ export async function requestPlan(
       result.event_ids,
     );
     if (!matchReasons) throw new Error("Invalid structured match reasons");
-    if (result.clarification) throw new InputError(result.clarification);
-    if (!result.understood)
-      throw new InputError(
-        "The simulated planner did not understand this request. Try an interest, day or time.",
+    if (result.clarification)
+      throw new PlanningClarification(
+        result.clarification,
+        result.constraints,
+        [],
       );
+    if (!result.understood) {
+      // Simulated mode: show the limited-demo hint.
+      // Watsonx mode always sets understood:true, so this only fires for simulated.
+      if (locallyUnderstood) {
+        throw new InputError(
+          "The simulated planner did not understand this request. Try an interest, day or time.",
+        );
+      } else {
+        throw new LimitedDemoHint(
+          "I\u2019m a limited demo planner. Try an interest like AI, career, social, arts, or wellbeing, plus a day or time:",
+          DEMO_EXAMPLES,
+        );
+      }
+    }
     return {
       constraints: result.constraints,
       ids: result.event_ids,
@@ -151,6 +207,7 @@ export async function requestPlan(
       source: "rust",
       // Which interpreter actually answered; a failed watsonx call is reported as simulated.
       mode: result.mode,
+      explanations: result.explanations,
       // A watsonx fallback notice comes first, then any explanation of why nothing matched.
       notice: [
         result.notice ?? "",
@@ -162,9 +219,27 @@ export async function requestPlan(
         .join(" "),
     };
   } catch (error) {
-    if (error instanceof InputError) throw error;
+    if (error instanceof InputError || error instanceof PlanningClarification)
+      throw error;
     const { constraints } = interpreted;
-    const selected = recommendWithReasons(state, constraints);
+    const demoState = state as DemoState;
+    const appliedIds = demoState.appliedUpdateIds ?? [];
+    // Browser fallback: build an effective state that respects update-cancelled/full events,
+    // and uses time-moved effective event times for conflict checks.
+    const effEvts = effectiveEvents(appliedIds);
+    const effectiveCancelled = [
+      ...state.cancelled,
+      ...ALL_UPDATES.filter(
+        (u) => u.kind === "cancelled" && appliedIds.includes(u.id),
+      )
+        .map((u) => u.event_id)
+        .filter((id) => !state.cancelled.includes(id)),
+    ];
+    const effectiveState: Schedule = {
+      ...state,
+      cancelled: effectiveCancelled,
+    };
+    const selected = recommendWithReasons(effectiveState, constraints, effEvts);
     return {
       constraints,
       ids: selected.map(({ event }) => event.id),
@@ -176,9 +251,12 @@ export async function requestPlan(
       evidence: [],
       source: "browser-fallback",
       mode: "simulated" as const,
+      explanations: "template" as const,
       notice:
         "The Rust planner is unavailable. These suggestions use the browser’s simulated demo planner." +
-        (!selected.length ? " " + noMatchReason(state, constraints) : ""),
+        (!selected.length
+          ? " " + noMatchReason(effectiveState, constraints)
+          : ""),
     };
   }
 }
@@ -267,9 +345,17 @@ export async function enrollEvent(
 export const planModeLabel = (result: {
   source: string;
   mode: "simulated" | "watsonx";
-}) =>
-  result.source !== "rust"
-    ? "Browser fallback · Simulated"
-    : result.mode === "watsonx"
-      ? "Rust planner · IBM watsonx"
-      : "Rust planner · Simulated";
+  explanations?: "watsonx" | "template";
+}) => {
+  if (result.source !== "rust") return "Browser fallback · Simulated";
+  if (result.mode === "watsonx") {
+    const suffix =
+      result.explanations === "watsonx"
+        ? " · AI explanations"
+        : result.explanations === "template"
+          ? " · Template evidence"
+          : "";
+    return `Rust planner · IBM watsonx${suffix}`;
+  }
+  return "Rust planner · Simulated";
+};

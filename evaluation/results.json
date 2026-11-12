@@ -15,24 +15,24 @@
     "output": {
       "ids": [
         "e28",
-        "e1",
-        "e2"
+        "e36",
+        "e41"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
         "e28": "None",
-        "e1": "Coffee & snacks",
-        "e2": "Free meal"
+        "e36": "None",
+        "e41": "Light refreshments"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 3,
+        "numerator": 1,
         "denominator": 3
       },
       "recall": {
-        "numerator": 3,
+        "numerator": 1,
         "denominator": 3
       },
       "conflict_violations": {
@@ -56,7 +56,7 @@
         "denominator": 3
       },
       "diversity": {
-        "numerator": 3,
+        "numerator": 1,
         "denominator": 3
       },
       "replanning_validity": {
@@ -163,8 +163,8 @@
     "output": {
       "ids": [
         "e18",
-        "e20",
-        "e6"
+        "e42",
+        "e7"
       ],
       "status": "matched",
       "evidence": [
@@ -187,25 +187,7 @@
           "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-018. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
-          "constraints_satisfied": {
-            "topics": [
-              "AI & education",
-              "Career",
-              "Social"
-            ]
-          },
-          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e20",
-          "interest_match": "Interest match: Career — Try approachable ways to start a professional conversation.",
-          "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: one-to-one. No belonging or ability is inferred.",
-          "practical": "$0 admission · Career Studio · Drop-in welcome · Open to demo students · Coffee & snacks",
-          "schedule_fit": "Monday, 17:30–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
-          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-020. Demo eligibility only; no real registration."
-        },
-        {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "topics": [
               "AI & education",
@@ -214,19 +196,37 @@
             ]
           },
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e6",
-          "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "event_id": "e42",
+          "interest_match": "Interest match: Social — New and returning School of Education students meet over coffee. An informal way to find study partners and hear about upcoming events.",
           "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
-          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
-          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Education Building Atrium · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Monday, 17:00–18:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-042. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Your first role in responsible tech: $0 vs $0; 60 vs 60 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education",
+              "Career",
+              "Social"
+            ]
+          },
+          "discovery_context": "Career / Career opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e7",
+          "interest_match": "Interest match: Career — Practice introducing your interests in a small peer workshop.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Fictional participation format: small-group. No belonging or ability is inferred.",
+          "practical": "$0 admission · Career Studio · RSVP required · Open to demo students · None",
+          "schedule_fit": "Tuesday, 13:00–14:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "60 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-007. Demo eligibility only; no real registration."
         }
       ],
       "food": {
         "e18": "None",
-        "e20": "Coffee & snacks",
-        "e6": "Free meal"
+        "e42": "Coffee & snacks",
+        "e7": "None"
       }
     },
     "metrics": {
@@ -386,22 +386,22 @@
     "output": {
       "ids": [
         "e1",
-        "e5"
+        "e46"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
         "e1": "Coffee & snacks",
-        "e5": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 2,
+        "numerator": 1,
         "denominator": 2
       },
       "recall": {
-        "numerator": 2,
+        "numerator": 1,
         "denominator": 2
       },
       "conflict_violations": {
@@ -468,7 +468,7 @@
     "output": {
       "ids": [
         "e1",
-        "e5"
+        "e46"
       ],
       "status": "matched",
       "evidence": [
@@ -507,28 +507,28 @@
               "AI & education"
             ]
           },
-          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e5",
-          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e46",
+          "interest_match": "Interest match: AI & education — Researchers from the Schools of Education, Engineering and Business present three contrasting visions for AI in higher education in 2030. Panel Q&A follows.",
           "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
-          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
-          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Innovation Hub, Room 2 · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Thursday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Tuesday, Thursday; start at/after 12:00; finish at/before 17:00.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-046. Demo eligibility only; no real registration."
         }
       ],
       "food": {
         "e1": "Coffee & snacks",
-        "e5": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 2,
+        "numerator": 1,
         "denominator": 2
       },
       "recall": {
-        "numerator": 2,
+        "numerator": 1,
         "denominator": 2
       },
       "conflict_violations": {
@@ -675,24 +675,24 @@
     "output": {
       "ids": [
         "e22",
-        "e6",
+        "e43",
         "e2"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
         "e22": "Free meal",
-        "e6": "Free meal",
+        "e43": "Free meal",
         "e2": "Free meal"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 3,
+        "numerator": 2,
         "denominator": 3
       },
       "recall": {
-        "numerator": 3,
+        "numerator": 2,
         "denominator": 3
       },
       "conflict_violations": {
@@ -757,7 +757,7 @@
     "output": {
       "ids": [
         "e22",
-        "e6",
+        "e43",
         "e2"
       ],
       "status": "matched",
@@ -766,7 +766,6 @@
           "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
-            "free": true,
             "topics": [
               "Social"
             ]
@@ -777,32 +776,30 @@
           "learning_connection": "No confirmed learning-topic connection used.",
           "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Monday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "schedule_fit": "Monday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
         },
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
-            "free": true,
             "topics": [
               "Social"
             ]
           },
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e6",
-          "interest_match": "Interest match: Social — Share a meal and stories about finding your way on a new campus.",
+          "event_id": "e43",
+          "interest_match": "Interest match: Social — Light dinner and introductions for incoming Business School students. Meet your cohort and connect with second-year mentors.",
           "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: open. No belonging or ability is inferred.",
-          "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
-          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-006. Demo eligibility only; no real registration."
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Business School Commons · RSVP required · Open to demo students · Free meal",
+          "schedule_fit": "Tuesday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-043. Demo eligibility only; no real registration."
         },
         {
           "comparison": "Compared with Community dinner & story exchange: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "food": "Free meal",
-            "free": true,
             "topics": [
               "Social"
             ]
@@ -813,23 +810,23 @@
           "learning_connection": "No confirmed learning-topic connection used.",
           "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Campus Commons · Drop-in welcome · Open to demo students · Free meal",
-          "schedule_fit": "Thursday, 17:00–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal; free admission.",
+          "schedule_fit": "Thursday, 17:00–18:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: food: Free meal.",
           "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-002. Demo eligibility only; no real registration."
         }
       ],
       "food": {
         "e22": "Free meal",
-        "e6": "Free meal",
+        "e43": "Free meal",
         "e2": "Free meal"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 3,
+        "numerator": 2,
         "denominator": 3
       },
       "recall": {
-        "numerator": 3,
+        "numerator": 2,
         "denominator": 3
       },
       "conflict_violations": {
@@ -890,18 +887,20 @@
     "adapter": "A Keyword/category",
     "output": {
       "ids": [
-        "e15"
+        "e15",
+        "e42"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
-        "e15": "Coffee & snacks"
+        "e15": "Coffee & snacks",
+        "e42": "Coffee & snacks"
       }
     },
     "metrics": {
       "precision": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "recall": {
         "numerator": 0,
@@ -909,23 +908,23 @@
       },
       "conflict_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "eligibility_violations": {
         "numerator": 1,
-        "denominator": 1
+        "denominator": 2
       },
       "constraint_satisfaction": {
         "numerator": 1,
-        "denominator": 1
+        "denominator": 2
       },
       "source_faithfulness": {
         "numerator": 0,
         "denominator": 0
       },
       "food_accuracy": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "diversity": {
         "numerator": 0,
@@ -937,7 +936,7 @@
       },
       "explanation_quality": {
         "numerator": 0,
-        "denominator": 5
+        "denominator": 10
       },
       "request_handling": {
         "numerator": 0,
@@ -1363,19 +1362,21 @@
     "output": {
       "ids": [
         "e12",
-        "e16"
+        "e16",
+        "e37"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
         "e12": "None",
-        "e16": "Free meal"
+        "e16": "Free meal",
+        "e37": "Popcorn"
       }
     },
     "metrics": {
       "precision": {
         "numerator": 0,
-        "denominator": 2
+        "denominator": 3
       },
       "recall": {
         "numerator": 0,
@@ -1383,14 +1384,93 @@
       },
       "conflict_violations": {
         "numerator": 0,
-        "denominator": 2
+        "denominator": 3
       },
       "eligibility_violations": {
         "numerator": 1,
-        "denominator": 2
+        "denominator": 3
       },
       "constraint_satisfaction": {
         "numerator": 1,
+        "denominator": 3
+      },
+      "source_faithfulness": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "food_accuracy": {
+        "numerator": 3,
+        "denominator": 3
+      },
+      "diversity": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "replanning_validity": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "explanation_quality": {
+        "numerator": 0,
+        "denominator": 15
+      },
+      "request_handling": {
+        "numerator": 0,
+        "denominator": 0
+      }
+    }
+  },
+  {
+    "scenario": {
+      "id": "D06",
+      "split": "development",
+      "description": "Membership cannot be assumed",
+      "message": "data events on Friday",
+      "relevant_ids": [
+        "e12",
+        "e26"
+      ],
+      "constraints": {
+        "topics": [
+          "AI & education"
+        ],
+        "days": [
+          4
+        ]
+      }
+    },
+    "adapter": "B Rules",
+    "output": {
+      "ids": [
+        "e48",
+        "e26"
+      ],
+      "status": "matched",
+      "evidence": [],
+      "food": {
+        "e48": "None",
+        "e26": "None"
+      }
+    },
+    "metrics": {
+      "precision": {
+        "numerator": 1,
+        "denominator": 2
+      },
+      "recall": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "conflict_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "eligibility_violations": {
+        "numerator": 0,
+        "denominator": 2
+      },
+      "constraint_satisfaction": {
+        "numerator": 2,
         "denominator": 2
       },
       "source_faithfulness": {
@@ -1402,7 +1482,7 @@
         "denominator": 2
       },
       "diversity": {
-        "numerator": 0,
+        "numerator": 1,
         "denominator": 1
       },
       "replanning_validity": {
@@ -1438,92 +1518,35 @@
         ]
       }
     },
-    "adapter": "B Rules",
-    "output": {
-      "ids": [
-        "e26"
-      ],
-      "status": "matched",
-      "evidence": [],
-      "food": {
-        "e26": "None"
-      }
-    },
-    "metrics": {
-      "precision": {
-        "numerator": 1,
-        "denominator": 1
-      },
-      "recall": {
-        "numerator": 1,
-        "denominator": 1
-      },
-      "conflict_violations": {
-        "numerator": 0,
-        "denominator": 1
-      },
-      "eligibility_violations": {
-        "numerator": 0,
-        "denominator": 1
-      },
-      "constraint_satisfaction": {
-        "numerator": 1,
-        "denominator": 1
-      },
-      "source_faithfulness": {
-        "numerator": 0,
-        "denominator": 0
-      },
-      "food_accuracy": {
-        "numerator": 1,
-        "denominator": 1
-      },
-      "diversity": {
-        "numerator": 1,
-        "denominator": 1
-      },
-      "replanning_validity": {
-        "numerator": 0,
-        "denominator": 0
-      },
-      "explanation_quality": {
-        "numerator": 0,
-        "denominator": 5
-      },
-      "request_handling": {
-        "numerator": 0,
-        "denominator": 0
-      }
-    }
-  },
-  {
-    "scenario": {
-      "id": "D06",
-      "split": "development",
-      "description": "Membership cannot be assumed",
-      "message": "data events on Friday",
-      "relevant_ids": [
-        "e12",
-        "e26"
-      ],
-      "constraints": {
-        "topics": [
-          "AI & education"
-        ],
-        "days": [
-          4
-        ]
-      }
-    },
     "adapter": "C Context/Rust",
     "output": {
       "ids": [
+        "e48",
         "e26"
       ],
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with AI ethics debate: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "constraints_satisfied": {
+            "days": [
+              4
+            ],
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e48",
+          "interest_match": "Interest match: AI & education — A practical session on using AI-assisted search and synthesis tools responsibly for academic research. Hosted by the library in partnership with the School of Education.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Library Research Suite · RSVP required · Open to demo students · None",
+          "schedule_fit": "Friday, 12:00–13:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday.",
+          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-048. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Research skills bootcamp: AI tools: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               4
@@ -1543,13 +1566,14 @@
         }
       ],
       "food": {
+        "e48": "None",
         "e26": "None"
       }
     },
     "metrics": {
       "precision": {
         "numerator": 1,
-        "denominator": 1
+        "denominator": 2
       },
       "recall": {
         "numerator": 1,
@@ -1557,23 +1581,23 @@
       },
       "conflict_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "eligibility_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "constraint_satisfaction": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "source_faithfulness": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "food_accuracy": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "diversity": {
         "numerator": 1,
@@ -1584,8 +1608,8 @@
         "denominator": 0
       },
       "explanation_quality": {
-        "numerator": 5,
-        "denominator": 5
+        "numerator": 10,
+        "denominator": 10
       },
       "request_handling": {
         "numerator": 0,
@@ -1700,16 +1724,16 @@
     "adapter": "B Rules",
     "output": {
       "ids": [
+        "e31",
         "e1",
-        "e5",
-        "e26"
+        "e46"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
+        "e31": "Coffee & snacks",
         "e1": "Coffee & snacks",
-        "e5": "None",
-        "e26": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
@@ -1783,12 +1807,28 @@
     "adapter": "C Context/Rust",
     "output": {
       "ids": [
+        "e31",
         "e1",
-        "e5",
-        "e26"
+        "e46"
       ],
       "status": "matched",
       "evidence": [
+        {
+          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "constraints_satisfied": {
+            "topics": [
+              "AI & education"
+            ]
+          },
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e31",
+          "interest_match": "Interest match: AI & education — An open conversation about fairness, transparency, and the limits of AI in education. All perspectives welcome.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Innovation Hub, Room 3 · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Monday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-031. Demo eligibility only; no real registration."
+        },
         {
           "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
@@ -1812,36 +1852,20 @@
               "AI & education"
             ]
           },
-          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e5",
-          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
-          "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
-          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
-          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
-        },
-        {
-          "comparison": "Compared with Learning with AI: a hands-on lab: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
-          "constraints_satisfied": {
-            "topics": [
-              "AI & education"
-            ]
-          },
           "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e26",
-          "interest_match": "Interest match: AI & education — Explore trade-offs in using AI for student support.",
+          "event_id": "e46",
+          "interest_match": "Interest match: AI & education — Researchers from the Schools of Education, Engineering and Business present three contrasting visions for AI in higher education in 2030. Panel Q&A follows.",
           "learning_connection": "No confirmed learning-topic connection used.",
           "participation_fit": "Participation format: Unknown; confirm before deciding.",
-          "practical": "$0 admission · Seminar Room 2 · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Friday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
-          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-026. Demo eligibility only; no real registration."
+          "practical": "$0 admission · Innovation Hub, Room 2 · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Thursday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. No additional chat time/cost/food filters.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-046. Demo eligibility only; no real registration."
         }
       ],
       "food": {
+        "e31": "Coffee & snacks",
         "e1": "Coffee & snacks",
-        "e5": "None",
-        "e26": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
@@ -2073,7 +2097,7 @@
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with Career storytelling workshop: $0 vs $0; 60 vs 90 minutes; RSVP required vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               1
@@ -2248,18 +2272,20 @@
     "adapter": "B Rules",
     "output": {
       "ids": [
-        "e16"
+        "e16",
+        "e38"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
-        "e16": "Free meal"
+        "e16": "Free meal",
+        "e38": "Free meal"
       }
     },
     "metrics": {
       "precision": {
         "numerator": 1,
-        "denominator": 1
+        "denominator": 2
       },
       "recall": {
         "numerator": 1,
@@ -2267,23 +2293,23 @@
       },
       "conflict_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "eligibility_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "constraint_satisfaction": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "source_faithfulness": {
         "numerator": 0,
         "denominator": 0
       },
       "food_accuracy": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "diversity": {
         "numerator": 1,
@@ -2295,7 +2321,7 @@
       },
       "explanation_quality": {
         "numerator": 0,
-        "denominator": 5
+        "denominator": 10
       },
       "request_handling": {
         "numerator": 0,
@@ -2326,18 +2352,18 @@
     "adapter": "C Context/Rust",
     "output": {
       "ids": [
-        "e16"
+        "e16",
+        "e38"
       ],
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with First-generation student meet-up: $0 vs $0; 60 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               4
             ],
             "food": "Free meal",
-            "free": true,
             "topics": [
               "Social"
             ]
@@ -2348,18 +2374,39 @@
           "learning_connection": "No confirmed learning-topic connection used.",
           "participation_fit": "Participation format: Unknown; confirm before deciding.",
           "practical": "$0 admission · Campus Commons · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Friday, 12:00–13:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal; free admission.",
+          "schedule_fit": "Friday, 12:00–13:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal.",
           "trade_offs": "60 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-016. Demo eligibility only; no real registration."
+        },
+        {
+          "comparison": "Compared with Friday community lunch: $0 vs $0; 90 vs 60 minutes; Drop-in welcome vs RSVP required. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "constraints_satisfied": {
+            "days": [
+              4
+            ],
+            "food": "Free meal",
+            "topics": [
+              "Social"
+            ]
+          },
+          "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e38",
+          "interest_match": "Interest match: Social — A community space for first-gen students to connect, share resources, and build support networks.",
+          "learning_connection": "No confirmed learning-topic connection used.",
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Student Centre Lounge · Drop-in welcome · Open to demo students · Free meal",
+          "schedule_fit": "Friday, 16:00–17:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Friday; food: Free meal.",
+          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-038. Demo eligibility only; no real registration."
         }
       ],
       "food": {
-        "e16": "Free meal"
+        "e16": "Free meal",
+        "e38": "Free meal"
       }
     },
     "metrics": {
       "precision": {
         "numerator": 1,
-        "denominator": 1
+        "denominator": 2
       },
       "recall": {
         "numerator": 1,
@@ -2367,23 +2414,23 @@
       },
       "conflict_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "eligibility_violations": {
         "numerator": 0,
-        "denominator": 1
+        "denominator": 2
       },
       "constraint_satisfaction": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "source_faithfulness": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "food_accuracy": {
-        "numerator": 1,
-        "denominator": 1
+        "numerator": 2,
+        "denominator": 2
       },
       "diversity": {
         "numerator": 1,
@@ -2394,8 +2441,8 @@
         "denominator": 0
       },
       "explanation_quality": {
-        "numerator": 5,
-        "denominator": 5
+        "numerator": 10,
+        "denominator": 10
       },
       "request_handling": {
         "numerator": 0,
@@ -3172,14 +3219,14 @@
     "adapter": "B Rules",
     "output": {
       "ids": [
-        "e22",
+        "e42",
         "e23",
         "e19"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
-        "e22": "Free meal",
+        "e42": "Coffee & snacks",
         "e23": "Coffee & snacks",
         "e19": "None"
       }
@@ -3252,14 +3299,14 @@
     "adapter": "C Context/Rust",
     "output": {
       "ids": [
-        "e22",
+        "e42",
         "e23",
         "e19"
       ],
       "status": "matched",
       "evidence": [
         {
-          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 90 vs 90 minutes; RSVP required vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with Conversations beyond your major: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "free": true,
             "topics": [
@@ -3268,13 +3315,13 @@
             ]
           },
           "discovery_context": "Social / Social opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e22",
-          "interest_match": "Interest match: Social — A relaxed evening of games and a picnic meal.",
+          "event_id": "e42",
+          "interest_match": "Interest match: Social — New and returning School of Education students meet over coffee. An informal way to find study partners and hear about upcoming events.",
           "learning_connection": "No confirmed learning-topic connection used.",
           "participation_fit": "Participation format: Unknown; confirm before deciding.",
-          "practical": "$0 admission · South Lawn · RSVP required · Open to demo students · Free meal",
-          "schedule_fit": "Monday, 18:00–19:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
-          "trade_offs": "90 minutes; no admission cost. Food: Free meal. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-022. Demo eligibility only; no real registration."
+          "practical": "$0 admission · Education Building Atrium · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Monday, 17:00–18:00 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: free admission.",
+          "trade_offs": "60 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-042. Demo eligibility only; no real registration."
         },
         {
           "comparison": "Compared with Autumn sketchbook walk: $0 vs $0; 60 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
@@ -3314,7 +3361,7 @@
         }
       ],
       "food": {
-        "e22": "Free meal",
+        "e42": "Coffee & snacks",
         "e23": "Coffee & snacks",
         "e19": "None"
       }
@@ -4211,21 +4258,21 @@
     "adapter": "B Rules",
     "output": {
       "ids": [
-        "e5"
+        "e46"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
-        "e5": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "recall": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "conflict_violations": {
@@ -4249,7 +4296,7 @@
         "denominator": 1
       },
       "diversity": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "replanning_validity": {
@@ -4305,12 +4352,12 @@
     "adapter": "C Context/Rust",
     "output": {
       "ids": [
-        "e5"
+        "e46"
       ],
       "status": "matched",
       "evidence": [
         {
-          "comparison": "No other eligible option in this topic meets the same time/food/cost filters. Other topics may offer broader exploration. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
+          "comparison": "Compared with AI in the classroom: open studio: $0 vs $0; 90 vs 90 minutes; Drop-in welcome vs Drop-in welcome. These are feasible record-level trade-offs, not a claim of a universally better choice. Topic diversity and preferred times also affect ranking. Major and free-text goals are not interpreted. Only enabled structured goal and confirmed learning topics affect ranking.",
           "constraints_satisfied": {
             "days": [
               3
@@ -4320,27 +4367,27 @@
               "AI & education"
             ]
           },
-          "discovery_context": "Workshops / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
-          "event_id": "e5",
-          "interest_match": "Interest match: AI & education — Explore teaching prototypes and exchange constructive feedback.",
+          "discovery_context": "Academic / AI & education opportunity. Open fictional access does not restrict participation by major; department membership and real eligibility are not inferred.",
+          "event_id": "e46",
+          "interest_match": "Interest match: AI & education — Researchers from the Schools of Education, Engineering and Business present three contrasting visions for AI in higher education in 2030. Panel Q&A follows.",
           "learning_connection": "No confirmed learning-topic connection used.",
-          "participation_fit": "Fictional participation format: independent. No belonging or ability is inferred.",
-          "practical": "$0 admission · Learning Studio · Drop-in welcome · Open to demo students · None",
-          "schedule_fit": "Thursday, 15:00–16:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday.",
-          "trade_offs": "90 minutes; no admission cost. Food: None. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-005. Demo eligibility only; no real registration."
+          "participation_fit": "Participation format: Unknown; confirm before deciding.",
+          "practical": "$0 admission · Innovation Hub, Room 2 · Drop-in welcome · Open to demo students · Coffee & snacks",
+          "schedule_fit": "Thursday, 14:00–15:30 America/New_York; No conflict with the commitments you entered, including a 15-minute buffer. Preferred time not matched or unspecified. Satisfied explicit filters: days: Thursday.",
+          "trade_offs": "90 minutes; no admission cost. Food: Coffee & snacks. Capacity is not confirmed unless marked full. Fictional record; not externally verified. Source: Original fictional record CC-046. Demo eligibility only; no real registration."
         }
       ],
       "food": {
-        "e5": "None"
+        "e46": "Coffee & snacks"
       }
     },
     "metrics": {
       "precision": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "recall": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "conflict_violations": {
@@ -4364,7 +4411,7 @@
         "denominator": 1
       },
       "diversity": {
-        "numerator": 1,
+        "numerator": 0,
         "denominator": 1
       },
       "replanning_validity": {
@@ -4599,19 +4646,19 @@
     "output": {
       "ids": [
         "e28",
-        "e1",
-        "e3",
-        "e4",
-        "e5"
+        "e35",
+        "e41",
+        "e47",
+        "e1"
       ],
       "status": "matched",
       "evidence": [],
       "food": {
         "e28": "None",
-        "e1": "Coffee & snacks",
-        "e3": "None",
-        "e4": "Coffee & snacks",
-        "e5": "None"
+        "e35": "None",
+        "e41": "Light refreshments",
+        "e47": "Coffee & snacks",
+        "e1": "Coffee & snacks"
       }
     },
     "metrics": {
@@ -4624,7 +4671,7 @@
         "denominator": 5
       },
       "conflict_violations": {
-        "numerator": 2,
+        "numerator": 1,
         "denominator": 5
       },
       "eligibility_violations": {
@@ -4632,7 +4679,7 @@
         "denominator": 5
       },
       "constraint_satisfaction": {
-        "numerator": 4,
+        "numerator": 5,
         "denominator": 5
       },
       "source_faithfulness": {
@@ -4644,7 +4691,7 @@
         "denominator": 5
       },
       "diversity": {
-        "numerator": 2,
+        "numerator": 3,
         "denominator": 3
       },
       "replanning_validity": {

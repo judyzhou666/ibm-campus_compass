@@ -476,54 +476,188 @@ fn events_comparison(
     }
 }
 
+const DAY_NAMES: [&str; 5] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+fn alt_count(state: &Schedule, c: &Constraints, events: &[Event]) -> usize {
+    let mut c4 = c.clone();
+    c4.limit = Some(4);
+    recommend(state, &c4, events).len()
+}
+
 pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> String {
-    let within: Vec<_> = events
-        .iter()
-        .filter(|e| matches_constraints(e, c) && preference_issue(e, state).is_none())
-        .collect();
-    if within.is_empty() {
-        return "No synthetic catalog records satisfy these topic/day/time/cost/food filters and saved recommendation preferences. State which filter you want to change; none will be relaxed automatically.".into();
-    }
-    let mut conflicts = 0;
-    let mut restrictions = 0;
-    let mut cancelled = 0;
-    let mut missing = 0;
-    let mut already = 0;
-    let mut dismissed = 0;
-    let mut explored = 0;
-    let mut view = 0;
     let active = active_topics(state);
-    for e in within {
-        if state.plan.contains(&e.id) {
-            already += 1;
-            continue;
+    let eligible: Vec<_> = events
+        .iter()
+        .filter(|e| {
+            matches_constraints(e, c)
+                && preference_issue(e, state).is_none()
+                && !state.plan.contains(&e.id)
+                && issue(e, state, events).is_none()
+        })
+        .collect();
+    let view = eligible
+        .iter()
+        .filter(|e| {
+            matches!(
+                discovery_exclusion(e, state, c, &active),
+                Some(DiscoveryExclusion::View)
+            )
+        })
+        .count();
+    let dismissed = eligible
+        .iter()
+        .filter(|e| {
+            matches!(
+                discovery_exclusion(e, state, c, &active),
+                Some(DiscoveryExclusion::Dismissed)
+            )
+        })
+        .count();
+    let explored = eligible
+        .iter()
+        .filter(|e| {
+            matches!(
+                discovery_exclusion(e, state, c, &active),
+                Some(DiscoveryExclusion::Exploration)
+            )
+        })
+        .count();
+    if view + dismissed + explored > 0 {
+        let mut reasons = Vec::new();
+        if view > 0 {
+            reasons.push(format!("{view} events were hidden by the current category/search filters. Change the category or search query to include them."));
         }
-        match issue(e, state, events).as_deref() {
-            Some(s) if s.starts_with("Conflicts") => conflicts += 1,
-            Some("Cancelled in demo") => cancelled += 1,
-            Some(s) if s.contains("RSVP") || s.contains("metadata") => missing += 1,
-            Some(_) => restrictions += 1,
-            None => match discovery_exclusion(e, state, c, &active) {
-                Some(DiscoveryExclusion::View) => view += 1,
-                Some(DiscoveryExclusion::Exploration) => explored += 1,
-                Some(DiscoveryExclusion::Dismissed) => dismissed += 1,
-                None => {}
-            },
+        if dismissed > 0 {
+            reasons.push(format!("{dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips."));
+        }
+        if explored > 0 {
+            reasons.push(format!("{explored} events were excluded because beyond-interest exploration excludes your active saved topics. Use a normal search or start over to include those topics."));
+        }
+        return reasons.join(" ");
+    }
+    let topic_prefix = match c.topics.as_deref() {
+        Some(ts) if !ts.is_empty() => format!("{} ", ts.join(" or ")),
+        _ => String::new(),
+    };
+    let n1 = |n: usize| {
+        if n == 1 {
+            "is 1 option".to_owned()
+        } else {
+            format!("are {n} options")
+        }
+    };
+    let day_str_fn = |c: &Constraints| match c.days.as_deref() {
+        Some([d]) if (*d as usize) < DAY_NAMES.len() => {
+            format!(" on {}", DAY_NAMES[*d as usize])
+        }
+        _ => String::new(),
+    };
+    let time_str_fn = |c: &Constraints| match (c.after, c.before) {
+        (Some(t), _) if t >= 1020 => " in the evening".to_owned(),
+        (Some(t), _) if t >= 720 => " in the afternoon".to_owned(),
+        (_, Some(t)) if t <= 720 => " in the morning".to_owned(),
+        _ => String::new(),
+    };
+    // When events match every filter but none can be recommended, they are blocked by the
+    // student's plan or are unavailable. Say so instead of claiming no events match.
+    let blocked_lead = events.iter().any(|e| matches_constraints(e, c)).then(|| {
+        format!(
+            "The matching {topic_prefix}events{}{} are already in your plan, conflict with it, or aren't open.",
+            day_str_fn(c),
+            time_str_fn(c)
+        )
+    });
+    let say = |lead: String, tail: String| match &blocked_lead {
+        Some(blocked) => format!("{blocked} {tail}"),
+        None => format!("{lead} {tail}"),
+    };
+
+    // 1. Drop food filter
+    if c.food.is_some() {
+        let mut no_food = c.clone();
+        no_food.food = None;
+        let alt = alt_count(state, &no_food, events);
+        if alt > 0 {
+            let food_label = match c.food.as_deref() {
+                Some("Free meal") => "free food".to_owned(),
+                Some(f) => f.to_lowercase(),
+                None => "food".to_owned(),
+            };
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} have {food_label}."),
+                format!("Here {} without the {food_label} filter.", n1(alt)),
+            );
         }
     }
-    let mut explanation = format!(
-        "Within your filters: {conflicts} scheduling conflicts, {restrictions} full/restricted/unknown-eligibility records, {cancelled} cancellations, {missing} incomplete/invalid records, and {already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change."
-    );
-    if view > 0 {
-        explanation.push_str(&format!(" {view} events were hidden by the current category/search filters. Change the category or search query to include them."));
+    // 2. Drop free-admission filter
+    if c.free.is_some_and(|f| f) {
+        let mut no_free = c.clone();
+        no_free.free = None;
+        let alt = alt_count(state, &no_free, events);
+        if alt > 0 {
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} are free admission."),
+                format!("Here {} including paid ones.", n1(alt)),
+            );
+        }
     }
-    if dismissed > 0 {
-        explanation.push_str(&format!(" {dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips."));
+    // 3. Drop day filter
+    if c.days.as_ref().is_some_and(|d| !d.is_empty()) {
+        let mut no_day = c.clone();
+        no_day.days = None;
+        let alt = alt_count(state, &no_day, events);
+        if alt > 0 {
+            let day_names: Vec<&str> = c
+                .days
+                .as_deref()
+                .unwrap_or(&[])
+                .iter()
+                .filter_map(|&d| DAY_NAMES.get(d as usize).copied())
+                .collect();
+            let day_str = if day_names.is_empty() {
+                "that day".to_owned()
+            } else {
+                day_names.join("/")
+            };
+            return say(
+                format!("No {topic_prefix}events on {day_str} match."),
+                format!("Here {} on other days.", n1(alt)),
+            );
+        }
     }
-    if explored > 0 {
-        explanation.push_str(&format!(" {explored} events were excluded because beyond-interest exploration excludes your active saved topics. Use a normal search or start over to include those topics."));
+    // 4. Drop time filter
+    if c.after.is_some() || c.before.is_some() {
+        let mut no_time = c.clone();
+        no_time.after = None;
+        no_time.before = None;
+        let alt = alt_count(state, &no_time, events);
+        if alt > 0 {
+            return say(
+                format!("No {topic_prefix}events match that time window."),
+                format!("Here {} at other times.", n1(alt)),
+            );
+        }
     }
-    explanation
+    // 5. Drop topic filter
+    if c.topics.as_ref().is_some_and(|t| !t.is_empty()) {
+        let mut no_topic = c.clone();
+        no_topic.topics = None;
+        let alt = alt_count(state, &no_topic, events);
+        if alt > 0 {
+            return say(
+                format!("No {topic_prefix}events fit the other filters."),
+                format!("Here {} from other areas.", n1(alt)),
+            );
+        }
+    }
+    say(
+        "Nothing matched in this demo week.".into(),
+        "Try a different day, topic, or time, or say \"start over\" to clear all filters.".into(),
+    )
 }
 
 #[cfg(test)]
@@ -839,7 +973,8 @@ mod ranking_optimization_tests {
         ))
         .unwrap();
         let events: Vec<Event> =
-            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+            serde_json::from_str(include_str!("../../tests/fixtures/pre-merge-events.json"))
+                .unwrap();
         for case in cases {
             let state: Schedule = serde_json::from_value(case["state"].clone()).unwrap();
             let constraints: Constraints =

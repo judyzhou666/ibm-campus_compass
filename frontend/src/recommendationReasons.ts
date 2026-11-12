@@ -92,9 +92,27 @@ export function readCatalogEvidence(
       "discovery_context",
       "learning_connection",
       "participation_fit",
+      "ai_reason",
     ] as const)
       if (typeof item[key] === "string" && item[key].length <= 5000)
         clean[key] = item[key];
+    if (
+      Array.isArray(item.cited_fields) &&
+      item.cited_fields.length <= 6 &&
+      item.cited_fields.every(
+        (field: unknown) =>
+          typeof field === "string" &&
+          [
+            "title",
+            "description",
+            "host_school",
+            "goal_type",
+            "food",
+            "access_conditions",
+          ].includes(field),
+      )
+    )
+      clean.cited_fields = [...item.cited_fields];
     if (item.constraints_satisfied !== undefined) {
       try {
         validateConstraints(item.constraints_satisfied);

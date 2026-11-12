@@ -8,7 +8,9 @@ import { defaultPreferences, migratePreferences } from "./preferences.ts";
 import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
+import { DEFAULT_READ_IDS } from "./notifications.ts";
 import type { DemoState } from "./types.ts";
+import { GOAL_TYPES } from "./types.ts";
 
 export function createStore<T>(initial: T) {
   let value = initial;
@@ -33,9 +35,13 @@ export type DemoStore = ReturnType<typeof createStore<DemoState>>;
 export const STORAGE_KEY = storageKey();
 export const fresh = (): DemoState => ({
   preferences: defaultPreferences(),
+  profileRankingConsent: false,
+  preferencesConfigured: false,
+  signedIn: false,
   onboarded: false,
   major: "",
   goals: "",
+  goal_types: [],
   timezone: "",
   preferred_time: "any",
   plan: [],
@@ -49,11 +55,15 @@ export const fresh = (): DemoState => ({
   joinedCommunities: [],
   posts: [],
   comments: [],
+  likes: [],
   postDraft: null,
   draft: [],
   constraints: {},
   messages: [],
   name: "Judy",
+  appliedUpdateIds: [],
+  lastUpdateCheck: null,
+  readNotificationIds: [...DEFAULT_READ_IDS],
 });
 
 export function restore(): DemoState {
@@ -70,8 +80,22 @@ export function restore(): DemoState {
       studentProfile: readStudentProfile(value.studentProfile),
       preferences: migratePreferences(value.preferences),
       onboarded: value.onboarded === true,
+      signedIn: value.signedIn === true,
       major: typeof value.major === "string" ? value.major.slice(0, 120) : "",
       goals: typeof value.goals === "string" ? value.goals.slice(0, 240) : "",
+      profileRankingConsent: value.profileRankingConsent === true,
+      preferencesConfigured:
+        value.preferencesConfigured === true ||
+        (value.preferencesConfigured === undefined &&
+          value.onboarded === true &&
+          !!value.preferences),
+      goal_types: Array.isArray(value.goal_types)
+        ? value.goal_types.filter(
+            (t: unknown) =>
+              typeof t === "string" &&
+              (GOAL_TYPES as readonly string[]).includes(t),
+          )
+        : [],
       timezone: isTimeZone(value.timezone) ? value.timezone : "",
       preferred_time: ["any", "morning", "afternoon", "evening"].includes(
         value.preferred_time,
@@ -129,6 +153,18 @@ export function restore(): DemoState {
               )
                 ? { recommendationMode: m.recommendationMode }
                 : {}),
+              ...(Array.isArray(m.overlapIds)
+                ? { overlapIds: ids(m.overlapIds) }
+                : {}),
+              ...(Array.isArray(m.altIds) ? { altIds: ids(m.altIds) } : {}),
+              ...(Array.isArray(m.examples)
+                ? {
+                    examples: m.examples
+                      .filter((x) => typeof x === "string")
+                      .slice(0, 5)
+                      .map((x) => x.slice(0, 2000)),
+                  }
+                : {}),
               ...(Array.isArray(m.eventIds)
                 ? { eventIds: ids(m.eventIds) }
                 : {}),
@@ -157,20 +193,22 @@ export function restore(): DemoState {
                 ),
             )
             .slice(0, 100)
-            .map((p: DemoState["posts"][number], i: number, all: unknown[]) => ({
-              name: p.name,
-              title: p.title,
-              body: p.body,
-              tag: p.tag,
-              // Posts saved before ids existed get a stable id from their age.
-              id:
-                typeof p.id === "string" && p.id.length <= 40
-                  ? p.id
-                  : `legacy-${all.length - i}`,
-              ...(COMMUNITIES.some((c) => c.id === p.communityId)
-                ? { communityId: p.communityId }
-                : {}),
-            }))
+            .map(
+              (p: DemoState["posts"][number], i: number, all: unknown[]) => ({
+                name: p.name,
+                title: p.title,
+                body: p.body,
+                tag: p.tag,
+                // Posts saved before ids existed get a stable id from their age.
+                id:
+                  typeof p.id === "string" && p.id.length <= 40
+                    ? p.id
+                    : `legacy-${all.length - i}`,
+                ...(COMMUNITIES.some((c) => c.id === p.communityId)
+                  ? { communityId: p.communityId }
+                  : {}),
+              }),
+            )
         : [],
       comments: Array.isArray(value.comments)
         ? value.comments
@@ -207,11 +245,31 @@ export function restore(): DemoState {
             COMMUNITIES.some((c) => c.id === id),
           )
         : [],
+      likes: Array.isArray(value.likes)
+        ? value.likes
+            .filter(
+              (k: unknown) =>
+                typeof k === "string" && /^(post|comment):/.test(k),
+            )
+            .slice(0, 500)
+        : [],
       joined: Array.isArray(value.joined)
         ? value.joined.filter((s: unknown) => typeof s === "string")
         : [],
       // Chat filters restart after reload; saved plans and availability are retained.
       constraints: {},
+      appliedUpdateIds: Array.isArray(value.appliedUpdateIds)
+        ? value.appliedUpdateIds.filter((id: unknown) => typeof id === "string")
+        : [],
+      lastUpdateCheck:
+        typeof value.lastUpdateCheck === "string"
+          ? value.lastUpdateCheck
+          : null,
+      readNotificationIds: Array.isArray(value.readNotificationIds)
+        ? value.readNotificationIds
+            .filter((id: unknown) => typeof id === "string" && id.length <= 40)
+            .slice(0, 500)
+        : base.readNotificationIds,
     };
   } catch {
     return fresh();

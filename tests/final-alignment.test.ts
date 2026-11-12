@@ -69,19 +69,29 @@ test("ambiguity needs clarification, while unsupported and understood-empty stay
 test("data review reports honest missing sources and invalid metadata without mutating catalog", () => {
   const e = EVENTS[0],
     before = JSON.stringify(e);
-  assert.ok(qualityIssues(e).includes("Missing original URL"));
-  assert.ok(qualityIssues(e).includes("Unverified or stale"));
+  // All events now have source_url, last_checked_at, host_school and goal_type populated.
+  assert.ok(!qualityIssues(e).includes("Missing original URL"));
+  assert.ok(!qualityIssues(e).includes("Unverified or stale"));
+  assert.ok(!qualityIssues(e).includes("Missing host school"));
+  assert.ok(!qualityIssues(e).includes("Missing goal type"));
   assert.equal(JSON.stringify(e), before);
+  // Synthesised invalid record covering each check
   const invalid = {
     ...e,
     source: "",
+    source_url: null as null | string,
+    last_checked_at: null as null | string,
+    host_school: "",
+    goal_type: [] as string[],
     rsvp: "Unknown",
     access: "unknown",
     food: "Unknown",
     start: 990,
     end: 900,
   };
-  assert.equal(qualityIssues(invalid).length, 7);
+  // Missing source, Missing original URL, Unverified or stale, Unknown eligibility,
+  // Unclear RSVP, Unknown food, Missing host school, Missing goal type, Invalid metadata = 9
+  assert.equal(qualityIssues(invalid).length, 9);
   assert.match(issue(invalid, fresh())!, /metadata/);
   assert.match(
     issue({ ...e, rsvp: "Unknown" }, fresh())!,

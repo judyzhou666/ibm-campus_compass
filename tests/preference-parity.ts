@@ -171,6 +171,23 @@ try {
     "Find events",
     true,
   );
+  await compare(
+    "applied full update",
+    { ...fresh(), appliedUpdateIds: ["u2"] },
+    {},
+    "Social events on Tuesday",
+  );
+  await compare(
+    "applied moved time",
+    { ...fresh(), appliedUpdateIds: ["u3"] },
+    {},
+    "AI events on Tuesday after 2 PM",
+  );
+  await compare(
+    "update-aware no match",
+    { ...fresh(), appliedUpdateIds: ["u2"] },
+    { topics: ["Social"], days: [1], after: 1080, before: 1170 },
+  );
   for (const fixture of fixtures) {
     const state = {
       ...fresh(),

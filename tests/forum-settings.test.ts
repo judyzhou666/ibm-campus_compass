@@ -91,3 +91,12 @@ test("legacy posts get stable ids; comments and drafts survive reload", () => {
     communityId: "",
   });
 });
+
+test("restore keeps saved forum likes and drops invalid entries", () => {
+  assert.deepEqual(
+    withStored({ likes: ["post:p1", "comment:p1:0", 42, "other:x", null] }, restore).likes,
+    ["post:p1", "comment:p1:0"],
+  );
+  assert.deepEqual(withStored({ likes: "post:p1" }, restore).likes, []);
+  assert.deepEqual(withStored({}, restore).likes, []);
+});

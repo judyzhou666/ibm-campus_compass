@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import legacyCatalog from "./fixtures/pre-merge-events.json";
+import type { CampusEvent } from "../frontend/src/types.ts";
 import expected from "./fixtures/planner-before-optimization.json";
 import { optimizationCases } from "./planner-optimization-cases.ts";
 import {
@@ -22,28 +24,37 @@ const hash = (value: unknown) =>
 for (const [index, scenario] of optimizationCases.entries()) {
   test(`pre-optimization equivalence: ${scenario.name}`, () => {
     const { name, state, constraints, limit } = scenario;
-    const ranked = recommendWithReasons(state, constraints);
+    const originalEvents = legacyCatalog as CampusEvent[];
+    const ranked = recommendWithReasons(state, constraints, originalEvents);
     assert.deepEqual(
       {
         name,
-        ids: recommend(state, constraints, limit).map((e) => e.id),
+        ids: recommend(state, constraints, limit, true, originalEvents).map(
+          (e) => e.id,
+        ),
         reasonIds: ranked.map((r) => r.event.id),
         scores: ranked.map((r) => r.score),
         explanationsHash: hash(ranked.map((r) => r.matches)),
-        baselineIds: recommend(state, constraints, limit, false).map(
-          (e) => e.id,
-        ),
+        baselineIds: recommend(
+          state,
+          constraints,
+          limit,
+          false,
+          originalEvents,
+        ).map((e) => e.id),
         allScoresHash: hash(
-          EVENTS.map((e) => rankingDetails(e, state, constraints)),
+          originalEvents.map((e) => rankingDetails(e, state, constraints)),
         ),
-        validationHash: hash(EVENTS.map((e) => issue(e, state))),
+        validationHash: hash(
+          originalEvents.map((e) => issue(e, state, originalEvents)),
+        ),
       },
       expected[index],
     );
     for (const r of ranked)
       assert.equal(
         r.event,
-        EVENTS.find((e) => e.id === r.event.id),
+        originalEvents.find((e) => e.id === r.event.id),
       );
   });
 }

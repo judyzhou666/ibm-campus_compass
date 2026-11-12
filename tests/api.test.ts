@@ -21,7 +21,9 @@ test("offline mode is explicit and respects constraints", async () => {
   );
   assert.equal(r.source, "browser-fallback");
   assert.match(r.notice, /unavailable/);
-  assert.deepEqual(r.ids, ["e1", "e5"]);
+  // With the expanded catalog, e46 (Interdisciplinary AI futures, Thu 2–3:30pm)
+  // now ranks ahead of e5 (AI studio, Thu 3–4:30pm) and doesn't conflict with e1.
+  assert.deepEqual(r.ids, ["e1", "e46"]);
 });
 test("server input rejection is surfaced, not bypassed", async () => {
   const bad: typeof fetch = async () => new Response("{}", { status: 400 });

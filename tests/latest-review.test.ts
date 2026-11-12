@@ -99,7 +99,7 @@ test("offline empty results explain dismissals, exploration and impossible hard 
       { explore: true },
       /beyond-interest exploration/,
     ],
-    [state, { after: 1439 }, /No synthetic catalog records/],
+    [state, { after: 1439 }, /Nothing matched|No .*events|The matching/],
   ] as [Schedule, Constraints, RegExp][]) {
     const result = await requestPlan(
       "Find events",

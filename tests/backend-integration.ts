@@ -1,6 +1,6 @@
 import { discoveryState } from "../frontend/src/discovery.ts";
 import { evolvingClarifications } from "./clarification-fixtures.ts";
-import rankingBaseline from "./fixtures/rust-ranking-before-optimization.json";
+import rankingBaseline from "./fixtures/rust-ranking-merged-catalog.json";
 import { interpretRequest } from "../frontend/src/interpretation.ts";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -77,7 +77,7 @@ try {
       discoveryState(fresh(), [], "Academic"),
       fetcher,
     );
-    assert.deepEqual(academic.ids.slice().sort(), ["e1", "e14", "e31"].sort());
+    assert.deepEqual(academic.ids.slice().sort(), ["e31", "e39", "e14"].sort());
     const demo = createStore(fresh());
     const conversation = createConversation(demo, () => {}, fetcher);
     await conversation.chat("AI events on Tuesday after 1 PM");
@@ -202,7 +202,13 @@ try {
       state: schedulePayload(state),
     })
   ).json();
-  assert.match(impossible.diagnostic, /scheduling conflicts/);
+  // Plain-language diagnostic: an AI Tuesday-morning event exists but conflicts with the
+  // schedule, so the reply must say that rather than claim nothing matches, then offer
+  // the nearest alternatives with the time filter dropped.
+  assert.match(
+    impossible.diagnostic,
+    /^The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open\. Here (is|are) \d options? at other times\.$/,
+  );
   const diverse = await (
     await post("/api/plan", {
       message: "AI career social events",
@@ -365,7 +371,9 @@ try {
       await conversation.chat("PM");
       assert.equal(calls, 0);
       await conversation.chat("social on Thursday after 3 PM");
-      assert.deepEqual(demo.read().draft, ["e2"]);
+      // e2 (Conversations beyond your major, Thu 5–6:30pm) and e45 (Night at the grad bar, Thu 8–10pm)
+      // both match Social on Thursday after 3 PM in the expanded catalog.
+      assert.deepEqual(demo.read().draft, ["e2", "e45"]);
       assert.deepEqual(demo.read().plan, []);
     }
   }

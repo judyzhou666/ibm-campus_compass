@@ -7,6 +7,8 @@ export const REVIEW_CATEGORIES = [
   "Unknown eligibility",
   "Unclear RSVP",
   "Unknown food",
+  "Missing host school",
+  "Missing goal type",
   "Invalid metadata",
 ] as const;
 export type ReviewCategory = (typeof REVIEW_CATEGORIES)[number];
@@ -30,6 +32,8 @@ export function qualityIssues(
     !["Free meal", "Coffee & snacks", "Paid food", "None"].includes(e.food)
   )
     issues.push("Unknown food");
+  if (!e.host_school?.trim()) issues.push("Missing host school");
+  if (!e.goal_type?.length) issues.push("Missing goal type");
   if (
     !e.id ||
     !e.title?.trim() ||

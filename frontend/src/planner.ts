@@ -4,16 +4,26 @@ import {
   practicalIssue,
 } from "./preferences.ts";
 import type { CampusEvent, Schedule, Constraints, TimeSlot } from "./types.ts";
+import { effectiveEvents, ALL_UPDATES } from "./updates.ts";
 import { EVENTS } from "./data.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
   a.day === b.day && a.start < b.end + buffer && b.start < a.end + buffer;
-function validationSnapshot(state: Schedule) {
+function validationSnapshot(state: Schedule, eventsOverride?: CampusEvent[]) {
+  const applied = state.appliedUpdateIds ?? [];
+  const events =
+    eventsOverride ?? (applied.length ? effectiveEvents(applied) : EVENTS);
   const plannedIds = new Set(state.plan);
-  const cancelled = new Set(state.cancelled);
+  const cancelled = new Set([
+    ...state.cancelled,
+    ...ALL_UPDATES.filter(
+      (u) => u.kind === "cancelled" && applied.includes(u.id),
+    ).map((u) => u.event_id),
+  ]);
   return {
     plannedIds,
     cancelled,
-    planned: EVENTS.filter(
+    events,
+    planned: events.filter(
       (event) => plannedIds.has(event.id) && !cancelled.has(event.id),
     ),
   };
@@ -23,6 +33,8 @@ function issueWithSnapshot(
   state: Schedule,
   snapshot?: ReturnType<typeof validationSnapshot>,
 ) {
+  if (snapshot && state.appliedUpdateIds?.length)
+    e = snapshot.events.find((x) => x.id === e.id) ?? e;
   if (e.day > 4 || e.day < 0 || e.start >= e.end || e.end > 1440)
     return "Invalid event metadata; team review required";
   if (!["RSVP required", "Drop-in welcome"].includes(e.rsvp))
@@ -45,8 +57,12 @@ function issueWithSnapshot(
     ? `Conflicts with ${conflict.title}${state.buffer ? " (including travel time)" : ""}`
     : null;
 }
-export function issue(e: CampusEvent, state: Schedule) {
-  return issueWithSnapshot(e, state);
+export function issue(
+  e: CampusEvent,
+  state: Schedule,
+  eventsOverride?: CampusEvent[],
+) {
+  return issueWithSnapshot(e, state, validationSnapshot(state, eventsOverride));
 }
 
 export const RANKING_WEIGHTS = {
@@ -154,13 +170,14 @@ function selectRecommendations(
   constraints: Constraints = {},
   limit = 3,
   contextual = true,
+  eventsOverride?: CampusEvent[],
 ) {
   // All snapshots are local to this synchronous operation; never cached across actions.
   const ranking = rankingSnapshot(state, constraints);
   const { prefs, active } = ranking;
-  const validation = validationSnapshot(state);
+  const validation = validationSnapshot(state, eventsOverride);
   const count = constraints.limit || (state.preferences ? prefs.count : limit);
-  let candidates = EVENTS.filter(
+  let candidates = validation.events.filter(
     (e) =>
       !validation.plannedIds.has(e.id) &&
       !issueWithSnapshot(e, state, validation) &&
@@ -209,20 +226,39 @@ export function recommend(
   constraints: Constraints = {},
   limit = 3,
   contextual = true,
+  eventsOverride?: CampusEvent[],
 ) {
-  return selectRecommendations(state, constraints, limit, contextual).map(
-    (result) => result.event,
-  );
+  return selectRecommendations(
+    state,
+    constraints,
+    limit,
+    contextual,
+    eventsOverride,
+  ).map((result) => result.event);
 }
 export function recommendWithReasons(
   state: Schedule,
   constraints: Constraints = {},
+  eventsOverride?: CampusEvent[],
 ) {
-  return selectRecommendations(state, constraints);
+  return selectRecommendations(state, constraints, 3, true, eventsOverride);
 }
 
 export function reasons(e: CampusEvent, state: Schedule, c: Constraints = {}) {
   return [
+    (c.topics || activeTopics(state)).includes(e.topic)
+      ? `Matches your interest in ${e.topic
+          .split(" ")
+          .map((w) =>
+            w.length > 1 && w === w.toUpperCase() ? w : w.toLowerCase(),
+          )
+          .join(" ")}`
+      : `An opportunity to explore ${e.topic
+          .split(" ")
+          .map((w) =>
+            w.length > 1 && w === w.toUpperCase() ? w : w.toLowerCase(),
+          )
+          .join(" ")}`,
     ...rankingDetails(e, state, c)
       .matches.filter((match) => !["diversity", "free"].includes(match.kind))
       .map((match) => match.explanation),
@@ -276,12 +312,11 @@ function matchesConstraints(e: CampusEvent, c: Constraints) {
 export function noMatchReason(state: Schedule, c: Constraints = {}) {
   const prefs = wirePreferences(state);
   const active = activeTopics(state, prefs);
-  const within = EVENTS.filter(
+  const snapshot = validationSnapshot(state);
+  const within = snapshot.events.filter(
     (e) => matchesConstraints(e, c) && !practicalIssue(e, state, prefs),
   );
-  if (!within.length)
-    return "No synthetic catalog records satisfy these topic/day/time/cost/food filters and saved recommendation preferences. State which filter you want to change; none will be relaxed automatically.";
-  const snapshot = validationSnapshot(state);
+
   let conflicts = 0,
     restrictions = 0,
     cancelled = 0,
@@ -305,12 +340,92 @@ export function noMatchReason(state: Schedule, c: Constraints = {}) {
     else if (c.explore && active.includes(e.topic)) explored++;
     else if (prefs.dismissed.includes(e.id)) dismissed++;
   }
-  let explanation = `Within your filters: ${conflicts} scheduling conflicts, ${restrictions} full/restricted/unknown-eligibility records, ${cancelled} cancellations, ${missing} incomplete/invalid records, and ${already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change.`;
+  let explanation = "";
   if (view)
     explanation += ` ${view} events were hidden by the current category/search filters. Change the category or search query to include them.`;
   if (dismissed)
     explanation += ` ${dismissed} events were hidden by saved or current-search dismissals. Restore hidden events in My Preferences or start a new search to clear session skips.`;
   if (explored)
     explanation += ` ${explored} events were excluded because beyond-interest exploration excludes your active saved topics. Use a normal search or start over to include those topics.`;
-  return explanation;
+  return explanation.trim() || plainNoMatchReason(state, c);
+}
+
+function plainNoMatchReason(state: Schedule, c: Constraints) {
+  const prefix = c.topics?.length ? c.topics.join(" or ") + " " : "";
+  const day =
+    c.days?.length === 1 && c.days[0] < 5
+      ? " on " +
+        ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][c.days[0]]
+      : "";
+  const time =
+    c.after !== undefined && c.after >= 1020
+      ? " in the evening"
+      : c.after !== undefined && c.after >= 720
+        ? " in the afternoon"
+        : c.before !== undefined && c.before <= 720
+          ? " in the morning"
+          : "";
+  const blocked = validationSnapshot(state).events.some((e) =>
+    matchesConstraints(e, c),
+  )
+    ? `The matching ${prefix}events${day}${time} are already in your plan, conflict with it, or aren't open.`
+    : undefined;
+  const say = (lead: string, tail: string) => (blocked || lead) + " " + tail;
+  const count = (cc: Constraints) =>
+    recommend(state, { ...cc, limit: 4 }).length;
+  const number = (n: number) => (n === 1 ? "is 1 option" : `are ${n} options`);
+  if (c.food) {
+    const n = count({ ...c, food: undefined });
+    if (n) {
+      const label = c.food === "Free meal" ? "free food" : c.food.toLowerCase();
+      return say(
+        `No ${prefix}events${day}${time} have ${label}.`,
+        `Here ${number(n)} without the ${label} filter.`,
+      );
+    }
+  }
+  if (c.free) {
+    const n = count({ ...c, free: undefined });
+    if (n)
+      return say(
+        `No ${prefix}events${day}${time} are free admission.`,
+        `Here ${number(n)} including paid ones.`,
+      );
+  }
+  if (c.days?.length) {
+    const n = count({ ...c, days: undefined });
+    if (n)
+      return say(
+        `No ${prefix}events on ${
+          c.days
+            .map(
+              (d) =>
+                ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][d],
+            )
+            .filter(Boolean)
+            .join("/") || "that day"
+        } match.`,
+        `Here ${number(n)} on other days.`,
+      );
+  }
+  if (c.after !== undefined || c.before !== undefined) {
+    const n = count({ ...c, after: undefined, before: undefined });
+    if (n)
+      return say(
+        `No ${prefix}events match that time window.`,
+        `Here ${number(n)} at other times.`,
+      );
+  }
+  if (c.topics?.length) {
+    const n = count({ ...c, topics: undefined });
+    if (n)
+      return say(
+        `No ${prefix}events fit the other filters.`,
+        `Here ${number(n)} from other areas.`,
+      );
+  }
+  return say(
+    "Nothing matched in this demo week.",
+    'Try a different day, topic, or time, or say "start over" to clear all filters.',
+  );
 }

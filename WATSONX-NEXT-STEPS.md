@@ -1,8 +1,12 @@
 # Connecting IBM watsonx
 
-## Status — November 4, 2026
+## Status — November 11, 2026
 
-A Rust watsonx.ai interpreter now exists (`backend/src/watsonx.rs`, enabled with `PLANNER_PROVIDER=watsonx`; configuration in `docs/backend.md`). The team chose Dallas (`us-south`), IBM Cloud API key + project ID authentication, and a Granite instruct model. It has been tested only against a local mock server. The default demo still needs no credentials, and no live IBM connection is claimed until the acceptance tests below pass with a real account. Step 5 below (model-written explanations) and clarification questions for ambiguous intent are not implemented; replies remain templates.
+A Rust watsonx.ai interpreter now exists (`backend/src/watsonx.rs`, enabled with `PLANNER_PROVIDER=watsonx`; configuration in `docs/backend.md`). The team chose Dallas (`us-south`), IBM Cloud API key + project ID authentication, and a Granite instruct model. It has been tested only against a local mock server. The default demo still needs no credentials, and no live IBM connection is claimed until the acceptance tests below pass with a real account.
+
+Step 5 (model-written explanations) is now implemented: the `rank_candidates` function in `backend/src/watsonx.rs` runs a second watsonx call after deterministic filtering, sending the feasible candidates and the student's goal types to the model and receiving ranked picks with per-event reasons. Reasons citing fields not present on the event are rejected and fall back to a deterministic template. The `/api/plan` response now includes `"explanations": "watsonx" | "template"` so the frontend can display the source honestly.
+
+Clarification questions for ambiguous intent are also now implemented: unrecognised chat messages in watsonx mode are forwarded to the server rather than returning the "limited demo planner" reply. The interpreter produces a `clarification` field when the model's structured output is ambiguous, and the frontend surfaces it to the student before proceeding.
 
 ## Recommended boundary
 

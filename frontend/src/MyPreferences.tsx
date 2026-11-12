@@ -28,6 +28,8 @@ function editable(s: DemoState) {
     interests: [...s.interests],
     major: s.major,
     goals: s.goals,
+    goal_types: [...(s.goal_types ?? [])],
+    profileRankingConsent: s.profileRankingConsent === true,
     preferred_time: s.preferred_time || "any",
     blocks: structuredClone(s.blocks),
     buffer: s.buffer,
@@ -58,12 +60,14 @@ export function MyPreferences({
   brief = false,
   onSkip,
   onFull,
+  watsonxMode = false,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   notify: (s: string) => void;
   onClearChat: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  watsonxMode?: boolean;
   brief?: boolean;
   onSkip?: () => void;
   onFull?: () => void;
@@ -369,6 +373,7 @@ export function MyPreferences({
                 ...draft,
                 preferences: migratePreferences(p),
                 onboarded: true,
+                preferencesConfigured: true,
                 draft: planningChanged ? [] : s.draft,
                 constraints: planningChanged ? {} : s.constraints,
               };

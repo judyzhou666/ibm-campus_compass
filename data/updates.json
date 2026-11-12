@@ -1,0 +1,69 @@
+[
+  {
+    "batch": 1,
+    "label": "Monday morning check",
+    "timestamp": "2026-11-02T08:00:00Z",
+    "updates": [
+      {
+        "id": "u1",
+        "event_id": "e3",
+        "kind": "cancelled",
+        "timestamp": "2026-11-02T08:00:00Z",
+        "details": "Your first role in responsible tech has been cancelled by the host. No replacement has been announced."
+      },
+      {
+        "id": "u2",
+        "event_id": "e6",
+        "kind": "full",
+        "timestamp": "2026-11-02T08:05:00Z",
+        "details": "Community dinner & story exchange is now full. Drop-in spots are no longer available."
+      }
+    ]
+  },
+  {
+    "batch": 2,
+    "label": "Wednesday morning check",
+    "timestamp": "2026-11-04T09:00:00Z",
+    "updates": [
+      {
+        "id": "u3",
+        "event_id": "e1",
+        "kind": "time_moved",
+        "timestamp": "2026-11-04T09:00:00Z",
+        "details": "Learning with AI: a hands-on lab has moved to 10:30 AM–12:00 PM (start 630, end 720). Re-check for schedule conflicts.",
+        "new_start": 630,
+        "new_end": 720
+      },
+      {
+        "id": "u4",
+        "event_id": "e9",
+        "kind": "room_changed",
+        "timestamp": "2026-11-04T09:10:00Z",
+        "details": "Graduate makers night has moved from Maker Space to Innovation Hub, Room 3.",
+        "new_location": "Innovation Hub, Room 3"
+      }
+    ]
+  },
+  {
+    "batch": 3,
+    "label": "Friday morning notices",
+    "timestamp": "2026-11-06T07:00:00Z",
+    "updates": [
+      {
+        "id": "u5",
+        "event_id": "e5",
+        "kind": "cancelled",
+        "timestamp": "2026-11-06T07:00:00Z",
+        "details": "AI in the classroom: open studio has been cancelled due to a room conflict."
+      },
+      {
+        "id": "u6",
+        "event_id": "e5",
+        "kind": "room_changed",
+        "timestamp": "2026-11-06T07:05:00Z",
+        "details": "AI in the classroom: open studio has been moved to Learning Studio B — the earlier cancellation notice may be incorrect.",
+        "new_location": "Learning Studio B"
+      }
+    ]
+  }
+]

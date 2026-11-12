@@ -1,3 +1,4 @@
+import { matchesFilter } from "./filters.ts";
 import { EVENTS } from "./data.ts";
 import { migratePreferences } from "./preferences.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
@@ -8,12 +9,9 @@ export function matchesDiscoveryFilter(
   query = "",
 ) {
   return (
-    (category === "All" ||
-      (category === "Free Food"
-        ? event.food === "Free meal"
-        : event.category === category)) &&
+    matchesFilter(event, category) &&
     (!query ||
-      `${event.title} ${event.description} ${event.topic} ${event.food}`
+      `${event.title} ${event.description} ${event.topic} ${event.food} ${event.host_school ?? ""} ${(event.goal_type ?? []).join(" ")}`
         .toLowerCase()
         .includes(query.toLowerCase()))
   );

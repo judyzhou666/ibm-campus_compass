@@ -19,7 +19,7 @@ test("Academic filtering happens before the saved count on fresh state", async (
     discoveryState(state, [], "Academic"),
     offline,
   );
-  assert.deepEqual(result.ids.slice().sort(), ["e1", "e14", "e31"].sort());
+  assert.deepEqual(result.ids.slice().sort(), ["e31", "e39", "e14"].sort());
   assert.ok(
     result.ids.every((id) =>
       matchesDiscoveryFilter(

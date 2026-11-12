@@ -264,6 +264,8 @@ export function clearPersonalization(s: DemoState): DemoState {
     interests: [],
     major: "",
     goals: "",
+    goal_types: [],
+    profileRankingConsent: false,
     preferred_time: "any",
     preferences: {
       ...defaultPreferences(),
@@ -310,6 +312,13 @@ export function proposalTopic(text: string) {
 export function preferenceSettingsKey(state: Schedule) {
   return JSON.stringify([
     state.interests,
+    (state as DemoState).profileRankingConsent === true
+      ? [
+          (state as DemoState).major,
+          (state as DemoState).goals,
+          (state as DemoState).goal_types,
+        ]
+      : null,
     wirePreferences(state),
     state.preferred_time || "any",
     state.buffer,

@@ -435,14 +435,16 @@ for (const offline of [false, true]) {
       request: "social but not Tuesday after 3",
       partial: "PM",
       complete: "social on Thursday after 3 PM",
-      ids: ["e2"],
+      // e2 (Conversations beyond your major, Thu 5–6:30pm) and e45 (Night at the grad bar, Thu 8–10pm)
+      // both match Social on Thursday after 3 PM in the expanded catalog.
+      ids: ["e2", "e45"],
       topic: "Social",
     },
     {
       request: "social but not Tuesday after 3",
       partial: "after 3 PM",
       complete: "social on Thursday after 3 PM",
-      ids: ["e2"],
+      ids: ["e2", "e45"],
       topic: "Social",
     },
     {

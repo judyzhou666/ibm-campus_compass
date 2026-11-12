@@ -21,7 +21,7 @@ export const EVENTS: CampusEvent[] = events.map((e) => ({
   ...e,
   campus_id: DEMO.campus_id,
   participation: (["independent", "one-to-one", "small-group", "open"].includes(
-    e.participation,
+    e.participation ?? "unknown",
   )
     ? e.participation
     : "unknown") as CampusEvent["participation"],

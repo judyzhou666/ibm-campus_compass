@@ -1,5 +1,24 @@
 import type { StudentProfile } from "./studentProfile.ts";
 import type { Preferences, Guidance, ResultCount } from "./preferences.ts";
+/** A single synthetic catalog update from data/updates.json. */
+export interface EventUpdate {
+  id: string;
+  event_id: string;
+  kind: "cancelled" | "full" | "time_moved" | "room_changed";
+  timestamp: string;
+  details: string;
+  new_start?: number;
+  new_end?: number;
+  new_location?: string;
+}
+
+export interface UpdateBatch {
+  batch: number;
+  label: string;
+  timestamp: string;
+  updates: EventUpdate[];
+}
+
 export interface TimeSlot {
   day: number;
   start: number;
@@ -26,6 +45,7 @@ export interface RecommendationPreferences {
   dismissed: string[];
 }
 export interface RecommendationSchedule {
+  applied_update_ids?: string[];
   view_excluded?: string[];
   plan: string[];
   cancelled: string[];
@@ -34,6 +54,12 @@ export interface RecommendationSchedule {
   buffer: number;
   preferred_time: string;
   preferences?: Omit<RecommendationPreferences, "guidance">;
+}
+export interface AccessConditions {
+  membership: boolean | string;
+  min_age: number | string;
+  ticket: boolean | string;
+  capacity: number | string;
 }
 export interface CampusEvent extends TimeSlot {
   id: string;
@@ -58,6 +84,9 @@ export interface CampusEvent extends TimeSlot {
   availability?: string;
   verification_status?: string;
   food_status?: string;
+  host_school?: string;
+  goal_type?: string[];
+  access_conditions?: AccessConditions;
 }
 export interface Schedule {
   /** Transient Dashboard category/query projection; never a saved dismissal. */
@@ -69,6 +98,8 @@ export interface Schedule {
   buffer: number;
   preferred_time?: string;
   preferences?: Preferences;
+  /** Applied synthetic update IDs (see updates.ts); absent means none. */
+  appliedUpdateIds?: string[];
 }
 /** Omitted mode means overlap-free plan-building in both planners. Discovery is explicit. */
 export type RecommendationMode = "discovery" | "plan-building";
@@ -93,6 +124,12 @@ export interface Message {
   role: "user" | "assistant";
   text: string;
   eventIds?: string[];
+  /** Event IDs that overlap the conflict-free picks; shown as "Also at the same time" cards. */
+  overlapIds?: string[];
+  /** Event IDs for no-match alternatives (one filter dropped); shown as suggestion cards. */
+  altIds?: string[];
+  /** Clickable example prompts shown as buttons below the message text (e.g. for "limited demo" hint). */
+  examples?: string[];
   evidence?: RecommendationEvidence[];
   settingsKey?: string;
   recommendationMode?: RecommendationMode;
@@ -117,12 +154,28 @@ export interface PostDraft {
   body: string;
   communityId: string;
 }
+/** Goal-type categories that the student can select in their profile. */
+export const GOAL_TYPES = [
+  "research",
+  "industry",
+  "social connection",
+  "cultural exploration",
+] as const;
+export type GoalType = (typeof GOAL_TYPES)[number];
+
 export interface DemoState extends Schedule {
   studentProfile?: StudentProfile;
+  profileRankingConsent?: boolean;
+  /** Distinguishes main's untouched Home default mix from explicitly saved preference count. */
+  preferencesConfigured?: boolean;
   name: string;
+  /** Demo sign-in only: no account or password; the profile stays local. */
+  signedIn: boolean;
   onboarded: boolean;
   major: string;
   goals: string;
+  /** Goal-type interests selected in profile; used by watsonx ranking. */
+  goal_types: string[];
   timezone: string;
   saved: string[];
   rsvps: string[];
@@ -130,10 +183,18 @@ export interface DemoState extends Schedule {
   joinedCommunities: string[];
   posts: Post[];
   comments: ForumComment[];
+  /** Forum likes saved in this browser: "post:<id>" or "comment:<postId>:<index>". */
+  likes: string[];
   postDraft: PostDraft | null;
   draft: string[];
   constraints: Constraints;
   messages: Message[];
+  /** IDs of EventUpdate entries that have been applied to the local demo state. */
+  appliedUpdateIds: string[];
+  /** ISO timestamp of the last time the student clicked "Check for updates". Null = never checked. */
+  lastUpdateCheck: string | null;
+  /** IDs of notifications the student has opened or marked as read. */
+  readNotificationIds: string[];
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";
@@ -148,6 +209,8 @@ export interface PlanResponse {
   match_reasons?: RecommendationMatchResult[];
   /** @deprecated Read-only compatibility with older Rust responses. Not emitted by current servers. */
   matchReasons?: RecommendationMatchResult[];
+  /** "watsonx" when AI narrative reasons were used; "template" when template evidence. */
+  explanations?: "watsonx" | "template";
 }
 
 export interface Rsvp {
@@ -166,4 +229,8 @@ export interface RecommendationEvidence {
   learning_connection?: string;
   participation_fit?: string;
   constraints_satisfied?: Constraints;
+  /** AI-written reason from IBM watsonx (Granite). Present only on watsonx-ranked results. */
+  ai_reason?: string;
+  /** Catalog fields the model cited when writing ai_reason. */
+  cited_fields?: string[];
 }

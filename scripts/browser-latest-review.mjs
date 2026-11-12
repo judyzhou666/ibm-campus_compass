@@ -32,7 +32,7 @@ try {
       (process.env.CAMPUS_TEST_URL || "http://127.0.0.1:5183") + "/#planner",
     );
     await page
-      .getByRole("button", { name: "Use sample preferences", exact: true })
+      .getByRole("button", { name: "Default Preference", exact: true })
       .click();
     const stored = () =>
       page.evaluate((k) => JSON.parse(localStorage.getItem(k)), key);
