@@ -4171,10 +4171,27 @@ button.gcal-event-block {
 .home h2 .icon {
   color: var(--green);
 }
-.announce-slide {
+.announce-frame {
   position: relative;
   border-radius: 18px;
   overflow: hidden;
+  background: var(--green-dark);
+}
+.announce-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.announce-track::-webkit-scrollbar {
+  display: none;
+}
+.announce-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   background:
     radial-gradient(circle at 88% 18%, #2f7556 0, transparent 46%),
     radial-gradient(circle at 8% 110%, #2b6a4f 0, transparent 40%),
@@ -4312,6 +4329,9 @@ button.gcal-event-block {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
+  /* Swipes over the edges still reach the slide scroller; only the round
+     button itself takes the click. */
+  pointer-events: none;
 }
 .announce-arrow.prev {
   left: 0;
@@ -4321,7 +4341,7 @@ button.gcal-event-block {
   right: 0;
   background: linear-gradient(to left, #0000002e, transparent);
 }
-.announce-arrow:hover,
+.announce-arrow.show,
 .announce-arrow:focus-visible {
   opacity: 1;
 }
@@ -4338,8 +4358,9 @@ button.gcal-event-block {
   border: 1px solid #ffffff40;
   backdrop-filter: blur(4px);
   transition: background 0.15s;
+  pointer-events: auto;
 }
-.announce-arrow:hover span {
+.announce-arrow span:hover {
   background: #ffffff47;
 }
 .announce-arrow:focus-visible span {

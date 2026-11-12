@@ -8,7 +8,6 @@ import {
   HOME_CATEGORIES,
   announcements,
   categoryCount,
-  createWheelSwipe,
   hasPreferences,
   homeRecommendations,
   recommendationBasis,
@@ -52,43 +51,4 @@ test("recommendations are catalog events the student can still add", () => {
     assert.notEqual(e.id, "e1");
     assert.equal(issue(e, state), null);
   }
-});
-
-/** A swipe: deltas ramp up, then a long momentum tail decays (16 ms apart). */
-function gesture(sign: number, start: number) {
-  const ramp = [6, 14, 24, 32, 28];
-  const tail = Array.from({ length: 60 }, (_, i) => 26 * 0.94 ** i);
-  return [...ramp, ...tail].map((d, i) => ({
-    dx: sign * d,
-    t: start + i * 16,
-  }));
-}
-const run = (
-  swipe: ReturnType<typeof createWheelSwipe>,
-  events: { dx: number; t: number }[],
-) => events.map((e) => swipe(e.dx, 0, e.t)).filter((s) => s !== 0);
-
-test("one trackpad swipe, momentum included, steps exactly once", () => {
-  const swipe = createWheelSwipe();
-  assert.deepEqual(run(swipe, gesture(1, 0)), [1]);
-  assert.deepEqual(run(swipe, gesture(-1, 0 + 2000)), [-1]);
-});
-
-test("repeated swipes step freely, even during the previous momentum", () => {
-  const swipe = createWheelSwipe();
-  // Three swipes left, each starting while the last one's momentum still runs.
-  const left = [0, 400, 800].flatMap((t, i, all) =>
-    gesture(1, t).filter((e) => i === all.length - 1 || e.t < all[i + 1]),
-  );
-  assert.deepEqual(run(swipe, left), [1, 1, 1]);
-  // Then reverse immediately: two swipes right.
-  const right = [1000, 1400].flatMap((t, i, all) =>
-    gesture(-1, t).filter((e) => i === all.length - 1 || e.t < all[i + 1]),
-  );
-  assert.deepEqual(run(swipe, right), [-1, -1]);
-});
-
-test("vertical scrolling never changes the announcement", () => {
-  const swipe = createWheelSwipe();
-  for (let i = 0; i < 30; i++) assert.equal(swipe(3, 60, i * 16), 0);
 });

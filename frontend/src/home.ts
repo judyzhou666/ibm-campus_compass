@@ -36,61 +36,6 @@ export const HOME_CATEGORIES: HomeCategory[] = [
   { label: "Free food", filter: "Free Food", icon: "food", tone: "social" },
 ];
 
-/**
- * Turns a stream of trackpad wheel deltas into one slide step per swipe.
- *
- * After a step, macOS keeps sending momentum events that shrink for a second
- * or more after the fingers lift. Those are ignored, but a new swipe is
- * recognised straight away, even mid-momentum: one in the opposite direction
- * steps back at once, and one in the same direction shows up as deltas that
- * grow again (after a short cooldown, so one swipe never steps twice).
- * Returns 1 (next), -1 (previous) or 0 (no change).
- */
-export function createWheelSwipe(
-  threshold = 30,
-  idleMs = 200,
-  cooldownMs = 250,
-) {
-  let total = 0;
-  let last = -Infinity;
-  let lastStep = -Infinity;
-  let prev = 0;
-  let locked = false;
-  let dir = 0;
-  return (dx: number, dy: number, now: number): -1 | 0 | 1 => {
-    const idle = now - last > idleMs;
-    last = now;
-    const mag = Math.abs(dx);
-    const sign = Math.sign(dx);
-    if (idle) {
-      locked = false;
-      total = 0;
-    }
-    if (mag <= Math.abs(dy) || !sign) {
-      prev = mag;
-      return 0;
-    }
-    if (locked) {
-      const reversed = sign !== dir;
-      const rising = mag > prev * 1.5 + 2 && now - lastStep > cooldownMs;
-      if (reversed || rising) {
-        locked = false;
-        total = 0;
-      }
-    }
-    prev = mag;
-    if (locked) return 0;
-    if (Math.sign(total) !== sign) total = 0;
-    total += dx;
-    if (Math.abs(total) < threshold) return 0;
-    locked = true;
-    dir = sign;
-    lastStep = now;
-    total = 0;
-    return sign > 0 ? 1 : -1;
-  };
-}
-
 /** Number of catalog events an Explore filter would show. */
 export function categoryCount(filter: string, events = EVENTS) {
   return events.filter((e) =>

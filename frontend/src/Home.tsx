@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { DEMO, dayLabel } from "./config.ts";
 import { DAYS, EVENTS, time } from "./data.ts";
 import { Button, EventCard, Icon } from "./components.tsx";
@@ -6,7 +6,6 @@ import {
   HOME_CATEGORIES,
   announcements,
   categoryCount,
-  createWheelSwipe,
   homeRecommendations,
   recommendationBasis,
 } from "./home.ts";
@@ -22,7 +21,20 @@ const kicker = (n: AppNotification) => {
 const tone = (category: string, topic: string) =>
   topic === "Arts & culture" ? "arts" : category.toLowerCase();
 
-/** Announcement banner: one slide at a time, each opening its event. */
+/** Width in px of the hover zone on each side that reveals an arrow. */
+const EDGE = 64;
+
+const reducedMotion = () =>
+  typeof matchMedia === "function" &&
+  matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Announcement banner. The slides sit side by side in a native horizontal
+ * scroller with scroll snapping, so trackpad and touch swipes follow the
+ * fingers, keep the system's momentum and settle on one slide, with no
+ * gesture detection of our own. `overscroll-behavior-x: contain` stops a
+ * swipe at either end from becoming the browser's back/forward gesture.
+ */
 function Announcements({
   list,
   readIds,
@@ -35,36 +47,21 @@ function Announcements({
   onViewAll: () => void;
 }) {
   const [index, setIndex] = useState(0);
-  const slideRef = useRef<HTMLDivElement>(null);
-  const stepRef = useRef((_by: number) => {});
-  const touch = useRef<{ x: number; y: number } | null>(null);
-  const many = list.length > 1;
-  // Two-finger trackpad swipe (Mac): horizontal wheel events change slide
-  // once per gesture. The listener is non-passive so the swipe does not
-  // also trigger the browser's own back/forward gesture.
-  useEffect(() => {
-    const el = slideRef.current;
-    if (!el || !many) return;
-    const swipe = createWheelSwipe();
-    const onWheel = (ev: WheelEvent) => {
-      if (Math.abs(ev.deltaX) <= Math.abs(ev.deltaY)) return;
-      ev.preventDefault();
-      const by = swipe(ev.deltaX, ev.deltaY, ev.timeStamp);
-      if (by) stepRef.current(by);
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [many]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  // Which edge zone the mouse is over. The zones let wheel events through to
+  // the scroller, so hover is tracked here rather than with CSS :hover.
+  const [edge, setEdge] = useState<"prev" | "next" | null>(null);
   if (!list.length) return null;
   const at = Math.min(index, list.length - 1);
-  const n = list[at];
-  const e = EVENTS.find((x) => x.id === n.eventId)!;
-  // Functional update: several quick swipes may land before a re-render.
-  const step = (by: number) =>
-    setIndex(
-      (i) => (Math.min(i, list.length - 1) + by + list.length) % list.length,
-    );
-  stepRef.current = step;
+  const go = (i: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const to = (i + list.length) % list.length;
+    track.scrollTo({
+      left: to * track.clientWidth,
+      behavior: reducedMotion() ? "auto" : "smooth",
+    });
+  };
   return (
     <section
       className="home-announce"
@@ -80,81 +77,96 @@ function Announcements({
         </button>
       </div>
       <div
-        ref={slideRef}
-        className={`announce-slide ${n.kind === "update" ? "update" : ""}`}
-        aria-roledescription="slide"
-        aria-label={`${at + 1} of ${list.length}`}
-        // Touch-screen swipe.
-        onTouchStart={(ev) => {
-          const t = ev.touches[0];
-          touch.current = { x: t.clientX, y: t.clientY };
+        className="announce-frame"
+        onMouseMove={(ev) => {
+          const r = ev.currentTarget.getBoundingClientRect();
+          const x = ev.clientX - r.left;
+          const next = x < EDGE ? "prev" : x > r.width - EDGE ? "next" : null;
+          if (next !== edge) setEdge(next);
         }}
-        onTouchEnd={(ev) => {
-          const start = touch.current;
-          touch.current = null;
-          if (!start || !many) return;
-          const t = ev.changedTouches[0];
-          const dx = t.clientX - start.x;
-          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(t.clientY - start.y))
-            step(dx < 0 ? 1 : -1);
-        }}
+        onMouseLeave={() => setEdge(null)}
       >
-        <button
-          className="announce-main"
-          onClick={() => onOpen(n)}
-          aria-label={`${n.title}. Open event details for ${e.title}`}
+        <div
+          className="announce-track"
+          ref={trackRef}
+          onScroll={(ev) => {
+            const t = ev.currentTarget;
+            const i = Math.round(t.scrollLeft / Math.max(1, t.clientWidth));
+            if (i !== index) setIndex(i);
+          }}
         >
-          <span className="announce-copy">
-            <span className="announce-kicker">
-              {kicker(n)}
-              {!readIds.includes(n.id) ? (
-                <span className="announce-new">New</span>
-              ) : null}
-            </span>
-            <span className="announce-title">{e.title}</span>
-            <span className="announce-body">{n.body}</span>
-            <span className="announce-meta">
-              <Icon name="calendar" />
-              {DAYS[e.day]}, {dayLabel(e.day)} · {time(e.start)}
-              <Icon name="pin" />
-              {e.location}
-            </span>
-            <span className="announce-cta">
-              View event details <Icon name="arrow" />
-            </span>
-          </span>
-          <span
-            className={`announce-art poster ${tone(e.category, e.topic)}`}
-            aria-hidden="true"
-          >
-            <small>
-              {DEMO.campus_name} / {dayLabel(e.day)}
-            </small>
-            <b>
-              {e.poster.split(" / ").map((part, i) => (
-                <span key={part}>
-                  {i > 0 ? <br /> : null}
-                  {part}
-                </span>
-              ))}
-            </b>
-          </span>
-        </button>
-        {many ? (
+          {list.map((n, i) => {
+            const e = EVENTS.find((x) => x.id === n.eventId)!;
+            const current = i === at;
+            return (
+              <div
+                key={n.id}
+                className={`announce-slide ${n.kind === "update" ? "update" : ""}`}
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${list.length}`}
+                aria-hidden={!current}
+              >
+                <button
+                  className="announce-main"
+                  tabIndex={current ? 0 : -1}
+                  onClick={() => onOpen(n)}
+                  aria-label={`${n.title}. Open event details for ${e.title}`}
+                >
+                  <span className="announce-copy">
+                    <span className="announce-kicker">
+                      {kicker(n)}
+                      {!readIds.includes(n.id) ? (
+                        <span className="announce-new">New</span>
+                      ) : null}
+                    </span>
+                    <span className="announce-title">{e.title}</span>
+                    <span className="announce-body">{n.body}</span>
+                    <span className="announce-meta">
+                      <Icon name="calendar" />
+                      {DAYS[e.day]}, {dayLabel(e.day)} · {time(e.start)}
+                      <Icon name="pin" />
+                      {e.location}
+                    </span>
+                    <span className="announce-cta">
+                      View event details <Icon name="arrow" />
+                    </span>
+                  </span>
+                  <span
+                    className={`announce-art poster ${tone(e.category, e.topic)}`}
+                    aria-hidden="true"
+                  >
+                    <small>
+                      {DEMO.campus_name} / {dayLabel(e.day)}
+                    </small>
+                    <b>
+                      {e.poster.split(" / ").map((part, j) => (
+                        <span key={part}>
+                          {j > 0 ? <br /> : null}
+                          {part}
+                        </span>
+                      ))}
+                    </b>
+                  </span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {list.length > 1 ? (
           <>
             <button
-              className="announce-arrow prev"
+              className={`announce-arrow prev ${edge === "prev" ? "show" : ""}`}
               aria-label="Previous announcement"
-              onClick={() => step(-1)}
+              onClick={() => go(at - 1)}
             >
               <span>
                 <Icon name="chevronLeft" />
               </span>
             </button>
             <button
-              className="announce-arrow next"
+              className={`announce-arrow next ${edge === "next" ? "show" : ""}`}
               aria-label="Next announcement"
-              onClick={() => step(1)}
+              onClick={() => go(at + 1)}
             >
               <span>
                 <Icon name="chevronRight" />
@@ -167,7 +179,7 @@ function Announcements({
                   className={i === at ? "active" : ""}
                   aria-label={`Show announcement ${i + 1}`}
                   aria-current={i === at ? "true" : undefined}
-                  onClick={() => setIndex(i)}
+                  onClick={() => go(i)}
                 />
               ))}
             </div>
