@@ -30,9 +30,10 @@ What the app does today, from the student's view:
 - **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
 - **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
 - **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. Ranks events that mention the student's own words first ("AI in education") and understands demo-week dates such as "Nov 6" or "Nov 3–5". The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
-- **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views.
+- **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views, personal event creation/editing/dragging (blue items), and campus events (green, fixed time).
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
 - **Notifications** — bell dropdown, unread badge, filterable Notifications page, per-notification messages.
+- **Demo sign-in as Student or Admin** — the profile photo opens a menu showing who is signed in and as which identity, with switch identity and sign out. Admin gets a **Create Event** entry in the top bar for drafting fictional events, and a shortcut to the read-only Team data review. Drafts stay in the browser and are not published to Explore or the AI Planner. There is no password and no real admin access.
 - **Settings** — time zone, 15-minute travel buffer, AI connection mode, demo reset, synthetic-data review (Team tools).
 
 ## Agentic AI approach

@@ -1,3 +1,5 @@
+import type { Role } from "./identity.ts";
+import type { EventDraft } from "./eventDrafts.ts";
 /** A single synthetic catalog update from data/updates.json. */
 export interface EventUpdate {
   id: string;
@@ -119,12 +121,29 @@ export const GOAL_TYPES = [
 ] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
 
+/** A student-created calendar item (one-off or weekly-repeating). */
+export interface PersonalEvent {
+  id: string;
+  title: string;
+  /** ISO date of the first (or only) occurrence: "YYYY-MM-DD". */
+  date: string;
+  /** Start time in minutes after midnight. */
+  start: number;
+  /** End time in minutes after midnight (> start). */
+  end: number;
+  /** "none" = single occurrence; "weekly" = repeats on the same weekday from date onward. */
+  repeat: "none" | "weekly";
+  location?: string;
+}
+
 export interface DemoState extends Schedule {
   name: string;
   studentStatus: string;
   university: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
   signedIn: boolean;
+  /** Demo identity chosen at sign-in. Only changes labels and shortcuts. */
+  role: Role;
   onboarded: boolean;
   major: string;
   goals: string;
@@ -149,6 +168,10 @@ export interface DemoState extends Schedule {
   lastUpdateCheck: string | null;
   /** IDs of notifications the student has opened or marked as read. */
   readNotificationIds: string[];
+  /** Student-created calendar items (one-off or weekly-repeating). Cap 200. */
+  personalEvents: PersonalEvent[];
+  /** Admin event drafts; browser-local and never added to the catalog. */
+  eventDrafts: EventDraft[];
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";

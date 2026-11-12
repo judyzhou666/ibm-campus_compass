@@ -2,6 +2,18 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Merge main (PR #23 calendar, PR #24 Student/Admin sign-in) into Doris — November 12, 2026
+
+Conflict resolution, made with Claude Code.
+
+- **Sidebar user card (`frontend/src/App.tsx`).** Keeps this branch's layout, with the Edit Profile button and the editable student status. Admins still see main's "Admin · Demo profile"; students see their own status, e.g. "Graduate student · Demo profile".
+- **Changelog.** Both sets of entries are kept.
+
+Verification after the merge: `tsc --noEmit`, `npm test` (286 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass. Checked in headless Chrome at 1280px:
+- Sign in as Student, edit status and university, save. The sidebar updates and the values survive a reload.
+- Switch to Admin. The sidebar shows "Admin · Demo profile" and Create Event appears.
+- No page errors and no sideways scrolling.
+
 ## Basic profile information editing — November 12, 2026
 
 Added an Edit Profile mode for display name, student status, university and major/program. Values are saved to the existing browser-local demo state; Cancel discards draft edits. Made with Codex.
@@ -13,6 +25,95 @@ Added an Edit Profile mode for display name, student status, university and majo
 Added an Edit Profile button below the signed-in sidebar user information. The button navigates to the existing Profile route; no new profile editing form or edit-mode behavior was added. The rest of the user card remains non-clickable, and the existing Profile and Settings navigation entries are unchanged. Made with Codex.
 
 **Verification.** `npm run typecheck`, `npm run build`, `node --import tsx --test tests/navigation.test.ts`, plus desktop and mobile browser checks pass.
+
+
+## Calendar: fix grid height, cross-day drag, grab offset, drag-vs-click, month drag — November 12, 2026
+
+Fixed eight bugs found during hands-on testing of commit 709a0fa. Work done with IBM Bob (note: Fix 1 corrects a grid-height bug introduced in b0dec35, which was written with Claude Code).
+
+1. **Grid height** — `.gcal-day-col` had `height: calc(13 * 48px)` hardcoded while `gridHours()` can produce grids of 14+ rows. Added `colHeight(start, end)` pure helper and `--gcal-col-h` CSS variable; the column height now matches the hour rows exactly for any grid span. Added `colHeight` and `HOUR_PX` exports to `calendarGrid.ts`.
+
+2. **Cross-day drag** — `setPointerCapture` locked pointer events to the original column, so `colIndex` always reflected the origin. Fixed by capturing all column DOMRects at `startDrag` time and computing the nearest column from `clientX` vs stored rects in `moveDrag`.
+
+3. **Grab offset / time jump** — was centering the block on the pointer (`newMins − dur/2`), causing a jump on mousedown. Now computes `grabOffsetPx = startY − blockTopClientY` at drag start and uses `colTop + newBlockTopPx` to derive the new start time. Resize uses the same grab-based math: dragging 1 hour now adds exactly 60 minutes.
+
+4. **Drag opens dialog after drop** — `onClick` on own blocks was always calling `onEditBlock/Personal`. Changed to let `endDrag` decide: only open the dialog when `active === false` (click); never call it from `onClick`. Text selection in the drag path prevented by `e.preventDefault()` on `onPointerDown`.
+
+5. **Text selection during drag** — `e.preventDefault()` added to `onPointerDown` of own blocks and resize handles; `.gcal-is-dragging` class applied to `.gcal-time-grid` while a drag is active, with `user-select: none`.
+
+6. **Undo appears twice** — removed the `gcal-undo-bar` banner; Undo now shows only as a `ToastAction` in the bottom toast (using the existing `run:` field on `App.tsx`'s `ToastAction` interface). `notify` prop updated to accept `Array<{label, run}>`.
+
+7. **Month view drag** — added `MonthDragState`, `startMonthDrag`, `moveMonthDrag`, `endMonthDrag` in `MonthView`. Uses `data-iso` attributes on cells for hit-testing. Chips show `.gcal-dragging` while in flight; target cell highlighted with `.gcal-month-drag-target`. `handleMonthDrop` wired into main component.
+
+8. **Weekday-only drop rule** — blocks snap back during both move and resize when targeting a weekend; validated in `moveDrag` preview and `endDrag` final commit.
+
+**New tests** (personal-events.test.ts, now 26): `colHeight` for 13/14/15-hour grids; `pixelToMins` at top/bottom/4 PM; target-column-from-clientX by midpoint; drag-threshold math (< 4px = click, ≥ 4px = drag).
+
+**Verification:** TypeScript 268/268 (26 new), npm test 5/5 Wiki, npm run build clean, cargo test 58/58, npm run test:api PASS.
+
+
+
+## Calendar: create, edit, delete and drag your own items — November 12, 2026
+
+Added Canvas-style personal calendar entries alongside existing busy-time blocks and campus events. Work done with IBM Bob.
+
+**Data model:** `PersonalEvent { id, title, date, start, end, repeat, location? }` added to `DemoState` (cap 200, validated in `restore()`). New `busyBlocks()` helper in `frontend/src/personalEvents.ts` combines `state.blocks` and personal-event demo-week occurrences; wired into `planner.ts` `issue()` and `recommend()`, `api.ts` `schedulePayload`, `updates.ts` conflict detection, `PlannerPanels.tsx` agenda, `components.tsx` WeekStrip, and `CalendarView.tsx` grid-hours computation.
+
+**Calendar interactions (My Calendar):**
+- "+" New event button in the toolbar; clicking empty time-grid space pre-fills the dialog; clicking empty month-cell creates for that date.
+- `PersonalEventDialog` (new `frontend/src/PersonalEventDialog.tsx`): Title, Date, From/To (15-min steps), Frequency (Does not repeat / Weekly), Location, Calendar (Personal or Class / busy time). Validation: end > start required, class+weekly+weekday → `state.blocks` entry. Delete with confirm step. Escape/× close; focus returns to opener.
+- Click own items in Day/Week/Month to open dialog. Click campus events unchanged (opens detail).
+- Drag own items with pointer events (no library): vertical move/resize in time grid, horizontal column change; Month view date drag. Snaps to 15 min. Preview shown during drag. After drop: toast "Moved X to Day, time. Undo" with Undo button.
+- Campus events: no drag, title="Campus event — time set by the organizer".
+- Blocks can only be dropped Mon–Fri; weekend drop shows message and cancels.
+
+**Visual:** personal items blue (`--personal: #1a6fb8`), classes grey, campus events green. Legend updated. Resize handle on own blocks.
+
+**Tests:** 22 new tests in `tests/personal-events.test.ts` covering state validation, `busyBlocks`, planner conflict, `recommend()` skipping, drag math helpers (`pixelToMins`, `clampStart`, `clampEnd`, `blockDropAllowed`), and `personalEventToBlock`.
+
+**Verification:** `npm test` (5/5 Wiki), TypeScript tests 264/264, `npm run build` clean, `cargo fmt --check` clean, `cargo clippy` 0 warnings, `cargo test` 58/58, `npm run test:api` PASS.
+
+## Admin: Create Event entry and event drafts — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Top bar.** When signed in as Admin, a **Create Event** button with a plus icon appears before "Plan with AI". Below 1060px wide it shows the icon only, keeping its "Create Event" accessible name. On phones, where the top-bar links are hidden, **Create event** is the first row of the Admin profile menu. Students and guests do not see either entry.
+- **Create an event page.** A form for title, topic, category, demo-week day, start and end time, location, host, description, food, admission, sign-up (drop-in or RSVP) and who can attend.
+  - Problems are explained in plain words, e.g. "The end time must be after the start time."
+  - Saved drafts are listed under **Your drafts** with a "Draft · Not published" tag, and each can be deleted. Up to 20 drafts are kept.
+  - Opening the page as a Student or guest shows "Sign in as Admin to draft a fictional event for team review."
+- **Not published.** Drafts are saved in this browser only. They are not added to `data/events.json`, Explore Events, My Calendar or the AI Planner. The page and the save message say so.
+- The Admin description now reads "Draft fictional events and review the catalog. Drafts stay in this browser."
+
+Files: new `frontend/src/eventDrafts.ts` and `frontend/src/CreateEvent.tsx`; `App.tsx`, `identity.ts`, `ProfileMenu.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in new `tests/event-drafts.test.ts` and `tests/sign-in.test.ts`.
+
+Verification: `npm test` (257 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px, 900px and 390px:
+- The entry is hidden for guests and students.
+- An invalid end time shows its message.
+- A valid draft is listed and survives a reload.
+- No page errors and no sideways scrolling.
+
+Rust checks not run: no backend files changed.
+
+Limitations: drafts cannot be published or shared with teammates. Publishing would need a team-reviewed catalog change and a server rebuild.
+
+## Profile menu with Student and Admin sign-in — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Two demo identities.** The sign-in dialog now asks "Sign in as" **Student** ("Find events, plan your week and RSVP.") or **Admin** ("Review the fictional event catalog. Read-only in this demo."). The button reads "Sign in as Student" or "Sign in as Admin".
+- **Profile dropdown.** Clicking the profile photo (top right) opens a menu instead of going straight to Profile. It shows the name, "Signed in as" with a Student or Admin tag, and what that identity is for. Rows:
+  - Admin only: **Team data review**
+  - Both: **View profile**, **Sign in as** the other identity, **Sign out**
+  - Escape or a click outside closes it. On phones it spans the screen under the top bar.
+- **Labels.** The sidebar reads "Student · Demo profile" or "Admin · Demo profile", and Settings shows "Signed in as Student/Admin". An Admin photo is blue so the two identities are easy to tell apart.
+- **State.** `role` is saved in this browser with the rest of the demo state. It defaults to Student; unknown values restore as Student. It is not sent to the server.
+
+Files: new `frontend/src/identity.ts` and `frontend/src/ProfileMenu.tsx`; `App.tsx`, `components.tsx` (`SignInDialog`), `Settings.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in `tests/sign-in.test.ts`.
+
+Verification: `npm test` (254 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px and 390px: sign in as Admin, open the menu, Escape closes it, switch to Student (the dialog preselects Student), sign out. No page errors and no sideways scrolling. Rust checks not run: no backend files changed.
+
+Limitations: Admin has no extra powers. It only labels the identity and links to the existing read-only data review. There is no password or permission check, and anyone can choose either identity.
 
 ## AI Planner: demo-week dates and relevance to the student's words — November 12, 2026
 

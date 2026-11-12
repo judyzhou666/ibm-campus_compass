@@ -13,6 +13,7 @@ import {
   validateConstraints,
 } from "./interpretation.ts";
 import { isUnavailableByUpdate, effectiveEvents } from "./updates.ts";
+import { busyBlocks } from "./personalEvents.ts";
 
 export const schedulePayload = (state: DemoState | Schedule) => {
   const s = state as DemoState;
@@ -23,7 +24,8 @@ export const schedulePayload = (state: DemoState | Schedule) => {
     interests: [...state.interests],
     buffer: state.buffer,
     preferred_time: state.preferred_time || "any",
-    blocks: state.blocks.map(({ title, day, start, end }) => ({
+    // Send derived blocks (state.blocks + personal-event occurrences on the demo week)
+    blocks: busyBlocks(s as DemoState).map(({ title, day, start, end }) => ({
       title,
       day,
       start,
