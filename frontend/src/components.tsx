@@ -103,6 +103,8 @@ export function Filters({
         "Career",
         "Social",
         "Workshops",
+        "Wellbeing",
+        "Arts",
         "Free Food",
         "Coffee & snacks",
         "Paid food",

@@ -2,6 +2,17 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Home page — November 12, 2026
+
+- **New Home tab** (first in the sidebar) is now the landing page; the Campus Compass logo and "Reset demo" also go there. My Dashboard is unchanged and gets its own grid icon. The top bar is unchanged.
+- **Announcements:** a banner carousel of the notifications that point at an event (invitations, "Coming up this week", and synthetic event updates once applied). Clicking a slide opens that event's detail page and marks the notification read; ‹ › and dots switch slides; "All notifications" opens the Notifications page.
+- **Browse by category:** round quick entries for Academic, Career, Social, Workshops, Wellbeing, Arts and Free food, the opportunity types in the proposal. Each opens Explore Events with that filter active. Explore Events gained the missing **Wellbeing** and **Arts** filter chips.
+- **Recommendations for you:** eight of the same event cards Explore Events shows. If the student has set preferences in Profile (interests other than the starting set, goal types, preferred time, major or goals), events are ranked by a simple, explainable score. Otherwise a default mix shows the earliest free-first event from each category in turn. Only events that can still be added appear (not planned, full, cancelled or clashing). The ranking is labelled "Simple preference ranking · No live AI · Fictional events".
+- **Search box polish:** the green search button now fills the right end of the top-bar search pill with no white gap.
+- **To demo:** open the site (Home), click the banner to open the event, go back, click Wellbeing, then set interests in Profile and return to Home to see "Based on your interests…".
+- **Verification:** `npm test` (189 TypeScript tests, including 5 new ones in `tests/home.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px and 390px: banner click opens the event detail, the carousel advances, a category opens Explore with its chip active, and phones have no sideways scrolling (categories scroll horizontally). Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+- **Limitations:** the default recommendations are a fixed mix, not real popularity data; the cards' "Matches your interests" line still uses the starting interests for guests.
+
 ## Dashboard Weekly Calendar and My Calendar sub-page — November 12, 2026
 
 - **My Calendar is no longer a sidebar tab.** It is a sub-page: open it with **Full Calendar** on My Dashboard (or the top bar's "My calendar" link). My Dashboard stays highlighted in the sidebar, the page has a "Back to …" link, and Back or swipe-back returns to the page it was opened from. All of its Day/Week/Month/Year features are unchanged.

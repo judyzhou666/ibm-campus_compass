@@ -26,6 +26,7 @@ import {
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
+import { Home } from "./Home.tsx";
 import {
   NotificationDetail,
   NotificationMenu,
@@ -42,6 +43,7 @@ import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./upda
 
 const labels = {
   review: "Team data review",
+  home: "Home",
   dashboard: "My Dashboard",
   calendar: "My Calendar",
   explore: "Explore Events",
@@ -59,7 +61,8 @@ interface ToastAction {
 }
 const navIcons: Record<Page, string> = {
   review: "settings",
-  dashboard: "home",
+  home: "home",
+  dashboard: "dashboard",
   calendar: "calendar",
   explore: "search",
   forum: "chat",
@@ -81,7 +84,7 @@ const prompts = [
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
-  return page in labels ? (page as Page) : "dashboard";
+  return page in labels ? (page as Page) : "home";
 };
 export default function App() {
   const [demo] = useState(() => createStore(restore()));
@@ -562,10 +565,10 @@ export default function App() {
         </button>
         <a
           className="brand"
-          href="#dashboard"
+          href="#home"
           onClick={(e) => {
             e.preventDefault();
-            nav("dashboard");
+            nav("home");
           }}
         >
           <span className="logo">
@@ -742,6 +745,27 @@ export default function App() {
       </aside>
       <div className="shell">
         <main id="main">
+          {page === "home" ? (
+            <Home
+              state={state}
+              notifications={notifications}
+              onOpenAnnouncement={(n) => {
+                markRead([n.id]);
+                setDetail(n.eventId ?? null);
+              }}
+              onViewNotifications={() => openNotifications()}
+              onCategory={(f) => {
+                nav("explore");
+                setFilter(f);
+              }}
+              onExplore={() => nav("explore")}
+              onProfile={() => nav("profile")}
+              onAdd={add}
+              onSave={save}
+              onDetail={setDetail}
+              onCalendar={openCalendar}
+            />
+          ) : null}
           {page === "dashboard" ? (
             <>
               <Heading
@@ -1430,7 +1454,7 @@ export default function App() {
                 enrollment.reset();
                 setCalendarOpen(false);
                 update(fresh);
-                nav("dashboard");
+                nav("home");
                 notify("Demo restored. You’re ready to present.");
               }}
             />
