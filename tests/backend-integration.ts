@@ -83,6 +83,13 @@ try {
     "before 12 am",
     "after 12 pm",
     "after 23:59",
+    "AI in education relevant events for week Nov 6-12",
+    "AI in education events",
+    "career on Nov 3 to 4",
+    "AI Oct 30 - Nov 3",
+    "social events on November 5th",
+    "make new friends and practice my english",
+    "no AI events on Nov 4",
   ]) {
     const response = await post("/api/plan", {
       message: query,
@@ -124,6 +131,8 @@ try {
     "events near me",
     "social but not Tuesday",
     "career after 3",
+    "AI in education relevant events for week Nov 7-12",
+    "events on Dec 1",
   ]) {
     const r = await (
       await post("/api/plan", { message, state: schedulePayload(state) })

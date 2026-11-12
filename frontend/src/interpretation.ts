@@ -1,5 +1,6 @@
 import type { Constraints } from "./types.ts";
 import { TOPICS, DAYS } from "./data.ts";
+import { outsideWeekMessage, parseDemoDates } from "./demoDates.ts";
 
 export function validateConstraints(
   value: unknown,
@@ -16,6 +17,7 @@ export function validateConstraints(
     "food",
     "free",
     "limit",
+    "focus",
   ];
   if (Object.keys(c).some((key) => !fields.includes(key)))
     throw new Error("Unknown constraint field");
@@ -48,6 +50,37 @@ export function validateConstraints(
     throw new Error("Unknown food preference");
   if (c.free !== undefined && typeof c.free !== "boolean")
     throw new Error("Invalid free-admission preference");
+  if (
+    c.focus !== undefined &&
+    (!Array.isArray(c.focus) ||
+      c.focus.length > 12 ||
+      c.focus.some(
+        (t) =>
+          typeof t !== "string" ||
+          t.length > 40 ||
+          !/^[a-z]+(?: [a-z]+)*$/.test(t),
+      ))
+  )
+    throw new Error("Invalid focus terms");
+}
+
+/**
+ * Words from the request that picked its topics ("ai", "education"). The planner
+ * ranks events that mention them first. Words that only name a whole category
+ * ("career", "social") are left out. Mirrored in backend/src/interpreter.rs.
+ */
+function focusTerms(q: string, excluded: string[]) {
+  const terms: string[] = [];
+  for (const [topic, re] of Object.entries(keywords)) {
+    if (excluded.includes(topic)) continue;
+    for (const m of q.matchAll(new RegExp(re.source, "gi"))) {
+      const term = m[0].toLowerCase().replace(/\s+/g, " ");
+      // A word that names the whole category ("career") does not narrow it.
+      if (term === topic.toLowerCase()) continue;
+      if (!terms.includes(term) && terms.length < 12) terms.push(term);
+    }
+  }
+  return terms;
 }
 
 const keywords = {
@@ -123,7 +156,12 @@ export function interpretRequest(
       ),
     )
     .map(([k]) => k);
-  if (topics.length) c.topics = topics.filter((t) => !excluded.includes(t));
+  if (topics.length) {
+    c.topics = topics.filter((t) => !excluded.includes(t));
+    const focus = focusTerms(q, excluded);
+    if (focus.length) c.focus = focus;
+    else delete c.focus;
+  }
   if (excluded.length) c.excluded = excluded;
   const days = DAYS.map((d, i) =>
     test(new RegExp(`\\b${d.toLowerCase()}(?:day|sday|nesday|rsday)?\\b`))
@@ -133,6 +171,14 @@ export function interpretRequest(
   if (days.length) c.days = days;
   if (test(/\bweekend|saturday|sunday\b/)) c.days = [5, 6];
   if (test(/\bweekday/)) c.days = [0, 1, 2, 3, 4];
+  // Month-day dates ("Nov 6-12") override weekday words and are limited to the demo week.
+  const dates = parseDemoDates(q);
+  let outsideWeek: string | undefined;
+  if (dates) {
+    understood = true;
+    if (dates.days.length) c.days = dates.days;
+    else outsideWeek = outsideWeekMessage(dates.requested);
+  }
   if (test(/\bafternoon/)) {
     c.after = 720;
     c.before = 1020;
@@ -219,7 +265,9 @@ export function interpretRequest(
       q,
     );
   if (restatement) delete c.days;
-  const clarification = restatement
+  const clarification = outsideWeek
+    ? outsideWeek
+    : restatement
     ? "Please restate your complete request with the topic, weekdays you CAN attend, and AM/PM for every time. I cannot infer location or weekday exclusions. For cost, only free admission is supported; numeric budgets are not supported."
     : ambiguousClock
       ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
