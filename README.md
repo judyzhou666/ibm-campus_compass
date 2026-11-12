@@ -29,7 +29,7 @@ What the app does today, from the student's view:
 
 - **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
 - **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
-- **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
+- **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. Ranks events that mention the student's own words first ("AI in education") and understands demo-week dates such as "Nov 6" or "Nov 3–5". The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
 - **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views.
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
 - **Notifications** — bell dropdown, unread badge, filterable Notifications page, per-notification messages.
@@ -102,6 +102,7 @@ Follow [docs/demo-script.md](docs/demo-script.md). Start from **Settings → Res
 ## Current limits
 
 - **Fictional data only.** No real university events, registrations or calendar sync.
+- **One demo week.** Events exist only for Mon Nov 2 – Fri Nov 6, 2026. A request for other dates says so instead of returning unrelated days.
 - **Simulated by default.** The deterministic planner requires no credentials. Live watsonx is optional and has not been evaluated against real queries.
 - **No real RSVPs.** The demo RSVP dialog is fictional; no organizer receives it.
 - **No external calendar sync.** `.ics` export only.
