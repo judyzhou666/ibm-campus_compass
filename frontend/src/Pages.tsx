@@ -18,6 +18,7 @@ type Props = {
   notify: (text: string) => void;
   watsonxMode?: boolean;
   editBasicInformation?: boolean;
+  onEditBasicInformation?: () => void;
   onCancelBasicInformation?: () => void;
   onSaveBasicInformation?: () => void;
 };
@@ -27,6 +28,7 @@ export function Profile({
   notify,
   watsonxMode = false,
   editBasicInformation = false,
+  onEditBasicInformation,
   onCancelBasicInformation,
   onSaveBasicInformation,
 }: Props) {
@@ -53,11 +55,9 @@ export function Profile({
     const f = new FormData(event.currentTarget);
     update((s) => ({
       ...s,
-      name: String(f.get("name")).trim() || "Judy",
       interests: f.getAll("topics").map(String),
       goal_types: f.getAll("goal_types").map(String),
       onboarded: true,
-      major: String(f.get("major") || "").trim(),
       goals: String(f.get("goals") || "").trim(),
       preferred_time: String(f.get("preferred_time") || "any"),
     }));
@@ -239,12 +239,11 @@ export function Profile({
               ))}
             </div>
             <label className="field">
-              Demo display name
+              Display Name
               <input
-                name="name"
-                defaultValue={state.name}
-                maxLength={30}
-                required
+                value={state.name}
+                readOnly
+                aria-readonly="true"
               />
             </label>
             <p className="sub">
@@ -252,9 +251,22 @@ export function Profile({
               in this browser.
             </p>
             <label className="field">
-              Major or interdisciplinary interests (optional)
-              <input name="major" maxLength={120} defaultValue={state.major} />
+              Major / Program
+              <input
+                value={state.major}
+                readOnly
+                aria-readonly="true"
+                placeholder="Not added yet"
+              />
             </label>
+            <button
+              type="button"
+              className="text-btn inline profile-edit-link"
+              aria-label="Edit basic information"
+              onClick={onEditBasicInformation}
+            >
+              Edit
+            </button>
             <label className="field">
               Research / career exploration goals (optional)
               <input name="goals" maxLength={240} defaultValue={state.goals} />
