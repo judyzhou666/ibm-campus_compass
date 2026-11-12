@@ -1,5 +1,4 @@
 import { DataReview } from "./DataReview.tsx";
-import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";

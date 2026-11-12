@@ -21,11 +21,19 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 
 **To demo:** run `npm run build` and `cargo run --locked`, then open http://127.0.0.1:4173. Open AI Planner to see the new heading. Open any event to try Back, Share, Follow, Contact, the travel buttons and the map toggle.
 
-**Verification:** `npm test` (244 TypeScript + 5 Wiki tests) and `npm run build` pass. Rust checks were not run because no backend files changed.
+**Launcher clean-up**
+
+- Deleted the unused `DemoLauncher.tsx`, its CSS and the two tests that copied its subtitle text.
+- Removed the unused `guidedScenario` import from `App.tsx`.
+- `docs/demo-script.md`, `docs/backend.md` and `wiki/Getting-Started.md` now start the guided demo by hand: Settings → Reset demo, then type "AI career social 3 events after 1 PM" in the AI Planner.
+- A new assertion in `tests/final-alignment.test.ts` checks that this prompt still returns at least 3 events from the reset state.
+
+**Verification:** `npm test` (242 TypeScript + 5 Wiki tests) and `npm run build` pass. Rust checks were not run because no backend files changed.
 
 **Limitations**
 
-- `docs/demo-script.md`, `docs/backend.md` and `wiki/Getting-Started.md` still point to the removed Demo Scenario Launcher. `DemoLauncher.tsx` is no longer used, and the guided journey is not available from the UI.
+- The optional `scripts/browser-journey.mjs` still clicks the removed "Prepare scenario" buttons and will fail until it is rewritten.
+- Settings → Reset demo does not archive the previous browser state. There is no "Restore previous demo" any more.
 - Share copies text only. Follow does nothing beyond the label. Contact, travel and map are demo placeholders.
 
 ## Event detail page: PR #19 review fixes — November 12, 2026
