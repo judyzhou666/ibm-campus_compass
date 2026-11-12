@@ -1,7 +1,7 @@
 import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
-import { DEMO, WEEK_LABEL, isTimeZone } from "./config.ts";
+import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
@@ -70,14 +70,14 @@ const navIcons: Record<Page, string> = {
   notifications: "bell",
 };
 /** Pages reached from elsewhere in the app, not from the sidebar. */
-const hiddenFromSidebar: Page[] = ["review", "notifications"];
+const hiddenFromSidebar: Page[] = ["review", "notifications", "calendar"];
+/** Hidden pages whose sidebar parent stays highlighted while they are open. */
+const sidebarParent: Partial<Record<Page, Page>> = { calendar: "dashboard" };
 const prompts = [
   "AI and education on Tuesday or Thursday afternoons",
   "A social event with free food",
   "Career events after 1 PM",
 ];
-/** Sidebar tabs shown nested under a parent tab. */
-const subTabs: Partial<Record<Page, Page>> = { calendar: "dashboard" };
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
@@ -164,6 +164,10 @@ export default function App() {
   const [openNote, setOpenNote] = useState<string | null>(null);
   const [notesFrom, setNotesFrom] = useState<Page>("dashboard");
   const [noteFilter, setNoteFilter] = useState<NotificationFilter>(NO_FILTER);
+  // My Calendar is a sub-page of the page it was opened from (usually My
+  // Dashboard); the dashboard's Weekly Calendar can step through weeks.
+  const [calendarFrom, setCalendarFrom] = useState<Page>("dashboard");
+  const [weekOffset, setWeekOffset] = useState(0);
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
@@ -235,6 +239,9 @@ export default function App() {
   // open message is a sub-page of Notifications: Back from a message shows
   // the full list, and Back again returns to the earlier page. Declared in
   // this order so both register in this order when opened together.
+  const closeCalendar = useSubPage(page === "calendar", () =>
+    setPage(calendarFrom),
+  );
   useSubPage(page === "notifications", () => {
     setOpenNote(null);
     setPage(notesFrom);
@@ -334,6 +341,11 @@ export default function App() {
       readNotificationIds: s.readNotificationIds.filter((x) => x !== id),
     }));
   }
+  /** Opens the My Calendar sub-page; Back returns to the current page. */
+  function openCalendar() {
+    if (page !== "calendar") setCalendarFrom(page);
+    nav("calendar");
+  }
   /** Opens the Notifications sub-page, optionally at one message. */
   function openNotifications(id?: string) {
     if (page !== "notifications") {
@@ -378,7 +390,7 @@ export default function App() {
       setDetail(null);
       setCalendarOpen(true);
       notify(result.notice, [
-        { label: "View calendar", run: () => nav("calendar") },
+        { label: "View calendar", run: () => openCalendar() },
         {
           label: "Undo",
           run: () => {
@@ -478,7 +490,7 @@ export default function App() {
           onAdd={add}
           onSave={save}
           onDetail={setDetail}
-          onCalendar={() => nav("calendar")}
+          onCalendar={openCalendar}
         />
       ))}
     </div>
@@ -491,9 +503,6 @@ export default function App() {
       { days: [day] },
     );
   };
-  const week = (full = false) => (
-    <Week state={state} full={full} onDetail={setDetail} onDay={findOnDay} />
-  );
   const draft = state.draft
     .map((id) => EVENTS.find((e) => e.id === id))
     .filter((e) => e && !state.plan.includes(e.id) && !issue(e, state));
@@ -599,7 +608,7 @@ export default function App() {
               key={p}
               className={page === p ? "active" : ""}
               aria-current={page === p ? "page" : undefined}
-              onClick={() => nav(p)}
+              onClick={() => (p === "calendar" ? openCalendar() : nav(p))}
             >
               {label}
             </button>
@@ -684,17 +693,13 @@ export default function App() {
             Object.keys(labels).filter(
               (key) => !hiddenFromSidebar.includes(key as Page),
             ) as Page[]
-          ).map((p, i) => (
+          ).map((p) => (
             <div key={p}>
-              {i === 6 ? <div className="break" /> : null}
+              {p === "profile" ? <div className="break" /> : null}
               <button
-                className={[
-                  page === p ? "active" : "",
-                  subTabs[p] ? "sub" : "",
-                  subTabs[p] && page === subTabs[p] ? "parent-active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                className={
+                  page === p || sidebarParent[page] === p ? "active" : ""
+                }
                 aria-current={page === p ? "page" : undefined}
                 title={collapsed ? labels[p] : undefined}
                 aria-label={collapsed ? labels[p] : undefined}
@@ -770,16 +775,50 @@ export default function App() {
                     </div>
                   </section>
                   <section className="panel">
-                    <div className="section-bar">
-                      <h2>Your week, at a glance</h2>
-                      <button
-                        className="text-btn"
-                        onClick={() => nav("calendar")}
-                      >
-                        View My Calendar <Icon name="arrow" />
+                    <div className="section-bar weekly-bar">
+                      <h2>Weekly Calendar</h2>
+                      <div className="week-nav">
+                        <button
+                          className="icon-btn"
+                          aria-label="Previous week"
+                          onClick={() => setWeekOffset((w) => w - 1)}
+                        >
+                          <Icon name="chevronLeft" />
+                        </button>
+                        <span className="week-nav-label" aria-live="polite">
+                          {weekDayLabel(0, weekOffset)} – {weekDayLabel(4, weekOffset)}
+                        </span>
+                        <button
+                          className="icon-btn"
+                          aria-label="Next week"
+                          onClick={() => setWeekOffset((w) => w + 1)}
+                        >
+                          <Icon name="chevronRight" />
+                        </button>
+                      </div>
+                      <button className="text-btn" onClick={openCalendar}>
+                        Full Calendar <Icon name="arrow" />
                       </button>
                     </div>
-                    {week()}
+                    {weekOffset !== 0 ? (
+                      <p className="week-nav-note">
+                        Campus events in this demo are only in the week of{" "}
+                        {weekDayLabel(0)}–{weekDayLabel(4)}, so this week shows
+                        classes only.{" "}
+                        <button
+                          className="text-btn"
+                          onClick={() => setWeekOffset(0)}
+                        >
+                          Back to demo week
+                        </button>
+                      </p>
+                    ) : null}
+                    <Week
+                      state={state}
+                      weekOffset={weekOffset}
+                      onDetail={setDetail}
+                      onDay={findOnDay}
+                    />
                     <div className="legend">
                       <span>
                         <i className="dot" />
@@ -796,7 +835,7 @@ export default function App() {
                       state={state}
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
-                      onCalendar={() => nav("calendar")}
+                      onCalendar={openCalendar}
                       onCheckUpdates={checkForUpdates}
                     />
                   </section>
@@ -1284,6 +1323,12 @@ export default function App() {
           ) : null}
           {page === "calendar" ? (
             <>
+              <button className="text-btn sub-page-back" onClick={closeCalendar}>
+                <span className="flip">
+                  <Icon name="arrow" />
+                </span>
+                Back to {labels[calendarFrom]}
+              </button>
               <Heading
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."

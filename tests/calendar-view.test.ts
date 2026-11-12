@@ -323,3 +323,13 @@ test("calendar export uses moved times and changed rooms from applied updates", 
   assert.ok(!text.includes(`DTSTART:${utcStamp(1, 900)}`), "old start is gone");
   assert.ok(text.includes("LOCATION:Innovation Hub\\, Room 3"), "changed room");
 });
+
+test("dashboard Weekly Calendar labels step a week at a time from the demo week", async () => {
+  const { weekDayLabel, dayLabel } = await import("../frontend/src/config.ts");
+  assert.equal(weekDayLabel(0), dayLabel(0));
+  assert.equal(weekDayLabel(0), "Nov 2");
+  assert.equal(weekDayLabel(4, 1), "Nov 13");
+  assert.equal(weekDayLabel(0, -1), "Oct 26");
+  // Crosses a month and a year boundary cleanly.
+  assert.equal(weekDayLabel(4, 8), "Jan 1");
+});

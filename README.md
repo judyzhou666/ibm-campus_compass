@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Dashboard Weekly Calendar and My Calendar sub-page — November 12, 2026
+
+- **My Calendar is no longer a sidebar tab.** It is a sub-page: open it with **Full Calendar** on My Dashboard (or the top bar's "My calendar" link). My Dashboard stays highlighted in the sidebar, the page has a "Back to …" link, and Back or swipe-back returns to the page it was opened from. All of its Day/Week/Month/Year features are unchanged.
+- **Weekly Calendar:** the dashboard's "Your week, at a glance" section is now "Weekly Calendar", and its link "View My Calendar" is now "Full Calendar".
+- **Week arrows:** ‹ and › beside the date range step the strip a week at a time. Classes repeat every week; campus events exist only in the demo week (Nov 2–6), so other weeks show classes only, no "+" find-event buttons, and a "Back to demo week" link. On phones the arrows sit on their own row.
+- **To demo:** on My Dashboard press › to see next week, "Back to demo week", then Full Calendar and swipe back.
+- **Verification:** `npm test` (184 TypeScript tests, including a new week-label test in `tests/calendar-view.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in the browser at 1280px and 375px: sidebar without My Calendar, renamed section and link, previous/next week and back, Full Calendar opening My Calendar with My Dashboard highlighted, Back returning to the dashboard, and no sideways scrolling. Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+
 ## Notifications: bell dropdown, Notifications page and messages — November 11, 2026
 
 - **Bell:** a red dot shows when there are unread notifications (or synthetic updates waiting). Clicking it opens a dropdown of unread notifications with "Mark all as read" and "View all". The bell now also shows on phones.
