@@ -21,6 +21,8 @@ export const paths: Record<string, string> = {
   close: "m6 6 12 12 M6 18 18 6",
   download: "M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5",
   menu: "M3 6h18 M3 12h18 M3 18h18",
+  chevronLeft: "m15 6-6 6 6 6",
+  chevronRight: "m9 6 6 6-6 6",
   refresh: "M20 7a9 9 0 1 0 1 8 M20 2v5h-5",
   users:
     "M9 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z M3 20v-4a6 6 0 0 1 12 0v4 M17 4a3 3 0 0 1 0 6 M18 13a4 4 0 0 1 3 4v3",

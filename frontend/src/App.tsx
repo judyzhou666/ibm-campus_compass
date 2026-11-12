@@ -30,7 +30,7 @@ import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./upda
 
 const labels = {
   review: "Team data review",
-  dashboard: "Dashboard",
+  dashboard: "My Dashboard",
   calendar: "My Calendar",
   explore: "Explore Events",
   forum: "Discussion Forum",
@@ -60,6 +60,9 @@ const prompts = [
   "A social event with free food",
   "Career events after 1 PM",
 ];
+/** Sidebar tabs shown nested under a parent tab. */
+const subTabs: Partial<Record<Page, Page>> = { calendar: "dashboard" };
+const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
   return page in labels ? (page as Page) : "dashboard";
@@ -122,6 +125,23 @@ export default function App() {
   const [message, setMessage] = useState(""),
     [detail, setDetail] = useState<string | null>(null),
     [menu, setMenu] = useState(false);
+  // Desktop-only: the student can shrink the sidebar to an icon rail. The
+  // choice is a per-browser convenience, so storage failures are ignored.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+  }, [collapsed]);
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
@@ -458,7 +478,20 @@ export default function App() {
           onSkip={() => update((s) => ({ ...s, onboarded: true }))}
         />
       ) : null}
-      <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
+      <aside
+        className={`sidebar ${menu ? "open" : ""} ${collapsed ? "collapsed" : ""}`}
+        id="sidebar"
+      >
+        <button
+          className="collapse-toggle"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          aria-controls="sidebar"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <Icon name={collapsed ? "chevronRight" : "chevronLeft"} />
+        </button>
         <a
           className="brand"
           href="#dashboard"
@@ -470,7 +503,7 @@ export default function App() {
           <span className="logo">
             <Icon name="compass" />
           </span>
-          <span>
+          <span className="brand-text">
             Campus<small>COMPASS</small>
           </span>
         </a>
@@ -481,12 +514,20 @@ export default function App() {
             <div key={p}>
               {i === 6 ? <div className="break" /> : null}
               <button
-                className={page === p ? "active" : ""}
+                className={[
+                  page === p ? "active" : "",
+                  subTabs[p] ? "sub" : "",
+                  subTabs[p] && page === subTabs[p] ? "parent-active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 aria-current={page === p ? "page" : undefined}
+                title={collapsed ? labels[p] : undefined}
+                aria-label={collapsed ? labels[p] : undefined}
                 onClick={() => nav(p)}
               >
                 <Icon name={navIcons[p]} />
-                {labels[p]}
+                <span className="nav-label">{labels[p]}</span>
                 {p === "saved" && state.saved.length > 0 ? (
                   <span className="badge">{state.saved.length}</span>
                 ) : null}
