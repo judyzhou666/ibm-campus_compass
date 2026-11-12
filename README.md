@@ -2,6 +2,40 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## AI Planner cleanup, Mimi branding, and event detail controls — November 12, 2026
+
+**AI Planner (`frontend/src/App.tsx`)**
+
+- Removed the **Demo Scenario Launcher**, the **What I'm working with** summary panel and the **Event updates** panel from the AI Planner.
+- Synthetic updates are still available from the bell and Settings › Notifications.
+- The planner heading now reads "Hi, Ask Mimi, your AI Chatbot!" and the chat panel is titled "Chat with Mimi".
+
+**Event detail page (`frontend/src/components.tsx`, `styles.css`, `icons.ts`)**
+
+- **Back to events** link above the banner.
+- The banner is now a solid dark-green poster on a light-green band, with a larger date.
+- **Share** copies the event's details as text, labelled as a fictional demo event, and confirms "Event details copied". The detail view has no URL of its own, so Share copies text rather than a link.
+- **Follow / Following** on the host row and the host card. Followed hosts are saved only in this browser.
+- **Contact** shows "Demo only: this fictional host can't be contacted and no message is sent."
+- **Getting there:** Walking, Biking and Public transit buttons. **Show campus map** toggle. Both say plainly that there are no real directions or maps for the fictional campus.
+
+**To demo:** run `npm run build` and `cargo run --locked`, then open http://127.0.0.1:4173. Open AI Planner to see the new heading. Open any event to try Back, Share, Follow, Contact, the travel buttons and the map toggle.
+
+**Launcher clean-up**
+
+- Deleted the unused `DemoLauncher.tsx`, its CSS and the two tests that copied its subtitle text.
+- Removed the unused `guidedScenario` import from `App.tsx`.
+- `docs/demo-script.md`, `docs/backend.md` and `wiki/Getting-Started.md` now start the guided demo by hand: Settings → Reset demo, then type "AI career social 3 events after 1 PM" in the AI Planner.
+- A new assertion in `tests/final-alignment.test.ts` checks that this prompt still returns at least 3 events from the reset state.
+
+**Verification:** `npm test` (242 TypeScript + 5 Wiki tests) and `npm run build` pass. Rust checks were not run because no backend files changed.
+
+**Limitations**
+
+- The optional `scripts/browser-journey.mjs` still clicks the removed "Prepare scenario" buttons and will fail until it is rewritten.
+- Settings → Reset demo does not archive the previous browser state. There is no "Restore previous demo" any more.
+- Share copies text only. Follow does nothing beyond the label. Contact, travel and map are demo placeholders.
+
 ## Event detail page: PR #19 review fixes — November 12, 2026
 
 - **Access matches updates.** The Highlights card reads access after applied updates. After update batch 1, "Community dinner & story exchange" (e6) says "At capacity", matching "Event is full" in the RSVP card, instead of "Open to all".

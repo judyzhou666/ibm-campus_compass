@@ -107,7 +107,7 @@ Now open **http://127.0.0.1:4173** in Chrome, Safari or Edge.
    - **Rust planner · IBM watsonx**: IBM's Granite AI model (only if you set up [watsonx](Using-watsonx)).
    - **Browser fallback · Simulated**: the server is not running; the page uses a backup copy of the rules.
 4. Click **My calendar** (top right) to see your week beside the chat. Use **View details** or **Add to calendar** on a suggested event. Events marked **RSVP required** ask for a demo name and attendance tick first.
-5. For a guided story, use **AI Planner → Demo Scenario Launcher**.
+5. For a guided story, follow `docs/demo-script.md`: type "AI career social 3 events after 1 PM" in the AI Planner and add events one at a time.
 6. Try **Simulate event cancellation → Find a replacement**, then export your calendar from **My Calendar**.
 
 Everything is fictional: the events, the students and the demo week (October 19–23, 2026, Eastern Time). Nothing is sent to a real calendar, and no real RSVP is made.
