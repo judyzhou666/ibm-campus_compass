@@ -52,8 +52,8 @@ export function validateConstraints(
 
 const keywords = {
   "AI & education": /\b(ai|education|research|learning|tech|coding|data)\b/i,
-  Career: /\b(career|job|jobs|internship|internships|industry|alumni|networking|resume|professional|work experience|hiring)\b/i,
-  Social: /\b(social|friend|friends|meet|people|dinner|lunch|community|practice english|make friends|meet people|talk to people|language exchange)\b/i,
+  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship))\b/i,
+  Social: /\b(social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people)\b/i,
   "Arts & culture":
     /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics)\b/i,
   Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance)\b/i,
@@ -166,7 +166,7 @@ export function interpretRequest(
           : h * 60 + minute;
     }
   }
-  if (test(/\b(free food|free meal|meal|dinner|lunch)\b/)) c.food = "Free meal";
+  if (test(/\b(free food|free meal|free lunch|free dinner|free snacks|free coffee|free pizza|free breakfast|meal|dinner|lunch)\b/)) c.food = "Free meal";
   if (test(/\b(coffee|tea|snack|refreshment)/) && !c.food)
     c.food = "Coffee & snacks";
   if (test(/\b(paid food|buy food|food for sale|food available for purchase)\b/) && !c.food)
@@ -175,7 +175,14 @@ export function interpretRequest(
     c.food = "None";
   if (test(/\b(unknown food|food (is |not )?(un)?confirmed|food status unknown)\b/) && !c.food)
     c.food = "Unknown";
-  if (test(/\b(free|no cost|no-cost|zero budget)\b/)) c.free = true;
+  // "free" means free-admission only when explicitly requesting it (not availability/food).
+  // "I'm free", "free on Wednesday", "free time", "free food/meal/etc." do NOT set free admission.
+  if (
+    test(
+      /\b(free admission|free entry|free to attend|free events?|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b/,
+    )
+  )
+    c.free = true;
   if (test(/\b(any food|food doesn.t matter|no food preference)\b/))
     delete c.food;
   const n = q.match(/\b([1-5])\s+(?:events|choices|options)/);

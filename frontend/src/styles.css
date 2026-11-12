@@ -910,6 +910,39 @@ p {
   background: var(--muted);
   color: white;
 }
+.example-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.example-prompt-btn {
+  font-size: 11px;
+  background: var(--mint);
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--green);
+  cursor: pointer;
+  font-weight: 500;
+}
+.example-prompt-btn:hover:not(:disabled) {
+  background: var(--green);
+  color: white;
+}
+.example-prompt-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.overlap-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 12px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .composer {
   display: flex;
   align-items: flex-end;

@@ -24,6 +24,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
+import { filterChips, removeChip } from "./filterChips.ts";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import {
@@ -1117,6 +1118,20 @@ export default function App() {
                         ) : null}
                         <div className="bubble">
                           {m.text}
+                          {m.role === "assistant" && m.examples?.length ? (
+                            <div className="example-prompts">
+                              {m.examples.map((ex) => (
+                                <button
+                                  key={ex}
+                                  className="example-prompt-btn"
+                                  disabled={busy}
+                                  onClick={() => void chat(ex, {})}
+                                >
+                                  {ex}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
@@ -1125,6 +1140,25 @@ export default function App() {
                               onDetails={setDetail}
                               onAdd={add}
                             />
+                          ) : null}
+                          {m.role === "assistant" && m.altIds?.length ? (
+                            <ChatEvents
+                              ids={m.altIds}
+                              state={state}
+                              onDetails={setDetail}
+                              onAdd={add}
+                            />
+                          ) : null}
+                          {m.role === "assistant" && m.overlapIds?.length ? (
+                            <>
+                              <p className="overlap-label">Also at the same time:</p>
+                              <ChatEvents
+                                ids={m.overlapIds}
+                                state={state}
+                                onDetails={setDetail}
+                                onAdd={add}
+                              />
+                            </>
                           ) : null}
                         </div>
                       </div>
@@ -1148,22 +1182,9 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  {/* Active filter chips — show constraints currently in use */}
+                  {/* Active filter chips — show constraints currently in use; clicking re-runs the search */}
                   {(() => {
-                    const c = state.constraints;
-                    const chips: { label: string; clear: () => void }[] = [];
-                    if (c.topics?.length)
-                      chips.push({ label: c.topics.join(", "), clear: () => update((s) => ({ ...s, constraints: { ...s.constraints, topics: undefined } })) });
-                    if (c.days?.length)
-                      chips.push({ label: c.days.map((d) => ["Monday","Tuesday","Wednesday","Thursday","Friday"][d] ?? String(d)).join("/"), clear: () => update((s) => ({ ...s, constraints: { ...s.constraints, days: undefined } })) });
-                    if (c.after !== undefined || c.before !== undefined) {
-                      const timeLabel = c.after !== undefined && c.after >= 1020 ? "Evening" : c.after !== undefined && c.after >= 720 ? "Afternoon" : c.before !== undefined && c.before <= 720 ? "Morning" : c.after !== undefined ? `After ${Math.floor(c.after/60)}:${String(c.after%60).padStart(2,"0")}` : `Before ${Math.floor((c.before??0)/60)}:${String((c.before??0)%60).padStart(2,"0")}`;
-                      chips.push({ label: timeLabel, clear: () => update((s) => ({ ...s, constraints: { ...s.constraints, after: undefined, before: undefined } })) });
-                    }
-                    if (c.food)
-                      chips.push({ label: c.food === "Free meal" ? "Free food" : c.food, clear: () => update((s) => ({ ...s, constraints: { ...s.constraints, food: undefined } })) });
-                    if (c.free)
-                      chips.push({ label: "Free admission", clear: () => update((s) => ({ ...s, constraints: { ...s.constraints, free: undefined } })) });
+                    const chips = filterChips(state.constraints);
                     if (!chips.length) return null;
                     return (
                       <div className="active-filters" role="group" aria-label="Active search filters">
@@ -1172,7 +1193,12 @@ export default function App() {
                           <button
                             key={chip.label}
                             className="filter-chip"
-                            onClick={chip.clear}
+                            onClick={() =>
+                              void conversation.removeFilter(
+                                chip.label,
+                                removeChip(state.constraints, chip),
+                              )
+                            }
                             disabled={busy}
                             aria-label={`Remove filter: ${chip.label}`}
                           >
@@ -1181,7 +1207,7 @@ export default function App() {
                         ))}
                         <button
                           className="filter-chip filter-chip-clear"
-                          onClick={() => update((s) => ({ ...s, constraints: {} }))}
+                          onClick={() => void conversation.removeFilter("", {}, true)}
                           disabled={busy}
                         >
                           Clear all

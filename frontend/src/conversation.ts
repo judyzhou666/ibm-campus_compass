@@ -1,7 +1,7 @@
 import { PlanningClarification, interpretRequest } from "./interpretation.ts";
-import { requestPlan, planningKey, planModeLabel } from "./api.ts";
+import { requestPlan, planningKey, planModeLabel, LimitedDemoHint } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
-import { issue, recommend } from "./planner.ts";
+import { issue, recommend, overlap } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
 import type { CampusEvent, Constraints, DemoState } from "./types.ts";
 import {
@@ -80,6 +80,8 @@ export function createConversation(
           .join(", ") || "none";
 
       let response: string;
+      let altIds: string[] = []; // alternative event IDs when nothing matched
+      let overlapIds: string[] = []; // events that overlap with the conflict-free picks
       if (old) {
         // Replacement flow: one alternative with explicit trade-off.
         const alternativeText = alternative
@@ -91,15 +93,31 @@ export function createConversation(
         response = matches.length
           ? `${availabilityChangeSummary}\n\nI found ${matches.length} ${matches.length === 1 ? "option" : "options"} on your remaining available days. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : `${availabilityChangeSummary}\n\nI couldn't find an eligible, conflict-free match for those days in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear all filters.`;
+      } else if (matches.length) {
+        // Find eligible events that overlap the conflict-free picks (up to 3).
+        overlapIds = findOverlapAlternatives(matches, plan.constraints, snapshot);
+        const overlapCount = overlapIds.length;
+        response = overlapCount > 0
+          ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} that fits together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
+          : `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
       } else {
-        if (matches.length) {
-          response = `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
+        // Nothing matched. Use the Rust diagnostic when present (avoids duplicating the same
+        // message from both Rust and the TypeScript fallback), otherwise build one here.
+        const localAlt = buildNoMatchAlts(plan.constraints, snapshot);
+        altIds = localAlt.ids;
+        if (plan.source === "rust" && plan.notice) {
+          // Rust planner returned a no-match diagnostic — use it directly.
+          response = plan.notice;
+        } else if (plan.source === "browser-fallback" && plan.notice) {
+          // Browser fallback unavailability notice + no-match explanation.
+          response = plan.notice + "\n\n" + localAlt.text;
         } else {
-          // Build a plain-language no-match response with nearest alternatives.
-          response = buildNoMatchResponse(plan.constraints, snapshot);
+          response = localAlt.text;
         }
       }
-      if (plan.notice) response = plan.notice + "\n\n" + response;
+      // Only prepend plan.notice when it is a watsonx fallback or similar (not the diagnostic).
+      // When plan.notice IS the diagnostic we've already assigned it as response above.
+      if (plan.notice && matches.length) response = plan.notice + "\n\n" + response;
       status.update((s) => ({
         ...s,
         mode: planModeLabel(plan),
@@ -107,6 +125,8 @@ export function createConversation(
       demo.update((s) => ({
         ...s,
         constraints: old ? s.constraints : plan.constraints,
+        // Only the conflict-free picks go into draft (shown in "Your draft plan").
+        // altIds are shown inline in the message but not in the draft panel.
         draft: matches.map((e) => e.id),
         messages: [
           ...s.messages,
@@ -114,6 +134,8 @@ export function createConversation(
             role: "assistant",
             text: response,
             eventIds: matches.map((e) => e.id),
+            overlapIds: overlapIds.length ? overlapIds : undefined,
+            altIds: altIds.length ? altIds : undefined,
             evidence: plan.evidence.filter((item) =>
               matches.some((e) => e.id === item.event_id),
             ),
@@ -123,11 +145,21 @@ export function createConversation(
     } catch (error) {
       if (!stale()) {
         pending = error instanceof PlanningClarification ? error : undefined;
-        assistant(
-          error instanceof Error
-            ? error.message
-            : "The planner could not finish. Try again.",
-        );
+        if (error instanceof LimitedDemoHint) {
+          demo.update((s) => ({
+            ...s,
+            messages: [
+              ...s.messages,
+              { role: "assistant" as const, text: error.message, examples: error.examples },
+            ],
+          }));
+        } else {
+          assistant(
+            error instanceof Error
+              ? error.message
+              : "The planner could not finish. Try again.",
+          );
+        }
       }
     } finally {
       if (token === version) status.update((s) => ({ ...s, busy: false }));
@@ -156,10 +188,13 @@ export function createConversation(
   }
 
   /**
-   * Build a plain-language no-match message. When a filter combination yields nothing, offer
-   * the closest alternatives by relaxing the most-restrictive filter first.
+   * Build a plain-language no-match message with IDs of alternative events to show as cards.
+   * Relaxes one filter at a time and returns the first relaxation that yields results.
    */
-  function buildNoMatchResponse(constraints: Constraints, snapshot: DemoState): string {
+  function buildNoMatchAlts(
+    constraints: Constraints,
+    snapshot: DemoState,
+  ): { text: string; ids: string[] } {
     const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     // 1. Drop food constraint and retry
     if (constraints.food) {
@@ -169,8 +204,11 @@ export function createConversation(
       if (alt.length) {
         const label = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
         const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
-        const timeStr = constraints.after === 1020 ? " in the evening" : constraints.after === 720 ? " in the afternoon" : constraints.before === 720 ? " in the morning" : "";
-        return `Nothing${dayStr}${timeStr} has ${label}. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} without that filter — tap one to see details.`;
+        const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
+        return {
+          text: `Nothing${dayStr}${timeStr} has ${label}. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} without that filter — tap one to see details.`,
+          ids: alt.map((e) => e.id),
+        };
       }
     }
     // 2. Drop day constraint and retry
@@ -180,7 +218,10 @@ export function createConversation(
       const alt = recommend(snapshot, noDay, 4, true);
       if (alt.length) {
         const dayNames = constraints.days.map((d) => DAY_NAMES[d]).filter(Boolean).join("/");
-        return `I didn't find anything on ${dayNames || "that day"} that matches. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} similar ${alt.length === 1 ? "option" : "options"} on other days.`;
+        return {
+          text: `I didn't find anything on ${dayNames || "that day"} that matches. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} similar ${alt.length === 1 ? "option" : "options"} on other days.`,
+          ids: alt.map((e) => e.id),
+        };
       }
     }
     // 3. Drop time constraint
@@ -190,7 +231,10 @@ export function createConversation(
       delete noTime.before;
       const alt = recommend(snapshot, noTime, 4, true);
       if (alt.length) {
-        return `Nothing matches that time window. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} at other times.`;
+        return {
+          text: `Nothing matches that time window. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} at other times.`,
+          ids: alt.map((e) => e.id),
+        };
       }
     }
     // 4. Drop topic constraint
@@ -200,10 +244,48 @@ export function createConversation(
       const alt = recommend(snapshot, noTopic, 4, true);
       if (alt.length) {
         const topicStr = constraints.topics.join(" or ");
-        return `I couldn't find any ${topicStr} events that fit. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} from other areas.`;
+        return {
+          text: `I couldn't find any ${topicStr} events that fit. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} from other areas.`,
+          ids: alt.map((e) => e.id),
+        };
       }
     }
-    return `Nothing matched in this demo week. Try a different day, topic, or time, or say "start over" to clear all filters.`;
+    return {
+      text: `Nothing matched in this demo week. Try a different day, topic, or time, or say "start over" to clear all filters.`,
+      ids: [],
+    };
+  }
+
+  /**
+   * Find eligible events that overlap with the conflict-free picks but weren't selected.
+   * Returns up to 3 alternative event IDs.
+   */
+  function findOverlapAlternatives(
+    picks: CampusEvent[],
+    constraints: Constraints,
+    snapshot: DemoState,
+  ): string[] {
+    const altIds: string[] = [];
+    for (const e of EVENTS) {
+      if (altIds.length >= 3) break;
+      if (
+        snapshot.plan.includes(e.id) ||
+        picks.some((p) => p.id === e.id) ||
+        issue(e, snapshot) ||
+        (constraints.topics?.length && !constraints.topics.includes(e.topic)) ||
+        (constraints.days?.length && !constraints.days.includes(e.day)) ||
+        (constraints.after !== undefined && e.start < constraints.after) ||
+        (constraints.before !== undefined && e.end > constraints.before) ||
+        (constraints.food && e.food !== constraints.food) ||
+        (constraints.free && e.cost !== 0)
+      )
+        continue;
+      // Include only if it overlaps at least one pick (that's why it was excluded).
+      if (picks.some((p) => overlap(e, p, snapshot.buffer))) {
+        altIds.push(e.id);
+      }
+    }
+    return altIds;
   }
 
   /**
@@ -253,6 +335,44 @@ export function createConversation(
     clear() {
       invalidate();
       demo.update((s) => ({ ...s, messages: [], constraints: {}, draft: [] }));
+    },
+    /**
+     * Remove a set of constraint keys and immediately re-run the search with the
+     * remaining constraints, posting a short "Removed X. Here's what fits now:" prefix.
+     */
+    async removeFilter(
+      removedLabel: string,
+      updatedConstraints: Constraints,
+      clearAll = false,
+    ) {
+      if (status.read().busy) return;
+      // Update stored constraints first.
+      demo.update((s) => ({ ...s, constraints: updatedConstraints }));
+      const prefix = clearAll
+        ? "Filters cleared."
+        : `Removed ${removedLabel} filter.`;
+      const prefixMessage = clearAll
+        ? "Filters cleared. Tell me what you're looking for."
+        : `Removed ${removedLabel} filter. Here's what fits now:`;
+      demo.update((s) => ({
+        ...s,
+        messages: [...s.messages, { role: "assistant" as const, text: prefixMessage }],
+      }));
+      if (clearAll) return;
+      // Re-run the search with the updated constraints.
+      await run(
+        (snapshot) =>
+          requestPlan(
+            "Find events",
+            updatedConstraints,
+            snapshot,
+            fetcher,
+            isWatsonxMode(),
+          ),
+        undefined,
+        undefined,
+      );
+      void prefix; // suppress unused warning
     },
     async chat(text: string, previous?: Constraints) {
       if (status.read().busy || !text.trim()) return;

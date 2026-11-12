@@ -2,7 +2,62 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
-## AI Planner: fresh search, visible filters, plain-language replies, and more synonyms — November 12, 2026
+## AI Planner: chip removal re-runs search, free-admission wording, alternatives, fuzzy phrases, overlap cards — November 12, 2026 (round 2)
+
+Six issues found in hands-on testing of commit `1ede074` have been addressed in this second round.
+
+### What was fixed (round 2)
+
+1. **Clicking a filter chip × re-runs the search.** Previously the chip disappeared but the suggestion cards did not change. Now `conversation.removeFilter()` posts a short confirmation line ("Removed Wednesday filter. Here's what fits now:") and immediately re-runs the planner with the remaining constraints. "Clear all" posts "Filters cleared. Tell me what you're looking for." The chip-building logic is extracted into `frontend/src/filterChips.ts` (`filterChips()` / `removeChip()`) for unit testing.
+
+2. **"free" no longer means free admission.** "I'm free Wednesday evening" and "anything with free food?" no longer add a "Free admission" chip. Free admission is now set only for explicit phrases: "free admission", "free entry", "free to attend", "free of charge", "no cost", "costs nothing", "without paying", "zero cost". Both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` were updated in lock-step. "Free meal/lunch/dinner/snacks/coffee/pizza" sets the food filter only.
+
+3. **No-match duplication fixed; alternative events shown as cards.** The no-match text was appearing twice (once from the Rust diagnostic in `plan.notice`, once from the TypeScript fallback). The fix: when the Rust planner returns a no-match diagnostic, use it as the response text and build the local alternative list (IDs only) for the suggestion cards. The no-match function (`buildNoMatchAlts`) now returns both `{ text, ids }` so the cards are populated. The browser-fallback path shows the unavailability notice followed by the plain-language no-match text.
+
+4. **Fuzzy phrase matching.** "practice **my** English", "make **some/new** friends", "meet **new** people", "find **an** internship", "get **a** job" now work. Both interpreters use flexible regexes that allow one or two small words between key terms. The "limited demo" reply now shows 3 clickable example-request buttons (rendered as `<button>` elements that send that text into the chat). A new `examples` field on `Message` carries these; a new `LimitedDemoHint` error class in `api.ts` carries them to `conversation.ts`.
+
+5. **Overlap alternatives shown as "Also at the same time" cards.** When the planner finds 1 conflict-free pick but there are other eligible events at the same time (e.g. Wednesday evening: 3 eligible, 1 conflict-free), the message says "I found 1 option that fits together, plus 2 alternatives at the same time" and shows them below a labelled "Also at the same time:" section. They are clearly separate from the main pick. A new `overlapIds` field on `Message` carries them.
+
+6. **New tests.** `tests/planner-round2.test.ts` adds 30 TypeScript tests covering all five items above: free-admission wording, phrase synonyms, `filterChips` labels, fresh-search carry-over, no-match plain-language fallback (browser mode), and overlap detection. `backend/src/interpreter.rs` adds 12 Rust tests covering the same free-admission and synonym rules, the no-match diagnostic wording, and fresh-parse carry-over.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173 → AI Planner. Start with "New chat" and try:
+
+1. "is there anything with free food?" — 3 results, **Free food chip** appears (no "Free admission" chip this time)
+2. "I'm free Wednesday evening, what can I do?" — "Wednesday" and "Evening" chips appear; results show 1 conflict-free pick + "Also at the same time: 2 alternatives"
+3. "any internship or job events?" — Career events across the whole week (new question = fresh search)
+4. "I want to practice my English" / "make some friends" — understood as Social
+5. Click "Wednesday ×" — planner re-runs without that filter and posts new cards
+6. "arts events with free food on Monday morning" — plain-language "Nothing on Monday morning has free food. Here are N options without that filter." with suggestion cards
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **215 TypeScript tests** (185 from merge + 30 new in `tests/planner-round2.test.ts`)
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **53 Rust tests** (41 from before + 12 new in `backend/src/interpreter.rs`)
+- `npm run build` (`tsc --noEmit` + Vite) — clean
+- `npm run test:api` — PASS
+
+`npm run evaluate`: the frozen results changed only in the `constraints_satisfied` annotation for scenarios whose input previously triggered the spurious `free: true` flag (e.g. "social with free food" no longer sets free-admission). The selected event IDs and `understood` flags are identical. The frozen `evaluation/results.json` was restored after verification; the change would be a correct improvement if the baseline were refreshed.
+
+### Limitations
+
+- Follow-up detection remains heuristic (keyword-based). Unusual follow-up phrasings without a keyword start fresh.
+- Chips show `state.constraints`, updated after each complete query; mid-clarification constraints are not shown as chips.
+- Overlap alternatives are limited to ≤ 3 and only appear when the user's constraints match eligible events; they are for reference, not added to the draft plan automatically.
+- Only simulated mode was tested locally; watsonx mode shares the same carry-over and synonym logic.
+
+## AI Planner: fresh search, visible filters, plain-language replies, and more synonyms — November 12, 2026 (round 1)
 
 Four bugs in the AI Planner that a judge or new student would hit in the first few questions have been fixed.
 
