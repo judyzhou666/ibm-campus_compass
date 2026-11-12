@@ -245,6 +245,19 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         (_, Some(t)) if t <= 720 => " in the morning".to_owned(),
         _ => String::new(),
     };
+    // When events match every filter but none can be recommended, they are blocked by the
+    // student's plan or are unavailable. Say so instead of claiming no events match.
+    let blocked_lead = events.iter().any(|e| matches_constraints(e, c)).then(|| {
+        format!(
+            "The matching {topic_prefix}events{}{} are already in your plan, conflict with it, or aren't open.",
+            day_str_fn(c),
+            time_str_fn(c)
+        )
+    });
+    let say = |lead: String, tail: String| match &blocked_lead {
+        Some(blocked) => format!("{blocked} {tail}"),
+        None => format!("{lead} {tail}"),
+    };
 
     // 1. Drop food filter
     if c.food.is_some() {
@@ -259,9 +272,9 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
             };
             let day_str = day_str_fn(c);
             let time_str = time_str_fn(c);
-            return format!(
-                "No {topic_prefix}events{day_str}{time_str} have {food_label}. Here {} without that filter.",
-                n1(alt)
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} have {food_label}."),
+                format!("Here {} without the {food_label} filter.", n1(alt)),
             );
         }
     }
@@ -273,9 +286,9 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         if alt > 0 {
             let day_str = day_str_fn(c);
             let time_str = time_str_fn(c);
-            return format!(
-                "No {topic_prefix}events{day_str}{time_str} are free admission. Here {} including paid ones.",
-                n1(alt)
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} are free admission."),
+                format!("Here {} including paid ones.", n1(alt)),
             );
         }
     }
@@ -297,9 +310,9 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
             } else {
                 day_names.join("/")
             };
-            return format!(
-                "No {topic_prefix}events on {day_str} match. Here {} on other days.",
-                n1(alt)
+            return say(
+                format!("No {topic_prefix}events on {day_str} match."),
+                format!("Here {} on other days.", n1(alt)),
             );
         }
     }
@@ -310,9 +323,9 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         no_time.before = None;
         let alt = alt_count(state, &no_time, events);
         if alt > 0 {
-            return format!(
-                "No {topic_prefix}events match that time window. Here {} at other times.",
-                n1(alt)
+            return say(
+                format!("No {topic_prefix}events match that time window."),
+                format!("Here {} at other times.", n1(alt)),
             );
         }
     }
@@ -322,13 +335,16 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         no_topic.topics = None;
         let alt = alt_count(state, &no_topic, events);
         if alt > 0 {
-            return format!(
-                "No {topic_prefix}events fit the other filters. Here {} from other areas.",
-                n1(alt)
+            return say(
+                format!("No {topic_prefix}events fit the other filters."),
+                format!("Here {} from other areas.", n1(alt)),
             );
         }
     }
-    "Nothing matched in this demo week. Try a different day, topic, or time, or say \"start over\" to clear all filters.".into()
+    say(
+        "Nothing matched in this demo week.".into(),
+        "Try a different day, topic, or time, or say \"start over\" to clear all filters.".into(),
+    )
 }
 
 #[cfg(test)]

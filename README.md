@@ -2,6 +2,16 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## AI Planner: PR #18 review fixes — November 12, 2026
+
+Small fixes from the PR #18 review, made with Claude Code (not IBM Bob):
+
+- **Honest no-match wording.** When events match every filter but are already in the plan, conflict with it, or aren't open, the reply now says "The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open." It no longer says "No AI & education events match that time window." The nearest alternatives are still offered. Same wording in Rust and the TypeScript fallback.
+- **Excluded topics are visible.** A "not career" filter now shows as a `Not Career ×` chip. "Also at the same time" alternatives no longer include excluded topics.
+- **"zero budget"** sets the free-admission filter again, as it did before this PR.
+
+Verification: `npm test` 244/244 + 5/5 Wiki, `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` 58/58, `cargo build`, `npm run test:api` all pass.
+
 ## AI Planner: free/availability rule, grammar, no-match wording, chip-removal lead — November 12, 2026 (round 3)
 
 Four small fixes on top of round 2 (commit `4444022`).

@@ -193,6 +193,19 @@ export function createConversation(
     return `An alternative is "${alternative.title}" on ${when(alternative)}. ${alternative.rsvp}. It's a suggestion only — add it if it works for you.\n\n${tradeOffText}\n\n[${attributionLabel}]`;
   }
 
+  /** Whether an event satisfies every filter, ignoring the student's schedule and availability. */
+  function matchesFilters(e: CampusEvent, c: Constraints) {
+    return (
+      (!c.topics?.length || c.topics.includes(e.topic)) &&
+      (!c.days || c.days.includes(e.day)) &&
+      (c.after == null || e.start >= c.after) &&
+      (c.before == null || e.end <= c.before) &&
+      (!c.food || e.food === c.food) &&
+      (!c.free || e.cost === 0) &&
+      !c.excluded?.includes(e.topic)
+    );
+  }
+
   /**
    * Build a plain-language no-match message with IDs of alternative events to show as cards.
    * Relaxes one filter at a time and returns the first relaxation that yields results.
@@ -205,6 +218,14 @@ export function createConversation(
     const n1 = (n: number) => (n === 1 ? "is 1 option" : `are ${n} options`);
     const topicStr =
       constraints.topics?.length ? constraints.topics.join(" or ") + " " : "";
+    const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
+    const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
+    // When events match every filter but none can be recommended, the student's plan or
+    // availability blocks them. Say so instead of claiming no events match.
+    const blockedLead = EVENTS.some((e) => matchesFilters(e, constraints))
+      ? `The matching ${topicStr}events${dayStr}${timeStr} are already in your plan, conflict with it, or aren't open.`
+      : undefined;
+    const say = (lead: string, tail: string) => `${blockedLead ?? lead} ${tail}`;
 
     // 1. Drop food constraint and retry
     if (constraints.food) {
@@ -213,10 +234,11 @@ export function createConversation(
       const alt = recommend(snapshot, noFood, 4, true);
       if (alt.length) {
         const foodLabel = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
-        const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
-        const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
         return {
-          text: `No ${topicStr}events${dayStr}${timeStr} have ${foodLabel}. Here ${n1(alt.length)} without that filter — tap one to see details.`,
+          text: say(
+            `No ${topicStr}events${dayStr}${timeStr} have ${foodLabel}.`,
+            `Here ${n1(alt.length)} without the ${foodLabel} filter — tap one to see details.`,
+          ),
           ids: alt.map((e) => e.id),
         };
       }
@@ -227,10 +249,11 @@ export function createConversation(
       delete noFree.free;
       const alt = recommend(snapshot, noFree, 4, true);
       if (alt.length) {
-        const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
-        const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
         return {
-          text: `No ${topicStr}events${dayStr}${timeStr} are free admission. Here ${n1(alt.length)} including paid ones — tap one to see details.`,
+          text: say(
+            `No ${topicStr}events${dayStr}${timeStr} are free admission.`,
+            `Here ${n1(alt.length)} including paid ones — tap one to see details.`,
+          ),
           ids: alt.map((e) => e.id),
         };
       }
@@ -243,7 +266,10 @@ export function createConversation(
       if (alt.length) {
         const dayNames = constraints.days.map((d) => DAY_NAMES[d]).filter(Boolean).join("/");
         return {
-          text: `No ${topicStr}events on ${dayNames || "that day"} match. Here ${n1(alt.length)} on other days.`,
+          text: say(
+            `No ${topicStr}events on ${dayNames || "that day"} match.`,
+            `Here ${n1(alt.length)} on other days.`,
+          ),
           ids: alt.map((e) => e.id),
         };
       }
@@ -256,7 +282,10 @@ export function createConversation(
       const alt = recommend(snapshot, noTime, 4, true);
       if (alt.length) {
         return {
-          text: `No ${topicStr}events match that time window. Here ${n1(alt.length)} at other times.`,
+          text: say(
+            `No ${topicStr}events match that time window.`,
+            `Here ${n1(alt.length)} at other times.`,
+          ),
           ids: alt.map((e) => e.id),
         };
       }
@@ -268,13 +297,19 @@ export function createConversation(
       const alt = recommend(snapshot, noTopic, 4, true);
       if (alt.length) {
         return {
-          text: `No ${topicStr}events fit the other filters. Here ${n1(alt.length)} from other areas.`,
+          text: say(
+            `No ${topicStr}events fit the other filters.`,
+            `Here ${n1(alt.length)} from other areas.`,
+          ),
           ids: alt.map((e) => e.id),
         };
       }
     }
     return {
-      text: `Nothing matched in this demo week. Try a different day, topic, or time, or say "start over" to clear all filters.`,
+      text: say(
+        "Nothing matched in this demo week.",
+        `Try a different day, topic, or time, or say "start over" to clear all filters.`,
+      ),
       ids: [],
     };
   }
@@ -295,12 +330,7 @@ export function createConversation(
         snapshot.plan.includes(e.id) ||
         picks.some((p) => p.id === e.id) ||
         issue(e, snapshot) ||
-        (constraints.topics?.length && !constraints.topics.includes(e.topic)) ||
-        (constraints.days?.length && !constraints.days.includes(e.day)) ||
-        (constraints.after !== undefined && e.start < constraints.after) ||
-        (constraints.before !== undefined && e.end > constraints.before) ||
-        (constraints.food && e.food !== constraints.food) ||
-        (constraints.free && e.cost !== 0)
+        !matchesFilters(e, constraints)
       )
         continue;
       // Include only if it overlaps at least one pick (that's why it was excluded).

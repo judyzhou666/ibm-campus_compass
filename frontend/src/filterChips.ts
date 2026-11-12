@@ -39,6 +39,8 @@ export function filterChips(c: Constraints): FilterChip[] {
       keys: ["food"],
     });
   if (c.free) chips.push({ label: "Free admission", keys: ["free"] });
+  if (c.excluded?.length)
+    chips.push({ label: `Not ${c.excluded.join(", ")}`, keys: ["excluded"] });
   return chips;
 }
 

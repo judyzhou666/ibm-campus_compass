@@ -211,7 +211,7 @@ impl SimulatedInterpreter {
             &q,
         );
         let free_admission_explicit = self::matches(
-            r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b",
+            r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost|zero budget)\b",
             &q,
         );
         // Use the `matches` closure (which borrows `understood`) to also flag explicit phrases.
@@ -223,7 +223,7 @@ impl SimulatedInterpreter {
         }
         if free_admission_explicit {
             let _ = matches(
-                r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b",
+                r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost|zero budget)\b",
                 &q,
             );
             c.free = Some(true);
@@ -432,6 +432,36 @@ mod round2_tests {
             reason.len() < 300,
             "Reason should be a single sentence, not duplicated, got: {reason}"
         );
+    }
+
+    #[test]
+    fn no_match_reason_names_blocked_matches_instead_of_denying_them() {
+        let events: Vec<crate::model::Event> =
+            serde_json::from_str(include_str!("../../data/events.json")).unwrap();
+        let chosen = &events[0];
+        let state = crate::model::Schedule {
+            plan: vec![chosen.id.clone()],
+            ..Default::default()
+        };
+        // Only the already-chosen event fits these filters.
+        let c = Constraints {
+            topics: Some(vec![chosen.topic.clone()]),
+            days: Some(vec![chosen.day]),
+            after: Some(chosen.start),
+            before: Some(chosen.end),
+            ..Default::default()
+        };
+        let reason = crate::planner::no_match_reason(&state, &c, &events);
+        assert!(
+            reason.starts_with("The matching"),
+            "must not claim nothing matches when the plan blocks a match, got: {reason}"
+        );
+        assert!(!reason.starts_with("No "), "got: {reason}");
+    }
+
+    #[test]
+    fn zero_budget_sets_free_admission() {
+        assert_eq!(parse("zero budget events").constraints.free, Some(true));
     }
 
     #[test]

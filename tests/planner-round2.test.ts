@@ -58,6 +58,10 @@ describe("free-admission wording", () => {
     assert.equal(c.free, true);
   });
 
+  it("'zero budget' sets free admission", () => {
+    assert.equal(interpretRequest("zero budget events").constraints.free, true);
+  });
+
   it("'no cost' sets free admission", () => {
     const c = interpretRequest("no cost events").constraints;
     assert.equal(c.free, true);
@@ -154,6 +158,12 @@ describe("filterChips labels", () => {
     assert.deepEqual(chips[0].keys, ["free"]);
   });
 
+  it("produces a 'Not <topic>' chip for excluded topics", () => {
+    const chips = filterChips({ excluded: ["Career"] });
+    assert.deepEqual(chips, [{ label: "Not Career", keys: ["excluded"] }]);
+    assert.deepEqual(removeChip({ excluded: ["Career"], days: [1] }, chips[0]), { days: [1] });
+  });
+
   it("removes the correct keys when removeChip is called", () => {
     const c: Constraints = { days: [2], after: 1020, food: "Free meal" };
     const chips = filterChips(c);
@@ -221,6 +231,22 @@ describe("no-match alternatives (browser recommend)", () => {
       errorMsg.includes("I couldn't find") ||
       errorMsg.includes("I didn't find");
     assert.ok(isPlainLang, `Should have a plain-language response, got: ${errorMsg}`);
+  });
+});
+
+describe("no-match wording when the schedule blocks a matching event", () => {
+  it("says the match is blocked instead of claiming nothing matches", async () => {
+    const demo = createStore(fresh());
+    const conversation = createConversation(demo, () => {}, async () => {
+      throw Error("offline");
+    });
+    await conversation.chat("AI on Tuesday morning");
+    const last = demo.read().messages.at(-1)!;
+    assert.match(
+      last.text,
+      /The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open\. Here (is|are) \d options? at other times\./,
+    );
+    assert.ok(!last.text.includes("No AI & education events"), last.text);
   });
 });
 

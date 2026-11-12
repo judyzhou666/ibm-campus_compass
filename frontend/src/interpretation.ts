@@ -196,7 +196,7 @@ export function interpretRequest(
   // Explicit free-admission phrases set free even when food is also mentioned.
   if (
     test(
-      /\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b/,
+      /\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost|zero budget)\b/,
     )
   )
     c.free = true;
