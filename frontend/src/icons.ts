@@ -1,6 +1,19 @@
 export const paths: Record<string, string> = {
   compass: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z M16 8l-3 5-5 3 3-5 5-3Z",
   home: "m3 10 9-7 9 7v11h-6v-7H9v7H3Z",
+  monitor: "M3 4h18v12H3Z M8 21h8 M12 16v5",
+  globe:
+    "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M3 12h18 M12 3c3.5 3.5 3.5 14.5 0 18 M12 3c-3.5 3.5-3.5 14.5 0 18",
+  reset: "M4 4v5h5 M4.6 9A8 8 0 1 1 4 13",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M12 11v6 M12 7.5h.01",
+  dashboard: "M3 3h8v8H3Z M13 3h8v5h-8Z M13 10h8v11h-8Z M3 13h8v8H3Z",
+  megaphone: "M3 10v4h3l8 4V6l-8 4Z M6 14l1 6h3l-1-5 M18 9a4 4 0 0 1 0 6",
+  academic: "M2 9l10-5 10 5-10 5Z M6 11v5c3 2.5 9 2.5 12 0v-5 M22 9v6",
+  briefcase: "M3 7h18v13H3Z M8 7V4h8v3 M3 13h18",
+  pencil: "M4 20l1-5L16 4l4 4L9 19Z M13 7l4 4",
+  heart: "M12 20s-8-5-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 6-8 11-8 11Z",
+  palette:
+    "M12 3a9 9 0 0 0 0 18c1.5 0 2-1 1.3-2s0-2 1.2-2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10Z M7.5 12h.1 M9.5 7.5h.1 M14.5 7.5h.1 M16.5 11h.1",
   calendar: "M4 5h16v16H4Z M8 2v6 M16 2v6 M4 11h16 M8 15h2 M14 15h2",
   search: "M21 21l-5-5 M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z",
   chat: "M21 11a9 9 0 0 1-9 9H4l-3 2 1-7a9 9 0 1 1 19-4Z M7 11h.1 M12 11h.1 M17 11h.1",

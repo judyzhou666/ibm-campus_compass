@@ -1,9 +1,9 @@
-import { dayLabel, DEMO, TIME_ZONES } from "./config.ts";
+import { dayLabel } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
 import { useEffect, useState, type FormEvent } from "react";
 import { useSubPage } from "./navigation.ts";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
-import { issue, overlap } from "./planner.ts";
+import { overlap } from "./planner.ts";
 import { effectiveEvents } from "./updates.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
@@ -856,126 +856,6 @@ export function Forum({
         })}
       </main>
     </div>
-    </>
-  );
-}
-
-export function Settings({
-  state,
-  update,
-  notify,
-  onReset,
-}: Props & { onReset: () => void }) {
-  const [confirm, setConfirm] = useState(false);
-  return (
-    <>
-      <Heading
-        title="Keep things your way."
-        description="A few useful settings for your demonstration."
-      />
-      <section className="panel">
-        <div className="settings-row">
-          <div>
-            <h3>Time zone</h3>
-            <p>
-              Shows the demo date and time, the day marked today and, in
-              event details, each event&rsquo;s start in this zone. Schedules, the planner and calendar export
-              stay in campus time ({DEMO.time_zone}). Resets on demo reset.
-            </p>
-          </div>
-          <select
-            value={state.timezone || DEMO.time_zone}
-            aria-label="Time zone"
-            style={{ fontSize: 13, padding: "6px 10px", borderRadius: 7, border: "1px solid var(--line)" }}
-            onChange={(e) => {
-              update((s) => ({ ...s, timezone: e.target.value }));
-              notify("Time zone updated.");
-            }}
-          >
-            {TIME_ZONES.map((tz) => (
-              <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
-            ))}
-          </select>
-        </div>
-        <div className="settings-row">
-          <div>
-            <h3>Leave time to get there</h3>
-            <p>Keep a 15-minute buffer between events and busy commitments.</p>
-          </div>
-          <input
-            type="checkbox"
-            aria-label="15-minute travel buffer"
-            checked={state.buffer > 0}
-            onChange={(e) => {
-              const next = { ...state, buffer: e.target.checked ? 15 : 0 };
-              const conflict = EVENTS.find(
-                (x) =>
-                  next.plan.includes(x.id) &&
-                  !next.cancelled.includes(x.id) &&
-                  issue(x, next),
-              );
-              if (conflict) {
-                notify(
-                  `Remove ${conflict.title} before enabling a longer travel buffer.`,
-                );
-                return;
-              }
-              update(() => next);
-              notify("Travel buffer updated.");
-            }}
-          />
-        </div>
-        <div className="settings-row">
-          <div>
-            <h3>AI connection</h3>
-            <p>
-              Simulated planner by default. The server can run a live IBM
-              watsonx interpreter when configured; each chat reply is labelled
-              with the mode that answered.
-            </p>
-          </div>
-          <span className="tag">Demo mode</span>
-        </div>
-        <div className="settings-row">
-          <div>
-            <h3>Start the demonstration again</h3>
-            <p>Clear locally saved plans, messages, posts, and preferences.</p>
-          </div>
-          <Button className="danger" onClick={() => setConfirm(true)}>
-            Reset demo
-          </Button>
-        </div>
-        {confirm ? (
-          <div className="notice" role="alert">
-            <strong>Reset your demo?</strong>
-            <p>
-              This clears plans, saved events, chats, and local posts, then
-              restores the sample profile.
-            </p>
-            <div className="row">
-              <Button onClick={() => setConfirm(false)}>Keep my changes</Button>
-              <Button className="primary" onClick={onReset}>
-                Confirm reset
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </section>
-      <section className="panel" style={{ marginTop: 24 }}>
-        <h2>About Campus Compass</h2>
-        <p className="sub">
-          A higher-education opportunity discovery project for the IBM AI
-          Experiential Learning Lab. Built to help students turn scattered
-          possibilities into a feasible weekly plan.
-        </p>
-        <p>Team: Judy, Shuozishan Wang, Chenxi Liu, and Tingting Lai.</p>
-        <p className="sub">
-          All events, student stories, and schedules are fictional. This is a
-          student project, not an official university or IBM product. IBM Bob
-          development work must be documented separately, and the optional
-          watsonx interpreter has not yet been verified with a live IBM account.
-        </p>
-      </section>
     </>
   );
 }
