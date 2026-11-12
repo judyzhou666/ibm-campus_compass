@@ -1,6 +1,7 @@
 import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
+import { DEFAULT_READ_IDS } from "./notifications.ts";
 import type { DemoState } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
 
@@ -52,6 +53,7 @@ export const fresh = (): DemoState => ({
   name: "Judy",
   appliedUpdateIds: [],
   lastUpdateCheck: null,
+  readNotificationIds: [...DEFAULT_READ_IDS],
 });
 
 export function restore(): DemoState {
@@ -205,6 +207,11 @@ export function restore(): DemoState {
         typeof value.lastUpdateCheck === "string"
           ? value.lastUpdateCheck
           : null,
+      readNotificationIds: Array.isArray(value.readNotificationIds)
+        ? value.readNotificationIds
+            .filter((id: unknown) => typeof id === "string" && id.length <= 40)
+            .slice(0, 500)
+        : base.readNotificationIds,
     };
   } catch {
     return fresh();

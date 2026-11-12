@@ -37,6 +37,17 @@ export function dayLabel(day: number, c = DEMO) {
     timeZone: "UTC",
   }).format(new Date(`${weekDates(c)[day]}T12:00:00Z`));
 }
+/** "Nov 9" for the weekday `day` (0 = Mon) of the week `offset` weeks from the demo week. */
+export function weekDayLabel(day: number, offset = 0) {
+  if (!offset) return dayLabel(day);
+  const d = new Date(`${DEMO.week_start}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + offset * 7 + day);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+}
 /** The demo clock: Monday of the demo week at 9:00 AM campus time. */
 export const DEMO_NOW_MINUTE = 9 * 60;
 export const WEEK_LABEL = `${dayLabel(0)}–${dayLabel(4)}, ${DEMO.week_start.slice(0, 4)}`;
