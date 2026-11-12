@@ -1,9 +1,14 @@
 import { DEMO, utcStamp } from "./config.ts";
-import { EVENTS } from "./data.ts";
+import { effectiveEvents, effectiveUpdate } from "./updates.ts";
 import type { DemoState, CampusEvent } from "./types.ts";
 
 export function calendarText(state: DemoState): string | null {
-  const chosen = EVENTS.filter(
+  // Export what the student sees: moved times and changed rooms from applied
+  // updates, not the original catalog values.
+  const applied = state.appliedUpdateIds ?? [];
+  const location = (e: CampusEvent) =>
+    effectiveUpdate(e.id, applied)?.new_location ?? e.location;
+  const chosen = effectiveEvents(applied).filter(
     (e) => state.plan.includes(e.id) && !state.cancelled.includes(e.id),
   );
   if (!chosen.length) return null;
@@ -29,7 +34,7 @@ export function calendarText(state: DemoState): string | null {
       `DTSTART:${stamp(e, e.start)}`,
       `DTEND:${stamp(e, e.end)}`,
       `SUMMARY:${clean("[DEMO] " + e.title)}`,
-      `LOCATION:${clean(e.location)}`,
+      `LOCATION:${clean(location(e))}`,
       "DESCRIPTION:Fictional Campus Compass demonstration event. No real reservation.",
       "END:VEVENT",
     ]),

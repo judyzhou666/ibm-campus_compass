@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
 import { Button, Icon } from "./components.tsx";
 import { issue, reasons } from "./planner.ts";
+import { effectiveEvents } from "./updates.ts";
 import type { CampusEvent, DemoState, Rsvp } from "./types.ts";
 
 type EvidenceKey = Exclude<
@@ -41,7 +42,7 @@ export function ChatEvents({
   return (
     <div className="chat-event-list">
       {ids.map((id) => {
-        const event = EVENTS.find((e) => e.id === id);
+        const event = effectiveEvents(state.appliedUpdateIds ?? []).find((e) => e.id === id);
         if (!event) return null;
         const added = state.plan.includes(id),
           problem = issue(event, state),
@@ -168,7 +169,7 @@ export function PlannerCalendar({
                 ...b,
                 event: undefined as CampusEvent | undefined,
               })),
-            ...EVENTS.filter(
+            ...effectiveEvents(state.appliedUpdateIds ?? []).filter(
               (e) => e.day === index && state.plan.includes(e.id),
             ).map((e) => ({ ...e, event: e })),
           ].sort((a, b) => a.start - b.start);
