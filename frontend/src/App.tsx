@@ -704,7 +704,7 @@ export default function App() {
                         className="text-btn"
                         onClick={() => nav("calendar")}
                       >
-                        View calendar <Icon name="arrow" />
+                        View My Calendar <Icon name="arrow" />
                       </button>
                     </div>
                     {week()}

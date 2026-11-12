@@ -7,6 +7,7 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 - **Collapsible sidebar:** a round chevron button on the sidebar's right edge shrinks it to a 76px icon rail and back. Hovering an icon shows the tab name, and the Saved Events count stays as a small badge. The choice is remembered in this browser only. Phones keep the slide-out menu instead.
 - **My Dashboard:** the Dashboard tab is renamed My Dashboard, and My Calendar is shown indented under it as a sub-tab. My Calendar is still its own page, so links and the top bar's "My calendar" shortcut work as before.
 - **Logo in the top bar:** the Campus Compass logo moved from the sidebar to the left end of the top bar, which now spans the full width and stays visible when scrolling. The sidebar starts below it. On phones only the logo mark shows.
+- **Follow-up polish:** the top bar is shorter (64px on desktop, 56px on phones), the My Calendar hover highlight no longer spills past the sidebar's edge, and the dashboard's week card link now reads "View My Calendar".
 - **To demo:** open the app on a desktop-width window, press the chevron beside My Dashboard, then scroll the page.
 - **Verification:** `npm test` (142 TypeScript and 5 Wiki tests) and `npm run build` pass. Checked in the browser at 1280px (expanded, collapsed and scrolled) and 375px: no sideways scrolling, and the event-details panel and forum community list now stay below the fixed top bar. Rust code was not changed, so the Rust checks were not rerun.
 
