@@ -1,3 +1,4 @@
+import type { Role } from "./identity.ts";
 /** A single synthetic catalog update from data/updates.json. */
 export interface EventUpdate {
   id: string;
@@ -123,6 +124,8 @@ export interface DemoState extends Schedule {
   name: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
   signedIn: boolean;
+  /** Demo identity chosen at sign-in. Only changes labels and shortcuts. */
+  role: Role;
   onboarded: boolean;
   major: string;
   goals: string;

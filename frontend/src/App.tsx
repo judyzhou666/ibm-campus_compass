@@ -1,4 +1,6 @@
 import { DataReview } from "./DataReview.tsx";
+import { ProfileMenu } from "./ProfileMenu.tsx";
+import { ROLE_INFO, type ProfileAction, type Role } from "./identity.ts";
 import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
@@ -197,7 +199,9 @@ export default function App() {
     heading.focus();
   }, [focusHeading]);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [signingIn, setSigningIn] = useState(false);
+  // The identity preselected in the sign-in dialog, or null when it is closed.
+  const [signingIn, setSigningIn] = useState<Role | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -211,6 +215,18 @@ export default function App() {
     setToastActions(actions);
     setToastHeld(false);
   }
+  function profileAction(action: ProfileAction) {
+    setProfileOpen(false);
+    if (action === "profile") nav("profile");
+    else if (action === "review") nav("review");
+    else if (action === "switch")
+      setSigningIn(state.role === "student" ? "admin" : "student");
+    else {
+      update((s) => ({ ...s, signedIn: false }));
+      notify("Signed out. Your demo plans stay in this browser.");
+    }
+  }
+
   function nav(next: Page, communityId?: string) {
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
@@ -218,6 +234,7 @@ export default function App() {
     setDetail(null);
     setOpenNote(null);
     setBellOpen(false);
+    setProfileOpen(false);
     setFilter("All");
     setQuery("");
     setSearch("");
@@ -668,16 +685,30 @@ export default function App() {
             ) : null}
           </div>
           {state.signedIn ? (
-            <button
-              className="avatar"
-              aria-label={`Open profile for ${state.name}`}
-              style={{ border: 0 }}
-              onClick={() => nav("profile")}
-            >
-              {state.name[0] || "J"}
-            </button>
+            <div className="profile-wrap">
+              <button
+                className={`avatar profile-btn ${state.role}`}
+                aria-label={`Account: ${state.name}, signed in as ${ROLE_INFO[state.role].label}`}
+                aria-expanded={profileOpen}
+                aria-controls="profile-menu"
+                onClick={() => setProfileOpen((open) => !open)}
+              >
+                {state.name[0] || "J"}
+              </button>
+              {profileOpen ? (
+                <ProfileMenu
+                  name={state.name}
+                  role={state.role}
+                  onAction={profileAction}
+                  onClose={() => setProfileOpen(false)}
+                />
+              ) : null}
+            </div>
           ) : (
-            <button className="sign-in" onClick={() => setSigningIn(true)}>
+            <button
+              className="sign-in"
+              onClick={() => setSigningIn(state.role)}
+            >
               Sign in
             </button>
           )}
@@ -733,7 +764,7 @@ export default function App() {
               <span className="avatar">{state.name[0] || "J"}</span>
               <div>
                 <strong>{state.name}’s campus</strong>
-                <small>Graduate student · Demo profile</small>
+                <small>{ROLE_INFO[state.role].sidebar}</small>
               </div>
             </div>
           ) : (
@@ -1428,7 +1459,7 @@ export default function App() {
               unreadCount={unreadNotes.length}
               updatesWaiting={updatesWaiting}
               onProfile={() => nav("profile")}
-              onSignIn={() => setSigningIn(true)}
+              onSignIn={() => setSigningIn(state.role)}
               onReview={() => nav("review")}
               onNotifications={() => openNotifications()}
               onMarkAllRead={() => {
@@ -1493,13 +1524,15 @@ export default function App() {
       </div>
       {signingIn ? (
         <SignInDialog
+          key={signingIn}
           name={state.name}
-          onClose={() => setSigningIn(false)}
-          onSignIn={(name) => {
-            update((s) => ({ ...s, name, signedIn: true }));
-            setSigningIn(false);
+          role={signingIn}
+          onClose={() => setSigningIn(null)}
+          onSignIn={(name, role) => {
+            update((s) => ({ ...s, name, role, signedIn: true }));
+            setSigningIn(null);
             notify(
-              `Signed in as ${name}. Demo only; nothing leaves this browser.`,
+              `Signed in as ${name} (${ROLE_INFO[role].label}). Demo only; nothing leaves this browser.`,
             );
           }}
         />

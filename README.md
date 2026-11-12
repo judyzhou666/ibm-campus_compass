@@ -33,6 +33,7 @@ What the app does today, from the student's view:
 - **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views.
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
 - **Notifications** — bell dropdown, unread badge, filterable Notifications page, per-notification messages.
+- **Demo sign-in as Student or Admin** — the profile photo opens a menu showing who is signed in and as which identity, with switch identity and sign out. Admin adds a shortcut to the read-only Team data review; there is no password and no real admin access.
 - **Settings** — time zone, 15-minute travel buffer, AI connection mode, demo reset, synthetic-data review (Team tools).
 
 ## Agentic AI approach

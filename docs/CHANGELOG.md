@@ -2,6 +2,24 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Profile menu with Student and Admin sign-in — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Two demo identities.** The sign-in dialog now asks "Sign in as" **Student** ("Find events, plan your week and RSVP.") or **Admin** ("Review the fictional event catalog. Read-only in this demo."). The button reads "Sign in as Student" or "Sign in as Admin".
+- **Profile dropdown.** Clicking the profile photo (top right) opens a menu instead of going straight to Profile. It shows the name, "Signed in as" with a Student or Admin tag, and what that identity is for. Rows:
+  - Admin only: **Team data review**
+  - Both: **View profile**, **Sign in as** the other identity, **Sign out**
+  - Escape or a click outside closes it. On phones it spans the screen under the top bar.
+- **Labels.** The sidebar reads "Student · Demo profile" or "Admin · Demo profile", and Settings shows "Signed in as Student/Admin". An Admin photo is blue so the two identities are easy to tell apart.
+- **State.** `role` is saved in this browser with the rest of the demo state. It defaults to Student; unknown values restore as Student. It is not sent to the server.
+
+Files: new `frontend/src/identity.ts` and `frontend/src/ProfileMenu.tsx`; `App.tsx`, `components.tsx` (`SignInDialog`), `Settings.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in `tests/sign-in.test.ts`.
+
+Verification: `npm test` (254 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px and 390px: sign in as Admin, open the menu, Escape closes it, switch to Student (the dialog preselects Student), sign out. No page errors and no sideways scrolling. Rust checks not run: no backend files changed.
+
+Limitations: Admin has no extra powers. It only labels the identity and links to the existing read-only data review. There is no password or permission check, and anyone can choose either identity.
+
 ## AI Planner: demo-week dates and relevance to the student's words — November 12, 2026
 
 Fixes irrelevant answers to requests such as "AI in education relevant events for week Nov 6-12". Made with Claude Code (not IBM Bob). The code landed in commit `20f7fca`, whose message only mentions the bookmark icon; this entry describes it.
