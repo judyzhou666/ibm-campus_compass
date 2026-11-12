@@ -8,6 +8,8 @@ import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 type Props = {
   state: DemoState;
   update: (change: (s: DemoState) => DemoState) => void;
@@ -264,7 +266,6 @@ interface DiscussionPost {
   body: string;
   communityId: string;
   upvotes: number;
-  commentCount: number;
   timeAgo: string;
   comments: { name: string; text: string; timeAgo: string }[];
 }
@@ -277,7 +278,6 @@ const seedPosts: DiscussionPost[] = [
     body: "I'm planning to try the Learning with AI lab on Tuesday afternoon. It's hands-on with classroom AI tools — would love to meet students from other programs. Feel free to reply if you're going!",
     communityId: "ai",
     upvotes: 34,
-    commentCount: 8,
     timeAgo: "3 hr. ago",
     comments: [
       { name: "Jordan", text: "I'll be there! Coming from the CS program.", timeAgo: "2 hr. ago" },
@@ -291,7 +291,6 @@ const seedPosts: DiscussionPost[] = [
     body: "The community dinner on Tuesday evening looks like a wonderful way to meet people outside our own classes. International students especially welcome — all backgrounds, all majors.",
     communityId: "global",
     upvotes: 51,
-    commentCount: 12,
     timeAgo: "5 hr. ago",
     comments: [
       { name: "Priya", text: "Looking forward to it! Will there be vegetarian options?", timeAgo: "4 hr. ago" },
@@ -305,7 +304,6 @@ const seedPosts: DiscussionPost[] = [
     body: "Who else is going to the sketchbook walk on Friday afternoon? No drawing experience needed — it's more about slowing down and noticing things.",
     communityId: "arts",
     upvotes: 27,
-    commentCount: 5,
     timeAgo: "6 hr. ago",
     comments: [
       { name: "Casey", text: "This sounds so lovely. Signing up now.", timeAgo: "5 hr. ago" },
@@ -318,7 +316,6 @@ const seedPosts: DiscussionPost[] = [
     body: "Went to a career center drop-in last week and got some great feedback on my resume layout. Has anyone else tried the Wednesday lunchtime peer reviews? Worth it for internship season.",
     communityId: "career",
     upvotes: 18,
-    commentCount: 7,
     timeAgo: "1 day ago",
     comments: [
       { name: "Dana", text: "Super helpful! The advisor gave line-by-line notes.", timeAgo: "20 hr. ago" },
@@ -332,7 +329,6 @@ const seedPosts: DiscussionPost[] = [
     body: "Looking for 4–6 people interested in reading Derek Parfit's Reasons and Persons together. Bi-weekly, totally informal, no prior philosophy background required.",
     communityId: "research",
     upvotes: 22,
-    commentCount: 4,
     timeAgo: "2 days ago",
     comments: [
       { name: "Alex", text: "I'm very interested. Is this open to undergrads?", timeAgo: "1 day ago" },
@@ -369,14 +365,14 @@ export function Forum({
     );
     setCreatingPost(true);
   }
-  // likes: Set of "post:id" or "comment:postId:index"
-  const [likes, setLikes] = useState<Set<string>>(() => new Set());
+  // Likes are saved with the rest of the browser-local demo state, so they
+  // survive leaving the forum and reloading. Keys: "post:id" or "comment:postId:index".
+  const likes = new Set(state.likes);
   function toggleLike(key: string) {
-    setLikes((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
+    update((s) => ({
+      ...s,
+      likes: s.likes.includes(key) ? s.likes.filter((k) => k !== key) : [...s.likes, key],
+    }));
   }
 
   // Sync activeCommunityId when selected prop changes (e.g. from URL hash)
@@ -399,7 +395,6 @@ export function Forum({
     communityId:
       p.communityId ?? COMMUNITIES.find((c) => c.name === p.tag)?.id ?? "",
     upvotes: 1,
-    commentCount: 0,
     timeAgo: "just now",
     comments: [],
   }));
@@ -576,7 +571,7 @@ export function Forum({
               >
                 ▲ {selectedPost.upvotes + (likes.has(`post:${selectedPost.id}`) ? 1 : 0)}
               </button>
-              <span className="forum-stat">💬 {selectedPost.comments.length + selectedPost.commentCount + mine.length} comments</span>
+              <span className="forum-stat">💬 {plural(selectedPost.comments.length + mine.length, "comment")}</span>
               <button
                 className="text-btn forum-stat"
                 aria-pressed={conversationJoined}
@@ -846,7 +841,7 @@ export function Forum({
                   className="forum-stat text-btn"
                   onClick={() => setSelectedPostId(p.id)}
                 >
-                  💬 {p.commentCount + p.comments.length + localComments(p.id).length} comments
+                  💬 {plural(p.comments.length + localComments(p.id).length, "comment")}
                 </button>
               </div>
             </article>
