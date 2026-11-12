@@ -26,6 +26,7 @@ import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
+import { applyNextBatch, nextBatch, relativeTime } from "./updates.ts";
 
 const labels = {
   review: "Team data review",
@@ -231,6 +232,32 @@ export default function App() {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
+  function checkForUpdates() {
+    const current = demo.read();
+    const { nextState, applied, batch } = applyNextBatch(current);
+    if (!applied.length) {
+      notify(
+        "No more update batches. All synthetic updates have been applied. · Synthetic update",
+      );
+      return;
+    }
+    update(() => nextState);
+    nav("dashboard");
+    const planned = applied.filter((u) =>
+      current.plan.includes(u.event_id),
+    );
+    const planNotice =
+      planned.length > 0
+        ? ` ${planned.length} of your planned event${planned.length > 1 ? "s" : ""} ${planned.length > 1 ? "are" : "is"} affected.`
+        : "";
+    notify(
+      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice} See Briefing for details. · Synthetic update`,
+      planned.length > 0
+        ? [{ label: "View briefing", run: () => nav("dashboard") }]
+        : [],
+    );
+  }
+
   function clearChat() {
     conversation.clear();
     setMessage("");
@@ -537,17 +564,32 @@ export default function App() {
           <div className="top-actions">
             <button
               className="icon-btn"
-              aria-label="View notifications"
-              onClick={() => {
-                nav("dashboard");
-                notify(
-                  cancelled
-                    ? "An event was cancelled in the demo. Open AI Planner to review."
-                    : "Your weekly event suggestions are ready. All updates are fictional.",
-                );
-              }}
+              aria-label={
+                nextBatch(state.appliedUpdateIds)
+                  ? "Check for updates (new batch available)"
+                  : "Notifications"
+              }
+              onClick={checkForUpdates}
+              style={{ position: "relative" }}
             >
               <Icon name="bell" />
+              {nextBatch(state.appliedUpdateIds) ? (
+                <span
+                  className="badge"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    fontSize: "0.65rem",
+                    minWidth: "0.9rem",
+                    padding: "0 0.2rem",
+                    lineHeight: 1.4,
+                    pointerEvents: "none",
+                  }}
+                >
+                  !
+                </span>
+              ) : null}
             </button>
             {state.signedIn ? (
               <button
@@ -635,6 +677,7 @@ export default function App() {
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
                       onCalendar={() => nav("calendar")}
+                      onCheckUpdates={checkForUpdates}
                     />
                     <Filters value={filter} onChange={setFilter} />
                     {cards(recommended.slice(0, 3))}
@@ -1045,6 +1088,27 @@ export default function App() {
                       >
                         Edit interests & availability <Icon name="arrow" />
                       </button>
+                    </section>
+                    <section className="panel">
+                      <div className="section-bar">
+                        <h2>Event updates</h2>
+                        <Icon name="bell" />
+                      </div>
+                      <p className="sub">
+                        Apply the next batch of synthetic demo updates — cancellations, capacity, time or room changes.
+                      </p>
+                      <Button
+                        className="small"
+                        onClick={checkForUpdates}
+                      >
+                        <Icon name="bell" />
+                        Check for updates
+                      </Button>
+                      {state.lastUpdateCheck ? (
+                        <p className="fineprint">
+                          Last checked {relativeTime(state.lastUpdateCheck)} · Synthetic update
+                        </p>
+                      ) : null}
                     </section>
                     {state.plan.some((id) => !state.cancelled.includes(id)) ? (
                       <section className="panel">

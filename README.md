@@ -2,6 +2,52 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Visible synthetic update loop — November 12, 2026
+
+A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces "What changed" details in the Briefing panel and bell menu, and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.
+
+### What was added
+
+**`data/updates.json`** — three timestamped batches of synthetic updates covering every kind:
+- Batch 1: e3 cancelled, e6 marked full
+- Batch 2: e1 time moved, e9 room changed
+- Batch 3: e5 cancelled + e5 room changed (conflicting notices → "Needs confirmation")
+
+**Frontend (`frontend/src/updates.ts`)** — new module with `applyNextBatch`, `hasConflict`, `effectiveUpdate`, `updateBadge`, `relativeTime`, `isUnavailableByUpdate`, and related helpers. All logic is deterministic and uses only the embedded JSON.
+
+**Types (`frontend/src/types.ts`)** — `EventUpdate`, `UpdateBatch` interfaces; `DemoState` gains `appliedUpdateIds` and `lastUpdateCheck`.
+
+**Briefing panel (`frontend/src/Briefing.tsx`)** — "Check for updates" button, timestamp, `UpdateFeed` component listing each change with kind badges, conflict notice, and "In your plan" highlight.
+
+**Bell button and Planner panel (`frontend/src/App.tsx`)** — bell now calls `checkForUpdates`, shows a `!` badge when a new batch is available, replaces the static toast. A new "Event updates" section in the Planner sidebar provides the same action.
+
+**Event cards and details (`frontend/src/components.tsx`)** — cards show "Needs confirmation" or kind badge, new location for room changes, "Last checked" relative time. Details show the full update notice inline in the hero and body.
+
+**Backend (`backend/src/model.rs`, `backend/src/lib.rs`)** — `Schedule` accepts `applied_update_ids`; `Schedule::validate_with_updates` checks them against `data/updates.json` (embedded at compile time). All three handlers (`/api/plan`, `/api/validate`, `/api/enroll`) build an effective cancelled set from applied updates before selection, validation, or enrollment. The watsonx ranking step receives the effective state so only available events are ranked.
+
+**TypeScript fallback (`frontend/src/api.ts`)** — `schedulePayload` sends `applied_update_ids`; the browser fallback also respects update-cancelled/full events.
+
+**CSS (`frontend/src/styles.css`)** — `badge--conflict`, `badge--updated`, `badge--planned`, `event-card--conflict`, `event-card--updated`, `update-feed`, `update-list`, `update-item`, `notice--conflict`, `notice--updated`.
+
+### Tests
+
+**Frontend** — `tests/updates.test.ts`: 18 new tests covering batch traversal, conflict detection, badge computation, relativeTime, isUnavailableByUpdate, and state mutation invariants.
+
+**Rust** — six new integration tests in `backend/src/lib.rs`: cancelled event excluded from plan, full event excluded from plan, unknown update ID rejected with 400, validate returns unavailable for cancelled/full, time/room updates do not break plan.
+
+### Demo usage
+
+1. Open the app; click the **bell** (topbar) or **Check for updates** in the Briefing panel or the Planner sidebar.
+2. Each click applies the next batch. The briefing shows "What changed since your last check" with kind badges.
+3. After batch 3, e5 shows "Needs confirmation" — two conflicting notices, no choice made.
+4. Planning and enrollment reject events marked cancelled or full by the applied updates.
+
+### Verification
+
+`npm test` (TypeScript tests), `npm run build`, `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`, and `npm run test:api` all pass.
+
+---
+
 ## Honest AI attribution, separate evidence fields, dynamic mode labels — November 12, 2026
 
 The backend and frontend were updated to separate AI-written evidence from template evidence, and to derive all honest mode labels from the live API rather than hardcoding them.

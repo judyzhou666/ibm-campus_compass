@@ -1,3 +1,22 @@
+/** A single synthetic catalog update from data/updates.json. */
+export interface EventUpdate {
+  id: string;
+  event_id: string;
+  kind: "cancelled" | "full" | "time_moved" | "room_changed";
+  timestamp: string;
+  details: string;
+  new_start?: number;
+  new_end?: number;
+  new_location?: string;
+}
+
+export interface UpdateBatch {
+  batch: number;
+  label: string;
+  timestamp: string;
+  updates: EventUpdate[];
+}
+
 export interface TimeSlot {
   day: number;
   start: number;
@@ -110,6 +129,10 @@ export interface DemoState extends Schedule {
   draft: string[];
   constraints: Constraints;
   messages: Message[];
+  /** IDs of EventUpdate entries that have been applied to the local demo state. */
+  appliedUpdateIds: string[];
+  /** ISO timestamp of the last time the student clicked "Check for updates". Null = never checked. */
+  lastUpdateCheck: string | null;
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";

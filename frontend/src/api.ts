@@ -12,20 +12,26 @@ import {
   interpretRequest,
   validateConstraints,
 } from "./interpretation.ts";
+import { isUnavailableByUpdate } from "./updates.ts";
 
-export const schedulePayload = (state: Schedule) => ({
-  plan: [...state.plan],
-  cancelled: [...state.cancelled],
-  interests: [...state.interests],
-  buffer: state.buffer,
-  preferred_time: state.preferred_time || "any",
-  blocks: state.blocks.map(({ title, day, start, end }) => ({
-    title,
-    day,
-    start,
-    end,
-  })),
-});
+export const schedulePayload = (state: DemoState | Schedule) => {
+  const s = state as DemoState;
+  const appliedUpdateIds: string[] = s.appliedUpdateIds ?? [];
+  return {
+    plan: [...state.plan],
+    cancelled: [...state.cancelled],
+    interests: [...state.interests],
+    buffer: state.buffer,
+    preferred_time: state.preferred_time || "any",
+    blocks: state.blocks.map(({ title, day, start, end }) => ({
+      title,
+      day,
+      start,
+      end,
+    })),
+    applied_update_ids: appliedUpdateIds,
+  };
+};
 
 /** Profile context sent to the Rust planner for watsonx ranking (no name, no history). */
 export const profilePayload = (state: DemoState) => ({
@@ -145,9 +151,19 @@ export async function requestPlan(
   } catch (error) {
     if (error instanceof InputError) throw error;
     const { constraints } = interpreted;
+    const demoState = state as DemoState;
+    const appliedIds = demoState.appliedUpdateIds ?? [];
+    // Browser fallback: build an effective state that respects update-cancelled/full events.
+    const effectiveCancelled = [
+      ...state.cancelled,
+      ...EVENTS.filter((e) => isUnavailableByUpdate(e.id, appliedIds))
+        .map((e) => e.id)
+        .filter((id) => !state.cancelled.includes(id)),
+    ];
+    const effectiveState: Schedule = { ...state, cancelled: effectiveCancelled };
     return {
       constraints,
-      ids: recommend(state, constraints).map((e) => e.id),
+      ids: recommend(effectiveState, constraints).map((e) => e.id),
       evidence: [],
       source: "browser-fallback",
       mode: "simulated" as const,

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// Profile context passed from the browser to guide watsonx ranking.
 /// Never contains the student's real name, chat history or display name.
@@ -65,6 +66,31 @@ pub struct Block {
     pub end: u16,
 }
 
+/// An individual update entry from data/updates.json.
+#[derive(Clone, Deserialize)]
+pub struct EventUpdate {
+    pub id: String,
+    pub event_id: String,
+    pub kind: String, // "cancelled" | "full" | "time_moved" | "room_changed"
+    pub timestamp: String,
+    pub details: String,
+    #[serde(default)]
+    pub new_start: Option<u16>,
+    #[serde(default)]
+    pub new_end: Option<u16>,
+    #[serde(default)]
+    pub new_location: Option<String>,
+}
+
+/// One batch in data/updates.json.
+#[derive(Clone, Deserialize)]
+pub struct UpdateBatch {
+    pub batch: u32,
+    pub label: String,
+    pub timestamp: String,
+    pub updates: Vec<EventUpdate>,
+}
+
 #[derive(Clone, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Schedule {
@@ -75,6 +101,23 @@ pub struct Schedule {
     pub buffer: u16,
     #[serde(default)]
     pub preferred_time: String,
+    /// IDs of EventUpdate entries already applied in the browser.
+    /// Sent to the server so it can treat cancelled/full events as unavailable.
+    #[serde(default)]
+    pub applied_update_ids: Vec<String>,
+}
+
+/// Derive the effective set of cancelled/full event IDs from applied update IDs.
+pub fn unavailable_by_updates<'a>(
+    applied_ids: &[String],
+    all_updates: &'a [EventUpdate],
+) -> HashSet<&'a str> {
+    let applied: HashSet<&str> = applied_ids.iter().map(|s| s.as_str()).collect();
+    all_updates
+        .iter()
+        .filter(|u| applied.contains(u.id.as_str()) && (u.kind == "cancelled" || u.kind == "full"))
+        .map(|u| u.event_id.as_str())
+        .collect()
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default, PartialEq)]
@@ -133,6 +176,14 @@ impl Constraints {
 
 impl Schedule {
     pub fn validate(&self, events: &[Event]) -> Result<(), &'static str> {
+        self.validate_with_updates(events, &[])
+    }
+
+    pub fn validate_with_updates(
+        &self,
+        events: &[Event],
+        all_updates: &[EventUpdate],
+    ) -> Result<(), &'static str> {
         if !["", "any", "morning", "afternoon", "evening"].contains(&self.preferred_time.as_str()) {
             return Err("Unknown preferred time");
         }
@@ -161,6 +212,22 @@ impl Schedule {
             .any(|b| b.day > 4 || b.start >= b.end || b.end > 1440 || b.title.len() > 240)
         {
             return Err("Invalid busy commitment");
+        }
+        // Validate applied_update_ids against the known update catalog (when provided).
+        if !all_updates.is_empty() {
+            let known_ids: std::collections::HashSet<&str> =
+                all_updates.iter().map(|u| u.id.as_str()).collect();
+            if self
+                .applied_update_ids
+                .iter()
+                .any(|id| !known_ids.contains(id.as_str()))
+            {
+                return Err("Unknown update ID");
+            }
+        }
+        // Basic size limit: no more update IDs than there are updates in total.
+        if self.applied_update_ids.len() > 200 {
+            return Err("Too many applied update IDs");
         }
         Ok(())
     }

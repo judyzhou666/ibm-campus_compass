@@ -11,7 +11,7 @@ use axum::{
     routing::{get, post},
 };
 use interpreter::{Interpreter, SimulatedInterpreter};
-use model::{Constraints, Event, PlanProfile, Schedule};
+use model::{Constraints, Event, EventUpdate, PlanProfile, Schedule};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{path::PathBuf, sync::Arc};
@@ -36,6 +36,7 @@ pub enum Provider {
 
 struct AppState {
     events: Vec<Event>,
+    all_updates: Vec<EventUpdate>,
     provider: Provider,
 }
 type Shared = State<Arc<AppState>>;
@@ -168,11 +169,30 @@ async fn plan(
     Json(request): Json<PlanRequest>,
 ) -> Result<Json<Value>, ApiError> {
     let events = &app.events;
+    let all_updates = &app.all_updates;
     if request.message.trim().is_empty() || request.message.len() > 2000 {
         return Err(bad_request("Message must contain 1–2000 bytes"));
     }
-    request.state.validate(events).map_err(bad_request)?;
+    request
+        .state
+        .validate_with_updates(events, all_updates)
+        .map_err(bad_request)?;
     request.previous.validate().map_err(bad_request)?;
+    // Build the effective unavailable set: browser-cancelled + update-cancelled/full.
+    let update_unavailable =
+        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
+    let effective_state = if update_unavailable.is_empty() {
+        std::borrow::Cow::Borrowed(&request.state)
+    } else {
+        let mut s = request.state.clone();
+        for id in &update_unavailable {
+            let id_str = id.to_string();
+            if !s.cancelled.contains(&id_str) {
+                s.cancelled.push(id_str);
+            }
+        }
+        std::borrow::Cow::Owned(s)
+    };
     // Deterministic safety rules (such as refusing unsupported numeric budgets) run before any
     // live model call, so a clarification never depends on the model.
     let simulated = SimulatedInterpreter.parse(&request.message, request.previous.clone());
@@ -199,7 +219,7 @@ async fn plan(
     // Required for every interpreter, including watsonx-generated constraints.
     constraints.validate().map_err(bad_request)?;
     let selected = if interpretation.understood && interpretation.clarification.is_none() {
-        planner::recommend(&request.state, &constraints, events)
+        planner::recommend(&effective_state, &constraints, events)
     } else {
         Vec::new()
     };
@@ -221,8 +241,12 @@ async fn plan(
                             .iter()
                             .filter_map(|r| {
                                 selected.iter().find(|e| e.id == r.id).map(|e| {
-                                    let mut ev =
-                                        planner::evidence(e, &request.state, &constraints, events);
+                                    let mut ev = planner::evidence(
+                                        e,
+                                        &effective_state,
+                                        &constraints,
+                                        events,
+                                    );
                                     ev["ai_reason"] = json!(r.reason);
                                     ev["cited_fields"] = json!(r.cited_fields);
                                     ev
@@ -233,22 +257,23 @@ async fn plan(
                     }
                     Err(RankError::Clarification(q)) => {
                         let (ids, ev) =
-                            template_evidence(&selected, &request.state, &constraints, events);
+                            template_evidence(&selected, &effective_state, &constraints, events);
                         (ids, ev, Some(q), "template")
                     }
                     Err(_) => {
                         // Ranking unavailable: fall back to template evidence (labelled).
                         let (ids, ev) =
-                            template_evidence(&selected, &request.state, &constraints, events);
+                            template_evidence(&selected, &effective_state, &constraints, events);
                         (ids, ev, None, "template")
                     }
                 }
             } else {
-                let (ids, ev) = template_evidence(&selected, &request.state, &constraints, events);
+                let (ids, ev) =
+                    template_evidence(&selected, &effective_state, &constraints, events);
                 (ids, ev, None, "template")
             }
         } else {
-            let (ids, ev) = template_evidence(&selected, &request.state, &constraints, events);
+            let (ids, ev) = template_evidence(&selected, &effective_state, &constraints, events);
             (ids, ev, None, "template")
         };
 
@@ -257,7 +282,7 @@ async fn plan(
     let diagnostic =
         if interpretation.understood && clarification.is_none() && ranked_ids.is_empty() {
             Some(planner::no_match_reason(
-                &request.state,
+                &effective_state,
                 &constraints,
                 events,
             ))
@@ -294,12 +319,31 @@ async fn validate(
     Json(request): Json<ValidateRequest>,
 ) -> Result<Json<Value>, ApiError> {
     let events = &app.events;
-    request.state.validate(events).map_err(bad_request)?;
+    let all_updates = &app.all_updates;
+    request
+        .state
+        .validate_with_updates(events, all_updates)
+        .map_err(bad_request)?;
     let event = events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
-    let issue = planner::issue(event, &request.state, events);
+    // Apply update-based unavailability before checking issue.
+    let update_unavailable =
+        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
+    let effective_state = if update_unavailable.is_empty() {
+        std::borrow::Cow::Borrowed(&request.state)
+    } else {
+        let mut s = request.state.clone();
+        for id in &update_unavailable {
+            let id_str = id.to_string();
+            if !s.cancelled.contains(&id_str) {
+                s.cancelled.push(id_str);
+            }
+        }
+        std::borrow::Cow::Owned(s)
+    };
+    let issue = planner::issue(event, &effective_state, events);
     Ok(Json(json!({"allowed":issue.is_none(),"issue":issue})))
 }
 
@@ -323,12 +367,31 @@ async fn enroll(
     Json(request): Json<EnrollmentRequest>,
 ) -> Result<Json<Value>, ApiError> {
     let events = &app.events;
-    request.state.validate(events).map_err(bad_request)?;
+    let all_updates = &app.all_updates;
+    request
+        .state
+        .validate_with_updates(events, all_updates)
+        .map_err(bad_request)?;
     let event = events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
-    if let Some(problem) = planner::issue(event, &request.state, events) {
+    // Apply update-based unavailability.
+    let update_unavailable =
+        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
+    let effective_state = if update_unavailable.is_empty() {
+        std::borrow::Cow::Borrowed(&request.state)
+    } else {
+        let mut s = request.state.clone();
+        for id in &update_unavailable {
+            let id_str = id.to_string();
+            if !s.cancelled.contains(&id_str) {
+                s.cancelled.push(id_str);
+            }
+        }
+        std::borrow::Cow::Owned(s)
+    };
+    if let Some(problem) = planner::issue(event, &effective_state, events) {
         return Err((StatusCode::CONFLICT, Json(json!({"error":problem}))));
     }
     let required = event.rsvp == "RSVP required";
@@ -356,6 +419,13 @@ pub fn app() -> Router {
 pub fn app_with(provider: Provider) -> Router {
     let events: Vec<Event> = serde_json::from_str(include_str!("../../data/events.json"))
         .expect("valid embedded demo events");
+    let all_update_batches: Vec<model::UpdateBatch> =
+        serde_json::from_str(include_str!("../../data/updates.json"))
+            .expect("valid embedded demo updates");
+    let all_updates: Vec<EventUpdate> = all_update_batches
+        .into_iter()
+        .flat_map(|b| b.updates)
+        .collect();
     Router::new()
         .route("/api/health", get(health))
         .route("/api/config", get(|| async { Json(demo_config()) }))
@@ -363,7 +433,11 @@ pub fn app_with(provider: Provider) -> Router {
         .route("/api/validate", post(validate))
         .route("/api/enroll", post(enroll))
         .layer(DefaultBodyLimit::max(32 * 1024))
-        .with_state(Arc::new(AppState { events, provider }))
+        .with_state(Arc::new(AppState {
+            events,
+            all_updates,
+            provider,
+        }))
         .fallback_service(ServeDir::new(
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../dist"),
         ))
@@ -635,5 +709,149 @@ mod tests {
         let result = apply_post_checks(&ranked, &candidates, &profile, std::slice::from_ref(&e1));
         // host_school matches major (case-insensitive) — no need to disclose.
         assert!(!result[0].reason.contains("Hosted by"));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Update-loop integration tests
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// Helper: start a plain simulated app() server and post a plan request with given state.
+    async fn plan_with_state(state_json: Value) -> reqwest::Response {
+        let router = app();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        reqwest::Client::new()
+            .post(format!("{base}/api/plan"))
+            .json(&json!({"message": "career events", "state": state_json}))
+            .send()
+            .await
+            .unwrap()
+    }
+
+    /// Helper: start a plain simulated app() server and post a validate request.
+    async fn validate_with_state(event_id: &str, state_json: Value) -> reqwest::Response {
+        let router = app();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        reqwest::Client::new()
+            .post(format!("{base}/api/validate"))
+            .json(&json!({"event_id": event_id, "state": state_json}))
+            .send()
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn update_cancelled_event_excluded_from_plan() {
+        // u1 cancels e3 ("Your first role in responsible tech")
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": ["Career"],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u1"]
+        });
+        let resp = plan_with_state(state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        let ids = body["event_ids"].as_array().unwrap();
+        assert!(
+            !ids.iter().any(|v| v.as_str() == Some("e3")),
+            "e3 should be excluded because update u1 cancels it; got {ids:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_full_event_excluded_from_plan() {
+        // u2 marks e6 as full
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": ["Social"],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u2"]
+        });
+        let resp = plan_with_state(state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        let ids = body["event_ids"].as_array().unwrap();
+        assert!(
+            !ids.iter().any(|v| v.as_str() == Some("e6")),
+            "e6 should be excluded because update u2 marks it full; got {ids:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn unknown_update_id_is_rejected() {
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": [],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u-does-not-exist"]
+        });
+        let resp = plan_with_state(state).await;
+        assert_eq!(resp.status(), 400, "unknown update ID must be rejected");
+    }
+
+    #[tokio::test]
+    async fn validate_returns_unavailable_for_update_cancelled_event() {
+        // u1 cancels e3
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": [],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u1"]
+        });
+        let resp = validate_with_state("e3", state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        assert_eq!(body["allowed"], false, "e3 must be unavailable after u1");
+    }
+
+    #[tokio::test]
+    async fn validate_returns_unavailable_for_update_full_event() {
+        // u2 marks e6 as full
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": [],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u2"]
+        });
+        let resp = validate_with_state("e6", state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        assert_eq!(body["allowed"], false, "e6 must be unavailable after u2");
+    }
+
+    #[tokio::test]
+    async fn update_ids_without_effect_do_not_break_plan() {
+        // u3 (time_moved) and u4 (room_changed) do not make events unavailable.
+        let state = json!({
+            "plan": [],
+            "cancelled": [],
+            "interests": ["AI & education"],
+            "blocks": [],
+            "buffer": 0,
+            "applied_update_ids": ["u3", "u4"]
+        });
+        let resp = plan_with_state(state).await;
+        assert_eq!(resp.status(), 200);
+        let body: Value = resp.json().await.unwrap();
+        // e1 (time_moved by u3) and e9 (room_changed by u4) should still be eligible.
+        let ids = body["event_ids"].as_array().unwrap();
+        assert!(
+            !ids.is_empty(),
+            "should still return results with time/room updates"
+        );
     }
 }

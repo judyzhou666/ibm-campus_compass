@@ -49,6 +49,8 @@ export const fresh = (): DemoState => ({
   constraints: {},
   messages: [],
   name: "Judy",
+  appliedUpdateIds: [],
+  lastUpdateCheck: null,
 });
 
 export function restore(): DemoState {
@@ -190,6 +192,13 @@ export function restore(): DemoState {
         : [],
       // Chat filters restart after reload; saved plans and availability are retained.
       constraints: {},
+      appliedUpdateIds: Array.isArray(value.appliedUpdateIds)
+        ? value.appliedUpdateIds.filter((id: unknown) => typeof id === "string")
+        : [],
+      lastUpdateCheck:
+        typeof value.lastUpdateCheck === "string"
+          ? value.lastUpdateCheck
+          : null,
     };
   } catch {
     return fresh();
