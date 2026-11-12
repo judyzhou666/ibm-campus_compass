@@ -2309,7 +2309,7 @@ p {
   .top-actions {
     gap: 8px;
   }
-  .top-actions > .avatar {
+  .top-actions .profile-btn {
     display: none;
   }
   main {
@@ -3525,7 +3525,10 @@ p {
   }
 }
 @media (max-width: 1060px) {
-  .top-links button:not(.top-cta) {
+  .top-links button:not(.top-cta):not(.top-create) {
+    display: none;
+  }
+  .top-links .top-create-label {
     display: none;
   }
 }
@@ -3537,7 +3540,7 @@ p {
     flex: 1;
     height: 40px;
   }
-  .top-actions > .avatar {
+  .top-actions .profile-btn {
     display: grid;
   }
   .top-actions .icon-btn {
@@ -5596,4 +5599,222 @@ input.switch:focus-visible {
   .news-title {
     font-size: 17px;
   }
+}
+
+/* ── Profile dropdown and Student / Admin identity ─────────────────────── */
+.profile-wrap {
+  position: relative;
+}
+.avatar.profile-btn {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.avatar.profile-btn:focus-visible {
+  outline: 3px solid #57a77a;
+  outline-offset: 2px;
+}
+.avatar.admin {
+  background: var(--info-bg);
+  color: var(--info-ink);
+}
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 40;
+  overflow: hidden;
+}
+.profile-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 10px;
+}
+.profile-menu-head .avatar {
+  flex: none;
+  width: 42px;
+  height: 42px;
+}
+.profile-menu-head strong {
+  display: block;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.profile-menu-as {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.role-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--mint);
+  color: var(--green);
+}
+.role-pill.admin {
+  background: var(--info-bg);
+  color: var(--info-ink);
+}
+.profile-menu-summary {
+  margin: 0;
+  padding: 0 18px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.profile-menu-list button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.profile-menu-list button:hover {
+  background: var(--bg);
+}
+.profile-menu-list .icon {
+  width: 18px;
+  color: var(--green);
+}
+.profile-menu-list .signout .icon {
+  transform: rotate(180deg);
+}
+.profile-menu-note {
+  margin: 0;
+  padding: 10px 18px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.role-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+.role-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.role-choice label {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.role-choice label.selected {
+  border-color: var(--green);
+  background: var(--mint);
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.role-choice label:focus-within {
+  outline: 3px solid #57a77a;
+  outline-offset: 2px;
+}
+.role-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.role-choice span {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+@media (max-width: 700px) {
+  .profile-menu {
+    position: fixed;
+    top: calc(var(--topbar-h) + 6px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+  .role-choice {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Admin: Create Event entry and draft page ──────────────────────────── */
+.top-links .top-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  color: var(--info-ink);
+  box-shadow: inset 0 0 0 1px #b9d0ea;
+}
+.top-links .top-create .icon {
+  width: 16px;
+  height: 16px;
+}
+.top-links .top-create:hover,
+.top-links .top-create.active {
+  background: var(--info-bg);
+  color: var(--info-ink);
+  box-shadow: inset 0 0 0 1px var(--info-ink);
+  border-radius: 8px;
+}
+.create-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 20px;
+}
+.create-note .icon {
+  flex: none;
+  width: 18px;
+  margin-top: 2px;
+}
+.create-error {
+  display: block;
+  margin-top: 8px;
+  color: var(--conflict-ink);
+  font-size: 13px;
+}
+.form-grid .btn .icon {
+  width: 16px;
+  vertical-align: -3px;
+}
+.draft-row .tag {
+  display: inline-block;
+  margin-top: 8px;
+}
+.draft-row strong {
+  overflow-wrap: anywhere;
+}
+.create-locked {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+.create-locked p {
+  margin: 0;
 }
