@@ -49,6 +49,16 @@ Added Canvas-style personal calendar entries alongside existing busy-time blocks
 
 **Verification:** `npm test` (5/5 Wiki), TypeScript tests 264/264, `npm run build` clean, `cargo fmt --check` clean, `cargo clippy` 0 warnings, `cargo test` 58/58, `npm run test:api` PASS.
 
+## PR #21 review fixes — November 12, 2026
+
+Four README wording fixes from the PR #21 review, made with Claude Code (not IBM Bob):
+
+- **Synthetic, not live.** The Context-Aware Expert row now says "synthetic event updates" instead of "live event updates".
+- **Real mode labels.** Responsible AI and data now quotes the labels the app shows: Rust planner · Simulated, Rust planner · IBM watsonx, and Browser fallback · Simulated.
+- **Held-out diversity.** The evaluation summary adds the held-out figure (85.7%, the same as the rules baseline) next to 100% on development scenarios.
+- **Bob evidence.** The Technology line points to Judy's exported Bob session and says Tingting's listed Bob work is not yet backed by an export.
+
+Verification: documentation only; `npm test` and `npm run build` pass.
 
 ## Merge main (PR #19 event detail, PR #20 planner cleanup) into Tingting — November 12, 2026
 
