@@ -2,14 +2,6 @@
  * CalendarView — Google-Calendar-style Day/Week/Month/Year views.
  * Used only on the My Calendar page; the Dashboard strip and
  * AI Planner panel continue to use the existing Week component.
- *
- * New in this version:
- *  - PersonalEvent items shown in blue (kind="personal")
- *  - Click own items to edit; click campus events for details (unchanged)
- *  - "+ New event" toolbar button; click empty grid to create
- *  - Drag own items (pointer events, no library): move time/day in Week/Day,
- *    resize bottom edge, move date in Month view
- *  - Campus events: no drag; title="Campus event — time set by the organizer"
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { DEMO, DEMO_NOW_MINUTE, isTimeZone, weekDates } from "./config.ts";
@@ -22,11 +14,13 @@ import { Icon } from "./components.tsx";
 import {
   type CalView,
   type CalendarItem,
+  HOUR_PX,
   addDays,
   attentionTag,
   blockDropAllowed,
   clampEnd,
   clampStart,
+  colHeight,
   gridHours,
   isoWeekdayIndex,
   isWeekday,
@@ -103,8 +97,8 @@ interface CalendarViewProps {
   onExportCalendar: () => void;
   /** Called when the user creates/edits/deletes a personal event or block */
   onUpdate: (change: (s: DemoState) => DemoState) => void;
-  /** Show a toast notification */
-  notify: (text: string) => void;
+  /** Show a toast notification (with optional action buttons, matching App.tsx ToastAction) */
+  notify: (text: string, actions?: Array<{ label: string; run: () => void }>) => void;
 }
 
 /** Chosen-event status shown on blocks and chips. */
@@ -155,20 +149,26 @@ function DemoWeekBanner({ onGoToDemo }: { onGoToDemo: () => void }) {
 interface DragState {
   id: string;
   kind: "personal" | "class";
-  /** Original start/end in minutes */
   origStart: number;
   origEnd: number;
-  /** ISO date before drag started */
   origIso: string;
-  /** Pointer Y at drag start, relative to the grid element */
+  /** Pointer clientY at drag start */
   startY: number;
-  /** Pointer X at grid start */
+  /** Pointer clientX at drag start */
   startX: number;
-  /** "move" = dragging whole block; "resize" = dragging bottom edge */
+  /** clientY of the block's top edge at drag start (for grab offset) */
+  blockTopClientY: number;
+  /**
+   * Column DOMRect array captured at drag start.
+   * Used to find the target column from clientX without relying on
+   * which column's handler fires (pointer capture locks events to the
+   * originating element).
+   */
+  colRects: DOMRect[];
+  /** The ISO dates corresponding to each colRect (same indices). */
+  colDates: string[];
   mode: "move" | "resize";
-  /** Current preview while dragging */
   preview: { iso: string; start: number; end: number } | null;
-  /** Whether this is actually dragging (vs. still within click threshold) */
   active: boolean;
 }
 
@@ -188,8 +188,6 @@ function DayColumn({
   onDragStart,
   onDragMove,
   onDragEnd,
-  colIndex,
-  dates,
 }: {
   iso: string;
   items: CalendarItem[];
@@ -202,10 +200,8 @@ function DayColumn({
   onCreateAt: (iso: string, startMins: number) => void;
   dragState: DragState | null;
   onDragStart: (e: React.PointerEvent, id: string, kind: "personal" | "class", mode: "move" | "resize", iso: string, start: number, end: number) => void;
-  onDragMove: (e: React.PointerEvent, colRef: HTMLDivElement | null, iso: string, colIndex: number, dates: string[]) => void;
+  onDragMove: (e: React.PointerEvent) => void;
   onDragEnd: (e: React.PointerEvent) => void;
-  colIndex: number;
-  dates: string[];
 }) {
   const colRef = useRef<HTMLDivElement>(null);
   const totalMin = (grid.end - grid.start) * 60;
@@ -247,9 +243,10 @@ function DayColumn({
     <div
       className="gcal-day-col"
       ref={colRef}
+      style={{ "--gcal-col-h": `${colHeight(grid.start, grid.end)}px` } as React.CSSProperties}
       aria-label={`${DAY_NAMES_FULL[isoWeekdayIndex(iso)]}, ${shortDate(iso)}`}
       onPointerDown={handleColPointerDown}
-      onPointerMove={(e) => onDragMove(e, colRef.current, iso, colIndex, dates)}
+      onPointerMove={onDragMove}
       onPointerUp={onDragEnd}
       onPointerCancel={onDragEnd}
     >
@@ -273,23 +270,23 @@ function DayColumn({
               title={label}
               tabIndex={0}
               onPointerDown={(e) => {
+                e.preventDefault(); // Fix 5: prevent text selection
                 e.stopPropagation();
                 onDragStart(e, item.id, "class", "move", iso, item.start, item.end);
               }}
               onClick={(e) => {
-                if (dragState?.active) return;
                 e.stopPropagation();
-                onEditBlock(item.id);
+                // onEditBlock is only called when endDrag detects no real drag
               }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEditBlock(item.id); } }}
             >
               <strong>{item.title}</strong>
               <span>{timeText}</span>
-              {/* Resize handle */}
               <div
                 className="gcal-resize-handle"
                 title="Drag to resize"
                 onPointerDown={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onDragStart(e, item.id, "class", "resize", iso, item.start, item.end);
                 }}
@@ -311,23 +308,23 @@ function DayColumn({
               title={lbl}
               tabIndex={0}
               onPointerDown={(e) => {
+                e.preventDefault(); // Fix 5: prevent text selection
                 e.stopPropagation();
                 onDragStart(e, item.id, "personal", "move", iso, item.start, item.end);
               }}
               onClick={(e) => {
-                if (dragState?.active) return;
                 e.stopPropagation();
-                onEditPersonal(item.id);
+                // onEditPersonal is only called when endDrag detects no real drag
               }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEditPersonal(item.id); } }}
             >
               <strong>{item.title}</strong>
               <span>{timeText}</span>
-              {/* Resize handle */}
               <div
                 className="gcal-resize-handle"
                 title="Drag to resize"
                 onPointerDown={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onDragStart(e, item.id, "personal", "resize", iso, item.start, item.end);
                 }}
@@ -419,7 +416,7 @@ function TimeGrid({
   onCreateAt: (iso: string, startMins: number) => void;
   dragState: DragState | null;
   onDragStart: (e: React.PointerEvent, id: string, kind: "personal" | "class", mode: "move" | "resize", iso: string, start: number, end: number) => void;
-  onDragMove: (e: React.PointerEvent, colRef: HTMLDivElement | null, iso: string, colIndex: number, dates: string[]) => void;
+  onDragMove: (e: React.PointerEvent) => void;
   onDragEnd: (e: React.PointerEvent) => void;
 }) {
   const hours = Array.from({ length: grid.end - grid.start }, (_, i) => grid.start + i);
@@ -453,7 +450,7 @@ function TimeGrid({
           })}
         </div>
 
-        <div className="gcal-time-grid">
+        <div className={`gcal-time-grid${dragState?.active ? " gcal-is-dragging" : ""}`}>
           <div className="gcal-gutter">
             {hours.map((h) => (
               <div key={h} className="gcal-hour-label">
@@ -466,7 +463,7 @@ function TimeGrid({
               <div key={h} className="gcal-grid-line" />
             ))}
           </div>
-          {dates.map((iso, colIndex) => (
+          {dates.map((iso) => (
             <DayColumn
               key={iso}
               iso={iso}
@@ -482,8 +479,6 @@ function TimeGrid({
               onDragStart={onDragStart}
               onDragMove={onDragMove}
               onDragEnd={onDragEnd}
-              colIndex={colIndex}
-              dates={dates}
             />
           ))}
         </div>
@@ -493,6 +488,16 @@ function TimeGrid({
 }
 
 // ── MonthView ────────────────────────────────────────────────────────────────
+
+interface MonthDragState {
+  id: string;
+  kind: "personal" | "block";
+  origIso: string;
+  startX: number;
+  startY: number;
+  targetIso: string | null;
+  active: boolean;
+}
 
 function MonthView({
   anchor,
@@ -504,6 +509,7 @@ function MonthView({
   onDetail,
   onEditPersonal,
   onCreateAt,
+  onMonthDrop,
 }: {
   anchor: string;
   state: DemoState;
@@ -514,9 +520,60 @@ function MonthView({
   onDetail: (id: string) => void;
   onEditPersonal: (id: string) => void;
   onCreateAt: (iso: string, startMins: number) => void;
+  onMonthDrop: (id: string, kind: "personal" | "block", targetIso: string) => void;
 }) {
   const dates = monthGridDates(anchor);
   const demoWeek = weekDates();
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const [mDrag, setMDrag] = useState<MonthDragState | null>(null);
+  const mDragRef = useRef<MonthDragState | null>(null);
+  mDragRef.current = mDrag;
+
+  function findCellIso(clientX: number, clientY: number): string | null {
+    if (!gridRef.current) return null;
+    const cells = Array.from(gridRef.current.querySelectorAll<HTMLDivElement>("[data-iso]"));
+    for (const cell of cells) {
+      const r = cell.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+        return cell.dataset.iso ?? null;
+      }
+    }
+    return null;
+  }
+
+  function startMonthDrag(e: React.PointerEvent, id: string, kind: "personal" | "block", iso: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const ds: MonthDragState = { id, kind, origIso: iso, startX: e.clientX, startY: e.clientY, targetIso: null, active: false };
+    setMDrag(ds);
+    mDragRef.current = ds;
+  }
+
+  function moveMonthDrag(e: React.PointerEvent) {
+    const ds = mDragRef.current;
+    if (!ds) return;
+    const dx = e.clientX - ds.startX;
+    const dy = e.clientY - ds.startY;
+    if (!ds.active && Math.sqrt(dx*dx + dy*dy) < DRAG_THRESHOLD) return;
+    const iso = findCellIso(e.clientX, e.clientY);
+    const updated = { ...ds, active: true, targetIso: iso };
+    setMDrag(updated);
+    mDragRef.current = updated;
+  }
+
+  function endMonthDrag(e: React.PointerEvent) {
+    const ds = mDragRef.current;
+    if (!ds) return;
+    setMDrag(null);
+    mDragRef.current = null;
+    if (!ds.active || !ds.targetIso || ds.targetIso === ds.origIso) {
+      if (!ds.active) onEditPersonal(ds.id);
+      return;
+    }
+    onMonthDrop(ds.id, ds.kind, ds.targetIso);
+  }
 
   return (
     <div className="gcal-month">
@@ -528,7 +585,13 @@ function MonthView({
         ))}
       </div>
 
-      <div className="gcal-month-grid">
+      <div
+        className="gcal-month-grid"
+        ref={gridRef}
+        onPointerMove={moveMonthDrag}
+        onPointerUp={endMonthDrag}
+        onPointerCancel={endMonthDrag}
+      >
         {dates.map((iso) => {
           const isToday = iso === today;
           const inDemoWeek = demoWeek.includes(iso);
@@ -542,19 +605,22 @@ function MonthView({
           const totalChips = chosen.length + personal.length;
           const overflow = totalChips - MAX_CHIPS;
           const dayName = `${DAY_NAMES_FULL[isoWeekdayIndex(iso)]}, ${shortDate(iso)}`;
+          const isDragTarget = mDrag?.active && mDrag.targetIso === iso;
 
           return (
             <div
               key={iso}
+              data-iso={iso}
               className={[
                 "gcal-month-cell",
                 !sameMonth(iso, anchor) ? "gcal-other-month" : "",
                 isToday ? "gcal-today-cell" : "",
                 inDemoWeek ? "gcal-demo-week-cell" : "",
+                isDragTarget ? "gcal-month-drag-target" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
-              onClick={() => onCreateAt(iso, 9 * 60)} // click empty area → create
+              onClick={() => onCreateAt(iso, 9 * 60)}
             >
               <button
                 className={`gcal-month-day-num ${isToday ? "gcal-today-dot" : ""}`}
@@ -598,23 +664,27 @@ function MonthView({
                 );
               })}
 
-              {/* Personal event chips */}
-              {personal.slice(0, Math.max(0, MAX_CHIPS - chosen.length)).map((item) => (
-                <button
-                  key={item.id}
-                  className="gcal-month-chip gcal-chip-personal"
-                  aria-label={`${item.title}, ${time(item.start)}–${time(item.end)}${item.weekly ? " (weekly)" : ""} (editable)`}
-                  title={`${item.title}${item.weekly ? " (weekly)" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditPersonal(item.id);
-                  }}
-                >
-                  <span className="gcal-chip-text">
-                    {time(item.start)} {item.title}
-                  </span>
-                </button>
-              ))}
+              {/* Personal event chips — draggable */}
+              {personal.slice(0, Math.max(0, MAX_CHIPS - chosen.length)).map((item) => {
+                const isDraggingThis = mDrag?.active && mDrag.id === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    className={`gcal-month-chip gcal-chip-personal${isDraggingThis ? " gcal-dragging" : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${item.title}, ${time(item.start)}–${time(item.end)}${item.weekly ? " (weekly)" : ""} (editable)`}
+                    title={`${item.title}${item.weekly ? " (weekly)" : ""}`}
+                    onPointerDown={(e) => startMonthDrag(e, item.id, "personal", iso)}
+                    onClick={(e) => { e.stopPropagation(); /* handled in endMonthDrag */ }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEditPersonal(item.id); } }}
+                  >
+                    <span className="gcal-chip-text">
+                      {time(item.start)} {item.title}
+                    </span>
+                  </div>
+                );
+              })}
 
               {overflow > 0 ? <span className="gcal-month-more">+{overflow}</span> : null}
             </div>
@@ -781,12 +851,6 @@ export function CalendarView({
   // ── Dialog state ──────────────────────────────────────────────────────────
   const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
 
-  // Undo state for drag
-  const [undoState, setUndoState] = useState<{
-    label: string;
-    restore: (s: DemoState) => DemoState;
-  } | null>(null);
-
   const openCreateDialog = useCallback(
     (iso: string, startMins: number) => {
       setDialogMode({ kind: "create", iso, startMins });
@@ -893,12 +957,55 @@ export function CalendarView({
     setDialogMode(null);
   }
 
+  // ── Month drop handler ────────────────────────────────────────────────────
+  function handleMonthDrop(id: string, kind: "personal" | "block", targetIso: string) {
+    const prevBlocks = [...state.blocks];
+    const prevPersonal = [...(state.personalEvents ?? [])];
+
+    if (kind === "block") {
+      if (!blockDropAllowed(targetIso)) { notify("Classes can only be placed on Mon–Fri."); return; }
+      const demoWeekDates = weekDates();
+      const newDay = demoWeekDates.indexOf(targetIso);
+      if (newDay < 0) { notify("Classes can only be placed on Mon–Fri."); return; }
+      const b = state.blocks.find((x) => x.id === id);
+      if (!b) return;
+      onUpdate((s) => ({ ...s, blocks: s.blocks.map((x) => x.id === id ? { ...x, day: newDay } : x) }));
+      notify(
+        `Moved "${b.title}" to ${DAY_NAMES_FULL[isoWeekdayIndex(targetIso)]}`,
+        [{ label: "Undo", run: () => onUpdate((s) => ({ ...s, blocks: prevBlocks, personalEvents: prevPersonal })) }],
+      );
+    } else {
+      const pe = (state.personalEvents ?? []).find((x) => x.id === id);
+      if (!pe) return;
+      let newDate = targetIso;
+      if (pe.repeat === "weekly") {
+        if (!blockDropAllowed(targetIso)) { notify("Weekly events can only be placed on Mon–Fri."); return; }
+        const targetWd = isoWeekdayIndex(targetIso);
+        const peDate = new Date(`${pe.date}T12:00:00Z`);
+        const peWd = peDate.getUTCDay() === 0 ? 6 : peDate.getUTCDay() - 1;
+        newDate = addDays(pe.date, targetWd - peWd);
+      }
+      onUpdate((s) => ({
+        ...s,
+        personalEvents: (s.personalEvents ?? []).map((x) => x.id === id ? { ...x, date: newDate } : x),
+      }));
+      notify(
+        `Moved "${pe.title}" to ${DAY_NAMES_FULL[isoWeekdayIndex(targetIso)]}`,
+        [{ label: "Undo", run: () => onUpdate((s) => ({ ...s, blocks: prevBlocks, personalEvents: prevPersonal })) }],
+      );
+    }
+  }
+
   // ── Drag implementation ────────────────────────────────────────────────────
   const [dragState, setDragState] = useState<DragState | null>(null);
-  // We use a ref alongside state for pointer-event handlers that capture stale state
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = dragState;
 
+  /**
+   * Start a drag. Capture column rects here so moveDrag can find the target
+   * column from clientX even though pointer capture locks events to the
+   * original element.
+   */
   function startDrag(
     e: React.PointerEvent,
     id: string,
@@ -908,7 +1015,27 @@ export function CalendarView({
     start: number,
     end: number,
   ) {
+    // Capture pointer to receive future move/up on this element regardless of
+    // where the pointer goes; but we'll compute the target col from stored rects.
     e.currentTarget.setPointerCapture(e.pointerId);
+
+    // Collect the bounding rects of all day columns.
+    const gridEl = (e.currentTarget as HTMLElement).closest(".gcal-time-grid");
+    const colEls = gridEl
+      ? Array.from(gridEl.querySelectorAll<HTMLDivElement>(".gcal-day-col"))
+      : [];
+    const dayColHeaders = gridEl
+      ? Array.from((gridEl.closest(".gcal-time-grid-wrap") as HTMLElement | null)
+          ?.querySelectorAll<HTMLDivElement>(".gcal-col-head") ?? [])
+      : [];
+
+    // Map col header data-iso (via aria-label) back to dates — simpler: just
+    // query all day cols in DOM order and pair with viewDates.
+    const colRects = colEls.map((el) => el.getBoundingClientRect());
+
+    // The block's own rect top for grab offset.
+    const blockRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
     const ds: DragState = {
       id,
       kind,
@@ -917,6 +1044,9 @@ export function CalendarView({
       origIso: iso,
       startY: e.clientY,
       startX: e.clientX,
+      blockTopClientY: blockRect.top,
+      colRects,
+      colDates: viewDates.length > 0 ? [...viewDates] : [iso],
       mode,
       preview: null,
       active: false,
@@ -925,13 +1055,11 @@ export function CalendarView({
     dragRef.current = ds;
   }
 
-  function moveDrag(
-    e: React.PointerEvent,
-    colRef: HTMLDivElement | null,
-    iso: string,
-    colIndex: number,
-    dates: string[],
-  ) {
+  /**
+   * Move handler — compute target column from stored rects (Fix 2),
+   * use grab offset for time (Fix 3).
+   */
+  function moveDrag(e: React.PointerEvent) {
     const ds = dragRef.current;
     if (!ds) return;
 
@@ -941,36 +1069,54 @@ export function CalendarView({
 
     if (!ds.active && dist < DRAG_THRESHOLD) return;
 
-    const gridEl = colRef?.closest(".gcal-time-grid") as HTMLDivElement | null;
-    const gridH = gridEl?.getBoundingClientRect().height ?? 1;
-    const gridTop = gridEl?.getBoundingClientRect().top ?? 0;
-    const relY = e.clientY - gridTop;
+    // Determine target column from clientX vs stored rects (Fix 2)
+    let targetIso = ds.origIso;
+    if (ds.mode === "move" && ds.colRects.length > 1) {
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < ds.colRects.length; i++) {
+        const r = ds.colRects[i];
+        const mid = r.left + r.width / 2;
+        const d = Math.abs(e.clientX - mid);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      targetIso = ds.colDates[bestIdx] ?? ds.origIso;
+    }
 
-    const newMins = pixelToMins(relY, gridH, grid.start, grid.end);
+    // Blocks can only drop on weekdays (Fix 8) — snap back during drag too
+    if (ds.kind === "class" && !blockDropAllowed(targetIso)) {
+      targetIso = ds.origIso;
+    }
+
+    // Compute new time using grab offset (Fix 3)
+    // The pointer's Y offset from the block top at drag start = (clientY - blockTopClientY)
+    // Use first col rect top as grid top anchor
+    const colTop = ds.colRects[0]?.top ?? 0;
+    const relY = e.clientY - colTop - (ds.blockTopClientY - colTop);
+    // relY is the pixel distance from block top to pointer = grab point within block
+    // New block top in grid coords = (clientY - grabOffsetInBlock) - colTop
+    const grabOffsetPx = ds.startY - ds.blockTopClientY;
+    const newBlockTopPx = e.clientY - colTop - grabOffsetPx;
+
     const dur = ds.origEnd - ds.origStart;
-
     let newStart: number;
     let newEnd: number;
-    let targetIso = iso;
 
     if (ds.mode === "move") {
-      newStart = clampStart(newMins - Math.floor(dur / 2), dur, grid.start, grid.end);
+      // Use actual column top, not the first col's top, for the active column
+      const activColIdx = ds.colDates.indexOf(targetIso);
+      const activeColRect = ds.colRects[activColIdx] ?? ds.colRects[0];
+      const activeRelY = e.clientY - activeColRect.top - grabOffsetPx;
+      newStart = pixelToMins(activeRelY, grid.start, grid.end);
+      newStart = clampStart(newStart, dur, grid.start, grid.end);
       newEnd = newStart + dur;
-
-      // Horizontal column change
-      if (dates.length > 1) {
-        const newColIndex = Math.max(0, Math.min(dates.length - 1, colIndex));
-        targetIso = dates[newColIndex];
-      }
-
-      // Blocks can only drop on weekdays
-      if (ds.kind === "class" && !blockDropAllowed(targetIso)) {
-        targetIso = ds.origIso;
-      }
     } else {
-      // resize: keep start, change end
+      // Resize: keep start, drag end from bottom edge
+      const activeColRect = ds.colRects[0] ?? { top: 0 };
+      const endRelY = e.clientY - activeColRect.top;
       newStart = ds.origStart;
-      newEnd = clampEnd(newMins, ds.origStart, grid.end);
+      newEnd = pixelToMins(endRelY, grid.start, grid.end);
+      newEnd = clampEnd(newEnd, ds.origStart, grid.end);
       targetIso = ds.origIso;
     }
 
@@ -983,12 +1129,16 @@ export function CalendarView({
     dragRef.current = updated;
   }
 
+  /**
+   * End drag. If it was a real drag, apply the move. If it was a tiny
+   * movement (< 4 px), open the edit dialog. Never both (Fix 4).
+   */
   function endDrag(e: React.PointerEvent) {
     const ds = dragRef.current;
     if (!ds) return;
 
     if (!ds.active || !ds.preview) {
-      // Was a click (no drag threshold reached) — open edit dialog
+      // Below threshold: treat as click → open edit dialog (Fix 4)
       setDragState(null);
       dragRef.current = null;
       if (ds.kind === "personal") {
@@ -1001,7 +1151,7 @@ export function CalendarView({
 
     const { iso: targetIso, start: newStart, end: newEnd } = ds.preview;
 
-    // Validate: blocks only on weekdays
+    // Validate blocks-only-weekdays (Fix 8)
     if (ds.kind === "class" && !blockDropAllowed(targetIso)) {
       notify("Classes can only be placed on Mon–Fri.");
       setDragState(null);
@@ -1009,7 +1159,6 @@ export function CalendarView({
       return;
     }
 
-    // Save previous state for undo
     const prevBlocks = [...state.blocks];
     const prevPersonal = [...(state.personalEvents ?? [])];
 
@@ -1029,43 +1178,34 @@ export function CalendarView({
         ),
       }));
     } else {
-      // personal event
       onUpdate((s) => ({
         ...s,
         personalEvents: (s.personalEvents ?? []).map((pe) => {
           if (pe.id !== ds.id) return pe;
           if (pe.repeat === "weekly") {
-            // Weekly: preserve weekday by adjusting the date
-            const demoWeekDates = weekDates();
             const targetWd = isoWeekdayIndex(targetIso);
-            // Find a date with this weekday starting from pe.date
             const peDate = new Date(`${pe.date}T12:00:00Z`);
             const peWd = peDate.getUTCDay() === 0 ? 6 : peDate.getUTCDay() - 1;
             const diff = targetWd - peWd;
-            const newDate = addDays(pe.date, diff);
-            return { ...pe, date: newDate, start: newStart, end: newEnd };
+            return { ...pe, date: addDays(pe.date, diff), start: newStart, end: newEnd };
           }
           return { ...pe, date: targetIso, start: newStart, end: newEnd };
         }),
       }));
     }
 
-    const moved = state.blocks.find((b) => b.id === ds.id) ?? (state.personalEvents ?? []).find((pe) => pe.id === ds.id);
+    const moved =
+      state.blocks.find((b) => b.id === ds.id) ??
+      (state.personalEvents ?? []).find((pe) => pe.id === ds.id);
     const label = moved?.title ?? "item";
-    const dayLabel = DAY_NAMES_FULL[isoWeekdayIndex(targetIso)];
+    const dLabel = DAY_NAMES_FULL[isoWeekdayIndex(targetIso)];
+    const restoreBlocks = prevBlocks;
+    const restorePersonal = prevPersonal;
+    // Fix 6: show Undo only in the toast (no separate banner)
     notify(
-      `Moved ${label} to ${dayLabel}, ${formatTimeRange(newStart, newEnd)}. Undo`,
+      `Moved "${label}" to ${dLabel}, ${formatTimeRange(newStart, newEnd)}`,
+      [{ label: "Undo", run: () => onUpdate((s) => ({ ...s, blocks: restoreBlocks, personalEvents: restorePersonal })) }],
     );
-
-    // Store undo
-    setUndoState({
-      label,
-      restore: (s) => ({
-        ...s,
-        blocks: prevBlocks,
-        personalEvents: prevPersonal,
-      }),
-    });
 
     setDragState(null);
     dragRef.current = null;
@@ -1170,29 +1310,6 @@ export function CalendarView({
 
       {!showingDemoWeek && timeGridView ? <DemoWeekBanner onGoToDemo={goToDemoWeek} /> : null}
 
-      {undoState ? (
-        <div className="gcal-undo-bar" role="status">
-          <span>Moved {undoState.label}</span>
-          <button
-            className="btn small"
-            onClick={() => {
-              onUpdate(undoState.restore);
-              setUndoState(null);
-              notify("Move undone.");
-            }}
-          >
-            Undo
-          </button>
-          <button
-            className="gcal-undo-dismiss"
-            aria-label="Dismiss"
-            onClick={() => setUndoState(null)}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-
       {timeGridView ? (
         <div className="gcal-body panel">
           <TimeGrid
@@ -1228,6 +1345,7 @@ export function CalendarView({
             onDetail={onDetail}
             onEditPersonal={openEditPersonal}
             onCreateAt={openCreateDialog}
+            onMonthDrop={handleMonthDrop}
           />
         </div>
       ) : null}

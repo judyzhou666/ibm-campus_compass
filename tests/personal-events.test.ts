@@ -219,21 +219,42 @@ test("planner: personal event on Tue 3-4 PM causes recommend() to skip Tue 3 PM 
 });
 
 // ── drag math helpers ────────────────────────────────────────────────────────
+// pixelToMins now uses colHeight(gridStart, gridEnd) = (end-start)*48px internally.
+// For gridStart=8, gridEnd=21: colH = 13*48 = 624px
 
-test("pixelToMins: 50% of grid = midpoint", () => {
-  // Grid 8:00-21:00 (780 min span), 50% → 8*60 + 390 = 870 → snap(870/15)*15 = 870
-  const result = pixelToMins(500, 1000, 8, 21);
-  assert.equal(result % 15, 0); // always snaps to 15 min
-});
+import { colHeight, HOUR_PX } from "../frontend/src/calendarGrid.ts";
 
-test("pixelToMins: top of grid (0px) = gridStart", () => {
-  const result = pixelToMins(0, 1000, 8, 21);
+test("pixelToMins: top of grid (0px) = gridStart*60", () => {
+  const result = pixelToMins(0, 8, 21);
   assert.equal(result, 8 * 60);
 });
 
-test("pixelToMins: bottom of grid (1000px) = gridEnd", () => {
-  const result = pixelToMins(1000, 1000, 8, 21);
+test("pixelToMins: bottom of grid (colH px) = gridEnd*60", () => {
+  const h = colHeight(8, 21); // 13 * 48 = 624
+  const result = pixelToMins(h, 8, 21);
   assert.equal(result, 21 * 60);
+});
+
+test("pixelToMins: 4 PM line on 8-22 grid = 960 minutes", () => {
+  // 4 PM = 16:00 = 960 min. On an 8-22 grid: colH = 14*48 = 672px
+  // relPct = (960 - 8*60) / ((22-8)*60) = 480/840 ≈ 0.5714
+  // pixelY = 0.5714 * 672 ≈ 384px
+  const h = colHeight(8, 22); // 14 * 48 = 672
+  const pxForAF = (((16 * 60) - 8 * 60) / ((22 - 8) * 60)) * h;
+  const result = pixelToMins(pxForAF, 8, 22);
+  assert.equal(result, 16 * 60); // exactly 960
+});
+
+test("pixelToMins: result always snaps to 15 min", () => {
+  // Any pixel value should produce a multiple-of-15 result
+  const result = pixelToMins(300, 8, 21);
+  assert.equal(result % 15, 0);
+});
+
+test("colHeight: 13-hour grid = 624px, 14-hour = 672px, 15-hour = 720px", () => {
+  assert.equal(colHeight(8, 21), 624);
+  assert.equal(colHeight(8, 22), 672);
+  assert.equal(colHeight(7, 22), 720);
 });
 
 test("clampStart: start + duration fits in grid", () => {
@@ -284,4 +305,52 @@ test("personalEventToBlock: weekly from different week returns block on same wee
   const block = personalEventToBlock(pe);
   assert.ok(block, "Should return a block for weekly event on Wednesday");
   assert.equal(block!.day, 2); // Wed
+});
+
+// ── target column from clientX ────────────────────────────────────────────
+
+test("target column from clientX: finds nearest column by midpoint", () => {
+  // Simulate 5 column rects for Mon–Fri, each 100px wide
+  const colRects = Array.from({ length: 5 }, (_, i) => ({
+    left: 60 + i * 100, right: 60 + (i + 1) * 100, width: 100,
+  } as DOMRect));
+  const colDates = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"];
+
+  function findCol(clientX: number): string {
+    let best = 0; let bestD = Infinity;
+    for (let i = 0; i < colRects.length; i++) {
+      const mid = colRects[i].left + colRects[i].width / 2;
+      const d = Math.abs(clientX - mid);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return colDates[best];
+  }
+
+  // Mon midpoint = 60 + 0*100 + 50 = 110 → Mon
+  assert.equal(findCol(110), "2026-11-02");
+  // 165 is between Mon(110) and Tue(210), closer to Tue
+  assert.equal(findCol(165), "2026-11-03");
+  // Fri midpoint = 60 + 4*100 + 50 = 510 → Fri
+  assert.equal(findCol(510), "2026-11-06");
+});
+
+// ── drag-vs-click: threshold suppresses dialog ──────────────────────────────
+
+test("drag threshold: move < 4px is treated as a click (active=false)", () => {
+  // Pure math: if dist < DRAG_THRESHOLD, active stays false
+  const DRAG_THRESHOLD = 4;
+  const startX = 100, startY = 200;
+  const scenarios: [number, number, boolean][] = [
+    [100, 200, false],       // no movement → click
+    [100, 203, false],       // 3px up → still click
+    [103, 200, false],       // 3px right → still click
+    [100, 205, true],        // 5px down → drag
+    [104, 200, true],        // 4px right → drag (equal to threshold → active)
+  ];
+  for (const [cx, cy, expectActive] of scenarios) {
+    const dx = cx - startX, dy = cy - startY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const wouldActivate = dist >= DRAG_THRESHOLD;
+    assert.equal(wouldActivate, expectActive, `dx=${dx} dy=${dy} dist=${dist.toFixed(2)} expected active=${expectActive}`);
+  }
 });

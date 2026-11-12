@@ -430,25 +430,48 @@ export function parseSavedPosition(
   }
 }
 
+// ── Grid height helper ─────────────────────────────────────────────────────
+
+/** Row height in pixels (matches the CSS .gcal-hour-label height). */
+export const HOUR_PX = 48;
+
+/**
+ * Column height in pixels for a given grid span.
+ * Used both by the React component (inline style) and by drag math so they
+ * stay in sync.
+ */
+export function colHeight(gridStart: number, gridEnd: number): number {
+  return (gridEnd - gridStart) * HOUR_PX;
+}
+
+/**
+ * Pixels per minute for a grid column of given span.
+ */
+export function pxPerMin(gridStart: number, gridEnd: number): number {
+  return colHeight(gridStart, gridEnd) / ((gridEnd - gridStart) * 60);
+}
+
 // ── Drag helpers (pure, no DOM) ────────────────────────────────────────────
 
 /**
- * Convert a pixel offset from the top of the time grid to a minute value,
+ * Convert a pixel offset from the top of a day column to a minute value,
  * snapped to 15-minute intervals.
  *
- * @param pixelY   - pixels from top of the grid area
- * @param gridH    - total height of the grid area in pixels
+ * Uses the CSS-derived column height (HOUR_PX × hours) so the math matches
+ * the rendered layout exactly.
+ *
+ * @param pixelY    - pixels from top of the column
  * @param gridStart - first hour displayed (inclusive)
  * @param gridEnd   - last hour displayed (exclusive)
  */
 export function pixelToMins(
   pixelY: number,
-  gridH: number,
   gridStart: number,
   gridEnd: number,
 ): number {
+  const h = colHeight(gridStart, gridEnd);
   const totalMin = (gridEnd - gridStart) * 60;
-  const raw = (pixelY / gridH) * totalMin + gridStart * 60;
+  const raw = (pixelY / h) * totalMin + gridStart * 60;
   return Math.round(raw / 15) * 15;
 }
 

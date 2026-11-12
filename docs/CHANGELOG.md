@@ -3,6 +3,32 @@
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
 
+## Calendar: fix grid height, cross-day drag, grab offset, drag-vs-click, month drag — November 12, 2026
+
+Fixed eight bugs found during hands-on testing of commit 709a0fa. Work done with IBM Bob (note: Fix 1 corrects a grid-height bug introduced in b0dec35, which was written with Claude Code).
+
+1. **Grid height** — `.gcal-day-col` had `height: calc(13 * 48px)` hardcoded while `gridHours()` can produce grids of 14+ rows. Added `colHeight(start, end)` pure helper and `--gcal-col-h` CSS variable; the column height now matches the hour rows exactly for any grid span. Added `colHeight` and `HOUR_PX` exports to `calendarGrid.ts`.
+
+2. **Cross-day drag** — `setPointerCapture` locked pointer events to the original column, so `colIndex` always reflected the origin. Fixed by capturing all column DOMRects at `startDrag` time and computing the nearest column from `clientX` vs stored rects in `moveDrag`.
+
+3. **Grab offset / time jump** — was centering the block on the pointer (`newMins − dur/2`), causing a jump on mousedown. Now computes `grabOffsetPx = startY − blockTopClientY` at drag start and uses `colTop + newBlockTopPx` to derive the new start time. Resize uses the same grab-based math: dragging 1 hour now adds exactly 60 minutes.
+
+4. **Drag opens dialog after drop** — `onClick` on own blocks was always calling `onEditBlock/Personal`. Changed to let `endDrag` decide: only open the dialog when `active === false` (click); never call it from `onClick`. Text selection in the drag path prevented by `e.preventDefault()` on `onPointerDown`.
+
+5. **Text selection during drag** — `e.preventDefault()` added to `onPointerDown` of own blocks and resize handles; `.gcal-is-dragging` class applied to `.gcal-time-grid` while a drag is active, with `user-select: none`.
+
+6. **Undo appears twice** — removed the `gcal-undo-bar` banner; Undo now shows only as a `ToastAction` in the bottom toast (using the existing `run:` field on `App.tsx`'s `ToastAction` interface). `notify` prop updated to accept `Array<{label, run}>`.
+
+7. **Month view drag** — added `MonthDragState`, `startMonthDrag`, `moveMonthDrag`, `endMonthDrag` in `MonthView`. Uses `data-iso` attributes on cells for hit-testing. Chips show `.gcal-dragging` while in flight; target cell highlighted with `.gcal-month-drag-target`. `handleMonthDrop` wired into main component.
+
+8. **Weekday-only drop rule** — blocks snap back during both move and resize when targeting a weekend; validated in `moveDrag` preview and `endDrag` final commit.
+
+**New tests** (personal-events.test.ts, now 26): `colHeight` for 13/14/15-hour grids; `pixelToMins` at top/bottom/4 PM; target-column-from-clientX by midpoint; drag-threshold math (< 4px = click, ≥ 4px = drag).
+
+**Verification:** TypeScript 268/268 (26 new), npm test 5/5 Wiki, npm run build clean, cargo test 58/58, npm run test:api PASS.
+
+
+
 ## Calendar: create, edit, delete and drag your own items — November 12, 2026
 
 Added Canvas-style personal calendar entries alongside existing busy-time blocks and campus events. Work done with IBM Bob.

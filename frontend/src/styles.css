@@ -3924,11 +3924,11 @@ p {
   height: 48px;
   border-top: 1px solid var(--line);
 }
-/* Day columns */
+/* Day columns — height driven by JS via --gcal-col-h (grid.end - grid.start) * 48px */
 .gcal-day-col {
   flex: 1;
   position: relative;
-  height: calc(13 * 48px); /* 13 hours × 48px each */
+  height: var(--gcal-col-h, calc(13 * 48px)); /* fallback for SSR/no-JS */
   border-left: 1px solid var(--line);
   min-width: 0;
 }
@@ -5616,6 +5616,18 @@ input.switch:focus-visible {
 .gcal-dragging {
   opacity: 0.55;
   pointer-events: none;
+}
+/* Prevent text selection during any drag operation */
+.gcal-time-grid.gcal-is-dragging,
+.gcal-time-grid.gcal-is-dragging * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Month view drag-target highlight */
+.gcal-month-drag-target {
+  background: var(--personal-light) !important;
+  outline: 2px solid var(--personal);
+  outline-offset: -2px;
 }
 /* Resize handle at the bottom edge of own blocks */
 .gcal-resize-handle {
