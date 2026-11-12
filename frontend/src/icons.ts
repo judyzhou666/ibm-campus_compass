@@ -1,6 +1,11 @@
 export const paths: Record<string, string> = {
   compass: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z M16 8l-3 5-5 3 3-5 5-3Z",
   home: "m3 10 9-7 9 7v11h-6v-7H9v7H3Z",
+  monitor: "M3 4h18v12H3Z M8 21h8 M12 16v5",
+  globe:
+    "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M3 12h18 M12 3c3.5 3.5 3.5 14.5 0 18 M12 3c-3.5 3.5-3.5 14.5 0 18",
+  reset: "M4 4v5h5 M4.6 9A8 8 0 1 1 4 13",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M12 11v6 M12 7.5h.01",
   dashboard: "M3 3h8v8H3Z M13 3h8v5h-8Z M13 10h8v11h-8Z M3 13h8v8H3Z",
   megaphone: "M3 10v4h3l8 4V6l-8 4Z M6 14l1 6h3l-1-5 M18 9a4 4 0 0 1 0 6",
   academic: "M2 9l10-5 10 5-10 5Z M6 11v5c3 2.5 9 2.5 12 0v-5 M22 9v6",

@@ -25,7 +25,8 @@ import {
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
-import { Forum, Profile, Settings } from "./Pages.tsx";
+import { Forum, Profile } from "./Pages.tsx";
+import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
 import {
   NotificationDetail,
@@ -1433,22 +1434,26 @@ export default function App() {
             />
           ) : null}
           {page === "settings" ? (
-            <section className="panel briefing">
-              <h2>Team tools</h2>
-              <p>
-                Read-only review of fictional event quality, separate from
-                student planning.
-              </p>
-              <Button onClick={() => nav("review")}>
-                Open synthetic-data review
-              </Button>
-            </section>
-          ) : null}
-          {page === "settings" ? (
             <Settings
               state={state}
               update={update}
               notify={notify}
+              watsonxMode={watsonxMode}
+              sidebarCollapsed={collapsed}
+              onSidebarCollapsed={setCollapsed}
+              unreadCount={unreadNotes.length}
+              updatesWaiting={updatesWaiting}
+              onProfile={() => nav("profile")}
+              onSignIn={() => setSigningIn(true)}
+              onReview={() => nav("review")}
+              onNotifications={() => openNotifications()}
+              onMarkAllRead={() => {
+                markRead(unreadNotes.map((n) => n.id));
+                notify("All notifications marked as read.");
+              }}
+              onCheckUpdates={checkForUpdates}
+              onExport={exportCalendar}
+              onPlanner={() => nav("planner")}
               onReset={() => {
                 conversation.reset();
                 enrollment.reset();

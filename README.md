@@ -2,6 +2,16 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Settings page: section bar and search — November 12, 2026
+
+- **New layout** (`frontend/src/Settings.tsx`, sections in `frontend/src/settings.ts`): a left bar with the "Settings" title, a **Search settings…** box and eight sections, each with its own icon — General, Notifications, Sync, AI Assistant, Time Zone, Event Buffer Time, Reset Demo and About. The right side shows the chosen section as a card of rows; on phones and tablets the sections become a horizontally scrolling row above the content.
+- **Every earlier setting is kept:** time zone, the 15-minute travel buffer (now an on/off switch, still refusing to turn on if it would create a conflict), AI connection mode, Reset demo with its confirmation, About, and the Team tools link to the synthetic-data review (moved from a separate panel into General).
+- **New rows use only features that already exist:** demo profile with Sign in / Edit profile; compact sidebar switch; unread notifications with Mark all read / Open; Check for synthetic updates with last-checked time; calendar (.ics) export; open the AI Planner. Sync states plainly that no external calendar is connected and that demo data stays in this browser. The AI connection tag shows "IBM watsonx (Granite)" when the server is in watsonx mode, otherwise "Simulated · Demo mode".
+- **Search** matches every typed word against section names, titles, descriptions and hidden keywords (for example "ics", "watsonx", "travel"); results are grouped under their section, sections with no match are dimmed, and clicking a section clears the search.
+- **To demo:** Settings → type "time" → clear it → Event Buffer Time → toggle the switch → Reset Demo → Reset demo shows the confirmation.
+- **Verification:** `npm test` (192 TypeScript tests, including 3 new ones in `tests/settings.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px, 800px and 390px: section switching, search for "time", buffer switch (toast "Travel buffer updated."), reset confirmation, no sideways scrolling on any width.
+- **Limitation:** "Check for updates" from Settings behaves as it does from the bell — it applies the batch and opens My Dashboard so the Briefing shows the changes.
+
 ## Top bar: search box centred — November 12, 2026
 
 - The top-bar search box now sits centred between the Campus Compass logo and the quick links (Find events … Plan with AI), using equal auto margins; the logo, links and actions are otherwise unchanged. On phones the quick links are hidden and the search box still fills the space between the logo and the bell.
