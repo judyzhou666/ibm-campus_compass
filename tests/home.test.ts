@@ -8,6 +8,7 @@ import {
   HOME_CATEGORIES,
   announcements,
   categoryCount,
+  createWheelSwipe,
   hasPreferences,
   homeRecommendations,
   recommendationBasis,
@@ -51,4 +52,16 @@ test("recommendations are catalog events the student can still add", () => {
     assert.notEqual(e.id, "e1");
     assert.equal(issue(e, state), null);
   }
+});
+
+test("a trackpad swipe changes the announcement once per gesture", () => {
+  const swipe = createWheelSwipe(40, 250);
+  // Fingers move left (content scrolls right): next slide, once.
+  assert.equal(swipe(15, 1, 0), 0);
+  assert.equal(swipe(30, 2, 16), 1);
+  assert.equal(swipe(40, 0, 32), 0, "momentum tail does not step again");
+  // Vertical scrolling never steps.
+  assert.equal(swipe(2, 80, 600), 0);
+  // A new gesture after a pause goes back.
+  assert.equal(swipe(-50, 0, 1000), -1);
 });

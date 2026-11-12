@@ -36,6 +36,29 @@ export const HOME_CATEGORIES: HomeCategory[] = [
   { label: "Free food", filter: "Free Food", icon: "food", tone: "social" },
 ];
 
+/**
+ * Turns a stream of trackpad wheel deltas into at most one slide step per
+ * swipe. A swipe (including its momentum tail) ends after `idleMs` without
+ * wheel events. Returns 1 (next), -1 (previous) or 0 (no change).
+ */
+export function createWheelSwipe(threshold = 40, idleMs = 250) {
+  let total = 0;
+  let last = -Infinity;
+  let fired = false;
+  return (dx: number, dy: number, now: number): -1 | 0 | 1 => {
+    if (now - last > idleMs) {
+      total = 0;
+      fired = false;
+    }
+    last = now;
+    if (fired || Math.abs(dx) <= Math.abs(dy)) return 0;
+    total += dx;
+    if (Math.abs(total) < threshold) return 0;
+    fired = true;
+    return total > 0 ? 1 : -1;
+  };
+}
+
 /** Number of catalog events an Explore filter would show. */
 export function categoryCount(filter: string, events = EVENTS) {
   return events.filter((e) =>

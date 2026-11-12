@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEMO, dayLabel } from "./config.ts";
 import { DAYS, EVENTS, time } from "./data.ts";
 import { Button, EventCard, Icon } from "./components.tsx";
@@ -6,6 +6,7 @@ import {
   HOME_CATEGORIES,
   announcements,
   categoryCount,
+  createWheelSwipe,
   homeRecommendations,
   recommendationBasis,
 } from "./home.ts";
@@ -34,11 +35,32 @@ function Announcements({
   onViewAll: () => void;
 }) {
   const [index, setIndex] = useState(0);
+  const slideRef = useRef<HTMLDivElement>(null);
+  const stepRef = useRef((_by: number) => {});
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const many = list.length > 1;
+  // Two-finger trackpad swipe (Mac): horizontal wheel events change slide
+  // once per gesture. The listener is non-passive so the swipe does not
+  // also trigger the browser's own back/forward gesture.
+  useEffect(() => {
+    const el = slideRef.current;
+    if (!el || !many) return;
+    const swipe = createWheelSwipe();
+    const onWheel = (ev: WheelEvent) => {
+      if (Math.abs(ev.deltaX) <= Math.abs(ev.deltaY)) return;
+      ev.preventDefault();
+      const by = swipe(ev.deltaX, ev.deltaY, ev.timeStamp);
+      if (by) stepRef.current(by);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [many]);
   if (!list.length) return null;
   const at = Math.min(index, list.length - 1);
   const n = list[at];
   const e = EVENTS.find((x) => x.id === n.eventId)!;
   const step = (by: number) => setIndex((at + by + list.length) % list.length);
+  stepRef.current = step;
   return (
     <section
       className="home-announce"
@@ -54,9 +76,24 @@ function Announcements({
         </button>
       </div>
       <div
+        ref={slideRef}
         className={`announce-slide ${n.kind === "update" ? "update" : ""}`}
         aria-roledescription="slide"
         aria-label={`${at + 1} of ${list.length}`}
+        // Touch-screen swipe.
+        onTouchStart={(ev) => {
+          const t = ev.touches[0];
+          touch.current = { x: t.clientX, y: t.clientY };
+        }}
+        onTouchEnd={(ev) => {
+          const start = touch.current;
+          touch.current = null;
+          if (!start || !many) return;
+          const t = ev.changedTouches[0];
+          const dx = t.clientX - start.x;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(t.clientY - start.y))
+            step(dx < 0 ? 1 : -1);
+        }}
       >
         <button
           className="announce-main"
@@ -99,14 +136,25 @@ function Announcements({
             </b>
           </span>
         </button>
-        {list.length > 1 ? (
-          <div className="announce-controls">
+        {many ? (
+          <>
             <button
-              className="icon-btn"
+              className="announce-arrow prev"
               aria-label="Previous announcement"
               onClick={() => step(-1)}
             >
-              <Icon name="chevronLeft" />
+              <span>
+                <Icon name="chevronLeft" />
+              </span>
+            </button>
+            <button
+              className="announce-arrow next"
+              aria-label="Next announcement"
+              onClick={() => step(1)}
+            >
+              <span>
+                <Icon name="chevronRight" />
+              </span>
             </button>
             <div className="announce-dots">
               {list.map((x, i) => (
@@ -119,14 +167,7 @@ function Announcements({
                 />
               ))}
             </div>
-            <button
-              className="icon-btn"
-              aria-label="Next announcement"
-              onClick={() => step(1)}
-            >
-              <Icon name="chevronRight" />
-            </button>
-          </div>
+          </>
         ) : null}
       </div>
     </section>
