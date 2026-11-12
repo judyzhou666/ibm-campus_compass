@@ -284,7 +284,7 @@ export function Week({
                       <span>
                         {cancelled
                           ? "Cancelled"
-                          : `${time(e.start)}${full ? " – " + time(e.end) : ""}`}
+                          : `${formatTime(e.start)}${full ? " – " + formatTime(e.end) : ""}`}
                       </span>
                     </>
                   );
