@@ -3,7 +3,6 @@
 A campus opportunity planner that helps university students — starting with first-semester graduate students — discover academic, career and social events and fit them into a realistic week. Built for the IBM AI Experiential Learning Lab.
 
 ## Challenge track
-
 **Bring Your Own Challenge.** Higher education is not one of the four listed tracks; this project names it as its own challenge statement.
 
 ## Problem statement
@@ -30,7 +29,7 @@ What the app does today, from the student's view:
 
 - **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
 - **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
-- **AI Planner** — conversational chat with visible filter chips; a draft-plan sidebar; and a "What I'm working with" panel showing interests, busy times, travel buffer and planned events. The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
+- **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
 - **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views.
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
 - **Notifications** — bell dropdown, unread badge, filterable Notifications page, per-notification messages.
@@ -48,7 +47,7 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 
 ## Technology
 
-- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and this README/Demo-tools cleanup; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/) (Tingting's exports are being added).
+- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/) (Tingting's exports are being added).
 - **IBM watsonx.ai Granite** — optional live interpreter and ranker via `PLANNER_PROVIDER=watsonx`. Default is the deterministic simulated planner. Every reply is labelled with the mode that produced it.
 - **Rust** (Axum, Tokio, Serde) — backend API, typed validation, deterministic scheduling logic.
 - **React + TypeScript + Vite** — frontend; browser-local state; explicitly labelled simulation fallback when the backend is unavailable.
@@ -92,7 +91,7 @@ See [docs/backend.md](docs/backend.md) for full backend and watsonx setup, and t
 
 ## Three-minute demo
 
-Follow [docs/demo-script.md](docs/demo-script.md). Open AI Planner and expand **Demo tools (for presenters)** at the bottom of the page to reach the Demo Scenario Launcher.
+Follow [docs/demo-script.md](docs/demo-script.md). Start from **Settings → Reset demo**, then open AI Planner.
 
 **Video:** TODO (team — add YouTube link before submission)
 

@@ -2,6 +2,104 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Merge main (PR #19 event detail, PR #20 planner cleanup) into Tingting — November 12, 2026
+
+PR #20 removed the Demo Scenario Launcher, so the earlier change on this branch that only moved it into a collapsed "Demo tools (for presenters)" section is superseded: `frontend/src/App.tsx` and `docs/demo-script.md` now match main. README.md overview updated to match main (AI Planner is "Mimi", no "What I'm working with" panel, demo starts from Settings → Reset demo). PR #19/#20 README update sections moved verbatim to this file. Merge resolved with Claude Code, not IBM Bob.
+
+## AI Planner cleanup, Mimi branding, and event detail controls — November 12, 2026
+
+**AI Planner (`frontend/src/App.tsx`)**
+
+- Removed the **Demo Scenario Launcher**, the **What I'm working with** summary panel and the **Event updates** panel from the AI Planner.
+- Synthetic updates are still available from the bell and Settings › Notifications.
+- The planner heading now reads "Hi, Ask Mimi, your AI Chatbot!" and the chat panel is titled "Chat with Mimi".
+
+**Event detail page (`frontend/src/components.tsx`, `styles.css`, `icons.ts`)**
+
+- **Back to events** link above the banner.
+- The banner is now a solid dark-green poster on a light-green band, with a larger date.
+- **Share** copies the event's details as text, labelled as a fictional demo event, and confirms "Event details copied". The detail view has no URL of its own, so Share copies text rather than a link.
+- **Follow / Following** on the host row and the host card. Followed hosts are saved only in this browser.
+- **Contact** shows "Demo only: this fictional host can't be contacted and no message is sent."
+- **Getting there:** Walking, Biking and Public transit buttons. **Show campus map** toggle. Both say plainly that there are no real directions or maps for the fictional campus.
+
+**To demo:** run `npm run build` and `cargo run --locked`, then open http://127.0.0.1:4173. Open AI Planner to see the new heading. Open any event to try Back, Share, Follow, Contact, the travel buttons and the map toggle.
+
+**Launcher clean-up**
+
+- Deleted the unused `DemoLauncher.tsx`, its CSS and the two tests that copied its subtitle text.
+- Removed the unused `guidedScenario` import from `App.tsx`.
+- `docs/demo-script.md`, `docs/backend.md` and `wiki/Getting-Started.md` now start the guided demo by hand: Settings → Reset demo, then type "AI career social 3 events after 1 PM" in the AI Planner.
+- A new assertion in `tests/final-alignment.test.ts` checks that this prompt still returns at least 3 events from the reset state.
+
+**Verification:** `npm test` (242 TypeScript + 5 Wiki tests) and `npm run build` pass. Rust checks were not run because no backend files changed.
+
+**Limitations**
+
+- The optional `scripts/browser-journey.mjs` still clicks the removed "Prepare scenario" buttons and will fail until it is rewritten.
+- Settings → Reset demo does not archive the previous browser state. There is no "Restore previous demo" any more.
+- Share copies text only. Follow does nothing beyond the label. Contact, travel and map are demo placeholders.
+
+## Event detail page: PR #19 review fixes — November 12, 2026
+
+- **Access matches updates.** The Highlights card reads access after applied updates. After update batch 1, "Community dinner & story exchange" (e6) says "At capacity", matching "Event is full" in the RSVP card, instead of "Open to all".
+- **Disabled button always has a reason.** For an event with conflicting notices (e5 after batch 3), the RSVP card shows "Needs confirmation: conflicting notices for this event. See the notice above." and the phone bottom bar shows "Needs confirmation". Before, both left "Can't add" with no reason.
+
+Verification: rendered the detail page for e6 and e5 after all three update batches, before and after the fix; `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and `npm run test:api` pass after merging `main`.
+
+## Event detail page redesign — November 12, 2026
+
+The `EventDetails` overlay was redesigned to match `docs/event-detail-redesign.md`.
+
+### What changed
+
+**`frontend/src/components.tsx` — `EventDetails`** (lines 353–1106): completely replaced.
+
+- **Poster banner**: full-width `--mint`-tinted band with a `poster ${category}` inner block (min-height 340px). Left: small-caps topic/category line and large-scale poster art split on `" / "` (64–120px). Right: a 2px top rule, `TUE · NOV 3` date abbreviation, shown time range, location, and host school.
+- **Save icon row**: a 44×44 `icon-btn` right-aligned under the banner, wired to `onSave` with `aria-pressed`. There is no Share button: the detail view has no URL of its own, so a copied link would not open the event.
+- **Section 1 — Title block**: category pill (mint/green), dashed "Fictional demo event" pill (always visible), `<h1 id="detail-title">` at `clamp(32px,4vw,46px)`. Host row with 52px round avatar (initials). When/Where rows with icon + text + small badge when moved or room changed. Update notice (`role="status"`): blue box for `time_moved` ("Moved earlier/later. Now …, ~~was~~") and `room_changed`; amber for conflict — raw minute values never rendered. Conflict notice kept verbatim.
+- **Section 2 — Overview**: description at 17px/1.6, max-width 640px. "Good for" label + mint pills per `goal_type`.
+- **Section 3 — Good to know**: two equal white cards. Highlights: duration, "In person", food, access. Entry requirements: one row per item, green check for confirmed / amber info icon for "Not confirmed"; Membership + Ticket merged when both "Not required". "Why it fits you" (check icons, no ✓ characters) when no problem.
+- **Section 4 — Location**: venue name + "Fictional campus", static grid-pattern map placeholder (300px tall, labelled "Fictional campus map"), travel-time note when `state.buffer > 0`.
+- **Section 5 — Hosted by + related communities**: host card with 64px avatar, host name, fineprint subline. Community pill links below the card.
+- **Section 6 — Record & evidence**: `<details>` unchanged; "Last checked" moved into the `<summary>` row right-aligned; separate paragraph removed.
+- **Section 7 — You might also like**: heading, "More {topic} events this week." subtitle, up to 4 same-topic events (excluding this event and cancelled), sorted by day then start. Row: poster tile 150×84, title, date/time, location/price, "Same room" / "Members" badges. Clicking opens that event's detail via new `onDetail` prop.
+- **RSVP card (aside)**: white card with `var(--shadow)` that stays visible while the page scrolls (the card itself is `position: sticky`). Price/RSVP line, short date+time, amber issue strip when `problem` is set, 52px primary button: planned → "Remove from calendar"; any issue (schedule conflict, full, members only, cancelled) → disabled "Can't add", with the issue strip saying why, because enrollment rejects every event with an issue; RSVP required → "RSVP & add to calendar"; drop-in → "Add to calendar". Fineprint "Nothing is added until you confirm. Fictional demo event, no real registration." Save moved out of the card into the icon row.
+- **Mobile (≤ 700px)**: single column, 16px side padding, aside hidden, bottom bar fixed (`position: fixed; bottom: 0`) with price/issue (left), primary button (right) and the "Nothing is added until you confirm · Fictional demo event" line underneath; the page's bottom padding keeps the bar from covering content.
+
+**`frontend/src/App.tsx`**: `onDetail={setDetail}` passed to `EventDetails`.
+
+**`frontend/src/icons.ts`**: `warning` (triangle) icon added in stroke style.
+
+**`frontend/src/styles.css`**: replaced all `.event-detail-hero*`, `.event-detail-aside*`, `.event-detail-info-*`, `.event-detail-reasons*`, `.event-detail-section*` rules with `ed-*` redesign rules. Added `.ed-banner-wrap`, `.ed-poster*`, `.ed-icon-row`, `.ed-section`, `.ed-title-block`, `.ed-tags-row`, `.ed-cat-pill`, `.ed-demo-pill`, `.ed-title`, `.ed-host-row`, `.ed-avatar`, `.ed-meta-row`, `.ed-update-notice`, `.ed-cards-row`, `.ed-card`, `.ed-conditions`, `.ed-why-fits`, `.ed-location-row`, `.ed-map-placeholder`, `.ed-host-card`, `.ed-communities`, `.ed-related-*`, `.ed-rsvp-card`, `.ed-issue-strip`, `.ed-rsvp-btn`, `.ed-mobile-bar`, `.ed-mobile-fine`. The banner and related-event tiles use `.ed-poster.poster` / `.ed-related-poster.poster` so the shared `.poster` card rules (fixed height, 21px text) do not shrink them. Two new CSS tokens: `--info-bg: #eef5fc` and `--info-ink: #1f4f82`.
+
+### How to verify
+
+To demo against the spec test cases:
+
+1. **e1 "Learning with AI" + time_moved update** — Bell → Check for updates (twice) to apply batches 1–2, then open the event: notice reads "Moved earlier. Now 10:30 AM–12:00 PM, ~~was 3:00–4:30 PM~~" (blue box); RSVP card shows the Research Methods conflict and a disabled "Can't add" button. Scroll down: the RSVP card stays in view.
+2. **No-update event, no conflict** — open any unaffected event: no notice, "Why it fits you" list in the Entry requirements card, button reads "RSVP & add to calendar".
+3. **Planned event** — add an event, reopen it: button reads "Remove from calendar".
+4. **Members-only event (e.g. e12)** — RSVP card shows "Membership not verified" in the amber issue strip and a disabled "Can't add" button.
+5. **Needs confirmation (batch 3, e5)** — apply third batch; open e5: "Needs confirmation" pill in title row, amber conflict notice in title block, no issue strip in RSVP card.
+6. **Mobile 375px** — resize to 375px: bottom bar visible, no content hidden, no horizontal scroll.
+
+### Verification
+
+`npm test` (200 TypeScript tests + 5 Wiki tests) and `npm run build` (`tsc --noEmit` + Vite) pass. Checked in the browser at 1280×900 and 375×812:
+- e1 with batches 1–2 applied shows the moved-time notice once, the conflict in the RSVP card, and a disabled "Can't add" button.
+- After scrolling 1,400px the RSVP card stays at the top of the column.
+- The banner art renders at 120px on desktop and 54px on phones; the host avatar reads "SE".
+- Opening a related event loads it, scrolls to the top and keeps focus on the close button.
+- On phones the bottom bar shows the confirmation note, nothing scrolls sideways, and the last row clears the bar.
+
+Review fixes applied after the first implementation: the sticky RSVP card, banner and tile sizes, blocked-state button labels, the removed Share button, the mobile confirmation note, host initials skipping "of", focus after opening a related event, and valid markup inside the related-event buttons.
+
+### Limitations
+
+- Map placeholder is a CSS grid pattern; no real campus map is wired.
+- No Share button, Follow/Contact buttons or travel-mode links: none of them would do anything yet in this demo.
+
 ## README follow-up: accurate Bob attribution, demo week, repository layout — November 12, 2026
 
 Five small README fixes: Bob technology line rewritten to match recorded evidence (calendar views four rounds, AI Planner filter fix three rounds, README/Demo-tools cleanup; review fixes noted as Claude Code per CHANGELOG); stale "October 19–23" demo week in wiki/Getting-Started.md updated to Nov 2–6, 2026; tool-note line removed from Data and assets register; pitch line widened beyond first-semester students; Repository layout section added before More. Work done with IBM Bob.
