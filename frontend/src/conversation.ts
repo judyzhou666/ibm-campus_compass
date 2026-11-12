@@ -39,6 +39,8 @@ export function createConversation(
     task: (snapshot: DemoState) => ReturnType<typeof requestPlan>,
     old?: CampusEvent,
     availabilityChangeSummary?: string,
+    /** When set, prepend this line to the result response (e.g. "Removed Thursday."). */
+    replyPrefix?: string,
   ) {
     const token = ++version;
     const snapshot = demo.read(),
@@ -97,9 +99,13 @@ export function createConversation(
         // Find eligible events that overlap the conflict-free picks (up to 3).
         overlapIds = findOverlapAlternatives(matches, plan.constraints, snapshot);
         const overlapCount = overlapIds.length;
-        response = overlapCount > 0
-          ? `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} that fits together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-          : `I found ${matches.length} ${matches.length === 1 ? "option" : "options"} for your week. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
+        const n = matches.length;
+        const base = n === 1
+          ? `I found 1 option${overlapCount > 0 ? ` that fits together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time` : " for your week"}. It fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.`
+          : `I found ${n} options${overlapCount > 0 ? ` that fit together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time` : " for your week"}. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.`;
+        response = replyPrefix
+          ? `${replyPrefix} ${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
+          : `${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
       } else {
         // Nothing matched. Use the Rust diagnostic when present (avoids duplicating the same
         // message from both Rust and the TypeScript fallback), otherwise build one here.
@@ -196,22 +202,40 @@ export function createConversation(
     snapshot: DemoState,
   ): { text: string; ids: string[] } {
     const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const n1 = (n: number) => (n === 1 ? "is 1 option" : `are ${n} options`);
+    const topicStr =
+      constraints.topics?.length ? constraints.topics.join(" or ") + " " : "";
+
     // 1. Drop food constraint and retry
     if (constraints.food) {
       const noFood = { ...constraints };
       delete noFood.food;
       const alt = recommend(snapshot, noFood, 4, true);
       if (alt.length) {
-        const label = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
+        const foodLabel = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
         const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
         const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
         return {
-          text: `Nothing${dayStr}${timeStr} has ${label}. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} without that filter — tap one to see details.`,
+          text: `No ${topicStr}events${dayStr}${timeStr} have ${foodLabel}. Here ${n1(alt.length)} without that filter — tap one to see details.`,
           ids: alt.map((e) => e.id),
         };
       }
     }
-    // 2. Drop day constraint and retry
+    // 2. Drop free-admission constraint and retry
+    if (constraints.free) {
+      const noFree = { ...constraints };
+      delete noFree.free;
+      const alt = recommend(snapshot, noFree, 4, true);
+      if (alt.length) {
+        const dayStr = constraints.days?.length === 1 ? ` on ${DAY_NAMES[constraints.days[0]] ?? "that day"}` : "";
+        const timeStr = constraints.after !== undefined && constraints.after >= 1020 ? " in the evening" : constraints.after !== undefined && constraints.after >= 720 ? " in the afternoon" : constraints.before !== undefined && constraints.before <= 720 ? " in the morning" : "";
+        return {
+          text: `No ${topicStr}events${dayStr}${timeStr} are free admission. Here ${n1(alt.length)} including paid ones — tap one to see details.`,
+          ids: alt.map((e) => e.id),
+        };
+      }
+    }
+    // 3. Drop day constraint and retry
     if (constraints.days?.length) {
       const noDay = { ...constraints };
       delete noDay.days;
@@ -219,12 +243,12 @@ export function createConversation(
       if (alt.length) {
         const dayNames = constraints.days.map((d) => DAY_NAMES[d]).filter(Boolean).join("/");
         return {
-          text: `I didn't find anything on ${dayNames || "that day"} that matches. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} similar ${alt.length === 1 ? "option" : "options"} on other days.`,
+          text: `No ${topicStr}events on ${dayNames || "that day"} match. Here ${n1(alt.length)} on other days.`,
           ids: alt.map((e) => e.id),
         };
       }
     }
-    // 3. Drop time constraint
+    // 4. Drop time constraint
     if (constraints.after !== undefined || constraints.before !== undefined) {
       const noTime = { ...constraints };
       delete noTime.after;
@@ -232,20 +256,19 @@ export function createConversation(
       const alt = recommend(snapshot, noTime, 4, true);
       if (alt.length) {
         return {
-          text: `Nothing matches that time window. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} at other times.`,
+          text: `No ${topicStr}events match that time window. Here ${n1(alt.length)} at other times.`,
           ids: alt.map((e) => e.id),
         };
       }
     }
-    // 4. Drop topic constraint
+    // 5. Drop topic constraint
     if (constraints.topics?.length) {
       const noTopic = { ...constraints };
       delete noTopic.topics;
       const alt = recommend(snapshot, noTopic, 4, true);
       if (alt.length) {
-        const topicStr = constraints.topics.join(" or ");
         return {
-          text: `I couldn't find any ${topicStr} events that fit. Here ${alt.length === 1 ? "is" : "are"} ${alt.length} ${alt.length === 1 ? "option" : "options"} from other areas.`,
+          text: `No ${topicStr}events fit the other filters. Here ${n1(alt.length)} from other areas.`,
           ids: alt.map((e) => e.id),
         };
       }
@@ -348,18 +371,17 @@ export function createConversation(
       if (status.read().busy) return;
       // Update stored constraints first.
       demo.update((s) => ({ ...s, constraints: updatedConstraints }));
-      const prefix = clearAll
-        ? "Filters cleared."
-        : `Removed ${removedLabel} filter.`;
-      const prefixMessage = clearAll
-        ? "Filters cleared. Tell me what you're looking for."
-        : `Removed ${removedLabel} filter. Here's what fits now:`;
-      demo.update((s) => ({
-        ...s,
-        messages: [...s.messages, { role: "assistant" as const, text: prefixMessage }],
-      }));
-      if (clearAll) return;
-      // Re-run the search with the updated constraints.
+      if (clearAll) {
+        demo.update((s) => ({
+          ...s,
+          messages: [
+            ...s.messages,
+            { role: "assistant" as const, text: "Filters cleared. Tell me what you're looking for." },
+          ],
+        }));
+        return;
+      }
+      // Re-run the search; the result message will start with "Removed <label>.".
       await run(
         (snapshot) =>
           requestPlan(
@@ -371,8 +393,8 @@ export function createConversation(
           ),
         undefined,
         undefined,
+        `Removed ${removedLabel}.`,
       );
-      void prefix; // suppress unused warning
     },
     async chat(text: string, previous?: Constraints) {
       if (status.read().busy || !text.trim()) return;

@@ -222,37 +222,64 @@ fn alt_count(state: &Schedule, c: &Constraints, events: &[Event]) -> usize {
 }
 
 pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> String {
-    // 1. Drop food filter and retry
+    let topic_prefix = match c.topics.as_deref() {
+        Some(ts) if !ts.is_empty() => format!("{} ", ts.join(" or ")),
+        _ => String::new(),
+    };
+    let n1 = |n: usize| {
+        if n == 1 {
+            "is 1 option".to_owned()
+        } else {
+            format!("are {n} options")
+        }
+    };
+    let day_str_fn = |c: &Constraints| match c.days.as_deref() {
+        Some([d]) if (*d as usize) < DAY_NAMES.len() => {
+            format!(" on {}", DAY_NAMES[*d as usize])
+        }
+        _ => String::new(),
+    };
+    let time_str_fn = |c: &Constraints| match (c.after, c.before) {
+        (Some(t), _) if t >= 1020 => " in the evening".to_owned(),
+        (Some(t), _) if t >= 720 => " in the afternoon".to_owned(),
+        (_, Some(t)) if t <= 720 => " in the morning".to_owned(),
+        _ => String::new(),
+    };
+
+    // 1. Drop food filter
     if c.food.is_some() {
         let mut no_food = c.clone();
         no_food.food = None;
         let alt = alt_count(state, &no_food, events);
         if alt > 0 {
-            let label = match c.food.as_deref() {
-                Some("Free meal") => "free food",
-                Some(f) => f,
-                None => "food",
+            let food_label = match c.food.as_deref() {
+                Some("Free meal") => "free food".to_owned(),
+                Some(f) => f.to_lowercase(),
+                None => "food".to_owned(),
             };
-            let day_str = match c.days.as_deref() {
-                Some([d]) if (*d as usize) < DAY_NAMES.len() => {
-                    format!(" on {}", DAY_NAMES[*d as usize])
-                }
-                _ => String::new(),
-            };
-            let time_str = match (c.after, c.before) {
-                (Some(t), _) if t >= 1020 => " in the evening".to_owned(),
-                (Some(t), _) if t >= 720 => " in the afternoon".to_owned(),
-                (_, Some(t)) if t <= 720 => " in the morning".to_owned(),
-                _ => String::new(),
-            };
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
             return format!(
-                "Nothing{day_str}{time_str} has {label}. Here {} {} without that filter.",
-                alt,
-                if alt == 1 { "option" } else { "options" }
+                "No {topic_prefix}events{day_str}{time_str} have {food_label}. Here {} without that filter.",
+                n1(alt)
             );
         }
     }
-    // 2. Drop day filter
+    // 2. Drop free-admission filter
+    if c.free.is_some_and(|f| f) {
+        let mut no_free = c.clone();
+        no_free.free = None;
+        let alt = alt_count(state, &no_free, events);
+        if alt > 0 {
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
+            return format!(
+                "No {topic_prefix}events{day_str}{time_str} are free admission. Here {} including paid ones.",
+                n1(alt)
+            );
+        }
+    }
+    // 3. Drop day filter
     if c.days.as_ref().is_some_and(|d| !d.is_empty()) {
         let mut no_day = c.clone();
         no_day.days = None;
@@ -271,13 +298,12 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
                 day_names.join("/")
             };
             return format!(
-                "I didn't find anything on {day_str} that matches. Here {} similar {} on other days.",
-                alt,
-                if alt == 1 { "option" } else { "options" }
+                "No {topic_prefix}events on {day_str} match. Here {} on other days.",
+                n1(alt)
             );
         }
     }
-    // 3. Drop time filter
+    // 4. Drop time filter
     if c.after.is_some() || c.before.is_some() {
         let mut no_time = c.clone();
         no_time.after = None;
@@ -285,23 +311,20 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         let alt = alt_count(state, &no_time, events);
         if alt > 0 {
             return format!(
-                "Nothing matches that time window. Here {} {} at other times.",
-                alt,
-                if alt == 1 { "option" } else { "options" }
+                "No {topic_prefix}events match that time window. Here {} at other times.",
+                n1(alt)
             );
         }
     }
-    // 4. Drop topic filter
+    // 5. Drop topic filter
     if c.topics.as_ref().is_some_and(|t| !t.is_empty()) {
         let mut no_topic = c.clone();
         no_topic.topics = None;
         let alt = alt_count(state, &no_topic, events);
         if alt > 0 {
-            let topic_str = c.topics.as_deref().unwrap_or(&[]).join(" or ");
             return format!(
-                "I couldn't find any {topic_str} events that fit. Here {} {} from other areas.",
-                alt,
-                if alt == 1 { "option" } else { "options" }
+                "No {topic_prefix}events fit the other filters. Here {} from other areas.",
+                n1(alt)
             );
         }
     }

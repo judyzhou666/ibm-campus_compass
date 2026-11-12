@@ -138,7 +138,8 @@ try {
     })
   ).json();
   // New plain-language diagnostic: offers nearest alternatives instead of jargon.
-  assert.match(impossible.diagnostic, /Nothing matches that time window/);
+  // Message is "AI on Tuesday morning" → no AI Tue morning events (conflict). Drops time → 1 AI Tue option.
+  assert.match(impossible.diagnostic, /No AI & education events match that time window/);
   const diverse = await (
     await post("/api/plan", {
       message: "AI career social events",

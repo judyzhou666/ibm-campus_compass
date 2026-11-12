@@ -175,11 +175,28 @@ export function interpretRequest(
     c.food = "None";
   if (test(/\b(unknown food|food (is |not )?(un)?confirmed|food status unknown)\b/) && !c.food)
     c.food = "Unknown";
-  // "free" means free-admission only when explicitly requesting it (not availability/food).
-  // "I'm free", "free on Wednesday", "free time", "free food/meal/etc." do NOT set free admission.
+  // "free" next to an event or topic word means FREE ADMISSION (e.g. "free ceramics",
+  // "ceramics free on Wednesday", "free workshops"). "free" describing the *person's*
+  // availability sets no cost filter (e.g. "I'm free", "free time", "I'm only free Friday").
+  // "free food/meal/…" is already handled above (food filter only).
+  //
+  // Person-availability forms: subject + optional adverb + "free"
+  //   "I'm free", "I am free", "I'm only free", "when I'm free", "free time/slot/period/hour"
+  const isPersonFree =
+    /\b(?:i(?:'m| am)|we(?:'re| are)|you(?:'re| are)|they(?:'re| are))(?:\s+\w+)?\s+free\b/i.test(q) ||
+    /\bwhen\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b/i.test(q) ||
+    /\bif\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b/i.test(q) ||
+    /\bfree\s+(?:time|slot|period|hour|day)\b/i.test(q);
+  const hasFree = /\bfree\b/i.test(q);
+  if (hasFree && !isPersonFree && !c.food) {
+    // "free" next to a topic/event word → free admission
+    understood = true;
+    c.free = true;
+  }
+  // Explicit free-admission phrases set free even when food is also mentioned.
   if (
     test(
-      /\b(free admission|free entry|free to attend|free events?|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b/,
+      /\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b/,
     )
   )
     c.free = true;

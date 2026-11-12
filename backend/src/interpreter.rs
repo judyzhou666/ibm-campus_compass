@@ -200,12 +200,32 @@ impl SimulatedInterpreter {
         if matches(r"\b(coffee|tea|snack|refreshment)", &q) && c.food.is_none() {
             c.food = Some("Coffee & snacks".into());
         }
-        // "free" means free-admission only when explicitly requesting it.
-        // "I'm free", "free on Wednesday", "free food/meal/etc." do NOT set free admission.
-        if matches(
-            r"\b(free admission|free entry|free to attend|free events?|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b",
+        // "free" next to an event/topic word means FREE ADMISSION ("free ceramics",
+        // "ceramics free on Wednesday"). "free" describing a person's *availability*
+        // ("I'm free", "free time", "I'm only free Friday") sets no cost filter.
+        // "free food/meal/…" is handled above (food filter only).
+        // Drop the `matches` closure borrow before checking free so we can assign `understood`.
+        let has_free = self::matches(r"\bfree\b", &q);
+        let is_person_free = self::matches(
+            r"(?i)\b(?:i(?:'m| am)|we(?:'re| are)|you(?:'re| are)|they(?:'re| are))(?:\s+\w+)?\s+free\b|\bwhen\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b|\bif\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b|\bfree\s+(?:time|slot|period|hour|day)\b",
             &q,
-        ) {
+        );
+        let free_admission_explicit = self::matches(
+            r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b",
+            &q,
+        );
+        // Use the `matches` closure (which borrows `understood`) to also flag explicit phrases.
+        // We've computed the booleans above; now just mutate through the closure for consistent
+        // `understood` tracking.
+        if has_free && !is_person_free && c.food.is_none() {
+            let _ = matches(r"\bfree\b", &q); // registers in `understood`
+            c.free = Some(true);
+        }
+        if free_admission_explicit {
+            let _ = matches(
+                r"\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost)\b",
+                &q,
+            );
             c.free = Some(true);
         }
         if matches(r"\b(any food|food doesn.t matter|no food preference)\b", &q) {
@@ -386,23 +406,67 @@ mod round2_tests {
         let events: Vec<crate::model::Event> =
             serde_json::from_str(include_str!("../../data/events.json")).unwrap();
         let state = crate::model::Schedule::default();
-        // Arts + Monday morning + free food: no such events in catalog.
+        // Arts & culture + food: Arts events exist but none have free food.
+        // Dropping food should expose Arts alternatives.
         let c = Constraints {
             topics: Some(vec!["Arts & culture".into()]),
-            days: Some(vec![0]),
-            before: Some(720),
             food: Some("Free meal".into()),
             ..Default::default()
         };
         let reason = crate::planner::no_match_reason(&state, &c, &events);
-        // Should mention dropped filter, not jargon.
+        // Should mention topic and dropped filter, not jargon.
         assert!(
             !reason.contains("synthetic catalog records"),
             "Must not use jargon, got: {reason}"
         );
-        // Should NOT be duplicated.
-        let count = reason.matches("Nothing").count();
-        assert!(count <= 1, "Sentence must not appear twice, got: {reason}");
+        assert!(
+            reason.contains("Arts & culture"),
+            "Should name the topic, got: {reason}"
+        );
+        assert!(
+            reason.contains("free food"),
+            "Should name the dropped filter, got: {reason}"
+        );
+        // Should NOT be duplicated — the full sentence should appear only once.
+        assert!(
+            reason.len() < 300,
+            "Reason should be a single sentence, not duplicated, got: {reason}"
+        );
+    }
+
+    #[test]
+    fn free_ceramics_sets_free_admission() {
+        let r = parse("free ceramics");
+        assert_eq!(
+            r.constraints.free,
+            Some(true),
+            "free ceramics must set free admission"
+        );
+        assert!(
+            r.constraints
+                .topics
+                .as_deref()
+                .unwrap_or(&[])
+                .contains(&"Arts & culture".to_string())
+        );
+    }
+
+    #[test]
+    fn ceramics_free_on_wednesday_sets_free_admission() {
+        let r = parse("ceramics free on Wednesday evening");
+        assert_eq!(r.constraints.free, Some(true), "must set free admission");
+        assert_eq!(r.constraints.days.as_deref(), Some(&[2u8][..]));
+        assert_eq!(r.constraints.after, Some(1020));
+    }
+
+    #[test]
+    fn im_only_free_on_friday_no_admission() {
+        let r = parse("I'm only free on Friday");
+        assert_eq!(
+            r.constraints.free, None,
+            "I'm only free must not set free admission"
+        );
+        assert_eq!(r.constraints.days.as_deref(), Some(&[4u8][..]));
     }
 
     // --- fresh-search carry-over ---

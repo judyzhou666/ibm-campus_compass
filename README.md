@@ -2,6 +2,40 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## AI Planner: free/availability rule, grammar, no-match wording, chip-removal lead — November 12, 2026 (round 3)
+
+Four small fixes on top of round 2 (commit `4444022`).
+
+### What was fixed (round 3)
+
+1. **"free" vs availability rule (regression fix).** The round-2 rule (`\bfree\b` not before/after a person → free admission) was too broad: "ceramics free on Wednesday evening" no longer set `free: true`. The new rule: "free" means **availability** only when it follows a person pronoun or forms "free time/slot/period/hour/day" (e.g. "I'm free", "I'm only free Friday", "free slot on Thursday"). "free" next to or after an event or topic word means **free admission** ("free ceramics", "ceramics free", "free workshops"). "free food/meal/…" continues to set the food filter only. Updated in both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs`. The frozen evaluation scenario H04 ("ceramics free on Wednesday evening") is confirmed restored: it no longer returns the $12 ceramics workshop.
+
+2. **Grammar — "3 options that **fit** together".** Plurals now correctly say "fit"; singular is still "1 option that **fits** together". Same for "1 alternative" vs "2 alternatives". Updated in `frontend/src/conversation.ts`.
+
+3. **No-match wording — topic included, "Here are N" not "Here N".** The no-match messages now name the topic and use correct verb agreement, e.g. "No AI & education events on Monday match that time window. Here are 4 options at other times." The helper function is `buildNoMatchAlts` (TypeScript) and `no_match_reason` (Rust); both updated in lock-step. A "free admission" relaxation step was added as step 2 (after food).
+
+4. **Chip-removal reply starts with "Removed [label]."** When a chip is removed, the planner result message now starts with "Removed Thursday. I found 3 options…" instead of "I found 3 options…". Implemented by passing a `replyPrefix` to `run()` in `conversation.ts`. The separate "Here's what fits now:" prefix message was removed to avoid two consecutive assistant messages.
+
+### New tests (round 3)
+
+`tests/planner-round2.test.ts` adds 17 more TypeScript tests (total 47 new since round 1): free vs availability tests ("ceramics free", "free ceramics", "I'm free", "I'm only free on Friday", "free food", "free slot"), grammar tests, no-match topic inclusion, and chip-removal lead. `backend/src/interpreter.rs` adds 3 more Rust tests (total 15 new): `free_ceramics_sets_free_admission`, `ceramics_free_on_wednesday_sets_free_admission`, `im_only_free_on_friday_no_admission`.
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **225 TypeScript tests**
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **56 Rust tests**
+- `npm run build` (tsc + Vite) — clean
+- `npm run test:api` — PASS
+- `npm run evaluate` + `git diff --stat evaluation docs/evaluation-report.md`: `docs/evaluation-report.md` is **clean** (zero diff). `evaluation/results.json` has annotation-only changes for scenarios D03/D09 where "social free food" previously set a spurious `free: true` flag — the event IDs selected and all quality scores are identical, and H04 is fully restored. The frozen file was restored after verification; the annotation improvement would be correct if the baseline were refreshed.
+
+### Limitations
+
+Same as round 2. Additionally: the chip-removal reply prefix ("Removed X.") appears after the browser-fallback unavailability notice when Rust is offline; in normal operation (Rust running) it appears first.
+
 ## AI Planner: chip removal re-runs search, free-admission wording, alternatives, fuzzy phrases, overlap cards — November 12, 2026 (round 2)
 
 Six issues found in hands-on testing of commit `1ede074` have been addressed in this second round.
