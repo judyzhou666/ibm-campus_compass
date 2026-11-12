@@ -2,6 +2,7 @@ import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL, isTimeZone } from "./config.ts";
+import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -482,19 +483,16 @@ export default function App() {
       ))}
     </div>
   );
+  // Shared by the Dashboard strip and the My Calendar "+" buttons.
+  const findOnDay = (day: number) => {
+    nav("planner");
+    void chat(
+      `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
+      { days: [day] },
+    );
+  };
   const week = (full = false) => (
-    <Week
-      state={state}
-      full={full}
-      onDetail={setDetail}
-      onDay={(day) => {
-        nav("planner");
-        void chat(
-          `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
-          { days: [day] },
-        );
-      }}
-    />
+    <Week state={state} full={full} onDetail={setDetail} onDay={findOnDay} />
   );
   const draft = state.draft
     .map((id) => EVENTS.find((e) => e.id === id))
@@ -1290,12 +1288,7 @@ export default function App() {
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."
                 timezone={state.timezone}
-              >
-                <Button onClick={exportCalendar}>
-                  <Icon name="download" />
-                  Export calendar
-                </Button>
-              </Heading>
+              />
 
               {cancelled ? (
                 <div className="notice">
@@ -1305,28 +1298,15 @@ export default function App() {
                   </Button>
                 </div>
               ) : null}
-              <section className="panel calendar-full">
-                <div className="section-bar">
-                  <h2>{WEEK_LABEL}</h2>
-                  <button className="text-btn" onClick={() => nav("profile")}>
-                    Edit availability <Icon name="arrow" />
-                  </button>
-                </div>
-                {week(true)}
-                <div className="legend">
-                  <span>
-                    <i className="dot" />
-                    Busy commitments
-                  </span>
-                  <span>
-                    <i className="dot green" />
-                    Chosen events
-                  </span>
-                  <span>
-                    {DEMO.time_zone} · {state.buffer}-minute travel buffer
-                  </span>
-                </div>
-              </section>
+
+              <CalendarView
+                state={state}
+                onDetail={setDetail}
+                onDay={findOnDay}
+                onEditAvailability={() => nav("profile")}
+                onExportCalendar={exportCalendar}
+              />
+
               <section style={{ marginTop: 28 }}>
                 <div className="section-bar">
                   <h2>Your campus plans</h2>
@@ -1335,7 +1315,7 @@ export default function App() {
                   </button>
                 </div>
                 {state.plan.length ? (
-                  EVENTS.filter((e) => state.plan.includes(e.id)).map((e) => (
+                  effEvents.filter((e) => state.plan.includes(e.id)).map((e) => (
                     <div className="block-row" key={e.id}>
                       <div>
                         <strong>
@@ -1344,6 +1324,10 @@ export default function App() {
                         </strong>
                         <small>
                           {when(e)} · {e.location}
+                          {(() => {
+                            const o = EVENTS.find((x) => x.id === e.id);
+                            return o && (o.start !== e.start || o.end !== e.end) ? " · Time changed" : "";
+                          })()}
                         </small>
                       </div>
                       <Button className="small" onClick={() => remove(e.id)}>

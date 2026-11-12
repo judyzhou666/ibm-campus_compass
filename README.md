@@ -179,6 +179,72 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Update — November 12, 2026: Calendar Day/Week/Month/Year views
+
+**What changed:** The My Calendar page now has a Google-Calendar-style calendar with Day, Week, Month, and Year views, replacing the fixed Mon–Fri cards-only layout.
+
+- **New files:**
+  - `frontend/src/CalendarView.tsx` — Day/Week/Month/Year views with time grids, overlapping-event columns, "now" line, and navigation toolbar.
+  - `frontend/src/calendarGrid.ts` — Pure date-math helpers (week/month/year grids, overlap layout, item position, sortByStart). No React, no DOM.
+  - `tests/calendar-view.test.ts` — 23 unit tests for the date-math helpers.
+- **Changed files:**
+  - `frontend/src/App.tsx` — Calendar page now renders `<CalendarView>` instead of the `week(true)` strip. Dashboard strip and AI Planner panel are **unchanged**.
+  - `frontend/src/styles.css` — New `.gcal-*` CSS classes appended at the end.
+
+**Round-2 polish fixes (commit e95156f):**
+1. Month-view columns now use `repeat(7, minmax(0,1fr))` on both header and grid — day numbers always align with the weekday labels.
+2. Week/Day view header and time grid share a single horizontal-scroll container so they always scroll together.
+3. Year/Month view "today" circle (dark-green fill, white number) wins over the pale demo-week background via CSS specificity.
+4. "Find an event" `+` button moved to the column header so it is always visible without scrolling.
+5. Month chips are sorted by start time (using `sortByStart` helper, with 2 new unit tests).
+6. Chosen events have a stronger green fill and solid green left border; classes remain grey with a grey border.
+7. Event block titles wrap up to 2 lines; full title + time shown on `title` attribute hover.
+8. Toolbar uses a 2-row right-side layout at ≥ 760 px so the Day/Week/Month/Year switcher never moves when the title changes.
+9. "Demo week" label shown only on the Monday cell in Month view; green background still covers all 5 demo-week days.
+10. Removed duplicate `setAnchor(today)` in `goToToday`.
+
+**Round-3 fixes (commit af7fe72):**
+- Week/Day column header placed inside `.gcal-time-grid-wrap` (vertical scroller) so both share the same `scrollbar-gutter: stable` lane. Desktop (1024 px, 1280 px) verified: console check all true.
+- `.gcal-dom` fixed `height: 32px` / `display: inline-flex` so all five "+" buttons sit on one row.
+- Removed stale `isInDemo` variable from `MonthView`.
+
+**Round-4 fix (commit after round-3):**
+- Restored `min-width` on `.gcal-col-headers` (accidentally removed in round 3 with an incorrect "inherited" comment — CSS `min-width` is not inherited). Both `.gcal-col-headers` and `.gcal-time-grid` now share a single CSS custom property `--gcal-min-w: 500px` so they can never drift apart. Console check all true at 375 px (before and after horizontal scroll), 1024 px, and 1280 px.
+
+**How to try it:**
+```sh
+npm run build
+cargo run --locked
+```
+Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher, the ‹ › and Today buttons, and click any event to open its details. Clicking a day in Month/Year view opens Day view for that date.
+
+**Review fixes for PR #12 (Judy's review plus hands-on testing):**
+- **Today follows the chosen time zone** like the Dashboard strip and page heading (e.g. Auckland shows Tuesday). The grid stays in campus time, so the now line is drawn only on the campus demo date when that is also today.
+- **The grid fits every item.** Hours are computed from the whole catalog plus busy times (`gridHours`), so the 8–10 PM grad-bar event and a 7:00 AM busy time are drawn at their real times instead of being clipped.
+- **Moved events show their new time** in Day, Week, Month and Year view and in "Your campus plans" (`effectiveEvents`). Moved blocks get a "Time changed" tag; a chosen event that now overlaps something (same `issue()` rule as the rest of the app, including the travel buffer) gets an amber "Conflict" tag. Narrow side-by-side blocks show ⚠ / ↻ symbols; the full wording is in the tooltip and accessible name.
+- **Legend:** the grey "Busy commitments" key only appears in Day/Week; Month/Year say "Classes appear in Day and Week view."
+- **The calendar remembers its view and date** for the browser session (sessionStorage, with a safe fallback to Week / today).
+- **Month chips are buttons** that open the event; clicking the rest of a day opens Day view (no nested buttons).
+- **Phones:** Month shows dots instead of cut-off text; Year shows one month per row with 44×36 px day targets and scrolls the current month into view.
+- **Cleanup:** one shared `findOnDay` handler in `App.tsx`; `calendarGrid.ts` reuses `weekDates` / `demoTodayIndex` from `config.ts`; unused helpers removed.
+
+**Related fixes outside the calendar (same "moved event" bug class):**
+- Event details: "Starts … in your time zone" and the side panel date/room now use the moved time and changed room.
+- Calendar export (.ics) uses moved times and changed rooms.
+- Dashboard / AI Planner week strip, AI Planner agenda and suggestion cards use moved times.
+- Profile: adding a busy time checks conflicts against moved times.
+
+**Test results:**
+- `npm test`: 175 TypeScript tests (33 calendar tests), 5 Wiki tests — all pass.
+- `npm run build`: clean. `cargo test --locked`: 41 pass. `npm run test:api`: pass.
+- Browser checks at 375 px, 1024 px and 1280 px: header/column alignment, Auckland today, update u3 move + conflict, 7:00 AM busy time, Month chip click, view memory across pages and reload, phone Month/Year.
+
+**Known limits:**
+- The "now" line uses the demo clock (Mon Nov 2, 9:00 AM campus time), not the real time.
+- Month/Year views don't show busy classes (they repeat weekly; see Day/Week).
+
+**Authorship:** rounds 1–4 of the calendar (commits up to "restore week header min-width") were written with [IBM Bob](https://www.ibm.com/products/bob); Tingting is adding the Bob task-history export to `bob_sessions/Tingting/` before merge. The merge with main, the PR #12 review fixes and the related fixes above were written with Claude Code, not IBM Bob.
+
 ## Update — November 11, 2026: watsonx ranking and explanations
 
 ### What was added
