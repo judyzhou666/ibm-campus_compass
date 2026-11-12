@@ -22,7 +22,7 @@ After the main demonstration, show the update loop:
 
 | Step | Action | Say / show |
 |---|---|---|
-| 1 | Click the **bell** icon (topbar) or **Check for updates** in the Briefing panel | "This applies the next pre-scripted batch of fictional catalog changes. Nothing is fetched from a server; everything is local." |
+| 1 | Click the **bell** icon (topbar), **Check for updates** in Settings › Notifications, or the AI Planner's Event updates panel | "This applies the next pre-scripted batch of fictional catalog changes. Nothing is fetched from a server; everything is local." |
 | 2 | Read the "What changed since your last check" feed | "Batch 1: a Career event was cancelled and a Social dinner is now full. Events in your plan are highlighted." |
 | 3 | Click again for Batch 2 | "The AI lab time moved to an earlier slot — now it may conflict with another event. The room for Graduate makers night changed." |
 | 4 | Click again for Batch 3 | Point to the "Needs confirmation" badge on the AI open studio card. "Two conflicting notices arrived for the same event — one says cancelled, one says the room changed. We do not choose which is correct; it shows 'Needs confirmation' until the student verifies directly." |

@@ -2,6 +2,14 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## My Dashboard: "This Week's Briefing" removed — November 12, 2026
+
+- The briefing panel (update feed, interest and cross-discipline suggestions, saved-not-added, uncertainties, plan warnings) is gone from My Dashboard; the dashboard now shows the hero, Weekly Calendar and the right-hand rail. `Briefing.tsx` is renamed `Welcome.tsx` and keeps only the first-visit dialog; the briefing's unused styles are deleted.
+- Synthetic updates still work from the bell, Settings › Notifications and the AI Planner's Event updates panel. Applying a batch no longer jumps to My Dashboard: you stay on the current page and the message offers **View notifications**, where each update is listed. Event cards still show "Updated" / "Needs confirmation" badges, and My Calendar still flags unavailable plans.
+- Docs that pointed at the Briefing (`docs/demo-script.md`, `docs/backend.md`) were updated.
+- **Verification:** `npm test` (192 TypeScript tests and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px: My Dashboard has no briefing and no sideways scrolling; Check for updates in Settings applied "Monday morning check: 2 updates applied", stayed on Settings and offered View notifications.
+- **Limitation:** the dashboard no longer lists cross-discipline suggestions or saved-but-not-added events in one place; Home's recommendations and Saved Events cover most of that.
+
 ## Settings page: section bar and search — November 12, 2026
 
 - **New layout** (`frontend/src/Settings.tsx`, sections in `frontend/src/settings.ts`): a left bar with the "Settings" title, a **Search settings…** box and eight sections, each with its own icon — General, Notifications, Sync, AI Assistant, Time Zone, Event Buffer Time, Reset Demo and About. The right side shows the chosen section as a card of rows; on phones and tablets the sections become a horizontally scrolling row above the content.
@@ -10,7 +18,7 @@ A runnable demonstration for the IBM AI Experiential Learning Lab, based on the 
 - **Search** matches every typed word against section names, titles, descriptions and hidden keywords (for example "ics", "watsonx", "travel"); results are grouped under their section, sections with no match are dimmed, and clicking a section clears the search.
 - **To demo:** Settings → type "time" → clear it → Event Buffer Time → toggle the switch → Reset Demo → Reset demo shows the confirmation.
 - **Verification:** `npm test` (192 TypeScript tests, including 3 new ones in `tests/settings.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in headless Chrome at 1440px, 800px and 390px: section switching, search for "time", buffer switch (toast "Travel buffer updated."), reset confirmation, no sideways scrolling on any width.
-- **Limitation:** "Check for updates" from Settings behaves as it does from the bell — it applies the batch and opens My Dashboard so the Briefing shows the changes.
+- "Check for updates" from Settings applies the next synthetic batch and stays on Settings; the message offers "View notifications".
 
 ## Top bar: search box centred — November 12, 2026
 

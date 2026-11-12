@@ -24,7 +24,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
-import { Briefing, Welcome } from "./Briefing.tsx";
+import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
@@ -310,7 +310,6 @@ export default function App() {
       return;
     }
     update(() => nextState);
-    nav("dashboard");
     const planned = applied.filter((u) =>
       current.plan.includes(u.event_id),
     );
@@ -323,10 +322,8 @@ export default function App() {
         ? ` A time change now conflicts with your schedule — use "Find a replacement" to update your plan.`
         : "";
     notify(
-      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} See Briefing for details. · Synthetic update`,
-      planned.length > 0
-        ? [{ label: "View briefing", run: () => nav("dashboard") }]
-        : [],
+      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} · Synthetic update`,
+      [{ label: "View notifications", run: () => openNotifications() }],
     );
   }
 
@@ -854,15 +851,6 @@ export default function App() {
                         Your campus plans
                       </span>
                     </div>
-                  </section>
-                  <section>
-                    <Briefing
-                      state={state}
-                      onDetail={setDetail}
-                      onPlanner={() => nav("planner")}
-                      onCalendar={openCalendar}
-                      onCheckUpdates={checkForUpdates}
-                    />
                   </section>
                 </div>
                 <aside className="stack rail">
