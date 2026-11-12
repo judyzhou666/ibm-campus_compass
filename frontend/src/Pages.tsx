@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useSubPage } from "./navigation.ts";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { issue, overlap } from "./planner.ts";
+import { effectiveEvents } from "./updates.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
@@ -53,7 +54,8 @@ export function Profile({ state, update, notify, watsonxMode = false }: Props) {
       setError("Remove a busy time before adding another.");
       return;
     }
-    const conflict = EVENTS.find(
+    // Check against the current (update-applied) times, not the catalog's.
+    const conflict = effectiveEvents(state.appliedUpdateIds ?? []).find(
       (e) =>
         state.plan.includes(e.id) &&
         !state.cancelled.includes(e.id) &&

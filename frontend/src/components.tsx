@@ -12,7 +12,7 @@ import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
-import { updateBadge, hasConflict, effectiveUpdate, relativeTime, kindLabel } from "./updates.ts";
+import { updateBadge, hasConflict, effectiveUpdate, effectiveEvents, relativeTime, kindLabel } from "./updates.ts";
 
 export function Icon({ name }: { name: string }) {
   return (
@@ -266,7 +266,8 @@ export function Week({
             ...state.blocks
               .filter((b) => b.day === i)
               .map((b) => ({ ...b, kind: "class" })),
-            ...EVENTS.filter(
+            // Effective times: a time_moved update moves the block.
+            ...effectiveEvents(state.appliedUpdateIds ?? []).filter(
               (e) => e.day === i && state.plan.includes(e.id),
             ).map((e) => ({ ...e, kind: "event" })),
           ].sort((a, b) => a.start - b.start);
@@ -348,10 +349,15 @@ export function EventDetails({
     isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
       ? state.timezone
       : "";
+  // Convert the same start time the panel shows (the moved time after a
+  // time_moved update), not the original catalog time.
+  const moved = upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null;
+  const shown = moved ? { ...e, start: upd!.new_start!, end: upd!.new_end! } : e;
+  const shownStart = shown.start;
   let viewerTime = "";
   if (viewerZone) {
     try {
-      viewerTime = timeIn(e.day, e.start, viewerZone);
+      viewerTime = timeIn(e.day, shownStart, viewerZone);
     } catch {
       viewerTime = "";
     }
@@ -600,8 +606,8 @@ export function EventDetails({
                 ))}</b>
               </div>
               <div className="event-detail-aside-body">
-                <p className="event-detail-aside-date">{when(e)}</p>
-                <p className="event-detail-aside-loc"><Icon name="pin" /> {e.location}</p>
+                <p className="event-detail-aside-date">{when(shown)}</p>
+                <p className="event-detail-aside-loc"><Icon name="pin" /> {upd?.new_location ?? e.location}</p>
                 <Button
                   className="primary"
                   onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
