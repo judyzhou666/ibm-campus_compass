@@ -2,6 +2,7 @@ import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
 import { DEMO, WEEK_LABEL } from "./config.ts";
+import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -1008,12 +1009,7 @@ export default function App() {
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."
                 timezone={state.timezone}
-              >
-                <Button onClick={exportCalendar}>
-                  <Icon name="download" />
-                  Export calendar
-                </Button>
-              </Heading>
+              />
 
               {cancelled ? (
                 <div className="notice">
@@ -1023,28 +1019,21 @@ export default function App() {
                   </Button>
                 </div>
               ) : null}
-              <section className="panel calendar-full">
-                <div className="section-bar">
-                  <h2>{WEEK_LABEL}</h2>
-                  <button className="text-btn" onClick={() => nav("profile")}>
-                    Edit availability <Icon name="arrow" />
-                  </button>
-                </div>
-                {week(true)}
-                <div className="legend">
-                  <span>
-                    <i className="dot" />
-                    Busy commitments
-                  </span>
-                  <span>
-                    <i className="dot green" />
-                    Chosen events
-                  </span>
-                  <span>
-                    {DEMO.time_zone} · {state.buffer}-minute travel buffer
-                  </span>
-                </div>
-              </section>
+
+              <CalendarView
+                state={state}
+                onDetail={setDetail}
+                onDay={(day) => {
+                  nav("planner");
+                  void chat(
+                    `Find events on ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day]}`,
+                    { days: [day] },
+                  );
+                }}
+                onEditAvailability={() => nav("profile")}
+                onExportCalendar={exportCalendar}
+              />
+
               <section style={{ marginTop: 28 }}>
                 <div className="section-bar">
                   <h2>Your campus plans</h2>

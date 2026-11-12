@@ -2649,3 +2649,536 @@ p {
   top: 12px;
   right: 12px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Google-Calendar-style CalendarView (My Calendar page only)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Root wrapper */
+.gcal-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.gcal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.gcal-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.gcal-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gcal-today-btn {
+  font-size: 12px;
+}
+.gcal-nav-btn {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+}
+.gcal-nav-btn:hover {
+  background: var(--mint);
+}
+.gcal-title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* View switcher */
+.gcal-view-switcher {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gcal-switch-btn {
+  background: white;
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.gcal-switch-btn:first-child {
+  border-left: 0;
+}
+.gcal-switch-btn:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+.gcal-switch-btn.active,
+.gcal-switch-btn[aria-pressed="true"] {
+  background: var(--mint);
+  color: var(--green);
+}
+.gcal-switch-btn:focus-visible {
+  outline: 3px solid #57a77a;
+  outline-offset: -2px;
+  z-index: 1;
+  position: relative;
+}
+
+/* Legend sits just below toolbar */
+.gcal-legend {
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+/* Demo banner */
+.gcal-demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--notice-bg);
+  color: var(--notice-ink);
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Body (panel) ─────────────────────────────────────────────────────────── */
+.gcal-body {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Column headers (Day/Week) ────────────────────────────────────────────── */
+.gcal-col-headers {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.gcal-col-headers-day {
+  /* single column */
+}
+.gcal-gutter {
+  width: 56px;
+  flex: none;
+  padding: 10px 0;
+}
+.gcal-col-head {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  gap: 2px;
+  min-width: 0;
+}
+.gcal-dow {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.gcal-dom {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  min-width: 32px;
+  text-align: center;
+}
+.gcal-today-head .gcal-dow {
+  color: var(--green);
+}
+.gcal-today-dot {
+  background: var(--green);
+  color: white !important;
+  border-radius: 999px;
+  min-width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* ── Time grid ────────────────────────────────────────────────────────────── */
+.gcal-time-grid-wrap {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 600px;
+  position: relative;
+}
+.gcal-time-grid {
+  display: flex;
+  position: relative;
+  min-height: 0;
+}
+/* Hour rows drive the height */
+.gcal-gutter {
+  display: flex;
+  flex-direction: column;
+  width: 56px;
+  flex: none;
+  border-right: 1px solid var(--line);
+  background: white;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+.gcal-hour-label {
+  flex: 1;
+  font-size: 9px;
+  color: var(--muted);
+  padding: 0 6px;
+  text-align: right;
+  height: 48px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+  box-sizing: border-box;
+}
+/* Grid lines */
+.gcal-grid-lines {
+  position: absolute;
+  left: 56px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  z-index: 1;
+}
+.gcal-grid-line {
+  flex: 1;
+  height: 48px;
+  border-top: 1px solid var(--line);
+}
+/* Day columns */
+.gcal-day-col {
+  flex: 1;
+  position: relative;
+  height: calc(13 * 48px); /* 13 hours × 48px each */
+  border-left: 1px solid var(--line);
+  min-width: 0;
+}
+.gcal-day-col:first-of-type {
+  border-left: 0;
+}
+
+/* ── Event blocks (positioned) ────────────────────────────────────────────── */
+.gcal-event-block {
+  position: absolute;
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 10px;
+  line-height: 1.35;
+  overflow: hidden;
+  z-index: 2;
+  border: 0;
+  text-align: left;
+  min-height: 22px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.gcal-event-block strong {
+  font-size: 10px;
+  font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gcal-event-block span {
+  font-size: 9px;
+  opacity: 0.85;
+}
+.gcal-class {
+  background: #f2f3ef;
+  color: var(--ink);
+}
+.gcal-chosen {
+  background: #e7f1e6;
+  color: var(--green-dark);
+}
+.gcal-cancelled {
+  background: #f8e9e3 !important;
+  color: #9c4938 !important;
+}
+.gcal-event-block:focus-visible {
+  outline: 3px solid #57a77a;
+  outline-offset: 2px;
+  z-index: 10;
+}
+
+/* "Now" line */
+.gcal-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--green);
+  z-index: 3;
+  pointer-events: none;
+}
+.gcal-now-line::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+/* Add-day button */
+.gcal-add-day {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border: 1px dashed #d5ded3;
+  background: none;
+  color: #82917f;
+  font-size: 10px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+  z-index: 2;
+  /* top is set inline */
+}
+.gcal-add-day:hover {
+  background: var(--mint);
+}
+
+/* ── Month view ───────────────────────────────────────────────────────────── */
+.gcal-month {
+  padding: 12px;
+}
+.gcal-month-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.gcal-month-dow {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.gcal-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.gcal-month-cell {
+  min-height: 80px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px 5px;
+  background: white;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.gcal-month-cell:hover {
+  background: var(--bg);
+}
+.gcal-month-cell:focus-visible {
+  outline: 3px solid #57a77a;
+  outline-offset: 2px;
+}
+.gcal-other-month {
+  background: #fafafa;
+  opacity: 0.55;
+}
+.gcal-today-cell {
+  border-color: var(--green);
+}
+.gcal-demo-week-cell {
+  background: #f1f9f2;
+}
+.gcal-month-day-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+.gcal-demo-week-label {
+  font-size: 8px;
+  color: var(--green);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: var(--mint);
+  border-radius: 3px;
+  padding: 1px 4px;
+  align-self: flex-start;
+}
+.gcal-month-chip {
+  display: block;
+  background: #e7f1e6;
+  color: var(--green-dark);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gcal-chip-cancelled {
+  background: #f8e9e3;
+  color: #9c4938;
+}
+.gcal-month-more {
+  font-size: 9px;
+  color: var(--muted);
+  padding-left: 4px;
+}
+
+/* ── Year view ────────────────────────────────────────────────────────────── */
+.gcal-year {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  padding: 16px;
+}
+.gcal-mini-month {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gcal-mini-month-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.gcal-mini-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 2px;
+}
+.gcal-mini-dow {
+  font-size: 8px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
+}
+.gcal-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+.gcal-mini-cell {
+  position: relative;
+  font-size: 9px;
+  text-align: center;
+  padding: 2px 0;
+  border-radius: 3px;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1.5;
+}
+.gcal-mini-cell:hover {
+  background: var(--mint);
+}
+.gcal-mini-cell:focus-visible {
+  outline: 2px solid #57a77a;
+  outline-offset: 1px;
+}
+.gcal-mini-other {
+  color: var(--muted);
+  opacity: 0.5;
+}
+.gcal-mini-today {
+  background: var(--green);
+  color: white;
+  border-radius: 50%;
+}
+.gcal-mini-demo {
+  background: #f1f9f2;
+}
+.gcal-event-dot {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green);
+  margin: 0 auto;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .gcal-year {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .gcal-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .gcal-toolbar-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .gcal-year {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 10px;
+    gap: 14px;
+  }
+  .gcal-time-grid-wrap {
+    overflow-x: auto;
+  }
+  .gcal-time-grid {
+    min-width: 500px;
+  }
+  .gcal-month-cell {
+    min-height: 58px;
+  }
+  .gcal-title {
+    font-size: 13px;
+  }
+}

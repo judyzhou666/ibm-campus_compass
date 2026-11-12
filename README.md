@@ -23,6 +23,37 @@ cargo run --locked
 
 Then open http://127.0.0.1:4173. The chat label under AI Planner shows which planner answered: **Rust planner · Simulated** (built-in rules, the default), **Rust planner · IBM watsonx** (live Granite), or **Browser fallback · Simulated** (the server is not running).
 
+## Update — November 12, 2026: Calendar Day/Week/Month/Year views
+
+**What changed:** The My Calendar page now has a Google-Calendar-style calendar with Day, Week, Month, and Year views, replacing the fixed Mon–Fri cards-only layout.
+
+- **New files:**
+  - `frontend/src/CalendarView.tsx` — Day/Week/Month/Year views with time grids, overlapping-event columns, "now" line, and navigation toolbar.
+  - `frontend/src/calendarGrid.ts` — Pure date-math helpers (week/month/year grids, overlap layout, item position). No React, no DOM.
+  - `tests/calendar-view.test.ts` — 21 unit tests for the date-math helpers.
+- **Changed files:**
+  - `frontend/src/App.tsx` — Calendar page now renders `<CalendarView>` instead of the `week(true)` strip. Dashboard strip and AI Planner panel are **unchanged**.
+  - `frontend/src/styles.css` — New `.gcal-*` CSS classes appended at the end.
+
+**How to try it:**
+```sh
+npm run build
+cargo run --locked
+```
+Open http://127.0.0.1:4173/#calendar. Use the Day | Week | Month | Year switcher, the ‹ › and Today buttons, and click any event to open its details. Clicking a day in Month/Year view opens Day view for that date.
+
+**Test results:**
+- `npm test`: 112 TypeScript tests pass (up from 91), 5 Wiki tests pass.
+- `npm run build`: clean TypeScript + Vite build, no new warnings.
+- `cargo test --locked`: 18 Rust tests pass.
+
+**Known limits / not implemented:**
+- The "now" line is drawn at demo-clock time (Mon Nov 2, 9:00 AM), not the real wall clock, consistent with the rest of the app.
+- No live-scroll to the current hour on open (grid can be scrolled manually).
+- Month/Year views do not show busy-class blocks (by design per requirements — classes are weekly repeating in Day/Week only).
+- The "+N more" chip in Month view opens Day view for that date (clicking any day cell does the same); individual event detail from Month chips is not added.
+- This change was made with [IBM Bob](https://www.ibm.com/products/bob).
+
 ## Back and swipe-back between tabs — November 10, 2026
 
 Back (and the swipe-back gesture) no longer steps through tabs you visited before. Sidebar tabs (Dashboard, My Calendar, Explore Events, Discussion Forum, AI Planner, Saved Events, Profile, Settings) are on the same level, so on any of them Back is blocked and you stay where you are. Back only closes sub-pages, innermost first:
