@@ -51,10 +51,16 @@ test("profile menu shows the other identity and admin-only review", () => {
   );
   assert.deepEqual(
     profileMenuItems("admin").map((i) => i.label),
-    ["Team data review", "View profile", "Sign in as Student", "Sign out"],
+    [
+      "Create event",
+      "Team data review",
+      "View profile",
+      "Sign in as Student",
+      "Sign out",
+    ],
   );
   assert.equal(ROLE_INFO.admin.label, "Admin");
-  assert.match(ROLE_INFO.admin.summary, /Read-only/);
+  assert.match(ROLE_INFO.admin.summary, /Drafts stay in this browser/);
   assert.equal(isRole("admin"), true);
   assert.equal(isRole("Admin"), false);
 });

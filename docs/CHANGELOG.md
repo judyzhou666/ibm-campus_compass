@@ -2,6 +2,30 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Admin: Create Event entry and event drafts — November 12, 2026
+
+Made with Claude Code (not IBM Bob).
+
+- **Top bar.** When signed in as Admin, a **Create Event** button with a plus icon appears before "Plan with AI". Below 1060px wide it shows the icon only, keeping its "Create Event" accessible name. On phones, where the top-bar links are hidden, **Create event** is the first row of the Admin profile menu. Students and guests do not see either entry.
+- **Create an event page.** A form for title, topic, category, demo-week day, start and end time, location, host, description, food, admission, sign-up (drop-in or RSVP) and who can attend.
+  - Problems are explained in plain words, e.g. "The end time must be after the start time."
+  - Saved drafts are listed under **Your drafts** with a "Draft · Not published" tag, and each can be deleted. Up to 20 drafts are kept.
+  - Opening the page as a Student or guest shows "Sign in as Admin to draft a fictional event for team review."
+- **Not published.** Drafts are saved in this browser only. They are not added to `data/events.json`, Explore Events, My Calendar or the AI Planner. The page and the save message say so.
+- The Admin description now reads "Draft fictional events and review the catalog. Drafts stay in this browser."
+
+Files: new `frontend/src/eventDrafts.ts` and `frontend/src/CreateEvent.tsx`; `App.tsx`, `identity.ts`, `ProfileMenu.tsx`, `state.ts`, `types.ts`, `styles.css`; tests in new `tests/event-drafts.test.ts` and `tests/sign-in.test.ts`.
+
+Verification: `npm test` (257 TypeScript + 5 Wiki tests) and `npm run build` pass. Checked in headless Chrome at 1280px, 900px and 390px:
+- The entry is hidden for guests and students.
+- An invalid end time shows its message.
+- A valid draft is listed and survives a reload.
+- No page errors and no sideways scrolling.
+
+Rust checks not run: no backend files changed.
+
+Limitations: drafts cannot be published or shared with teammates. Publishing would need a team-reviewed catalog change and a server rebuild.
+
 ## Profile menu with Student and Admin sign-in — November 12, 2026
 
 Made with Claude Code (not IBM Bob).

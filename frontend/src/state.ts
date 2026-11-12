@@ -1,4 +1,5 @@
 import { isRole } from "./identity.ts";
+import { restoreDrafts } from "./eventDrafts.ts";
 import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
@@ -56,6 +57,7 @@ export const fresh = (): DemoState => ({
   appliedUpdateIds: [],
   lastUpdateCheck: null,
   readNotificationIds: [...DEFAULT_READ_IDS],
+  eventDrafts: [],
 });
 
 export function restore(): DemoState {
@@ -215,6 +217,7 @@ export function restore(): DemoState {
             .filter((id: unknown) => typeof id === "string" && id.length <= 40)
             .slice(0, 500)
         : base.readNotificationIds,
+      eventDrafts: restoreDrafts(value.eventDrafts),
     };
   } catch {
     return fresh();

@@ -19,12 +19,17 @@ export const ROLE_INFO: Record<
   },
   admin: {
     label: "Admin",
-    summary: "Review the fictional event catalog. Read-only in this demo.",
+    summary: "Draft fictional events and review the catalog. Drafts stay in this browser.",
     sidebar: "Admin · Demo profile",
   },
 };
 
-export type ProfileAction = "profile" | "review" | "switch" | "signout";
+export type ProfileAction =
+  | "create"
+  | "profile"
+  | "review"
+  | "switch"
+  | "signout";
 
 /** Rows in the profile dropdown, in order, for the signed-in role. */
 export function profileMenuItems(
@@ -33,7 +38,10 @@ export function profileMenuItems(
   const other = role === "student" ? "admin" : "student";
   return [
     ...(role === "admin"
-      ? [{ action: "review" as const, label: "Team data review" }]
+      ? [
+          { action: "create" as const, label: "Create event" },
+          { action: "review" as const, label: "Team data review" },
+        ]
       : []),
     { action: "profile", label: "View profile" },
     { action: "switch", label: `Sign in as ${ROLE_INFO[other].label}` },

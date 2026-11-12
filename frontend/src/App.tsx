@@ -1,5 +1,6 @@
 import { DataReview } from "./DataReview.tsx";
 import { ProfileMenu } from "./ProfileMenu.tsx";
+import { CreateEvent } from "./CreateEvent.tsx";
 import { ROLE_INFO, type ProfileAction, type Role } from "./identity.ts";
 import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
@@ -52,6 +53,7 @@ import {
 
 const labels = {
   review: "Team data review",
+  create: "Create event",
   home: "Home",
   dashboard: "My Dashboard",
   calendar: "My Calendar",
@@ -70,6 +72,7 @@ interface ToastAction {
 }
 const navIcons: Record<Page, string> = {
   review: "settings",
+  create: "plus",
   home: "home",
   dashboard: "dashboard",
   calendar: "calendar",
@@ -82,7 +85,12 @@ const navIcons: Record<Page, string> = {
   notifications: "bell",
 };
 /** Pages reached from elsewhere in the app, not from the sidebar. */
-const hiddenFromSidebar: Page[] = ["review", "notifications", "calendar"];
+const hiddenFromSidebar: Page[] = [
+  "review",
+  "create",
+  "notifications",
+  "calendar",
+];
 /** Hidden pages whose sidebar parent stays highlighted while they are open. */
 const sidebarParent: Partial<Record<Page, Page>> = { calendar: "dashboard" };
 const prompts = [
@@ -218,6 +226,7 @@ export default function App() {
   function profileAction(action: ProfileAction) {
     setProfileOpen(false);
     if (action === "profile") nav("profile");
+    else if (action === "create") nav("create");
     else if (action === "review") nav("review");
     else if (action === "switch")
       setSigningIn(state.role === "student" ? "admin" : "student");
@@ -639,6 +648,18 @@ export default function App() {
               {label}
             </button>
           ))}
+          {state.signedIn && state.role === "admin" ? (
+            <button
+              className={`top-create ${page === "create" ? "active" : ""}`}
+              aria-current={page === "create" ? "page" : undefined}
+              onClick={() => nav("create")}
+              aria-label="Create Event"
+              title="Create Event"
+            >
+              <Icon name="plus" />
+              <span className="top-create-label">Create Event</span>
+            </button>
+          ) : null}
           <button
             className={`top-cta ${page === "planner" ? "active" : ""}`}
             aria-current={page === "planner" ? "page" : undefined}
@@ -1057,6 +1078,14 @@ export default function App() {
                 onMarkAllRead={() => markRead(unreadNotes.map((n) => n.id))}
               />
             )
+          ) : null}
+          {page === "create" ? (
+            <CreateEvent
+              state={state}
+              update={update}
+              notify={notify}
+              onSignInAsAdmin={() => setSigningIn("admin")}
+            />
           ) : null}
           {page === "review" ? (
             <DataReview onDetail={setDetail} onExit={() => nav("dashboard")} />

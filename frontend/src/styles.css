@@ -3525,7 +3525,10 @@ p {
   }
 }
 @media (max-width: 1060px) {
-  .top-links button:not(.top-cta) {
+  .top-links button:not(.top-cta):not(.top-create) {
+    display: none;
+  }
+  .top-links .top-create-label {
     display: none;
   }
 }
@@ -5757,4 +5760,61 @@ input.switch:focus-visible {
   .role-choice {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Admin: Create Event entry and draft page ──────────────────────────── */
+.top-links .top-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  color: var(--info-ink);
+  box-shadow: inset 0 0 0 1px #b9d0ea;
+}
+.top-links .top-create .icon {
+  width: 16px;
+  height: 16px;
+}
+.top-links .top-create:hover,
+.top-links .top-create.active {
+  background: var(--info-bg);
+  color: var(--info-ink);
+  box-shadow: inset 0 0 0 1px var(--info-ink);
+  border-radius: 8px;
+}
+.create-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 20px;
+}
+.create-note .icon {
+  flex: none;
+  width: 18px;
+  margin-top: 2px;
+}
+.create-error {
+  display: block;
+  margin-top: 8px;
+  color: var(--conflict-ink);
+  font-size: 13px;
+}
+.form-grid .btn .icon {
+  width: 16px;
+  vertical-align: -3px;
+}
+.draft-row .tag {
+  display: inline-block;
+  margin-top: 8px;
+}
+.draft-row strong {
+  overflow-wrap: anywhere;
+}
+.create-locked {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+.create-locked p {
+  margin: 0;
 }

@@ -8,6 +8,7 @@ import {
 } from "./identity.ts";
 
 const ICONS: Record<ProfileAction, string> = {
+  create: "plus",
   review: "search",
   profile: "user",
   switch: "refresh",

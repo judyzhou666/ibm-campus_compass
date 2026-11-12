@@ -1,4 +1,5 @@
 import type { Role } from "./identity.ts";
+import type { EventDraft } from "./eventDrafts.ts";
 /** A single synthetic catalog update from data/updates.json. */
 export interface EventUpdate {
   id: string;
@@ -150,6 +151,8 @@ export interface DemoState extends Schedule {
   lastUpdateCheck: string | null;
   /** IDs of notifications the student has opened or marked as read. */
   readNotificationIds: string[];
+  /** Admin event drafts; browser-local and never added to the catalog. */
+  eventDrafts: EventDraft[];
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";
