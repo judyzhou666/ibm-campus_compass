@@ -173,10 +173,13 @@ Replaces today's aside. White, radius 16px, `--shadow`, padding 20px,
   | State | Label | Action |
   |---|---|---|
   | `planned` | Remove from calendar | `onRemove(e.id)` |
-  | problem starts with "Conflicts with" | Review & RSVP (or Review & add when drop-in) | `onAdd(e.id)` |
+  | any problem (schedule conflict, full, members, cancelled, invalid) | Can't add (disabled) | none; the issue strip explains why |
   | RSVP required, no problem | RSVP & add to calendar | `onAdd(e.id)` |
   | drop-in, no problem | Add to calendar | `onAdd(e.id)` |
-  | other problem (full, members, cancelled, invalid) | keep today's label | `onAdd(e.id)`, as today |
+
+  `enrollment.choose` rejects every event that has an issue, conflicts
+  included, so there is no "Review & RSVP" path. This matches the event
+  cards' "Can't add · See why".
 
   Do not add a new confirmation step. The existing `enrollment.choose` →
   `RsvpDialog` flow is the student's explicit approval.

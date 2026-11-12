@@ -350,6 +350,21 @@ export function Week({
     </div>
   );
 }
+function ConditionRow({ label, value }: { label: string; value: string }) {
+  const confirmed = value !== "Not confirmed";
+  return (
+    <div className="ed-condition-row">
+      <span className="ed-condition-label">{label}</span>
+      <span
+        className={`ed-condition-value ${confirmed ? "confirmed" : "unconfirmed"}`}
+      >
+        <Icon name={confirmed ? "check" : "info"} />
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function EventDetails({
   event: e,
   state,
@@ -358,6 +373,7 @@ export function EventDetails({
   onAdd,
   onRemove,
   onSave,
+  onDetail,
 }: {
   event: CampusEvent;
   state: DemoState;
@@ -366,6 +382,7 @@ export function EventDetails({
   onAdd: (id: string) => void;
   onRemove: (id: string) => void;
   onSave: (id: string) => void;
+  onDetail: (id: string) => void;
 }) {
   const problem = issue(e, state),
     planned = state.plan.includes(e.id),
@@ -376,17 +393,17 @@ export function EventDetails({
   const conflict = hasConflict(e.id, appliedIds);
   const upd = !conflict ? effectiveUpdate(e.id, appliedIds) : null;
   const overlayRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const viewerZone =
     isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
       ? state.timezone
       : "";
-  // Convert the same start time the panel shows (the moved time after a
-  // time_moved update), not the original catalog time.
   const moved =
     upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null;
   const shown = moved
     ? { ...e, start: upd!.new_start!, end: upd!.new_end! }
     : e;
+  const shownLocation = upd?.new_location ?? e.location;
   const shownStart = shown.start;
   let viewerTime = "";
   if (viewerZone) {
@@ -396,6 +413,11 @@ export function EventDetails({
       viewerTime = "";
     }
   }
+
+  // Scroll back to the top when the event changes (You might also like nav)
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [e.id]);
 
   // Move focus into the overlay and give it back to the opener on close.
   useEffect(() => {
@@ -419,7 +441,6 @@ export function EventDetails({
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") return onClose();
       if (ev.key !== "Tab" || !overlayRef.current) return;
-      // Keep Tab inside the overlay, as the former modal dialog did.
       const focusable = [
         ...overlayRef.current.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), summary, input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -441,6 +462,76 @@ export function EventDetails({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Poster banner: day abbreviation + date from dayLabel, e.g. "TUE · NOV 3"
+  const WEEKDAY_ABBR = ["MON", "TUE", "WED", "THU", "FRI"];
+  const dayAbbr = WEEKDAY_ABBR[e.day] ?? "???";
+  // dayLabel returns e.g. "Nov 3"; convert to "NOV 3"
+  const dateStr = dayLabel(e.day).toUpperCase();
+  const posterDateLine = `${dayAbbr} · ${dateStr}`;
+
+  // Initials avatar from host_school: first letters of the first two
+  // significant words ("School of Education" → "SE").
+  function hostInitials(name: string): string {
+    const words = name
+      .trim()
+      .split(/\s+/)
+      .filter((w) => !["of", "and", "the", "for", "&"].includes(w.toLowerCase()));
+    return (
+      (words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")
+    ).toUpperCase();
+  }
+
+  // Duration label from shown times
+  function durationLabel(start: number, end: number): string {
+    const mins = end - start;
+    if (mins <= 0) return "";
+    if (mins % 60 === 0) return `${mins / 60} hour${mins / 60 === 1 ? "" : "s"}`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h === 0) return `${m} minutes`;
+    return `${h}.${Math.round((m / 60) * 10)} hours`;
+  }
+
+  // Access label
+  function accessLabel(): string {
+    if (e.access === "open") return "Open to all";
+    if (e.access === "members") return "Members only";
+    if (e.access === "full") return "At capacity";
+    return "Eligibility not confirmed";
+  }
+
+  // RSVP card primary button. Enrollment rejects any event with an issue
+  // (conflicts included), so a blocked event gets a disabled "Can't add"
+  // button and the issue strip explains why, matching the event cards.
+  const blocked = !planned && !!problem;
+  function rsvpButtonLabel(): string {
+    if (planned) return "Remove from calendar";
+    if (blocked) return "Can't add";
+    return e.rsvp === "RSVP required" ? "RSVP & add to calendar" : "Add to calendar";
+  }
+
+  // "You might also like" — same topic, excluding this event and cancelled, sorted by day then start
+  const relatedEvents = effectiveEvents(appliedIds)
+    .filter(
+      (ev) =>
+        ev.topic === e.topic &&
+        ev.id !== e.id &&
+        !state.cancelled.includes(ev.id),
+    )
+    .sort((a, b) => a.day - b.day || a.start - b.start)
+    .slice(0, 4);
+
+  // Short date+time for RSVP card: "Tue, Nov 3 · 10:30 AM"
+  const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  const shortWhen = `${WEEKDAY_SHORT[e.day] ?? ""}, ${dayLabel(e.day)} · ${formatTime(shown.start)}`;
+
+  // Merge membership + ticket when both "Not required"
+  const ac = e.access_conditions;
+  const membershipLabel = ac ? conditionLabel(ac.membership) : null;
+  const ticketLabel = ac ? conditionLabel(ac.ticket) : null;
+  const bothNotRequired =
+    membershipLabel === "Not required" && ticketLabel === "Not required";
+
   return (
     <div
       ref={overlayRef}
@@ -461,269 +552,508 @@ export function EventDetails({
       </div>
 
       {/* Scrollable page content */}
-      <div className="event-detail-scroll">
-        {/* Hero banner */}
-        <div className={`event-detail-hero poster ${category}`}>
-          <div className="event-detail-hero-inner">
-            <span className="tag">{e.category} · Fictional event</span>
-            {badge === "needs-confirmation" ? (
-              <span className="badge badge--conflict">Needs confirmation</span>
-            ) : badge === "updated" && upd ? (
-              <span className="badge badge--updated">
-                {kindLabel(upd.kind)}
-              </span>
-            ) : null}
-            <h1 id="detail-title" className="event-detail-hero-title">
-              {e.title}
-            </h1>
-          </div>
-        </div>
+      <div className="event-detail-scroll" ref={scrollRef}>
+        <div className="event-detail-page">
 
-        {/* Body */}
-        <div className="event-detail-body">
-          {/* Left: details */}
-          <div className="event-detail-main">
-            <p className="event-detail-desc">{e.description}</p>
-
-            <div className="event-detail-info-grid">
-              <div className="event-detail-info-row">
-                <Icon name="calendar" />
-                <span>
-                  {upd?.kind === "time_moved" &&
-                  upd.new_start != null &&
-                  upd.new_end != null ? (
-                    <>
-                      {formatTime(upd.new_start)}–{formatTime(upd.new_end)} ·{" "}
-                      {DEMO.time_zone}{" "}
-                      <span
-                        className="badge badge--updated"
-                        style={{ marginLeft: "0.25rem" }}
-                      >
-                        Time changed
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      {when(e)} · {DEMO.time_zone}
-                    </>
-                  )}
+          {/* Poster banner */}
+          <div className="ed-banner-wrap">
+            <div className={`ed-poster poster ${category}`}>
+              <div className="ed-poster-left">
+                <span className="ed-poster-topic">
+                  {e.topic.toUpperCase()} · {e.category.toUpperCase()}
                 </span>
-              </div>
-              {viewerTime && (
-                <div className="event-detail-info-row">
-                  <Icon name="calendar" />
-                  <span>
-                    Starts {viewerTime} in your time zone ({viewerZone})
-                  </span>
-                </div>
-              )}
-              <div className="event-detail-info-row">
-                <Icon name="pin" />
-                <span>
-                  {upd?.new_location ?? e.location}
-                  {upd?.new_location ? (
-                    <span
-                      className="badge badge--updated"
-                      style={{ marginLeft: "0.5rem" }}
-                    >
-                      Room changed
-                    </span>
-                  ) : null}
-                </span>
-              </div>
-              <div className="event-detail-info-row">
-                <Icon name="food" />
-                <span>
-                  {foodLabel(e.food)} ·{" "}
-                  {e.cost ? `$${e.cost}` : "Free admission"}
-                </span>
-              </div>
-              <div className="event-detail-info-row">
-                <Icon name="users" />
-                <span>
-                  {e.access === "open"
-                    ? "Open to all demo students"
-                    : e.access === "members"
-                      ? "Membership required"
-                      : e.access === "full"
-                        ? "At capacity"
-                        : "Eligibility not confirmed"}{" "}
-                  · {e.rsvp}
-                </span>
-              </div>
-              {e.host_school && (
-                <div className="event-detail-info-row">
-                  <Icon name="users" />
-                  <span>Hosted by {e.host_school}</span>
-                </div>
-              )}
-              {e.goal_type && e.goal_type.length > 0 && (
-                <div className="event-detail-info-row">
-                  <Icon name="spark" />
-                  <span>Goal: {e.goal_type.join(" · ")}</span>
-                </div>
-              )}
-              {e.access_conditions && (
-                <div className="event-detail-info-row">
-                  <Icon name="settings" />
-                  <span>
-                    Membership: {conditionLabel(e.access_conditions.membership)}{" "}
-                    · Min age: {conditionLabel(e.access_conditions.min_age)} ·{" "}
-                    Ticket: {conditionLabel(e.access_conditions.ticket)} ·{" "}
-                    Capacity: {conditionLabel(e.access_conditions.capacity)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {conflict ? (
-              <div className="notice notice--conflict">
-                <strong>Needs confirmation</strong>
-                <p>
-                  Conflicting notices were received for this event — one says it
-                  was cancelled, another says the room changed. The organizer
-                  has not clarified. Do not make plans based on either notice
-                  alone.
-                </p>
-              </div>
-            ) : badge === "updated" && upd ? (
-              <div className="notice notice--updated">
-                <strong>{kindLabel(upd.kind)}</strong>
-                <p>{upd.details}</p>
-              </div>
-            ) : null}
-            {e.last_checked_at ? (
-              <p className="fineprint" style={{ marginTop: "0.5rem" }}>
-                <Icon name="clock" /> Last checked{" "}
-                {relativeTime(e.last_checked_at)}
-              </p>
-            ) : null}
-            {problem && !conflict ? (
-              <div className="notice">{problem}</div>
-            ) : !problem ? (
-              <div className="event-detail-reasons">
-                {reasons(e, state).map((reason) => (
-                  <div key={reason} className="event-detail-reason-item">
-                    ✓ {reason}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            <section className="event-detail-section">
-              <h2 className="event-detail-section-title">
-                Related communities
-              </h2>
-              <p className="fineprint">
-                Fictional local groups matching this record's topic.
-              </p>
-              <div className="event-detail-communities">
-                {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map(
-                  (c) => (
-                    <a
-                      key={c.id}
-                      href={communityHash(c.id)}
-                      onClick={(ev) => {
-                        ev.preventDefault();
-                        onCommunity(c.id);
-                      }}
-                      className="event-detail-community-link"
-                    >
-                      {c.name}
-                    </a>
-                  ),
-                )}
-              </div>
-            </section>
-
-            <details className="event-detail-evidence">
-              <summary>Record &amp; evidence</summary>
-              <dl className="evidence">
-                {Object.entries({
-                  "Host school": e.host_school || "Not confirmed",
-                  "Goal type": e.goal_type?.length
-                    ? e.goal_type.join(", ")
-                    : "Not confirmed",
-                  Campus: e.campus_id || "Unknown",
-                  Source: e.source || "Unknown",
-                  "Last checked": e.last_checked_at
-                    ? `${new Date(e.last_checked_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} (${relativeTime(e.last_checked_at)})`
-                    : "Not confirmed",
-                  "Intended audience": e.intended_audience || "Not confirmed",
-                  Eligibility: e.eligibility || "Not confirmed",
-                  RSVP: e.rsvp || "Unknown",
-                  Availability: e.availability || "Not confirmed",
-                  "Food status": e.food_status || "Not confirmed",
-                  Verification: e.verification_status || "Not verified",
-                }).map(([label, value]) => (
-                  <div key={label}>
-                    <dt>{label}</dt>
-                    <dd>{value}</dd>
-                  </div>
-                ))}
-                {e.source_url ? (
-                  <div>
-                    <dt>Original source URL</dt>
-                    <dd>
-                      <a
-                        href={e.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {e.source_url}
-                      </a>
-                    </dd>
-                  </div>
-                ) : (
-                  <div>
-                    <dt>Original source URL</dt>
-                    <dd>Not confirmed</dd>
-                  </div>
-                )}
-              </dl>
-              <p className="fineprint">
-                Authored for this prototype · Internal authoring review (not
-                external verification) {e.checked}. RSVP-required events use a
-                mandatory demo registration step. No organiser is contacted and
-                no real place is reserved.
-              </p>
-            </details>
-          </div>
-
-          {/* Right: sticky action panel */}
-          <aside className="event-detail-aside">
-            <div className="event-detail-aside-inner">
-              <div className={`event-detail-aside-banner poster ${category}`}>
-                <b>
+                <b className="ed-poster-title">
                   {e.poster.split(" / ").map((part, i) => (
                     <span key={part}>
-                      {i > 0 ? " / " : ""}
+                      {i > 0 ? <br /> : null}
                       {part}
                     </span>
                   ))}
                 </b>
               </div>
-              <div className="event-detail-aside-body">
-                <p className="event-detail-aside-date">{when(shown)}</p>
-                <p className="event-detail-aside-loc">
-                  <Icon name="pin" /> {upd?.new_location ?? e.location}
-                </p>
-                <Button
-                  className="primary"
-                  onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
-                >
-                  {planned ? "Remove from calendar" : "Add to calendar"}
-                </Button>
-                <Button onClick={() => onSave(e.id)}>
-                  <Icon name="bookmark" />
-                  {saved ? "Saved" : "Save event"}
-                </Button>
-                <p className="fineprint" style={{ marginTop: 12 }}>
-                  Fictional demo event. No real registration.
-                </p>
+              <div className="ed-poster-right">
+                <div className="ed-poster-rule" />
+                <span className="ed-poster-date">{posterDateLine}</span>
+                <span className="ed-poster-time">
+                  {formatTime(shown.start)}–{formatTime(shown.end)}
+                </span>
+                <span className="ed-poster-loc">{shownLocation}</span>
+                {e.host_school && (
+                  <span className="ed-poster-host">{e.host_school}</span>
+                )}
               </div>
             </div>
-          </aside>
+          </div>
+
+          {/* Save row. No Share button: the detail view has no URL of its
+              own, so a copied link would not open this event. */}
+          <div className="ed-icon-row">
+            <button
+              className={`icon-btn ed-icon-btn ${saved ? "selected" : ""}`}
+              aria-label={saved ? "Saved" : "Save event"}
+              aria-pressed={saved}
+              onClick={() => onSave(e.id)}
+            >
+              <Icon name="bookmark" />
+            </button>
+          </div>
+
+          {/* Two-column layout */}
+          <div className="event-detail-body">
+            {/* Main column */}
+            <div className="event-detail-main">
+
+              {/* 1. Title block */}
+              <div className="ed-section ed-title-block">
+                {/* Tags row */}
+                <div className="ed-tags-row">
+                  <span className={`ed-cat-pill tag ${category}`}>
+                    {e.category.toUpperCase()}
+                  </span>
+                  <span className="ed-demo-pill">Fictional demo event</span>
+                  {badge === "needs-confirmation" ? (
+                    <span className="badge badge--conflict">
+                      Needs confirmation
+                    </span>
+                  ) : null}
+                </div>
+
+                <h1 id="detail-title" className="ed-title">
+                  {e.title}
+                </h1>
+
+                {/* Host row */}
+                {e.host_school && (
+                  <div className="ed-host-row">
+                    <span className="ed-avatar" aria-hidden="true">
+                      {hostInitials(e.host_school)}
+                    </span>
+                    <div className="ed-host-info">
+                      <span>
+                        by <strong>{e.host_school}</strong>
+                      </span>
+                      <span className="ed-host-sub">
+                        Fictional host · {e.topic}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* When */}
+                <div className="ed-meta-row">
+                  <Icon name="calendar" />
+                  <span>
+                    {WEEKDAY_SHORT[e.day] || ""}, {dayLabel(e.day)} ·{" "}
+                    <strong>
+                      {formatTime(shown.start)}–{formatTime(shown.end)}
+                    </strong>{" "}
+                    ET
+                    {moved && (
+                      <span className="badge badge--updated ed-badge-inline">
+                        Time updated
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {viewerTime && (
+                  <div className="ed-meta-row ed-meta-sub">
+                    <Icon name="clock" />
+                    <span>
+                      Starts {viewerTime} in your time zone ({viewerZone})
+                    </span>
+                  </div>
+                )}
+
+                {/* Where */}
+                <div className="ed-meta-row">
+                  <Icon name="pin" />
+                  <span>
+                    {shownLocation} · Fictional campus
+                    {upd?.new_location && (
+                      <span className="badge badge--updated ed-badge-inline">
+                        Room changed
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Update notice */}
+                {conflict ? (
+                  <div className="ed-update-notice notice--conflict" role="status">
+                    <strong>
+                      <Icon name="warning" /> Needs confirmation
+                    </strong>
+                    <p>
+                      Conflicting notices were received for this event — one
+                      says it was cancelled, another says the room changed. The
+                      organizer has not clarified. Do not make plans based on
+                      either notice alone.
+                    </p>
+                  </div>
+                ) : moved ? (
+                  <div className="ed-update-notice ed-update-notice--info" role="status">
+                    <strong>
+                      Moved{" "}
+                      {upd!.new_start! < e.start ? "earlier" : "later"}.
+                    </strong>{" "}
+                    Now {formatTime(upd!.new_start!)}–
+                    {formatTime(upd!.new_end!)},{" "}
+                    <s className="ed-struck">
+                      was {formatTime(e.start)}–{formatTime(e.end)}
+                    </s>
+                    . Your schedule was re-checked.
+                  </div>
+                ) : upd?.kind === "room_changed" ? (
+                  <div className="ed-update-notice ed-update-notice--info" role="status">
+                    <strong>Room changed.</strong> Now in {upd.new_location},{" "}
+                    <s className="ed-struck">was {e.location}</s>.
+                  </div>
+                ) : badge === "updated" && upd ? (
+                  <div className="ed-update-notice ed-update-notice--info" role="status">
+                    <strong>{kindLabel(upd.kind)}.</strong> {upd.details}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 2. Overview */}
+              <div className="ed-section">
+                <h2 className="ed-section-heading">Overview</h2>
+                <p className="event-detail-desc">{e.description}</p>
+                {e.goal_type && e.goal_type.length > 0 && (
+                  <div className="ed-goals-row">
+                    <span className="ed-goals-label">Good for</span>
+                    {e.goal_type.map((g) => (
+                      <span key={g} className="ed-goal-pill">
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Good to know */}
+              <div className="ed-section">
+                <h2 className="ed-section-heading">Good to know</h2>
+                <div className="ed-cards-row">
+                  {/* Highlights card */}
+                  <div className="ed-card">
+                    <h3 className="ed-card-title">Highlights</h3>
+                    <ul className="ed-card-list">
+                      <li>
+                        <Icon name="clock" />
+                        {durationLabel(shown.start, shown.end)}
+                      </li>
+                      <li>
+                        <Icon name="pin" />
+                        In person
+                      </li>
+                      <li>
+                        <Icon name="food" />
+                        {foodLabel(e.food)}
+                      </li>
+                      <li>
+                        <Icon name="users" />
+                        {accessLabel()}
+                      </li>
+                    </ul>
+                  </div>
+                  {/* Entry requirements card */}
+                  <div className="ed-card">
+                    <h3 className="ed-card-title">Entry requirements</h3>
+                    <div className="ed-conditions">
+                      <ConditionRow label="RSVP" value={e.rsvp} />
+                      {ac ? (
+                        <>
+                          {bothNotRequired ? (
+                            <ConditionRow
+                              label="Membership / Ticket"
+                              value="Not required"
+                            />
+                          ) : (
+                            <>
+                              <ConditionRow
+                                label="Membership"
+                                value={membershipLabel!}
+                              />
+                              <ConditionRow
+                                label="Ticket"
+                                value={ticketLabel!}
+                              />
+                            </>
+                          )}
+                          {conditionLabel(ac.min_age) !== "Not required" && (
+                            <ConditionRow
+                              label="Minimum age"
+                              value={conditionLabel(ac.min_age)}
+                            />
+                          )}
+                          {conditionLabel(ac.capacity) !== "Not required" && (
+                            <ConditionRow
+                              label="Capacity"
+                              value={conditionLabel(ac.capacity)}
+                            />
+                          )}
+                        </>
+                      ) : null}
+                      {e.cost > 0 && (
+                        <ConditionRow label="Cost" value={`$${e.cost}`} />
+                      )}
+                    </div>
+                    {/* Why it fits */}
+                    {!problem && (
+                      <div className="ed-why-fits">
+                        <span className="ed-why-label">Why it fits you</span>
+                        {reasons(e, state).map((r) => (
+                          <div key={r} className="ed-why-item">
+                            <Icon name="check" />
+                            {r}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Location */}
+              <div className="ed-section">
+                <h2 className="ed-section-heading">Location</h2>
+                <div className="ed-location-row">
+                  <div className="ed-location-text">
+                    <strong>{shownLocation}</strong>
+                    <span className="ed-location-sub">Fictional campus</span>
+                    {state.buffer > 0 && (
+                      <span className="ed-location-note">
+                        Travel time between rooms counts toward conflict checks.
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="ed-map-placeholder"
+                    aria-label="Fictional campus map"
+                    role="img"
+                  >
+                    Fictional campus map
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Hosted by + related communities */}
+              <div className="ed-section">
+                <h2 className="ed-section-heading">Hosted by</h2>
+                {e.host_school ? (
+                  <div className="ed-host-card">
+                    <span className="ed-avatar ed-avatar--lg" aria-hidden="true">
+                      {hostInitials(e.host_school)}
+                    </span>
+                    <div>
+                      <strong>{e.host_school}</strong>
+                      <span className="ed-host-sub">
+                        Fictional host department · Topics: {e.topic}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="ed-location-sub">Host not confirmed.</p>
+                )}
+                <div className="ed-communities">
+                  <span className="ed-communities-label">
+                    Related communities
+                  </span>
+                  <div className="event-detail-communities">
+                    {COMMUNITIES.filter((c) => c.topics.includes(e.topic)).map(
+                      (c) => (
+                        <a
+                          key={c.id}
+                          href={communityHash(c.id)}
+                          onClick={(ev) => {
+                            ev.preventDefault();
+                            onCommunity(c.id);
+                          }}
+                          className="event-detail-community-link"
+                        >
+                          {c.name}
+                        </a>
+                      ),
+                    )}
+                  </div>
+                  <p className="fineprint">
+                    Fictional local groups matching this record's topic.
+                  </p>
+                </div>
+              </div>
+
+              {/* 6. Record & evidence */}
+              <div className="ed-section">
+                <details className="event-detail-evidence">
+                  <summary>
+                    Record &amp; evidence
+                    {e.last_checked_at && (
+                      <span className="ed-evidence-checked">
+                        Last checked {relativeTime(e.last_checked_at)}
+                      </span>
+                    )}
+                  </summary>
+                  <dl className="evidence">
+                    {Object.entries({
+                      "Host school": e.host_school || "Not confirmed",
+                      "Goal type": e.goal_type?.length
+                        ? e.goal_type.join(", ")
+                        : "Not confirmed",
+                      Campus: e.campus_id || "Unknown",
+                      Source: e.source || "Unknown",
+                      "Last checked": e.last_checked_at
+                        ? `${new Date(e.last_checked_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} (${relativeTime(e.last_checked_at)})`
+                        : "Not confirmed",
+                      "Intended audience":
+                        e.intended_audience || "Not confirmed",
+                      Eligibility: e.eligibility || "Not confirmed",
+                      RSVP: e.rsvp || "Unknown",
+                      Availability: e.availability || "Not confirmed",
+                      "Food status": e.food_status || "Not confirmed",
+                      Verification:
+                        e.verification_status || "Not verified",
+                    }).map(([label, value]) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                    {e.source_url ? (
+                      <div>
+                        <dt>Original source URL</dt>
+                        <dd>
+                          <a
+                            href={e.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {e.source_url}
+                          </a>
+                        </dd>
+                      </div>
+                    ) : (
+                      <div>
+                        <dt>Original source URL</dt>
+                        <dd>Not confirmed</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <p className="fineprint">
+                    Authored for this prototype · Internal authoring review (not
+                    external verification) {e.checked}. RSVP-required events
+                    use a mandatory demo registration step. No organiser is
+                    contacted and no real place is reserved.
+                  </p>
+                </details>
+              </div>
+
+              {/* 7. You might also like */}
+              {relatedEvents.length > 0 && (
+                <div className="ed-section">
+                  <h2 className="ed-section-heading">You might also like</h2>
+                  <p className="ed-section-sub">
+                    More {e.topic} events this week.
+                  </p>
+                  <div className="ed-related-list">
+                    {relatedEvents.map((ev) => {
+                      const evUpd = !hasConflict(ev.id, appliedIds)
+                        ? effectiveUpdate(ev.id, appliedIds)
+                        : null;
+                      const evShownLoc = evUpd?.new_location ?? ev.location;
+                      const sameRoom = evShownLoc === shownLocation;
+                      return (
+                        <button
+                          key={ev.id}
+                          className="ed-related-item"
+                          onClick={() => {
+                            onDetail(ev.id);
+                            // The clicked row unmounts; keep keyboard focus
+                            // inside the dialog.
+                            overlayRef.current
+                              ?.querySelector<HTMLElement>(".event-detail-close")
+                              ?.focus();
+                          }}
+                        >
+                          <span
+                            className={`ed-related-poster poster ${posterTone(ev)}`}
+                          >
+                            <b>
+                              {ev.poster
+                                .split(" / ")
+                                .map((part, i) => (
+                                  <span key={part}>
+                                    {i > 0 ? <br /> : null}
+                                    {part}
+                                  </span>
+                                ))}
+                            </b>
+                          </span>
+                          <span className="ed-related-info">
+                            <strong className="ed-related-title">
+                              {ev.title}
+                            </strong>
+                            <span className="ed-related-when">
+                              {when(ev)}
+                            </span>
+                            <span className="ed-related-meta">
+                              {evShownLoc} ·{" "}
+                              {ev.cost ? `$${ev.cost}` : "Free"}
+                            </span>
+                            <span className="ed-related-badges">
+                              {sameRoom && (
+                                <span className="badge badge--updated">
+                                  Same room
+                                </span>
+                              )}
+                              {ev.access === "members" && (
+                                <span className="badge badge--conflict">
+                                  Members
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Aside: RSVP card (sticky on desktop, fixed bottom bar on mobile) */}
+            <aside className="event-detail-aside">
+              <div className="ed-rsvp-card">
+                <p className="ed-rsvp-price">
+                  {e.cost ? `$${e.cost}` : "Free"}
+                  {e.rsvp === "RSVP required" ? " · RSVP required" : ""}
+                </p>
+                <p className="ed-rsvp-when">{shortWhen}</p>
+
+                {/* Issue strip */}
+                {problem && !conflict ? (
+                  <div className="ed-issue-strip" role="status">
+                    <Icon name="warning" />
+                    <span>{problem}</span>
+                  </div>
+                ) : null}
+
+                {/* Primary button */}
+                <Button
+                  className="primary ed-rsvp-btn"
+                  disabled={blocked}
+                  onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
+                >
+                  {rsvpButtonLabel()}
+                </Button>
+
+                <p className="fineprint ed-rsvp-fine">
+                  Nothing is added until you confirm. Fictional demo event, no
+                  real registration.
+                </p>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
 
@@ -733,6 +1063,29 @@ export function EventDetails({
         onClick={onClose}
         aria-hidden="true"
       />
+
+      {/* Mobile fixed bottom bar */}
+      <div className="ed-mobile-bar" aria-hidden="false">
+        <div className="ed-mobile-bar-left">
+          <span className="ed-rsvp-price">
+            {e.cost ? `$${e.cost}` : "Free"}
+            {e.rsvp === "RSVP required" ? " · RSVP required" : ""}
+          </span>
+          {problem && !conflict ? (
+            <span className="ed-mobile-issue">{problem}</span>
+          ) : null}
+        </div>
+        <Button
+          className="primary ed-rsvp-btn"
+          disabled={blocked}
+          onClick={() => (planned ? onRemove(e.id) : onAdd(e.id))}
+        >
+          {rsvpButtonLabel()}
+        </Button>
+        <p className="ed-mobile-fine">
+          Nothing is added until you confirm · Fictional demo event
+        </p>
+      </div>
     </div>
   );
 }

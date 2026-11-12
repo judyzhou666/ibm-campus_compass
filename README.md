@@ -2,6 +2,61 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Event detail page redesign — November 12, 2026
+
+The `EventDetails` overlay was redesigned to match `docs/event-detail-redesign.md`.
+
+### What changed
+
+**`frontend/src/components.tsx` — `EventDetails`** (lines 353–1106): completely replaced.
+
+- **Poster banner**: full-width `--mint`-tinted band with a `poster ${category}` inner block (min-height 340px). Left: small-caps topic/category line and large-scale poster art split on `" / "` (64–120px). Right: a 2px top rule, `TUE · NOV 3` date abbreviation, shown time range, location, and host school.
+- **Save icon row**: a 44×44 `icon-btn` right-aligned under the banner, wired to `onSave` with `aria-pressed`. There is no Share button: the detail view has no URL of its own, so a copied link would not open the event.
+- **Section 1 — Title block**: category pill (mint/green), dashed "Fictional demo event" pill (always visible), `<h1 id="detail-title">` at `clamp(32px,4vw,46px)`. Host row with 52px round avatar (initials). When/Where rows with icon + text + small badge when moved or room changed. Update notice (`role="status"`): blue box for `time_moved` ("Moved earlier/later. Now …, ~~was~~") and `room_changed`; amber for conflict — raw minute values never rendered. Conflict notice kept verbatim.
+- **Section 2 — Overview**: description at 17px/1.6, max-width 640px. "Good for" label + mint pills per `goal_type`.
+- **Section 3 — Good to know**: two equal white cards. Highlights: duration, "In person", food, access. Entry requirements: one row per item, green check for confirmed / amber info icon for "Not confirmed"; Membership + Ticket merged when both "Not required". "Why it fits you" (check icons, no ✓ characters) when no problem.
+- **Section 4 — Location**: venue name + "Fictional campus", static grid-pattern map placeholder (300px tall, labelled "Fictional campus map"), travel-time note when `state.buffer > 0`.
+- **Section 5 — Hosted by + related communities**: host card with 64px avatar, host name, fineprint subline. Community pill links below the card.
+- **Section 6 — Record & evidence**: `<details>` unchanged; "Last checked" moved into the `<summary>` row right-aligned; separate paragraph removed.
+- **Section 7 — You might also like**: heading, "More {topic} events this week." subtitle, up to 4 same-topic events (excluding this event and cancelled), sorted by day then start. Row: poster tile 150×84, title, date/time, location/price, "Same room" / "Members" badges. Clicking opens that event's detail via new `onDetail` prop.
+- **RSVP card (aside)**: white card with `var(--shadow)` that stays visible while the page scrolls (the card itself is `position: sticky`). Price/RSVP line, short date+time, amber issue strip when `problem` is set, 52px primary button: planned → "Remove from calendar"; any issue (schedule conflict, full, members only, cancelled) → disabled "Can't add", with the issue strip saying why, because enrollment rejects every event with an issue; RSVP required → "RSVP & add to calendar"; drop-in → "Add to calendar". Fineprint "Nothing is added until you confirm. Fictional demo event, no real registration." Save moved out of the card into the icon row.
+- **Mobile (≤ 700px)**: single column, 16px side padding, aside hidden, bottom bar fixed (`position: fixed; bottom: 0`) with price/issue (left), primary button (right) and the "Nothing is added until you confirm · Fictional demo event" line underneath; the page's bottom padding keeps the bar from covering content.
+
+**`frontend/src/App.tsx`**: `onDetail={setDetail}` passed to `EventDetails`.
+
+**`frontend/src/icons.ts`**: `warning` (triangle) icon added in stroke style.
+
+**`frontend/src/styles.css`**: replaced all `.event-detail-hero*`, `.event-detail-aside*`, `.event-detail-info-*`, `.event-detail-reasons*`, `.event-detail-section*` rules with `ed-*` redesign rules. Added `.ed-banner-wrap`, `.ed-poster*`, `.ed-icon-row`, `.ed-section`, `.ed-title-block`, `.ed-tags-row`, `.ed-cat-pill`, `.ed-demo-pill`, `.ed-title`, `.ed-host-row`, `.ed-avatar`, `.ed-meta-row`, `.ed-update-notice`, `.ed-cards-row`, `.ed-card`, `.ed-conditions`, `.ed-why-fits`, `.ed-location-row`, `.ed-map-placeholder`, `.ed-host-card`, `.ed-communities`, `.ed-related-*`, `.ed-rsvp-card`, `.ed-issue-strip`, `.ed-rsvp-btn`, `.ed-mobile-bar`, `.ed-mobile-fine`. The banner and related-event tiles use `.ed-poster.poster` / `.ed-related-poster.poster` so the shared `.poster` card rules (fixed height, 21px text) do not shrink them. Two new CSS tokens: `--info-bg: #eef5fc` and `--info-ink: #1f4f82`.
+
+### How to verify
+
+To demo against the spec test cases:
+
+1. **e1 "Learning with AI" + time_moved update** — Bell → Check for updates (twice) to apply batches 1–2, then open the event: notice reads "Moved earlier. Now 10:30 AM–12:00 PM, ~~was 3:00–4:30 PM~~" (blue box); RSVP card shows the Research Methods conflict and a disabled "Can't add" button. Scroll down: the RSVP card stays in view.
+2. **No-update event, no conflict** — open any unaffected event: no notice, "Why it fits you" list in the Entry requirements card, button reads "RSVP & add to calendar".
+3. **Planned event** — add an event, reopen it: button reads "Remove from calendar".
+4. **Members-only event (e.g. e12)** — RSVP card shows "Membership not verified" in the amber issue strip and a disabled "Can't add" button.
+5. **Needs confirmation (batch 3, e5)** — apply third batch; open e5: "Needs confirmation" pill in title row, amber conflict notice in title block, no issue strip in RSVP card.
+6. **Mobile 375px** — resize to 375px: bottom bar visible, no content hidden, no horizontal scroll.
+
+### Verification
+
+`npm test` (200 TypeScript tests + 5 Wiki tests) and `npm run build` (`tsc --noEmit` + Vite) pass. Checked in the browser at 1280×900 and 375×812:
+- e1 with batches 1–2 applied shows the moved-time notice once, the conflict in the RSVP card, and a disabled "Can't add" button.
+- After scrolling 1,400px the RSVP card stays at the top of the column.
+- The banner art renders at 120px on desktop and 54px on phones; the host avatar reads "SE".
+- Opening a related event loads it, scrolls to the top and keeps focus on the close button.
+- On phones the bottom bar shows the confirmation note, nothing scrolls sideways, and the last row clears the bar.
+
+Review fixes applied after the first implementation: the sticky RSVP card, banner and tile sizes, blocked-state button labels, the removed Share button, the mobile confirmation note, host initials skipping "of", focus after opening a related event, and valid markup inside the related-event buttons.
+
+### Limitations
+
+- Map placeholder is a CSS grid pattern; no real campus map is wired.
+- No Share button, Follow/Contact buttons or travel-mode links: none of them would do anything yet in this demo.
+
+---
+
 ## PR #17 review fixes — November 12, 2026
 
 - **Home banner** shows an event's updated time and room after synthetic updates (same rule as the event cards; conflicting notices keep the catalog values).
