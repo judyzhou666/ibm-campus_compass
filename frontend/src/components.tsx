@@ -2,6 +2,7 @@ import {
   DEMO,
   DEMO_NOW_MINUTE,
   dayLabel,
+  weekDayLabel,
   demoTodayIndex,
   isTimeZone,
   timeIn,
@@ -246,18 +247,26 @@ export function conditionLabel(value: boolean | number | string | undefined) {
 export function Week({
   state,
   full = false,
+  weekOffset = 0,
   onDetail,
   onDay,
 }: {
   state: DemoState;
   full?: boolean;
+  /**
+   * Weeks before (negative) or after the demo week. Classes repeat weekly;
+   * campus events exist only in the demo week, so other weeks show classes
+   * only and no "Find events" buttons.
+   */
+  weekOffset?: number;
   onDetail: (id: string) => void;
   onDay: (day: number) => void;
 }) {
+  const demoWeek = weekOffset === 0;
   // Mark the same day the heading shows for the chosen time zone.
-  const today = demoTodayIndex(
-    isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone,
-  );
+  const today = demoWeek
+    ? demoTodayIndex(isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone)
+    : -1;
   return (
     <div className="week-scroll">
       <div className="week">
@@ -267,15 +276,15 @@ export function Week({
               .filter((b) => b.day === i)
               .map((b) => ({ ...b, kind: "class" })),
             // Effective times: a time_moved update moves the block.
-            ...effectiveEvents(state.appliedUpdateIds ?? []).filter(
-              (e) => e.day === i && state.plan.includes(e.id),
-            ).map((e) => ({ ...e, kind: "event" })),
+            ...(demoWeek ? effectiveEvents(state.appliedUpdateIds ?? []) : [])
+              .filter((e) => e.day === i && state.plan.includes(e.id))
+              .map((e) => ({ ...e, kind: "event" })),
           ].sort((a, b) => a.start - b.start);
           return (
             <div className="week-day" key={day}>
               <div className={`day-head ${i === today ? "today" : ""}`}>
                 {day}
-                <strong>{dayLabel(i)}</strong>
+                <strong>{weekDayLabel(i, weekOffset)}</strong>
               </div>
               {items.map((e) => {
                 const cancelled = state.cancelled.includes(e.id),
@@ -303,14 +312,16 @@ export function Week({
                   </div>
                 );
               })}
-              <button
-                className="add-day"
-                aria-label={`Find events on ${day}`}
-                onClick={() => onDay(i)}
-              >
-                <Icon name="plus" />
-                {full ? "Find an event" : ""}
-              </button>
+              {demoWeek ? (
+                <button
+                  className="add-day"
+                  aria-label={`Find events on ${day}`}
+                  onClick={() => onDay(i)}
+                >
+                  <Icon name="plus" />
+                  {full ? "Find an event" : ""}
+                </button>
+              ) : null}
             </div>
           );
         })}

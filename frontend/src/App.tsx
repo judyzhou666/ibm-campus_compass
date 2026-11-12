@@ -1,7 +1,7 @@
 import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
-import { DEMO, WEEK_LABEL } from "./config.ts";
+import { DEMO, WEEK_LABEL, isTimeZone, weekDayLabel } from "./config.ts";
 import { CalendarView } from "./CalendarView.tsx";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
@@ -26,6 +26,17 @@ import {
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
+import {
+  NotificationDetail,
+  NotificationMenu,
+  NotificationsPage,
+} from "./Notifications.tsx";
+import {
+  allNotifications,
+  NO_FILTER,
+  unreadOf,
+  type NotificationFilter,
+} from "./notifications.ts";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./updates.ts";
 
@@ -39,6 +50,7 @@ const labels = {
   saved: "Saved Events",
   profile: "Profile",
   settings: "Settings",
+  notifications: "Notifications",
 };
 type Page = keyof typeof labels;
 interface ToastAction {
@@ -55,14 +67,17 @@ const navIcons: Record<Page, string> = {
   saved: "bookmark",
   profile: "user",
   settings: "settings",
+  notifications: "bell",
 };
+/** Pages reached from elsewhere in the app, not from the sidebar. */
+const hiddenFromSidebar: Page[] = ["review", "notifications", "calendar"];
+/** Hidden pages whose sidebar parent stays highlighted while they are open. */
+const sidebarParent: Partial<Record<Page, Page>> = { calendar: "dashboard" };
 const prompts = [
   "AI and education on Tuesday or Thursday afternoons",
   "A social event with free food",
   "Career events after 1 PM",
 ];
-/** Sidebar tabs shown nested under a parent tab. */
-const subTabs: Partial<Record<Page, Page>> = { calendar: "dashboard" };
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
@@ -143,6 +158,16 @@ export default function App() {
     }
     document.body.classList.toggle("sidebar-collapsed", collapsed);
   }, [collapsed]);
+  // Notifications: the bell dropdown, the open message, and the page the
+  // student was on before opening the Notifications sub-page.
+  const [bellOpen, setBellOpen] = useState(false);
+  const [openNote, setOpenNote] = useState<string | null>(null);
+  const [notesFrom, setNotesFrom] = useState<Page>("dashboard");
+  const [noteFilter, setNoteFilter] = useState<NotificationFilter>(NO_FILTER);
+  // My Calendar is a sub-page of the page it was opened from (usually My
+  // Dashboard); the dashboard's Weekly Calendar can step through weeks.
+  const [calendarFrom, setCalendarFrom] = useState<Page>("dashboard");
+  const [weekOffset, setWeekOffset] = useState(0);
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
@@ -176,6 +201,8 @@ export default function App() {
     setPage(next);
     setMenu(false);
     setDetail(null);
+    setOpenNote(null);
+    setBellOpen(false);
     setFilter("All");
     setQuery("");
     setSearch("");
@@ -208,6 +235,21 @@ export default function App() {
     page === "forum" && selectedCommunity !== null,
     () => setSelectedCommunity(null),
   );
+  // Notifications is a sub-page of whatever page it was opened from, and an
+  // open message is a sub-page of Notifications: Back from a message shows
+  // the full list, and Back again returns to the earlier page. Declared in
+  // this order so both register in this order when opened together.
+  const closeCalendar = useSubPage(page === "calendar", () =>
+    setPage(calendarFrom),
+  );
+  useSubPage(page === "notifications", () => {
+    setOpenNote(null);
+    setPage(notesFrom);
+  });
+  const closeNote = useSubPage(
+    page === "notifications" && openNote !== null,
+    () => setOpenNote(null),
+  );
   const closeDetail = useSubPage(detail !== null, () => setDetail(null));
   // The synthetic-data review is opened from Settings, not the sidebar, so
   // Back returns to Settings.
@@ -233,6 +275,7 @@ export default function App() {
           setPage(validPage(location.hash.slice(1)));
           setSelectedCommunity(communityFromHash(location.hash));
           setDetail(null);
+          setOpenNote(null);
           setMenu(false);
         },
         () => appUrlRef.current,
@@ -283,6 +326,44 @@ export default function App() {
     );
   }
 
+  function markRead(ids: string[]) {
+    update((s) => ({
+      ...s,
+      readNotificationIds: [
+        ...s.readNotificationIds,
+        ...ids.filter((id) => !s.readNotificationIds.includes(id)),
+      ],
+    }));
+  }
+  function markUnread(id: string) {
+    update((s) => ({
+      ...s,
+      readNotificationIds: s.readNotificationIds.filter((x) => x !== id),
+    }));
+  }
+  /** Opens the My Calendar sub-page; Back returns to the current page. */
+  function openCalendar() {
+    if (page !== "calendar") setCalendarFrom(page);
+    nav("calendar");
+  }
+  /** Opens the Notifications sub-page, optionally at one message. */
+  function openNotifications(id?: string) {
+    if (page !== "notifications") {
+      setNotesFrom(page);
+      setNoteFilter(NO_FILTER);
+    }
+    nav("notifications");
+    if (id) {
+      setOpenNote(id);
+      markRead([id]);
+    }
+  }
+  function openNotification(id: string) {
+    setOpenNote(id);
+    markRead([id]);
+    window.scrollTo(0, 0);
+  }
+
   function clearChat() {
     conversation.clear();
     setMessage("");
@@ -309,7 +390,7 @@ export default function App() {
       setDetail(null);
       setCalendarOpen(true);
       notify(result.notice, [
-        { label: "View calendar", run: () => nav("calendar") },
+        { label: "View calendar", run: () => openCalendar() },
         {
           label: "Undo",
           run: () => {
@@ -409,7 +490,7 @@ export default function App() {
           onAdd={add}
           onSave={save}
           onDetail={setDetail}
-          onCalendar={() => nav("calendar")}
+          onCalendar={openCalendar}
         />
       ))}
     </div>
@@ -422,9 +503,6 @@ export default function App() {
       { days: [day] },
     );
   };
-  const week = (full = false) => (
-    <Week state={state} full={full} onDetail={setDetail} onDay={findOnDay} />
-  );
   const draft = state.draft
     .map((id) => EVENTS.find((e) => e.id === id))
     .filter((e) => e && !state.plan.includes(e.id) && !issue(e, state));
@@ -450,19 +528,15 @@ export default function App() {
         })(),
     );
   const detailEvent = EVENTS.find((e) => e.id === detail);
+  const campusZone = isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone;
+  const notifications = allNotifications(state.appliedUpdateIds);
+  const unreadNotes = unreadOf(notifications, state.readNotificationIds);
+  const updatesWaiting = nextBatch(state.appliedUpdateIds) !== null;
+  const openNotification_ = notifications.find((n) => n.id === openNote);
   const list = filterEvents(
     page === "saved"
       ? EVENTS.filter((e) => state.saved.includes(e.id))
       : EVENTS,
-  );
-  const recommended = filterEvents(
-    effEvents.filter((e) => !state.plan.includes(e.id) && !issue(e, state, effEvents)),
-  ).sort(
-    (a, b) =>
-      Number(state.interests.includes(b.topic)) -
-        Number(state.interests.includes(a.topic)) ||
-      a.day - b.day ||
-      a.start - b.start,
   );
 
   return (
@@ -534,7 +608,7 @@ export default function App() {
               key={p}
               className={page === p ? "active" : ""}
               aria-current={page === p ? "page" : undefined}
-              onClick={() => nav(p)}
+              onClick={() => (p === "calendar" ? openCalendar() : nav(p))}
             >
               {label}
             </button>
@@ -548,35 +622,42 @@ export default function App() {
           </button>
         </nav>
         <div className="top-actions">
-          <button
-            className="icon-btn"
-            aria-label={
-              nextBatch(state.appliedUpdateIds)
-                ? "Check for updates (new batch available)"
-                : "Notifications"
-            }
-            onClick={checkForUpdates}
-            style={{ position: "relative" }}
-          >
-            <Icon name="bell" />
-            {nextBatch(state.appliedUpdateIds) ? (
-              <span
-                className="badge"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  fontSize: "0.65rem",
-                  minWidth: "0.9rem",
-                  padding: "0 0.2rem",
-                  lineHeight: 1.4,
-                  pointerEvents: "none",
+          <div className="bell-wrap">
+            <button
+              className="icon-btn bell-btn"
+              aria-label={
+                unreadNotes.length
+                  ? `Notifications, ${unreadNotes.length} unread`
+                  : updatesWaiting
+                    ? "Notifications, new synthetic updates available"
+                    : "Notifications"
+              }
+              aria-expanded={bellOpen}
+              aria-controls="notification-menu"
+              onClick={() => setBellOpen((open) => !open)}
+            >
+              <Icon name="bell" />
+              {unreadNotes.length || updatesWaiting ? (
+                <span className="bell-dot" aria-hidden="true" />
+              ) : null}
+            </button>
+            {bellOpen ? (
+              <NotificationMenu
+                unread={unreadNotes}
+                timeZone={campusZone}
+                updatesWaiting={updatesWaiting}
+                onOpen={(id) => openNotifications(id)}
+                onViewAll={() => openNotifications()}
+                onCheckUpdates={() => {
+                  checkForUpdates();
+                  // Keep the menu open so the new updates show in it.
+                  setBellOpen(true);
                 }}
-              >
-                !
-              </span>
+                onMarkAllRead={() => markRead(unreadNotes.map((n) => n.id))}
+                onClose={() => setBellOpen(false)}
+              />
             ) : null}
-          </button>
+          </div>
           {state.signedIn ? (
             <button
               className="avatar"
@@ -609,18 +690,16 @@ export default function App() {
         </button>
         <nav className="nav" aria-label="Main navigation">
           {(
-            Object.keys(labels).filter((key) => key !== "review") as Page[]
-          ).map((p, i) => (
+            Object.keys(labels).filter(
+              (key) => !hiddenFromSidebar.includes(key as Page),
+            ) as Page[]
+          ).map((p) => (
             <div key={p}>
-              {i === 6 ? <div className="break" /> : null}
+              {p === "profile" ? <div className="break" /> : null}
               <button
-                className={[
-                  page === p ? "active" : "",
-                  subTabs[p] ? "sub" : "",
-                  subTabs[p] && page === subTabs[p] ? "parent-active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                className={
+                  page === p || sidebarParent[page] === p ? "active" : ""
+                }
                 aria-current={page === p ? "page" : undefined}
                 title={collapsed ? labels[p] : undefined}
                 aria-label={collapsed ? labels[p] : undefined}
@@ -696,16 +775,50 @@ export default function App() {
                     </div>
                   </section>
                   <section className="panel">
-                    <div className="section-bar">
-                      <h2>Your week, at a glance</h2>
-                      <button
-                        className="text-btn"
-                        onClick={() => nav("calendar")}
-                      >
-                        View calendar <Icon name="arrow" />
+                    <div className="section-bar weekly-bar">
+                      <h2>Weekly Calendar</h2>
+                      <div className="week-nav">
+                        <button
+                          className="icon-btn"
+                          aria-label="Previous week"
+                          onClick={() => setWeekOffset((w) => w - 1)}
+                        >
+                          <Icon name="chevronLeft" />
+                        </button>
+                        <span className="week-nav-label" aria-live="polite">
+                          {weekDayLabel(0, weekOffset)} – {weekDayLabel(4, weekOffset)}
+                        </span>
+                        <button
+                          className="icon-btn"
+                          aria-label="Next week"
+                          onClick={() => setWeekOffset((w) => w + 1)}
+                        >
+                          <Icon name="chevronRight" />
+                        </button>
+                      </div>
+                      <button className="text-btn" onClick={openCalendar}>
+                        Full Calendar <Icon name="arrow" />
                       </button>
                     </div>
-                    {week()}
+                    {weekOffset !== 0 ? (
+                      <p className="week-nav-note">
+                        Campus events in this demo are only in the week of{" "}
+                        {weekDayLabel(0)}–{weekDayLabel(4)}, so this week shows
+                        classes only.{" "}
+                        <button
+                          className="text-btn"
+                          onClick={() => setWeekOffset(0)}
+                        >
+                          Back to demo week
+                        </button>
+                      </p>
+                    ) : null}
+                    <Week
+                      state={state}
+                      weekOffset={weekOffset}
+                      onDetail={setDetail}
+                      onDay={findOnDay}
+                    />
                     <div className="legend">
                       <span>
                         <i className="dot" />
@@ -718,29 +831,13 @@ export default function App() {
                     </div>
                   </section>
                   <section>
-                    <div className="section-bar">
-                      <h2>A few things you might love</h2>
-                      <button
-                        className="text-btn"
-                        onClick={() => nav("explore")}
-                      >
-                        Explore all <Icon name="arrow" />
-                      </button>
-                    </div>
                     <Briefing
                       state={state}
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
-                      onCalendar={() => nav("calendar")}
+                      onCalendar={openCalendar}
                       onCheckUpdates={checkForUpdates}
                     />
-                    <Filters value={filter} onChange={setFilter} />
-                    {cards(recommended.slice(0, 3))}
-                    {!recommended.length ? (
-                      <Empty title="Try another category">
-                        There are no available matches in this category.
-                      </Empty>
-                    ) : null}
                   </section>
                 </div>
                 <aside className="stack rail">
@@ -876,6 +973,32 @@ export default function App() {
                 </Empty>
               ) : null}
             </>
+          ) : null}
+          {page === "notifications" ? (
+            openNotification_ ? (
+              <NotificationDetail
+                notification={openNotification_}
+                timeZone={campusZone}
+                onBack={closeNote}
+                onViewEvent={setDetail}
+                onOpenCommunity={(id) => nav("forum", id)}
+                onExplore={() => nav("explore")}
+                onMarkUnread={() => {
+                  markUnread(openNotification_.id);
+                  closeNote();
+                }}
+              />
+            ) : (
+              <NotificationsPage
+                list={notifications}
+                readIds={state.readNotificationIds}
+                timeZone={campusZone}
+                filter={noteFilter}
+                setFilter={setNoteFilter}
+                onOpen={openNotification}
+                onMarkAllRead={() => markRead(unreadNotes.map((n) => n.id))}
+              />
+            )
           ) : null}
           {page === "review" ? (
             <DataReview onDetail={setDetail} onExit={() => nav("dashboard")} />
@@ -1200,6 +1323,12 @@ export default function App() {
           ) : null}
           {page === "calendar" ? (
             <>
+              <button className="text-btn sub-page-back" onClick={closeCalendar}>
+                <span className="flip">
+                  <Icon name="arrow" />
+                </span>
+                Back to {labels[calendarFrom]}
+              </button>
               <Heading
                 title="Make room for what matters."
                 description="Your classes, your plans, and a little breathing room."

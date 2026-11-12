@@ -135,6 +135,8 @@ export interface DemoState extends Schedule {
   appliedUpdateIds: string[];
   /** ISO timestamp of the last time the student clicked "Check for updates". Null = never checked. */
   lastUpdateCheck: string | null;
+  /** IDs of notifications the student has opened or marked as read. */
+  readNotificationIds: string[];
 }
 export interface PlanResponse {
   mode: "simulated" | "watsonx";
