@@ -8,6 +8,7 @@ import { effectiveEvents } from "./updates.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
+import { validateBasicInformation } from "./profile.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -16,9 +17,37 @@ type Props = {
   update: (change: (s: DemoState) => DemoState) => void;
   notify: (text: string) => void;
   watsonxMode?: boolean;
+  editBasicInformation?: boolean;
+  onCancelBasicInformation?: () => void;
+  onSaveBasicInformation?: () => void;
 };
-export function Profile({ state, update, notify, watsonxMode = false }: Props) {
+export function Profile({
+  state,
+  update,
+  notify,
+  watsonxMode = false,
+  editBasicInformation = false,
+  onCancelBasicInformation,
+  onSaveBasicInformation,
+}: Props) {
   const [error, setError] = useState("");
+  const [basicInformation, setBasicInformation] = useState(() => ({
+    name: state.name,
+    studentStatus: state.studentStatus,
+    university: state.university,
+    major: state.major,
+  }));
+  function saveBasicInformation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const result = validateBasicInformation(basicInformation);
+    if (!result.valid) {
+      setError(result.error);
+      return;
+    }
+    update((s) => ({ ...s, ...result.value }));
+    notify("Profile information saved.");
+    onSaveBasicInformation?.();
+  }
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const f = new FormData(event.currentTarget);
@@ -72,6 +101,105 @@ export function Profile({ state, update, notify, watsonxMode = false }: Props) {
     update((s) => ({ ...s, blocks: [...s.blocks, block] }));
     setError("");
     notify("Busy time added. Future recommendations will respect it.");
+  }
+  if (editBasicInformation) {
+    return (
+      <>
+        <Heading
+          title="Edit Profile"
+          description="Update your basic information. Changes stay in this browser."
+        />
+        <section
+          className="panel profile-basic-editor"
+          aria-labelledby="basic-information-heading"
+        >
+          <h2 id="basic-information-heading">Basic Information</h2>
+          <form className="form-grid" onSubmit={saveBasicInformation}>
+            <label className="field full">
+              Display Name
+              <input
+                autoFocus
+                name="displayName"
+                value={basicInformation.name}
+                onChange={(event) =>
+                  setBasicInformation((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+                maxLength={30}
+                autoComplete="name"
+                required
+                placeholder="Enter your display name"
+              />
+            </label>
+            <label className="field full">
+              Student Status
+              <input
+                name="studentStatus"
+                value={basicInformation.studentStatus}
+                onChange={(event) =>
+                  setBasicInformation((current) => ({
+                    ...current,
+                    studentStatus: event.target.value,
+                  }))
+                }
+                maxLength={80}
+                placeholder="For example, undergraduate student"
+              />
+            </label>
+            <label className="field full">
+              University
+              <input
+                name="university"
+                value={basicInformation.university}
+                onChange={(event) =>
+                  setBasicInformation((current) => ({
+                    ...current,
+                    university: event.target.value,
+                  }))
+                }
+                maxLength={120}
+                autoComplete="organization"
+                placeholder="Enter your university"
+              />
+            </label>
+            <label className="field full">
+              Major / Program
+              <input
+                name="major"
+                value={basicInformation.major}
+                onChange={(event) =>
+                  setBasicInformation((current) => ({
+                    ...current,
+                    major: event.target.value,
+                  }))
+                }
+                maxLength={120}
+                placeholder="Enter your major or program"
+              />
+            </label>
+            {error ? (
+              <p className="field full" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <div className="profile-form-actions field full">
+              <button type="submit" className="btn primary">
+                Save Changes
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={onCancelBasicInformation}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+      </>
+    );
   }
   return (
     <>

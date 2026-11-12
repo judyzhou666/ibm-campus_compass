@@ -2,6 +2,30 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Merge main (PR #23 calendar, PR #24 Student/Admin sign-in) into Doris — November 12, 2026
+
+Conflict resolution, made with Claude Code.
+
+- **Sidebar user card (`frontend/src/App.tsx`).** Keeps this branch's layout, with the Edit Profile button and the editable student status. Admins still see main's "Admin · Demo profile"; students see their own status, e.g. "Graduate student · Demo profile".
+- **Changelog.** Both sets of entries are kept.
+
+Verification after the merge: `tsc --noEmit`, `npm test` (286 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass. Checked in headless Chrome at 1280px:
+- Sign in as Student, edit status and university, save. The sidebar updates and the values survive a reload.
+- Switch to Admin. The sidebar shows "Admin · Demo profile" and Create Event appears.
+- No page errors and no sideways scrolling.
+
+## Basic profile information editing — November 12, 2026
+
+Added an Edit Profile mode for display name, student status, university and major/program. Values are saved to the existing browser-local demo state; Cancel discards draft edits. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `npm test` (255 TypeScript tests and 5 Wiki tests), plus desktop/mobile browser checks for save, cancel, sidebar updates and refresh persistence pass.
+
+## Sidebar Edit Profile entry point — November 12, 2026
+
+Added an Edit Profile button below the signed-in sidebar user information. The button navigates to the existing Profile route; no new profile editing form or edit-mode behavior was added. The rest of the user card remains non-clickable, and the existing Profile and Settings navigation entries are unchanged. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `node --import tsx --test tests/navigation.test.ts`, plus desktop and mobile browser checks pass.
+
 
 ## Calendar: fix grid height, cross-day drag, grab offset, drag-vs-click, month drag — November 12, 2026
 

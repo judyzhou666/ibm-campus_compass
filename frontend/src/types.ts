@@ -138,6 +138,8 @@ export interface PersonalEvent {
 
 export interface DemoState extends Schedule {
   name: string;
+  studentStatus: string;
+  university: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
   signedIn: boolean;
   /** Demo identity chosen at sign-in. Only changes labels and shortcuts. */

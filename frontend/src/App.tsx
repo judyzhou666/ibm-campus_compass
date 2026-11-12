@@ -157,6 +157,7 @@ export default function App() {
   const [page, setPage] = useState<Page>(() =>
     validPage(location.hash.slice(1)),
   );
+  const [profileEditMode, setProfileEditMode] = useState(false);
   const [selectedCommunity, setSelectedCommunity] = useState(() =>
     communityFromHash(location.hash),
   );
@@ -237,6 +238,7 @@ export default function App() {
   }
 
   function nav(next: Page, communityId?: string) {
+    setProfileEditMode(false);
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
@@ -781,12 +783,29 @@ export default function App() {
             time. Your next great discovery.
           </div>
           {state.signedIn ? (
-            <div className="user">
-              <span className="avatar">{state.name[0] || "J"}</span>
-              <div>
-                <strong>{state.name}’s campus</strong>
-                <small>{ROLE_INFO[state.role].sidebar}</small>
+            <div className="user user-profile-card">
+              <div className="user-profile-info">
+                <span className="avatar">{state.name[0] || "J"}</span>
+                <div>
+                  <strong>{state.name}’s campus</strong>
+                  <small>
+                    {state.role === "admin"
+                      ? ROLE_INFO.admin.sidebar
+                      : [state.studentStatus, "Demo profile"]
+                          .filter(Boolean)
+                          .join(" · ")}
+                  </small>
+                </div>
               </div>
+              <button
+                className="btn primary user-profile-edit"
+                onClick={() => {
+                  nav("profile");
+                  setProfileEditMode(true);
+                }}
+              >
+                Edit Profile
+              </button>
             </div>
           ) : (
             <div className="user">
@@ -1464,10 +1483,14 @@ export default function App() {
           ) : null}
           {page === "profile" ? (
             <Profile
+              key={profileEditMode ? "profile-edit" : "profile-view"}
               state={state}
               update={update}
               notify={notify}
               watsonxMode={watsonxMode}
+              editBasicInformation={profileEditMode}
+              onCancelBasicInformation={() => setProfileEditMode(false)}
+              onSaveBasicInformation={() => setProfileEditMode(false)}
             />
           ) : null}
           {page === "forum" ? (
