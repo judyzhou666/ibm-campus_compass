@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Basic profile information editing — November 12, 2026
+
+Added an Edit Profile mode for display name, student status, university and major/program. Values are saved to the existing browser-local demo state; Cancel discards draft edits. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `npm test` (255 TypeScript tests and 5 Wiki tests), plus desktop/mobile browser checks for save, cancel, sidebar updates and refresh persistence pass.
+
 ## Sidebar Edit Profile entry point — November 12, 2026
 
 Added an Edit Profile button below the signed-in sidebar user information. The button navigates to the existing Profile route; no new profile editing form or edit-mode behavior was added. The rest of the user card remains non-clickable, and the existing Profile and Settings navigation entries are unchanged. Made with Codex.

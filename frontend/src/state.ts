@@ -51,6 +51,8 @@ export const fresh = (): DemoState => ({
   constraints: {},
   messages: [],
   name: "Judy",
+  studentStatus: "Graduate student",
+  university: "",
   appliedUpdateIds: [],
   lastUpdateCheck: null,
   readNotificationIds: [...DEFAULT_READ_IDS],
@@ -91,6 +93,14 @@ export function restore(): DemoState {
       draft: ids(value.draft),
       name:
         typeof value.name === "string" ? value.name.slice(0, 30) : base.name,
+      studentStatus:
+        typeof value.studentStatus === "string"
+          ? value.studentStatus.slice(0, 80)
+          : base.studentStatus,
+      university:
+        typeof value.university === "string"
+          ? value.university.slice(0, 120)
+          : base.university,
       buffer: value.buffer === 0 ? 0 : 15,
       interests: Array.isArray(value.interests)
         ? value.interests.filter(

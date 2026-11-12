@@ -1112,6 +1112,15 @@ p {
 .field.full {
   grid-column: 1/-1;
 }
+.profile-basic-editor {
+  width: min(100%, 760px);
+}
+.profile-form-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .row {
   display: flex;
   gap: 10px;

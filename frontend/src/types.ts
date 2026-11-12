@@ -121,6 +121,8 @@ export type GoalType = (typeof GOAL_TYPES)[number];
 
 export interface DemoState extends Schedule {
   name: string;
+  studentStatus: string;
+  university: string;
   /** Demo sign-in only: no account or password; the profile stays local. */
   signedIn: boolean;
   onboarded: boolean;
