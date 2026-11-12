@@ -164,6 +164,35 @@ fn apply_post_checks(
     result
 }
 
+/// Folds the browser's applied synthetic updates into the request: update-cancelled events
+/// join `cancelled`, and the returned catalog carries moved times and update-full access.
+fn effective_inputs<'a>(
+    state: &'a Schedule,
+    all_updates: &[EventUpdate],
+    events: &[Event],
+) -> (std::borrow::Cow<'a, Schedule>, Vec<Event>) {
+    let ids = &state.applied_update_ids;
+    let cancelled = model::unavailable_by_updates(ids, all_updates);
+    let effective_state = if cancelled
+        .iter()
+        .all(|id| state.cancelled.iter().any(|c| c == id))
+    {
+        std::borrow::Cow::Borrowed(state)
+    } else {
+        let mut s = state.clone();
+        for id in cancelled {
+            if !s.cancelled.iter().any(|c| c == id) {
+                s.cancelled.push(id.to_string());
+            }
+        }
+        std::borrow::Cow::Owned(s)
+    };
+    (
+        effective_state,
+        model::apply_event_updates(ids, all_updates, events),
+    )
+}
+
 async fn plan(
     State(app): Shared,
     Json(request): Json<PlanRequest>,
@@ -178,24 +207,8 @@ async fn plan(
         .validate_with_updates(events, all_updates)
         .map_err(bad_request)?;
     request.previous.validate().map_err(bad_request)?;
-    // Build the effective unavailable set: browser-cancelled + update-cancelled/full.
-    let update_unavailable =
-        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
-    let effective_state = if update_unavailable.is_empty() {
-        std::borrow::Cow::Borrowed(&request.state)
-    } else {
-        let mut s = request.state.clone();
-        for id in &update_unavailable {
-            let id_str = id.to_string();
-            if !s.cancelled.contains(&id_str) {
-                s.cancelled.push(id_str);
-            }
-        }
-        std::borrow::Cow::Owned(s)
-    };
-    // Apply time_moved updates so conflict checks use effective times.
-    let effective_events_owned =
-        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let (effective_state, effective_events_owned) =
+        effective_inputs(&request.state, all_updates, events);
     let effective_events: &[Event] = &effective_events_owned;
     // Deterministic safety rules (such as refusing unsupported numeric budgets) run before any
     // live model call, so a clarification never depends on the model.
@@ -346,29 +359,13 @@ async fn validate(
         .state
         .validate_with_updates(events, all_updates)
         .map_err(bad_request)?;
-    // Apply time_moved updates so conflict checks use effective times.
-    let effective_events_owned =
-        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let (effective_state, effective_events_owned) =
+        effective_inputs(&request.state, all_updates, events);
     let effective_events: &[Event] = &effective_events_owned;
     let event = effective_events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
-    // Apply update-based unavailability before checking issue.
-    let update_unavailable =
-        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
-    let effective_state = if update_unavailable.is_empty() {
-        std::borrow::Cow::Borrowed(&request.state)
-    } else {
-        let mut s = request.state.clone();
-        for id in &update_unavailable {
-            let id_str = id.to_string();
-            if !s.cancelled.contains(&id_str) {
-                s.cancelled.push(id_str);
-            }
-        }
-        std::borrow::Cow::Owned(s)
-    };
     let issue = planner::issue(event, &effective_state, effective_events);
     Ok(Json(json!({"allowed":issue.is_none(),"issue":issue})))
 }
@@ -398,29 +395,13 @@ async fn enroll(
         .state
         .validate_with_updates(events, all_updates)
         .map_err(bad_request)?;
-    // Apply time_moved updates so conflict checks use effective times.
-    let effective_events_owned =
-        model::apply_time_moves(&request.state.applied_update_ids, all_updates, events);
+    let (effective_state, effective_events_owned) =
+        effective_inputs(&request.state, all_updates, events);
     let effective_events: &[Event] = &effective_events_owned;
     let event = effective_events
         .iter()
         .find(|e| e.id == request.event_id)
         .ok_or_else(|| bad_request("Unknown event ID"))?;
-    // Apply update-based unavailability.
-    let update_unavailable =
-        model::unavailable_by_updates(&request.state.applied_update_ids, all_updates);
-    let effective_state = if update_unavailable.is_empty() {
-        std::borrow::Cow::Borrowed(&request.state)
-    } else {
-        let mut s = request.state.clone();
-        for id in &update_unavailable {
-            let id_str = id.to_string();
-            if !s.cancelled.contains(&id_str) {
-                s.cancelled.push(id_str);
-            }
-        }
-        std::borrow::Cow::Owned(s)
-    };
     if let Some(problem) = planner::issue(event, &effective_state, effective_events) {
         return Err((StatusCode::CONFLICT, Json(json!({"error":problem}))));
     }
@@ -861,6 +842,7 @@ mod tests {
         assert_eq!(resp.status(), 200);
         let body: Value = resp.json().await.unwrap();
         assert_eq!(body["allowed"], false, "e6 must be unavailable after u2");
+        assert_eq!(body["issue"], "Event is full");
     }
 
     #[tokio::test]
@@ -960,10 +942,10 @@ mod tests {
         );
     }
 
-    // model.rs unit test for apply_time_moves
+    // model.rs unit test for apply_event_updates
     #[test]
-    fn apply_time_moves_overrides_start_end() {
-        use model::{EventUpdate, apply_time_moves};
+    fn apply_event_updates_overrides_start_end() {
+        use model::{EventUpdate, apply_event_updates};
         let events: Vec<model::Event> =
             serde_json::from_str(include_str!("../../data/events.json")).unwrap();
         let updates: Vec<Vec<EventUpdate>> =
@@ -974,12 +956,12 @@ mod tests {
                 .collect();
         let all_updates: Vec<EventUpdate> = updates.into_iter().flatten().collect();
         // u3 moves e1: new_start=630, new_end=720
-        let effective = apply_time_moves(&["u3".to_string()], &all_updates, &events);
+        let effective = apply_event_updates(&["u3".to_string()], &all_updates, &events);
         let e1 = effective.iter().find(|e| e.id == "e1").unwrap();
         assert_eq!(e1.start, 630, "e1 start must be 630 after u3");
         assert_eq!(e1.end, 720, "e1 end must be 720 after u3");
         // Without applying u3, original times should be used.
-        let original = apply_time_moves(&[], &all_updates, &events);
+        let original = apply_event_updates(&[], &all_updates, &events);
         let e1_orig = original.iter().find(|e| e.id == "e1").unwrap();
         let catalog_e1 = events.iter().find(|e| e.id == "e1").unwrap();
         assert_eq!(e1_orig.start, catalog_e1.start);

@@ -2,6 +2,16 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## PR #11 review fix: events marked full by an update — November 11, 2026
+
+A "full" synthetic update (u2 marks Community dinner & story exchange full) was only honoured by the browser's fallback planner. Elsewhere in the browser the event still looked available.
+
+- **Fixed:** after the first update batch, a full event no longer appears in dashboard picks, its event card shows "Event is full" and disables adding it, and a planned full event now triggers "One of your plans has changed". "Find a replacement" says the event is "now full" instead of "moved into a conflict".
+- **How:** `effectiveEvents` (TypeScript) and `apply_event_updates` (Rust) now fold a full update into the event's `access`, and `issue()` applies the state's update IDs itself, so every caller (cards, enrollment, replanning) uses moved times and full status. The server's `/api/validate` and `/api/enroll` now report "Event is full" instead of "Cancelled in demo". The three Rust handlers share one `effective_inputs` helper.
+- **To demo:** sign in, add Community dinner & story exchange, press the bell, then open AI Planner.
+- **Verification:** `npm test` (142 TypeScript and 5 Wiki tests, including two new regression tests), `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, `cargo build --locked` and `npm run test:api` pass. Checked in the browser: the banner appears, the replacement message says "now full", and the event card shows "Event is full".
+- **Limitation:** the server still only blocks events from update IDs the browser sends; it does not track updates on its own.
+
 ## Visible synthetic update loop — November 12, 2026
 
 A clearly synthetic "Check for updates" demo loop has been added. It applies pre-scripted batches of catalog changes to browser-local state, surfaces "What changed" details in the Briefing panel and bell menu, and highlights affected planned events. The backend validates applied update IDs server-side before planning or enrollment.

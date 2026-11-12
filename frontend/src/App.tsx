@@ -914,7 +914,7 @@ export default function App() {
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
                   <p>
-                    An event in your plan is now unavailable — cancelled or moved into a conflict. Your other choices will stay in place.
+                    An event in your plan is now unavailable — cancelled, full, or moved into a conflict. Your other choices will stay in place.
                   </p>
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
@@ -1174,7 +1174,7 @@ export default function App() {
 
               {cancelled ? (
                 <div className="notice">
-                  A planned event is now unavailable — cancelled or moved into a conflict.{" "}
+                  A planned event is now unavailable — cancelled, full, or moved into a conflict.{" "}
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
                   </Button>

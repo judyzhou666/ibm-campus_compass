@@ -85,7 +85,7 @@ export function createConversation(
         const alternativeText = alternative
           ? buildAlternativeText(alternative, old, plan)
           : `No replacement satisfies the current filters: ${constraintSummary(plan.constraints)}. To explore alternatives, explicitly request a different day/time, food requirement, or topic in chat. Availability and eligibility checks will still apply. No alternative has been added.`;
-        response = `"${old.title}" was unavailable (${snapshot.cancelled.includes(old.id) ? "cancelled in demo" : "moved into a conflict"}). I removed the unavailable entry and kept all your other calendar choices: ${retained}.\n\n${alternativeText}`;
+        response = `"${old.title}" was unavailable (${snapshot.cancelled.includes(old.id) ? "cancelled in demo" : old.access === "full" ? "now full" : "moved into a conflict"}). I removed the unavailable entry and kept all your other calendar choices: ${retained}.\n\n${alternativeText}`;
       } else if (availabilityChangeSummary) {
         // Availability-change re-plan: show "what changed" summary.
         response = matches.length
@@ -153,7 +153,7 @@ export function createConversation(
   }
 
   /**
-   * Find a planned event that is now unavailable: explicitly cancelled OR moved into a conflict.
+   * Find a planned event that is now unavailable: cancelled, full by update, or moved into a conflict.
    * Returns the first such event from the plan, or undefined if none.
    */
   function findUnavailablePlanEvent(state: DemoState): CampusEvent | undefined {

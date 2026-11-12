@@ -41,24 +41,28 @@ export function nextBatch(appliedIds: string[]): UpdateBatch | null {
 }
 
 /**
- * Returns a copy of the EVENTS catalog with effective start/end times for any event
- * that has an applied `time_moved` update. Other events are returned unchanged.
+ * Returns a copy of the EVENTS catalog with applied updates folded in: a
+ * `time_moved` update sets effective start/end times and a `full` update sets
+ * `access: "full"`. Other events are returned unchanged.
  */
 export function effectiveEvents(appliedIds: string[]): CampusEvent[] {
   const applied = new Set(appliedIds);
   return EVENTS.map((e) => {
-    const moved = ALL_UPDATES.filter(
-      (u) =>
-        u.kind === "time_moved" &&
-        u.event_id === e.id &&
-        applied.has(u.id) &&
-        u.new_start != null &&
-        u.new_end != null,
-    ).at(-1);
+    const mine = ALL_UPDATES.filter(
+      (u) => u.event_id === e.id && applied.has(u.id),
+    );
+    let next = e;
+    const moved = mine
+      .filter(
+        (u) =>
+          u.kind === "time_moved" && u.new_start != null && u.new_end != null,
+      )
+      .at(-1);
     if (moved && moved.new_start! < moved.new_end! && moved.new_end! <= 1440) {
-      return { ...e, start: moved.new_start!, end: moved.new_end! };
+      next = { ...next, start: moved.new_start!, end: moved.new_end! };
     }
-    return e;
+    if (mine.some((u) => u.kind === "full")) next = { ...next, access: "full" };
+    return next;
   });
 }
 

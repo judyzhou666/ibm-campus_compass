@@ -107,7 +107,8 @@ pub struct Schedule {
     pub applied_update_ids: Vec<String>,
 }
 
-/// Derive the effective set of cancelled/full event IDs from applied update IDs.
+/// Derive the set of event IDs cancelled by applied updates. (`full` updates are folded into
+/// the event itself by `apply_event_updates`, so they report "Event is full".)
 pub fn unavailable_by_updates<'a>(
     applied_ids: &[String],
     all_updates: &'a [EventUpdate],
@@ -115,15 +116,15 @@ pub fn unavailable_by_updates<'a>(
     let applied: HashSet<&str> = applied_ids.iter().map(|s| s.as_str()).collect();
     all_updates
         .iter()
-        .filter(|u| applied.contains(u.id.as_str()) && (u.kind == "cancelled" || u.kind == "full"))
+        .filter(|u| applied.contains(u.id.as_str()) && u.kind == "cancelled")
         .map(|u| u.event_id.as_str())
         .collect()
 }
 
-/// Apply `time_moved` updates to a catalog snapshot, returning cloned events with overridden
-/// start/end times for any event that has an applied `time_moved` update.
+/// Apply updates to a catalog snapshot: an applied `time_moved` update overrides start/end
+/// and an applied `full` update sets `access` to "full".
 /// The returned `Vec<Event>` has the same length and order as `events`.
-pub fn apply_time_moves(
+pub fn apply_event_updates(
     applied_ids: &[String],
     all_updates: &[EventUpdate],
     events: &[Event],
@@ -140,19 +141,23 @@ pub fn apply_time_moves(
                     && u.new_start.is_some()
                     && u.new_end.is_some()
             });
+            let mut next = e.clone();
             if let Some(u) = moved {
                 let new_start = u.new_start.unwrap();
                 let new_end = u.new_end.unwrap();
                 // Only apply if the new times are valid.
                 if new_start < new_end && new_end <= 1440 {
-                    return Event {
-                        start: new_start,
-                        end: new_end,
-                        ..e.clone()
-                    };
+                    next.start = new_start;
+                    next.end = new_end;
                 }
             }
-            e.clone()
+            if all_updates
+                .iter()
+                .any(|u| u.kind == "full" && u.event_id == e.id && applied.contains(u.id.as_str()))
+            {
+                next.access = "full".into();
+            }
+            next
         })
         .collect()
 }

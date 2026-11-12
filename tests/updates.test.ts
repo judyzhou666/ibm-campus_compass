@@ -299,3 +299,33 @@ test("applyNextBatch reports no movedConflicts when moved event has no block ove
     `e1 should not be a movedConflict with no blocks; got: ${movedConflicts.join(", ")}`,
   );
 });
+
+test("a full update blocks the event everywhere issue() is used", () => {
+  const { nextState } = applyNextBatch({ ...fresh(), plan: ["e6"] });
+  assert.ok(nextState.appliedUpdateIds.includes("u2"));
+  assert.ok(!nextState.cancelled.includes("e6"));
+  const e6 = effectiveEvents(nextState.appliedUpdateIds).find((e) => e.id === "e6")!;
+  assert.equal(e6.access, "full");
+  // Event cards and enrollment call issue() with the raw catalog event.
+  const raw = recommend({ ...fresh(), interests: ["Social"] }, {}, 48).find((e) => e.id === "e6");
+  assert.ok(raw, "e6 is recommendable before the update");
+  assert.equal(issue(raw, { ...nextState, plan: [] }), "Event is full");
+  // The plan-changed banner and replacement flow see the planned event as unavailable.
+  assert.equal(issue(e6, nextState), "Event is full");
+  // Dashboard and planner recommendations exclude it.
+  assert.ok(
+    !recommend({ ...nextState, plan: [], interests: ["Social"] }, {}, 48).some((e) => e.id === "e6"),
+  );
+});
+
+test("issue() checks a moved event at its new time without an events override", () => {
+  const e1 = effectiveEvents([]).find((e) => e.id === "e1")!;
+  const state = {
+    ...fresh(),
+    plan: [],
+    blocks: [{ id: "b-test", title: "Morning seminar", day: e1.day, start: 600, end: 690 }],
+    buffer: 0,
+  };
+  assert.equal(issue(e1, state), null, "original slot does not conflict");
+  assert.match(issue(e1, { ...state, appliedUpdateIds: ["u3"] }) ?? "", /Morning seminar/);
+});

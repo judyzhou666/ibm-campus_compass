@@ -65,6 +65,8 @@ export interface Schedule {
   blocks: Block[];
   buffer: number;
   preferred_time?: string;
+  /** Applied synthetic update IDs (see updates.ts); absent means none. */
+  appliedUpdateIds?: string[];
 }
 export interface Constraints {
   topics?: string[];
