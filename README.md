@@ -35,9 +35,9 @@ Then open http://127.0.0.1:4173. The chat label under AI Planner shows which pla
   - `frontend/src/App.tsx` — Calendar page now renders `<CalendarView>` instead of the `week(true)` strip. Dashboard strip and AI Planner panel are **unchanged**.
   - `frontend/src/styles.css` — New `.gcal-*` CSS classes appended at the end.
 
-**Round-2 polish fixes (commit after initial):**
+**Round-2 polish fixes (commit e95156f):**
 1. Month-view columns now use `repeat(7, minmax(0,1fr))` on both header and grid — day numbers always align with the weekday labels.
-2. Week/Day view header and time grid share a single horizontal-scroll container so they never misalign on phone or desktop.
+2. Week/Day view header and time grid share a single horizontal-scroll container so they always scroll together.
 3. Year/Month view "today" circle (dark-green fill, white number) wins over the pale demo-week background via CSS specificity.
 4. "Find an event" `+` button moved to the column header so it is always visible without scrolling.
 5. Month chips are sorted by start time (using `sortByStart` helper, with 2 new unit tests).
@@ -45,7 +45,12 @@ Then open http://127.0.0.1:4173. The chat label under AI Planner shows which pla
 7. Event block titles wrap up to 2 lines; full title + time shown on `title` attribute hover.
 8. Toolbar uses a 2-row right-side layout at ≥ 760 px so the Day/Week/Month/Year switcher never moves when the title changes.
 9. "Demo week" label shown only on the Monday cell in Month view; green background still covers all 5 demo-week days.
-10. Removed duplicate `setAnchor(today)` in `goToToday`; simplified redundant `isDemoWeekRange && isInDemo` check.
+10. Removed duplicate `setAnchor(today)` in `goToToday`.
+
+**Round-3 fixes (commit after round-2):**
+- Week/Day column header is now placed inside the vertical scroll container (`.gcal-time-grid-wrap`) rather than alongside it, so both header and day columns share the same `scrollbar-gutter: stable` lane — header and columns are within 1 px at 1024 px, 1280 px, and 375 px.
+- `.gcal-dom` has a fixed `height: 32px` and `display: inline-flex` so the today-circle and plain date numbers take the same vertical space — all five "+" buttons sit on one row.
+- Removed the stale `isInDemo` variable and its comment from `MonthView`; demo-week label uses `isDemoWeekRange && isoWeekdayIndex(iso) === 0` directly.
 
 **How to try it:**
 ```sh

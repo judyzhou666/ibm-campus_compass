@@ -208,9 +208,14 @@ function DayColumn({
 
 /**
  * Shared time-grid scaffold (used by both Day and Week views).
- * Fix #2: one shared horizontal-scroll container holds BOTH the sticky header
- * row and the scrollable time grid, so they always scroll together and share
- * the same column widths.
+ *
+ * Layout (fix for header/body alignment):
+ *  .gcal-scroll-host   — horizontal scroll for phones (overflow-x: auto)
+ *    .gcal-time-grid-wrap  — vertical scroll (overflow-y: auto, scrollbar-gutter: stable)
+ *      .gcal-col-headers   — sticky top:0 INSIDE the vertical scroller, so it
+ *                             sits in the same box and shares the exact same width
+ *                             (scrollbar-gutter lane included).
+ *      .gcal-time-grid     — day columns
  */
 function TimeGrid({
   dates,
@@ -228,41 +233,42 @@ function TimeGrid({
   const demoWeek = demoWeekDates();
 
   return (
-    /* Single horizontal-scroll container for header + body */
+    /* Horizontal scroll for phones */
     <div className="gcal-scroll-host">
-      {/* Sticky column-header row — scrolls horizontally with the grid */}
-      <div className="gcal-col-headers">
-        <div className="gcal-gutter" aria-hidden="true" />
-        {dates.map((iso) => {
-          const wdi = isoWeekdayIndex(iso);
-          const isToday = iso === today;
-          const demoIdx = demoDayIndex(iso);
-          const showAdd = demoWeek.includes(iso) && isWeekday(iso);
-          return (
-            <div key={iso} className={`gcal-col-head ${isToday ? "gcal-today-head" : ""}`}>
-              <span className="gcal-dow">
-                {dates.length === 1 ? DAY_NAMES_FULL[wdi] : DAY_NAMES_SHORT[wdi]}
-              </span>
-              <span className={`gcal-dom ${isToday ? "gcal-today-dot" : ""}`}>
-                {dayOfMonth(iso)}
-              </span>
-              {/* Fix #4: "+" find-an-event button in the header, always visible */}
-              {showAdd && (
-                <button
-                  className="gcal-add-header-btn"
-                  aria-label={`Find an event on ${DAY_NAMES_FULL[wdi]}`}
-                  onClick={() => onDay(demoIdx)}
-                >
-                  <Icon name="plus" />
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Scrollable time-grid body */}
+      {/* Vertical scroll — header lives INSIDE here so they share the same width */}
       <div className="gcal-time-grid-wrap">
+        {/* Sticky column-header row */}
+        <div className="gcal-col-headers">
+          <div className="gcal-gutter" aria-hidden="true" />
+          {dates.map((iso) => {
+            const wdi = isoWeekdayIndex(iso);
+            const isToday = iso === today;
+            const demoIdx = demoDayIndex(iso);
+            const showAdd = demoWeek.includes(iso) && isWeekday(iso);
+            return (
+              <div key={iso} className={`gcal-col-head ${isToday ? "gcal-today-head" : ""}`}>
+                <span className="gcal-dow">
+                  {dates.length === 1 ? DAY_NAMES_FULL[wdi] : DAY_NAMES_SHORT[wdi]}
+                </span>
+                <span className={`gcal-dom ${isToday ? "gcal-today-dot" : ""}`}>
+                  {dayOfMonth(iso)}
+                </span>
+                {/* "+" find-an-event button in the header */}
+                {showAdd && (
+                  <button
+                    className="gcal-add-header-btn"
+                    aria-label={`Find an event on ${DAY_NAMES_FULL[wdi]}`}
+                    onClick={() => onDay(demoIdx)}
+                  >
+                    <Icon name="plus" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Time-grid body */}
         <div className="gcal-time-grid">
           {/* Gutter with hour labels */}
           <div className="gcal-gutter">
@@ -331,12 +337,8 @@ function MonthView({
         {dates.map((iso) => {
           const isThisMonth = sameMonth(iso, anchor);
           const isToday = iso === today;
-          // Fix #10: isInDemoWeek is equivalent to isInDemo (demo week is Mon–Fri),
-          // so just check demoWeek.includes(iso) instead of the double check.
-          const isInDemo = demoWeek.includes(iso);
           const isDemoWeekRange = iso >= demoMon && iso <= demoFri;
           const dayIdx = demoDayIndex(iso);
-          // Fix #5: sort chips by start time using sortByStart
           const chosenEvents = sortByStart(
             dayIdx >= 0
               ? EVENTS.filter((e) => e.day === dayIdx && state.plan.includes(e.id))
@@ -344,9 +346,8 @@ function MonthView({
           );
           const MAX_CHIPS = 3;
           const overflow = chosenEvents.length - MAX_CHIPS;
-          // Fix #9: show "Demo week" label only on the Monday cell
-          const isMonday = isoWeekdayIndex(iso) === 0;
-          const showDemoLabel = isDemoWeekRange && isInDemo && isMonday;
+          // "Demo week" label only on the Monday cell
+          const showDemoLabel = isDemoWeekRange && isoWeekdayIndex(iso) === 0;
 
           return (
             <button
@@ -363,7 +364,6 @@ function MonthView({
               <span className={`gcal-month-day-num ${isToday ? "gcal-today-dot" : ""}`}>
                 {dayOfMonth(iso)}
               </span>
-              {/* Fix #9: only the Monday cell gets the label */}
               {showDemoLabel && (
                 <span className="gcal-demo-week-label">Demo week</span>
               )}

@@ -2790,15 +2790,15 @@ p {
 }
 
 /*
- * Fix #2: one shared horizontal-scroll container (.gcal-scroll-host) holds
- * BOTH the sticky header row and the scrollable grid body.  They always
- * share the same column widths and scroll together, so no misalignment at
- * any viewport width.  scrollbar-gutter:stable reserves the scrollbar lane
- * on the body so the header never shifts when the scrollbar appears.
+ * .gcal-scroll-host — horizontal scroll for phones (overflow-x: auto).
+ *
+ * The header and body are BOTH inside .gcal-time-grid-wrap (vertical scroll,
+ * scrollbar-gutter: stable).  Because they share the same containing block
+ * the scrollbar lane is counted identically for header and day columns, so
+ * there is no drift at any desktop or phone width.
  */
 .gcal-scroll-host {
   overflow-x: auto;
-  /* On desktop constrain to a comfortable height; inner body scrolls vertically */
 }
 
 /* ── Column headers (Day/Week) ────────────────────────────────────────────── */
@@ -2809,8 +2809,7 @@ p {
   position: sticky;
   top: 0;
   z-index: 5;
-  /* Fix #2: minimum width matches the inner time-grid minimum width */
-  min-width: 500px;
+  /* min-width inherited from parent .gcal-time-grid-wrap / .gcal-time-grid */
 }
 .gcal-gutter {
   width: 56px;
@@ -2831,12 +2830,21 @@ p {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+/*
+ * Issue 2: give .gcal-dom a fixed height so the today-circle (32 px) does
+ * not make Monday's column taller than the others — all "+" buttons stay on
+ * one row.
+ */
 .gcal-dom {
   font-size: 20px;
   font-weight: 600;
   color: var(--ink);
-  line-height: 1.2;
+  line-height: 1;
   min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 .gcal-today-head .gcal-dow {
@@ -2879,21 +2887,20 @@ p {
 
 /* ── Time grid ────────────────────────────────────────────────────────────── */
 /*
- * Fix #2: the scrollable body is inside .gcal-scroll-host (shared with the
- * header), so horizontal scroll is synchronised automatically.
- * scrollbar-gutter:stable on the wrap reserves the scrollbar space so the
- * column widths don't shift when the scrollbar appears.
+ * .gcal-time-grid-wrap contains BOTH the sticky header and the day columns.
+ * scrollbar-gutter:stable reserves the scrollbar lane for BOTH, so their
+ * widths are always identical — no drift at any viewport width.
+ * overflow-x is visible so .gcal-scroll-host handles horizontal scrolling.
  */
 .gcal-time-grid-wrap {
   overflow-y: auto;
-  overflow-x: visible; /* horizontal scroll is handled by .gcal-scroll-host */
+  overflow-x: visible;
   max-height: 580px;
   scrollbar-gutter: stable;
 }
 .gcal-time-grid {
   display: flex;
   position: relative;
-  /* Fix #2: same min-width as .gcal-col-headers */
   min-width: 500px;
 }
 /* Gutter with hour labels */
