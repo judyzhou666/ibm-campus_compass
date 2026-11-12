@@ -1,7 +1,7 @@
 import { DataReview } from "./DataReview.tsx";
 import { DemoLauncher } from "./DemoLauncher.tsx";
 import { guidedScenario } from "./demoScenario.ts";
-import { DEMO, WEEK_LABEL } from "./config.ts";
+import { DEMO, WEEK_LABEL, isTimeZone } from "./config.ts";
 import { communityFromHash, communityHash } from "./communities.ts";
 import { handlePopState, initHistory, useSubPage } from "./navigation.ts";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -25,6 +25,17 @@ import {
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
+import {
+  NotificationDetail,
+  NotificationMenu,
+  NotificationsPage,
+} from "./Notifications.tsx";
+import {
+  allNotifications,
+  NO_FILTER,
+  unreadOf,
+  type NotificationFilter,
+} from "./notifications.ts";
 import type { Constraints, Message, Rsvp } from "./types.ts";
 import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./updates.ts";
 
@@ -38,6 +49,7 @@ const labels = {
   saved: "Saved Events",
   profile: "Profile",
   settings: "Settings",
+  notifications: "Notifications",
 };
 type Page = keyof typeof labels;
 interface ToastAction {
@@ -54,7 +66,10 @@ const navIcons: Record<Page, string> = {
   saved: "bookmark",
   profile: "user",
   settings: "settings",
+  notifications: "bell",
 };
+/** Pages reached from elsewhere in the app, not from the sidebar. */
+const hiddenFromSidebar: Page[] = ["review", "notifications"];
 const prompts = [
   "AI and education on Tuesday or Thursday afternoons",
   "A social event with free food",
@@ -142,6 +157,12 @@ export default function App() {
     }
     document.body.classList.toggle("sidebar-collapsed", collapsed);
   }, [collapsed]);
+  // Notifications: the bell dropdown, the open message, and the page the
+  // student was on before opening the Notifications sub-page.
+  const [bellOpen, setBellOpen] = useState(false);
+  const [openNote, setOpenNote] = useState<string | null>(null);
+  const [notesFrom, setNotesFrom] = useState<Page>("dashboard");
+  const [noteFilter, setNoteFilter] = useState<NotificationFilter>(NO_FILTER);
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
@@ -175,6 +196,8 @@ export default function App() {
     setPage(next);
     setMenu(false);
     setDetail(null);
+    setOpenNote(null);
+    setBellOpen(false);
     setFilter("All");
     setQuery("");
     setSearch("");
@@ -207,6 +230,18 @@ export default function App() {
     page === "forum" && selectedCommunity !== null,
     () => setSelectedCommunity(null),
   );
+  // Notifications is a sub-page of whatever page it was opened from, and an
+  // open message is a sub-page of Notifications: Back from a message shows
+  // the full list, and Back again returns to the earlier page. Declared in
+  // this order so both register in this order when opened together.
+  useSubPage(page === "notifications", () => {
+    setOpenNote(null);
+    setPage(notesFrom);
+  });
+  const closeNote = useSubPage(
+    page === "notifications" && openNote !== null,
+    () => setOpenNote(null),
+  );
   const closeDetail = useSubPage(detail !== null, () => setDetail(null));
   // The synthetic-data review is opened from Settings, not the sidebar, so
   // Back returns to Settings.
@@ -232,6 +267,7 @@ export default function App() {
           setPage(validPage(location.hash.slice(1)));
           setSelectedCommunity(communityFromHash(location.hash));
           setDetail(null);
+          setOpenNote(null);
           setMenu(false);
         },
         () => appUrlRef.current,
@@ -280,6 +316,39 @@ export default function App() {
         ? [{ label: "View briefing", run: () => nav("dashboard") }]
         : [],
     );
+  }
+
+  function markRead(ids: string[]) {
+    update((s) => ({
+      ...s,
+      readNotificationIds: [
+        ...s.readNotificationIds,
+        ...ids.filter((id) => !s.readNotificationIds.includes(id)),
+      ],
+    }));
+  }
+  function markUnread(id: string) {
+    update((s) => ({
+      ...s,
+      readNotificationIds: s.readNotificationIds.filter((x) => x !== id),
+    }));
+  }
+  /** Opens the Notifications sub-page, optionally at one message. */
+  function openNotifications(id?: string) {
+    if (page !== "notifications") {
+      setNotesFrom(page);
+      setNoteFilter(NO_FILTER);
+    }
+    nav("notifications");
+    if (id) {
+      setOpenNote(id);
+      markRead([id]);
+    }
+  }
+  function openNotification(id: string) {
+    setOpenNote(id);
+    markRead([id]);
+    window.scrollTo(0, 0);
   }
 
   function clearChat() {
@@ -452,19 +521,15 @@ export default function App() {
         })(),
     );
   const detailEvent = EVENTS.find((e) => e.id === detail);
+  const campusZone = isTimeZone(state.timezone) ? state.timezone : DEMO.time_zone;
+  const notifications = allNotifications(state.appliedUpdateIds);
+  const unreadNotes = unreadOf(notifications, state.readNotificationIds);
+  const updatesWaiting = nextBatch(state.appliedUpdateIds) !== null;
+  const openNotification_ = notifications.find((n) => n.id === openNote);
   const list = filterEvents(
     page === "saved"
       ? EVENTS.filter((e) => state.saved.includes(e.id))
       : EVENTS,
-  );
-  const recommended = filterEvents(
-    effEvents.filter((e) => !state.plan.includes(e.id) && !issue(e, state, effEvents)),
-  ).sort(
-    (a, b) =>
-      Number(state.interests.includes(b.topic)) -
-        Number(state.interests.includes(a.topic)) ||
-      a.day - b.day ||
-      a.start - b.start,
   );
 
   return (
@@ -550,35 +615,42 @@ export default function App() {
           </button>
         </nav>
         <div className="top-actions">
-          <button
-            className="icon-btn"
-            aria-label={
-              nextBatch(state.appliedUpdateIds)
-                ? "Check for updates (new batch available)"
-                : "Notifications"
-            }
-            onClick={checkForUpdates}
-            style={{ position: "relative" }}
-          >
-            <Icon name="bell" />
-            {nextBatch(state.appliedUpdateIds) ? (
-              <span
-                className="badge"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  fontSize: "0.65rem",
-                  minWidth: "0.9rem",
-                  padding: "0 0.2rem",
-                  lineHeight: 1.4,
-                  pointerEvents: "none",
+          <div className="bell-wrap">
+            <button
+              className="icon-btn bell-btn"
+              aria-label={
+                unreadNotes.length
+                  ? `Notifications, ${unreadNotes.length} unread`
+                  : updatesWaiting
+                    ? "Notifications, new synthetic updates available"
+                    : "Notifications"
+              }
+              aria-expanded={bellOpen}
+              aria-controls="notification-menu"
+              onClick={() => setBellOpen((open) => !open)}
+            >
+              <Icon name="bell" />
+              {unreadNotes.length || updatesWaiting ? (
+                <span className="bell-dot" aria-hidden="true" />
+              ) : null}
+            </button>
+            {bellOpen ? (
+              <NotificationMenu
+                unread={unreadNotes}
+                timeZone={campusZone}
+                updatesWaiting={updatesWaiting}
+                onOpen={(id) => openNotifications(id)}
+                onViewAll={() => openNotifications()}
+                onCheckUpdates={() => {
+                  checkForUpdates();
+                  // Keep the menu open so the new updates show in it.
+                  setBellOpen(true);
                 }}
-              >
-                !
-              </span>
+                onMarkAllRead={() => markRead(unreadNotes.map((n) => n.id))}
+                onClose={() => setBellOpen(false)}
+              />
             ) : null}
-          </button>
+          </div>
           {state.signedIn ? (
             <button
               className="avatar"
@@ -611,7 +683,9 @@ export default function App() {
         </button>
         <nav className="nav" aria-label="Main navigation">
           {(
-            Object.keys(labels).filter((key) => key !== "review") as Page[]
+            Object.keys(labels).filter(
+              (key) => !hiddenFromSidebar.includes(key as Page),
+            ) as Page[]
           ).map((p, i) => (
             <div key={p}>
               {i === 6 ? <div className="break" /> : null}
@@ -720,15 +794,6 @@ export default function App() {
                     </div>
                   </section>
                   <section>
-                    <div className="section-bar">
-                      <h2>A few things you might love</h2>
-                      <button
-                        className="text-btn"
-                        onClick={() => nav("explore")}
-                      >
-                        Explore all <Icon name="arrow" />
-                      </button>
-                    </div>
                     <Briefing
                       state={state}
                       onDetail={setDetail}
@@ -736,13 +801,6 @@ export default function App() {
                       onCalendar={() => nav("calendar")}
                       onCheckUpdates={checkForUpdates}
                     />
-                    <Filters value={filter} onChange={setFilter} />
-                    {cards(recommended.slice(0, 3))}
-                    {!recommended.length ? (
-                      <Empty title="Try another category">
-                        There are no available matches in this category.
-                      </Empty>
-                    ) : null}
                   </section>
                 </div>
                 <aside className="stack rail">
@@ -878,6 +936,32 @@ export default function App() {
                 </Empty>
               ) : null}
             </>
+          ) : null}
+          {page === "notifications" ? (
+            openNotification_ ? (
+              <NotificationDetail
+                notification={openNotification_}
+                timeZone={campusZone}
+                onBack={closeNote}
+                onViewEvent={setDetail}
+                onOpenCommunity={(id) => nav("forum", id)}
+                onExplore={() => nav("explore")}
+                onMarkUnread={() => {
+                  markUnread(openNotification_.id);
+                  closeNote();
+                }}
+              />
+            ) : (
+              <NotificationsPage
+                list={notifications}
+                readIds={state.readNotificationIds}
+                timeZone={campusZone}
+                filter={noteFilter}
+                setFilter={setNoteFilter}
+                onOpen={openNotification}
+                onMarkAllRead={() => markRead(unreadNotes.map((n) => n.id))}
+              />
+            )
           ) : null}
           {page === "review" ? (
             <DataReview onDetail={setDetail} onExit={() => nav("dashboard")} />

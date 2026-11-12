@@ -2,6 +2,19 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## Notifications: bell dropdown, Notifications page and messages — November 11, 2026
+
+- **Bell:** a red dot shows when there are unread notifications (or synthetic updates waiting). Clicking it opens a dropdown of unread notifications with "Mark all as read" and "View all". The bell now also shows on phones.
+- **Messages:** clicking a notification opens its full message and marks it read. Depending on the notification it offers View event, Open community or Explore events, plus Mark as unread.
+- **Notifications page:** reached only from the bell (not in the sidebar). It lists every notification, with unread titles in bold, and a filter panel: show only unread, sort newest/oldest, type, and sent on/after and on/before dates (campus time). Filters stay set while you open a message and come back.
+- **Back / swipe-back:** from a message, Back shows the Notifications page; Back again returns to the page the student was on.
+- **Data:** 8 fictional demo notifications (two start read), plus one notification per applied synthetic event update, labelled "Synthetic update". Read state is stored in the browser (`readNotificationIds`); older saved demos start with the default read set.
+- **Synthetic updates:** the bell no longer applies the next update batch on click. Use the "New synthetic event updates are available" row at the top of the dropdown, or "Check for updates" in This Week's Briefing.
+- **Dashboard:** the "A few things you might love" section (heading, category filters and three suggested cards) was removed. This Week's Briefing stays on My Dashboard.
+- **To demo:** click the bell, open a notification, swipe or press Back to reach the Notifications page, filter to unread, then Back again to return.
+- **Verification:** `npm test` (150 TypeScript tests including 8 new ones in `tests/notifications.test.ts`, and 5 Wiki tests), `tsc --noEmit` and `npm run build` pass. Checked in the browser at 1280px and 375px: dropdown, message page, Back to the list and then to the dashboard, unread filter kept across a message, bold unread titles, synthetic updates arriving as notifications, and no sideways scrolling. Rust code was not changed, so Rust checks and `npm run test:api` were not rerun.
+- **Limitation:** notifications are fixed fictional data; nothing is sent or received, and read state lives only in this browser.
+
 ## Sidebar and top bar layout — November 11, 2026
 
 - **Collapsible sidebar:** a round chevron button on the sidebar's right edge shrinks it to a 76px icon rail and back. Hovering an icon shows the tab name, and the Saved Events count stays as a small badge. The choice is remembered in this browser only. Phones keep the slide-out menu instead.
