@@ -299,7 +299,9 @@ try {
       await conversation.chat("PM");
       assert.equal(calls, 0);
       await conversation.chat("social on Thursday after 3 PM");
-      assert.deepEqual(demo.read().draft, ["e2"]);
+      // e2 (Conversations beyond your major, Thu 5–6:30pm) and e45 (Night at the grad bar, Thu 8–10pm)
+      // both match Social on Thursday after 3 PM in the expanded catalog.
+      assert.deepEqual(demo.read().draft, ["e2", "e45"]);
       assert.deepEqual(demo.read().plan, []);
     }
   }

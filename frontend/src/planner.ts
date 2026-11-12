@@ -1,8 +1,26 @@
 import type { CampusEvent, Schedule, Constraints, TimeSlot } from "./types.ts";
 import { EVENTS } from "./data.ts";
+import { effectiveEvents } from "./updates.ts";
 export const overlap = (a: TimeSlot, b: TimeSlot, buffer = 0) =>
   a.day === b.day && a.start < b.end + buffer && b.start < a.end + buffer;
-export function issue(e: CampusEvent, state: Schedule) {
+/**
+ * Check whether an event has a scheduling issue.
+ * Pass `eventsOverride` to use effective (time-moved) event times instead of the catalog.
+ * When the state carries applied synthetic updates, they are always honoured:
+ * a "full" update blocks the event and a "time_moved" update changes its times.
+ */
+export function issue(
+  event: CampusEvent,
+  state: Schedule,
+  eventsOverride?: CampusEvent[],
+) {
+  const applied = state.appliedUpdateIds ?? [];
+  const planEvents =
+    eventsOverride ?? (applied.length ? effectiveEvents(applied) : EVENTS);
+  const e =
+    applied.length || eventsOverride
+      ? (planEvents.find((x) => x.id === event.id) ?? event)
+      : event;
   if (e.day > 4 || e.day < 0 || e.start >= e.end || e.end > 1440)
     return "Invalid event metadata; team review required";
   if (!["RSVP required", "Drop-in welcome"].includes(e.rsvp))
@@ -14,7 +32,7 @@ export function issue(e: CampusEvent, state: Schedule) {
     return "Eligibility not confirmed";
   const conflict = [
     ...state.blocks,
-    ...EVENTS.filter(
+    ...planEvents.filter(
       (x) =>
         state.plan.includes(x.id) &&
         x.id !== e.id &&
@@ -30,14 +48,16 @@ export function recommend(
   constraints: Constraints = {},
   limit = 3,
   contextual = true,
+  eventsOverride?: CampusEvent[],
 ) {
   const topics = constraints.topics?.length
     ? constraints.topics
     : state.interests;
-  let candidates = EVENTS.filter(
+  const eventList = eventsOverride ?? EVENTS;
+  let candidates = eventList.filter(
     (e) =>
       !state.plan.includes(e.id) &&
-      !issue(e, state) &&
+      !issue(e, state, eventsOverride) &&
       (!constraints.days || constraints.days.includes(e.day)) &&
       (constraints.after == null || e.start >= constraints.after) &&
       (constraints.before == null || e.end <= constraints.before) &&

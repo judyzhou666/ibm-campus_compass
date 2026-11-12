@@ -43,7 +43,7 @@ export function validateConstraints(
   if (
     c.food !== undefined &&
     (typeof c.food !== "string" ||
-      !["Free meal", "Coffee & snacks"].includes(c.food))
+      !["Free meal", "Coffee & snacks", "Paid food", "None", "Unknown"].includes(c.food))
   )
     throw new Error("Unknown food preference");
   if (c.free !== undefined && typeof c.free !== "boolean")
@@ -169,6 +169,12 @@ export function interpretRequest(
   if (test(/\b(free food|free meal|meal|dinner|lunch)\b/)) c.food = "Free meal";
   if (test(/\b(coffee|tea|snack|refreshment)/) && !c.food)
     c.food = "Coffee & snacks";
+  if (test(/\b(paid food|buy food|food for sale|food available for purchase)\b/) && !c.food)
+    c.food = "Paid food";
+  if (test(/\b(no food|food-free|without food)\b/) && !c.food)
+    c.food = "None";
+  if (test(/\b(unknown food|food (is |not )?(un)?confirmed|food status unknown)\b/) && !c.food)
+    c.food = "Unknown";
   if (test(/\b(free|no cost|no-cost|zero budget)\b/)) c.free = true;
   if (test(/\b(any food|food doesn.t matter|no food preference)\b/))
     delete c.food;

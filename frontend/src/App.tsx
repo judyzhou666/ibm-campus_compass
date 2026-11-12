@@ -17,6 +17,7 @@ import {
   Empty,
   EventCard,
   EventDetails,
+  SignInDialog,
   Filters,
   Heading,
   Icon,
@@ -26,6 +27,7 @@ import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
 import { Briefing, Welcome } from "./Briefing.tsx";
 import { Forum, Profile, Settings } from "./Pages.tsx";
 import type { Constraints, Message, Rsvp } from "./types.ts";
+import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./updates.ts";
 
 const labels = {
   review: "Team data review",
@@ -70,14 +72,39 @@ export default function App() {
   // visit greets with "Welcome" rather than "Welcome back".
   const [firstVisit] = useState(() => !state.onboarded);
   const update = demo.update;
+  // Check whether the backend is in watsonx mode to hide simulated-only UI and
+  // forward unrecognised messages to the server for model interpretation.
+  const watsonxModeRef = useRef(false);
+  const [watsonxMode, setWatsonxMode] = useState(false);
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h: { mode?: string }) => {
+        const isWatsonx = h.mode === "watsonx";
+        watsonxModeRef.current = isWatsonx;
+        setWatsonxMode(isWatsonx);
+      })
+      .catch(() => {});
+  }, []);
   const [enrollment] = useState(() => createEnrollment(demo));
   const [conversation] = useState(() =>
-    createConversation(demo, enrollment.remove),
+    createConversation(demo, enrollment.remove, globalThis.fetch, () => watsonxModeRef.current),
   );
   const { busy, mode } = useSyncExternalStore(
     conversation.subscribe,
     conversation.read,
   );
+  /** Label shown in the chat header status area. Before the first reply it
+   *  reflects the health endpoint mode; after a reply it reflects the plan mode. */
+  const chatStatusLabel =
+    state.messages.length === 0
+      ? watsonxMode
+        ? "IBM watsonx (Granite) · Ranking and explaining picks · Fictional events"
+        : "Simulated planner · No live AI"
+      : mode;
+  const chatFineprint = watsonxMode
+    ? "IBM watsonx (Granite) is ranking and explaining picks. All events are fictional demo data."
+    : "Simulated responses using fictional events. No live AI or external calendar is connected.";
   const { busy: enrolling, rsvpEvent } = useSyncExternalStore(
     enrollment.subscribe,
     enrollment.read,
@@ -110,6 +137,7 @@ export default function App() {
     heading.focus();
   }, [focusHeading]);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -154,17 +182,16 @@ export default function App() {
     );
     return () => clearTimeout(timer);
   }, [toast, toastActions, toastHeld]);
-  // Sub-pages: an open community and the event details overlay each own one
-  // history entry, so Back closes them before anything else.
+  // Sub-pages: Back closes an open community or the event details overlay
+  // before anything else (see navigation.ts).
   const closeCommunity = useSubPage(
     page === "forum" && selectedCommunity !== null,
     () => setSelectedCommunity(null),
-    selectedCommunity ? communityHash(selectedCommunity) : undefined,
   );
   const closeDetail = useSubPage(detail !== null, () => setDetail(null));
   // The synthetic-data review is opened from Settings, not the sidebar, so
   // Back returns to Settings.
-  useSubPage(page === "review", () => setPage("settings"), "#review");
+  useSubPage(page === "review", () => setPage("settings"));
   // Keep the URL in step with the current tab without adding history.
   const appUrl =
     page === "forum" && selectedCommunity
@@ -175,8 +202,8 @@ export default function App() {
   useEffect(() => {
     if (location.hash !== appUrl) history.replaceState(history.state, "", appUrl);
   }, [appUrl]);
-  // Back / swipe-back: close the innermost sub-page; at a top-level tab,
-  // absorb it by re-adding the entry just left, so the app stays put.
+  // Back / swipe-back: close the innermost sub-page; on a top-level tab,
+  // nothing happens.
   useEffect(() => {
     function onPop(e: PopStateEvent) {
       handlePopState(
@@ -206,6 +233,36 @@ export default function App() {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [menu]);
+  function checkForUpdates() {
+    const current = demo.read();
+    const { nextState, applied, batch, movedConflicts } = applyNextBatch(current);
+    if (!applied.length) {
+      notify(
+        "No more update batches. All synthetic updates have been applied. · Synthetic update",
+      );
+      return;
+    }
+    update(() => nextState);
+    nav("dashboard");
+    const planned = applied.filter((u) =>
+      current.plan.includes(u.event_id),
+    );
+    const planNotice =
+      planned.length > 0
+        ? ` ${planned.length} of your planned event${planned.length > 1 ? "s" : ""} ${planned.length > 1 ? "are" : "is"} affected.`
+        : "";
+    const conflictNotice =
+      movedConflicts.length > 0
+        ? ` A time change now conflicts with your schedule — use "Find a replacement" to update your plan.`
+        : "";
+    notify(
+      `${batch!.label}: ${applied.length} update${applied.length > 1 ? "s" : ""} applied.${planNotice}${conflictNotice} See Briefing for details. · Synthetic update`,
+      planned.length > 0
+        ? [{ label: "View briefing", run: () => nav("dashboard") }]
+        : [],
+    );
+  }
+
   function clearChat() {
     conversation.clear();
     setMessage("");
@@ -303,15 +360,22 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     notify("Exported chosen events. Cancelled events were excluded.");
   }
+  const FOOD_FILTERS: Record<string, string> = {
+    "Free Food": "Free meal",
+    "Coffee & snacks": "Coffee & snacks",
+    "Paid food": "Paid food",
+    "No food": "None",
+    "Food unknown": "Unknown",
+  };
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
         (filter === "All" ||
-          (filter === "Free Food"
-            ? e.food === "Free meal"
+          (filter in FOOD_FILTERS
+            ? e.food === FOOD_FILTERS[filter]
             : e.category === filter)) &&
         (!query ||
-          `${e.title} ${e.description} ${e.topic} ${e.food}`
+          `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
             .toLowerCase()
             .includes(query.toLowerCase())),
     );
@@ -355,7 +419,19 @@ export default function App() {
           text: `Hi ${state.name}! Let’s find a little more of what you love on campus.\n\nTell me your interests, when you’re free, and anything that matters — like free food or a little time between events. I’ll check your demo schedule and suggest a few options.`,
         },
       ];
-  const cancelled = state.cancelled.some((id) => state.plan.includes(id));
+  // A plan event is "unavailable" when explicitly cancelled OR when a time_moved
+  // update has shifted it into a conflict with a busy block or another plan event.
+  const effEvents = effectiveEvents(state.appliedUpdateIds);
+  const cancelled =
+    state.cancelled.some((id) => state.plan.includes(id)) ||
+    state.plan.some(
+      (id) =>
+        !state.cancelled.includes(id) &&
+        (() => {
+          const eff = effEvents.find((e) => e.id === id);
+          return eff ? !!issue(eff, state, effEvents) : false;
+        })(),
+    );
   const detailEvent = EVENTS.find((e) => e.id === detail);
   const list = filterEvents(
     page === "saved"
@@ -363,7 +439,7 @@ export default function App() {
       : EVENTS,
   );
   const recommended = filterEvents(
-    EVENTS.filter((e) => !state.plan.includes(e.id) && !issue(e, state)),
+    effEvents.filter((e) => !state.plan.includes(e.id) && !issue(e, state, effEvents)),
   ).sort(
     (a, b) =>
       Number(state.interests.includes(b.topic)) -
@@ -424,13 +500,25 @@ export default function App() {
             <strong>A campus of possibilities.</strong>Your interests. Your
             time. Your next great discovery.
           </div>
-          <div className="user">
-            <span className="avatar">{state.name[0] || "J"}</span>
-            <div>
-              <strong>{state.name}’s campus</strong>
-              <small>Graduate student · Demo profile</small>
+          {state.signedIn ? (
+            <div className="user">
+              <span className="avatar">{state.name[0] || "J"}</span>
+              <div>
+                <strong>{state.name}’s campus</strong>
+                <small>Graduate student · Demo profile</small>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="user">
+              <span className="avatar guest">
+                <Icon name="user" />
+              </span>
+              <div>
+                <strong>Guest</strong>
+                <small>Not signed in · Demo</small>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
       <div className="shell">
@@ -444,11 +532,9 @@ export default function App() {
           >
             <Icon name="menu" />
           </button>
-          <div className="breadcrumb">
-            My campus <span>/ &nbsp; {labels[page]}</span>
-          </div>
           <form
             className="search"
+            role="search"
             onSubmit={(e) => {
               e.preventDefault();
               setQuery(search.trim());
@@ -459,42 +545,94 @@ export default function App() {
             <Icon name="search" />
             <input
               aria-label="Search events"
-              placeholder="Find something that sparks your interest"
+              placeholder="Search events"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <button type="submit" className="search-go" aria-label="Search">
+              <Icon name="search" />
+            </button>
           </form>
+          <nav className="top-links" aria-label="Quick links">
+            {(
+              [
+                ["explore", "Find events"],
+                ["calendar", "My calendar"],
+                ["forum", "Forum"],
+              ] as [Page, string][]
+            ).map(([p, label]) => (
+              <button
+                key={p}
+                className={page === p ? "active" : ""}
+                aria-current={page === p ? "page" : undefined}
+                onClick={() => nav(p)}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              className={`top-cta ${page === "planner" ? "active" : ""}`}
+              aria-current={page === "planner" ? "page" : undefined}
+              onClick={() => nav("planner")}
+            >
+              Plan with AI
+            </button>
+          </nav>
           <div className="top-actions">
-            <span className="term">{DEMO.campus_name}</span>
             <button
               className="icon-btn"
-              aria-label="View notifications"
-              onClick={() => {
-                nav("dashboard");
-                notify(
-                  cancelled
-                    ? "An event was cancelled in the demo. Open AI Planner to review."
-                    : "Your weekly event suggestions are ready. All updates are fictional.",
-                );
-              }}
+              aria-label={
+                nextBatch(state.appliedUpdateIds)
+                  ? "Check for updates (new batch available)"
+                  : "Notifications"
+              }
+              onClick={checkForUpdates}
+              style={{ position: "relative" }}
             >
               <Icon name="bell" />
+              {nextBatch(state.appliedUpdateIds) ? (
+                <span
+                  className="badge"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    fontSize: "0.65rem",
+                    minWidth: "0.9rem",
+                    padding: "0 0.2rem",
+                    lineHeight: 1.4,
+                    pointerEvents: "none",
+                  }}
+                >
+                  !
+                </span>
+              ) : null}
             </button>
-            <button
-              className="avatar"
-              aria-label="Open profile"
-              style={{ border: 0 }}
-              onClick={() => nav("profile")}
-            >
-              {state.name[0] || "J"}
-            </button>
+            {state.signedIn ? (
+              <button
+                className="avatar"
+                aria-label={`Open profile for ${state.name}`}
+                style={{ border: 0 }}
+                onClick={() => nav("profile")}
+              >
+                {state.name[0] || "J"}
+              </button>
+            ) : (
+              <button className="sign-in" onClick={() => setSigningIn(true)}>
+                Sign in
+              </button>
+            )}
           </div>
         </header>
         <main id="main">
           {page === "dashboard" ? (
             <>
               <Heading
-                title={`${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`}
+                title={
+                  state.signedIn
+                    ? `${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`
+                    : "Welcome to Campus Compass."
+                }
                 description="A little direction. A world of campus possibilities."
                 timezone={state.timezone}
               />
@@ -556,6 +694,7 @@ export default function App() {
                       onDetail={setDetail}
                       onPlanner={() => nav("planner")}
                       onCalendar={() => nav("calendar")}
+                      onCheckUpdates={checkForUpdates}
                     />
                     <Filters value={filter} onChange={setFilter} />
                     {cards(recommended.slice(0, 3))}
@@ -723,6 +862,7 @@ export default function App() {
               <DemoLauncher
                 state={state}
                 busy={busy || enrolling}
+                watsonxMode={watsonxMode}
                 onPrepare={() => {
                   try {
                     if (
@@ -775,8 +915,7 @@ export default function App() {
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
                   <p>
-                    An event was cancelled in this demonstration. Your other
-                    choices will stay in place.
+                    An event in your plan is now unavailable — cancelled, full, or moved into a conflict. Your other choices will stay in place.
                   </p>
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
@@ -791,7 +930,7 @@ export default function App() {
                       <h2>Chat with your campus guide</h2>
                       <span className="status-label">
                         <i className="dot green" />
-                        {mode}
+                        {chatStatusLabel}
                       </span>
                     </div>
                     <button
@@ -880,10 +1019,7 @@ export default function App() {
                       <Icon name="send" />
                     </button>
                   </form>
-                  <p className="fineprint">
-                    Simulated responses using fictional events. No live AI or
-                    external calendar is connected.
-                  </p>
+                  <p className="fineprint">{chatFineprint}</p>
                 </section>
                 {calendarOpen ? (
                   <PlannerCalendar
@@ -969,6 +1105,27 @@ export default function App() {
                         Edit interests & availability <Icon name="arrow" />
                       </button>
                     </section>
+                    <section className="panel">
+                      <div className="section-bar">
+                        <h2>Event updates</h2>
+                        <Icon name="bell" />
+                      </div>
+                      <p className="sub">
+                        Apply the next batch of synthetic demo updates — cancellations, capacity, time or room changes.
+                      </p>
+                      <Button
+                        className="small"
+                        onClick={checkForUpdates}
+                      >
+                        <Icon name="bell" />
+                        Check for updates
+                      </Button>
+                      {state.lastUpdateCheck ? (
+                        <p className="fineprint">
+                          Last checked {relativeTime(state.lastUpdateCheck)} · Synthetic update
+                        </p>
+                      ) : null}
+                    </section>
                     {state.plan.some((id) => !state.cancelled.includes(id)) ? (
                       <section className="panel">
                         <h2>Try a change of plans</h2>
@@ -1013,7 +1170,7 @@ export default function App() {
 
               {cancelled ? (
                 <div className="notice">
-                  A planned event was cancelled.{" "}
+                  A planned event is now unavailable — cancelled, full, or moved into a conflict.{" "}
                   <Button className="small" onClick={replan} disabled={busy}>
                     Find a replacement
                   </Button>
@@ -1075,7 +1232,7 @@ export default function App() {
             </>
           ) : null}
           {page === "profile" ? (
-            <Profile state={state} update={update} notify={notify} />
+            <Profile state={state} update={update} notify={notify} watsonxMode={watsonxMode} />
           ) : null}
           {page === "forum" ? (
             <Forum
@@ -1156,6 +1313,17 @@ export default function App() {
           </span>
         ) : null}
       </div>
+      {signingIn ? (
+        <SignInDialog
+          name={state.name}
+          onClose={() => setSigningIn(false)}
+          onSignIn={(name) => {
+            update((s) => ({ ...s, name, signedIn: true }));
+            setSigningIn(false);
+            notify(`Signed in as ${name}. Demo only; nothing leaves this browser.`);
+          }}
+        />
+      ) : null}
       {rsvpEvent ? (
         <RsvpDialog
           key={rsvpEvent}

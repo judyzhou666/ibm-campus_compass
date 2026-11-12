@@ -8,10 +8,11 @@ import {
 } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
 import { useEffect, useRef, type ReactNode } from "react";
-import { DAYS, EVENTS, time, when } from "./data.ts";
+import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
+import { updateBadge, hasConflict, effectiveUpdate, relativeTime, kindLabel } from "./updates.ts";
 
 export function Icon({ name }: { name: string }) {
   return (
@@ -95,18 +96,27 @@ export function Filters({
 }) {
   return (
     <div className="filters">
-      {["All", "Academic", "Career", "Social", "Workshops", "Free Food"].map(
-        (c) => (
-          <button
-            key={c}
-            className={`chip ${value === c ? "active" : ""}`}
-            aria-pressed={value === c}
-            onClick={() => onChange(c)}
-          >
-            {c}
-          </button>
-        ),
-      )}
+      {[
+        "All",
+        "Academic",
+        "Career",
+        "Social",
+        "Workshops",
+        "Free Food",
+        "Coffee & snacks",
+        "Paid food",
+        "No food",
+        "Food unknown",
+      ].map((c) => (
+        <button
+          key={c}
+          className={`chip ${value === c ? "active" : ""}`}
+          aria-pressed={value === c}
+          onClick={() => onChange(c)}
+        >
+          {c}
+        </button>
+      ))}
     </div>
   );
 }
@@ -130,8 +140,12 @@ export function EventCard({
     saved = state.saved.includes(e.id);
   const category =
     e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const appliedIds = (state as DemoState).appliedUpdateIds ?? [];
+  const badge = updateBadge(e.id, appliedIds);
+  const conflict = hasConflict(e.id, appliedIds);
+  const upd = !conflict ? effectiveUpdate(e.id, appliedIds) : null;
   return (
-    <article className="event-card">
+    <article className={`event-card${badge === "needs-confirmation" ? " event-card--conflict" : badge === "updated" ? " event-card--updated" : ""}`}>
       <div className={`poster ${category}`}>
         <small>
           {DEMO.campus_name} / {dayLabel(e.day)}
@@ -154,30 +168,55 @@ export function EventCard({
         </button>
       </div>
       <div className="event-body">
-        <span className={`tag ${category}`}>{e.category}</span>
+        <div className="event-tag-row">
+          <span className={`tag ${category}`}>{e.category}</span>
+          {badge === "needs-confirmation" ? (
+            <span className="badge badge--conflict">Needs confirmation</span>
+          ) : badge === "updated" && upd ? (
+            <span className="badge badge--updated">{kindLabel(upd.kind)}</span>
+          ) : null}
+        </div>
         <button className="event-title" onClick={() => onDetail(e.id)}>
           <h3>{e.title}</h3>
         </button>
         <div className="meta">
           <Icon name="calendar" />
-          {when(e)}
+          {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null
+            ? <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} <span className="badge badge--updated">Time changed</span></>
+            : when(e)}
         </div>
         <div className="meta">
           <Icon name="pin" />
-          {e.location}
+          {upd?.new_location ?? e.location}
+          {upd?.new_location ? <span className="badge badge--updated">Room changed</span> : null}
         </div>
         <div className="meta">
           <Icon name="food" />
           {foodLabel(e.food)} · {e.cost ? `$${e.cost}` : "Free entry"}
         </div>
+        {e.host_school && (
+          <div className="meta">
+            <Icon name="users" />
+            {e.host_school}
+            {e.goal_type?.length ? ` · ${e.goal_type.join(", ")}` : ""}
+          </div>
+        )}
+        {e.last_checked_at ? (
+          <div className="meta meta--fineprint">
+            <Icon name="clock" />
+            Last checked {relativeTime(e.last_checked_at)}
+          </div>
+        ) : null}
         <div className={`reason ${problem && !inPlan ? "blocked" : ""}`}>
-          {problem ||
-            `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
+          {conflict
+            ? "Needs confirmation — conflicting notices received for this event."
+            : problem ||
+              `${state.interests.includes(e.topic) ? "Matches your interests" : "Discover something new"} · Fits your schedule`}
         </div>
         {problem && !inPlan ? (
           // A blocked event explains itself instead of offering an add that fails.
           <Button className="blocked" onClick={() => onDetail(e.id)}>
-            Can’t add · See why
+            Can't add · See why
           </Button>
         ) : (
           <Button onClick={() => (inPlan ? onCalendar() : onAdd(e.id))}>
@@ -195,6 +234,14 @@ export function foodLabel(food: string) {
     : food === "Unknown"
       ? "Food unconfirmed"
       : food;
+}
+/** Renders an access_conditions field value; "unknown" → "Not confirmed". */
+export function conditionLabel(value: boolean | number | string | undefined) {
+  if (value === "unknown" || value === undefined) return "Not confirmed";
+  if (value === true) return "Required";
+  if (value === false) return "Not required";
+  if (value === "full") return "Full";
+  return String(value);
 }
 export function Week({
   state,
@@ -237,7 +284,7 @@ export function Week({
                       <span>
                         {cancelled
                           ? "Cancelled"
-                          : `${time(e.start)}${full ? " – " + time(e.end) : ""}`}
+                          : `${formatTime(e.start)}${full ? " – " + formatTime(e.end) : ""}`}
                       </span>
                     </>
                   );
@@ -292,6 +339,10 @@ export function EventDetails({
     saved = state.saved.includes(e.id);
   const category =
     e.topic === "Arts & culture" ? "arts" : e.category.toLowerCase();
+  const appliedIds = (state as DemoState).appliedUpdateIds ?? [];
+  const badge = updateBadge(e.id, appliedIds);
+  const conflict = hasConflict(e.id, appliedIds);
+  const upd = !conflict ? effectiveUpdate(e.id, appliedIds) : null;
   const overlayRef = useRef<HTMLDivElement>(null);
   const viewerZone =
     isTimeZone(state.timezone) && state.timezone !== DEMO.time_zone
@@ -364,6 +415,11 @@ export function EventDetails({
         <div className={`event-detail-hero poster ${category}`}>
           <div className="event-detail-hero-inner">
             <span className="tag">{e.category} · Fictional event</span>
+            {badge === "needs-confirmation" ? (
+              <span className="badge badge--conflict">Needs confirmation</span>
+            ) : badge === "updated" && upd ? (
+              <span className="badge badge--updated">{kindLabel(upd.kind)}</span>
+            ) : null}
             <h1 id="detail-title" className="event-detail-hero-title">{e.title}</h1>
           </div>
         </div>
@@ -378,7 +434,13 @@ export function EventDetails({
             <div className="event-detail-info-grid">
               <div className="event-detail-info-row">
                 <Icon name="calendar" />
-                <span>{when(e)} · {DEMO.time_zone}</span>
+                <span>
+                  {upd?.kind === "time_moved" && upd.new_start != null && upd.new_end != null ? (
+                    <>{formatTime(upd.new_start)}–{formatTime(upd.new_end)} · {DEMO.time_zone} <span className="badge badge--updated" style={{ marginLeft: "0.25rem" }}>Time changed</span></>
+                  ) : (
+                    <>{when(e)} · {DEMO.time_zone}</>
+                  )}
+                </span>
               </div>
               {viewerTime && (
                 <div className="event-detail-info-row">
@@ -390,7 +452,10 @@ export function EventDetails({
               )}
               <div className="event-detail-info-row">
                 <Icon name="pin" />
-                <span>{e.location}</span>
+                <span>
+                  {upd?.new_location ?? e.location}
+                  {upd?.new_location ? <span className="badge badge--updated" style={{ marginLeft: "0.5rem" }}>Room changed</span> : null}
+                </span>
               </div>
               <div className="event-detail-info-row">
                 <Icon name="food" />
@@ -409,17 +474,56 @@ export function EventDetails({
                   } · {e.rsvp}
                 </span>
               </div>
+              {e.host_school && (
+                <div className="event-detail-info-row">
+                  <Icon name="users" />
+                  <span>Hosted by {e.host_school}</span>
+                </div>
+              )}
+              {e.goal_type && e.goal_type.length > 0 && (
+                <div className="event-detail-info-row">
+                  <Icon name="spark" />
+                  <span>Goal: {e.goal_type.join(" · ")}</span>
+                </div>
+              )}
+              {e.access_conditions && (
+                <div className="event-detail-info-row">
+                  <Icon name="settings" />
+                  <span>
+                    Membership: {conditionLabel(e.access_conditions.membership)} ·{" "}
+                    Min age: {conditionLabel(e.access_conditions.min_age)} ·{" "}
+                    Ticket: {conditionLabel(e.access_conditions.ticket)} ·{" "}
+                    Capacity: {conditionLabel(e.access_conditions.capacity)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {problem ? (
+            {conflict ? (
+              <div className="notice notice--conflict">
+                <strong>Needs confirmation</strong>
+                <p>Conflicting notices were received for this event — one says it was cancelled, another says the room changed. The organizer has not clarified. Do not make plans based on either notice alone.</p>
+              </div>
+            ) : badge === "updated" && upd ? (
+              <div className="notice notice--updated">
+                <strong>{kindLabel(upd.kind)}</strong>
+                <p>{upd.details}</p>
+              </div>
+            ) : null}
+            {e.last_checked_at ? (
+              <p className="fineprint" style={{ marginTop: "0.5rem" }}>
+                <Icon name="clock" /> Last checked {relativeTime(e.last_checked_at)}
+              </p>
+            ) : null}
+            {problem && !conflict ? (
               <div className="notice">{problem}</div>
-            ) : (
+            ) : !problem ? (
               <div className="event-detail-reasons">
                 {reasons(e, state).map((reason) => (
                   <div key={reason} className="event-detail-reason-item">✓ {reason}</div>
                 ))}
               </div>
-            )}
+            ) : null}
 
             <section className="event-detail-section">
               <h2 className="event-detail-section-title">Related communities</h2>
@@ -445,15 +549,18 @@ export function EventDetails({
               <summary>Record &amp; evidence</summary>
               <dl className="evidence">
                 {Object.entries({
+                  "Host school": e.host_school || "Not confirmed",
+                  "Goal type": e.goal_type?.length ? e.goal_type.join(", ") : "Not confirmed",
                   Campus: e.campus_id || "Unknown",
                   Source: e.source || "Unknown",
-                  "Original source URL": e.source_url || "Unknown",
-                  "Last checked": e.last_checked_at || "Not verified",
-                  "Intended audience": e.intended_audience || "Unknown",
-                  Eligibility: e.eligibility || "Unknown",
+                  "Last checked": e.last_checked_at
+                    ? `${new Date(e.last_checked_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} (${relativeTime(e.last_checked_at)})`
+                    : "Not confirmed",
+                  "Intended audience": e.intended_audience || "Not confirmed",
+                  Eligibility: e.eligibility || "Not confirmed",
                   RSVP: e.rsvp || "Unknown",
-                  Availability: e.availability || "Unknown",
-                  "Food status": e.food_status || "Unknown",
+                  Availability: e.availability || "Not confirmed",
+                  "Food status": e.food_status || "Not confirmed",
                   Verification: e.verification_status || "Not verified",
                 }).map(([label, value]) => (
                   <div key={label}>
@@ -461,6 +568,21 @@ export function EventDetails({
                     <dd>{value}</dd>
                   </div>
                 ))}
+                {e.source_url ? (
+                  <div>
+                    <dt>Original source URL</dt>
+                    <dd>
+                      <a href={e.source_url} target="_blank" rel="noopener noreferrer">
+                        {e.source_url}
+                      </a>
+                    </dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt>Original source URL</dt>
+                    <dd>Not confirmed</dd>
+                  </div>
+                )}
               </dl>
               <p className="fineprint">
                 Authored for this prototype · Internal authoring review (not external verification) {e.checked}.
@@ -503,5 +625,62 @@ export function EventDetails({
       {/* Backdrop click to close */}
       <div className="event-detail-backdrop" onClick={onClose} aria-hidden="true" />
     </div>
+  );
+}
+
+/** Demo sign-in: a display name only. No account, password or email. */
+export function SignInDialog({
+  name,
+  onSignIn,
+  onClose,
+}: {
+  name: string;
+  onSignIn: (name: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current!;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="rsvp-dialog signin-dialog"
+      aria-labelledby="signin-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      <h2 id="signin-title">Sign in to Campus Compass</h2>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = String(
+            new FormData(e.currentTarget).get("name") || "",
+          ).trim();
+          if (value) onSignIn(value.slice(0, 30));
+        }}
+      >
+        <label className="rsvp-name">
+          Display name
+          <input name="name" autoFocus required maxLength={30} defaultValue={name} />
+        </label>
+        <p className="fineprint">
+          Demo sign-in only: there is no account or password, and no email is
+          needed. Your fictional profile stays in this browser.
+        </p>
+        <div className="row">
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn primary">
+            Sign in
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
