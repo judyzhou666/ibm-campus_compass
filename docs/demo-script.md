@@ -1,6 +1,6 @@
 # Three-minute Campus Compass demonstration
 
-This is a repeatable fictional journey, not a real university or live IBM demonstration. Run `npm ci`, `npm run build`, and `cargo run --locked`; use the Rust-served app. No credentials are needed. Go to AI Planner → Demo Scenario Launcher.
+This is a repeatable fictional journey, not a real university or live IBM demonstration. Run `npm ci`, `npm run build`, and `cargo run --locked`; use the Rust-served app. No credentials are needed. Go to AI Planner → open **Demo tools (for presenters)** at the bottom of the page.
 
 | Time | Presenter action | Say / show |
 |---|---|---|

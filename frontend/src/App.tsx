@@ -1049,58 +1049,6 @@ export default function App() {
                   {calendarOpen ? "Hide calendar" : "My calendar"}
                 </button>
               </Heading>
-              <DemoLauncher
-                state={state}
-                busy={busy || enrolling}
-                watsonxMode={watsonxMode}
-                onPrepare={() => {
-                  try {
-                    if (
-                      !localStorage.getItem(STORAGE_KEY + ":before-guided-demo")
-                    )
-                      localStorage.setItem(
-                        STORAGE_KEY + ":before-guided-demo",
-                        JSON.stringify(demo.read()),
-                      );
-                  } catch {
-                    notify("Could not archive current demo. Nothing changed.");
-                    return false;
-                  }
-                  enrollment.reset();
-                  conversation.reset();
-                  update(() => guidedScenario());
-                  setCalendarOpen(false);
-                  return true;
-                }}
-                onRestore={() => {
-                  try {
-                    const saved = localStorage.getItem(
-                      STORAGE_KEY + ":before-guided-demo",
-                    );
-                    if (!saved) {
-                      notify("No previous demo has been archived.");
-                      return;
-                    }
-                    localStorage.setItem(STORAGE_KEY, saved);
-                    localStorage.removeItem(
-                      STORAGE_KEY + ":before-guided-demo",
-                    );
-                    location.reload();
-                  } catch {
-                    notify("Could not restore browser storage.");
-                  }
-                }}
-                onPlan={(text) => void chat(text, {})}
-                onCancel={() => {
-                  const id = demo
-                    .read()
-                    .plan.find((id) => !demo.read().cancelled.includes(id));
-                  if (id)
-                    update((s) => ({ ...s, cancelled: [...s.cancelled, id] }));
-                }}
-                onReplace={replan}
-                onExport={exportCalendar}
-              />
               {cancelled ? (
                 <div className="notice">
                   <strong>One of your plans has changed.</strong>
@@ -1415,6 +1363,87 @@ export default function App() {
                   </aside>
                 )}
               </div>
+              <details
+                style={{ marginTop: 16 }}
+                open={(() => {
+                  try {
+                    return sessionStorage.getItem("demo-launcher-open") === "1";
+                  } catch {
+                    return false;
+                  }
+                })()}
+                onToggle={(e) => {
+                  try {
+                    sessionStorage.setItem(
+                      "demo-launcher-open",
+                      (e.currentTarget as HTMLDetailsElement).open ? "1" : "0",
+                    );
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+              >
+                <summary style={{ cursor: "pointer", userSelect: "none" }}>
+                  Demo tools (for presenters)
+                </summary>
+                <DemoLauncher
+                  state={state}
+                  busy={busy || enrolling}
+                  watsonxMode={watsonxMode}
+                  onPrepare={() => {
+                    try {
+                      if (
+                        !localStorage.getItem(
+                          STORAGE_KEY + ":before-guided-demo",
+                        )
+                      )
+                        localStorage.setItem(
+                          STORAGE_KEY + ":before-guided-demo",
+                          JSON.stringify(demo.read()),
+                        );
+                    } catch {
+                      notify("Could not archive current demo. Nothing changed.");
+                      return false;
+                    }
+                    enrollment.reset();
+                    conversation.reset();
+                    update(() => guidedScenario());
+                    setCalendarOpen(false);
+                    return true;
+                  }}
+                  onRestore={() => {
+                    try {
+                      const saved = localStorage.getItem(
+                        STORAGE_KEY + ":before-guided-demo",
+                      );
+                      if (!saved) {
+                        notify("No previous demo has been archived.");
+                        return;
+                      }
+                      localStorage.setItem(STORAGE_KEY, saved);
+                      localStorage.removeItem(
+                        STORAGE_KEY + ":before-guided-demo",
+                      );
+                      location.reload();
+                    } catch {
+                      notify("Could not restore browser storage.");
+                    }
+                  }}
+                  onPlan={(text) => void chat(text, {})}
+                  onCancel={() => {
+                    const id = demo
+                      .read()
+                      .plan.find((id) => !demo.read().cancelled.includes(id));
+                    if (id)
+                      update((s) => ({
+                        ...s,
+                        cancelled: [...s.cancelled, id],
+                      }));
+                  }}
+                  onReplace={replan}
+                  onExport={exportCalendar}
+                />
+              </details>
             </>
           ) : null}
           {page === "calendar" ? (
