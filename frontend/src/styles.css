@@ -2801,6 +2801,14 @@ p {
   overflow-x: auto;
 }
 
+/*
+ * Both .gcal-col-headers and .gcal-time-grid share --gcal-min-w so their
+ * widths are always identical and can never drift apart again.
+ */
+:root {
+  --gcal-min-w: 500px;
+}
+
 /* ── Column headers (Day/Week) ────────────────────────────────────────────── */
 .gcal-col-headers {
   display: flex;
@@ -2809,7 +2817,7 @@ p {
   position: sticky;
   top: 0;
   z-index: 5;
-  /* min-width inherited from parent .gcal-time-grid-wrap / .gcal-time-grid */
+  min-width: var(--gcal-min-w);
 }
 .gcal-gutter {
   width: 56px;
@@ -2901,7 +2909,7 @@ p {
 .gcal-time-grid {
   display: flex;
   position: relative;
-  min-width: 500px;
+  min-width: var(--gcal-min-w);
 }
 /* Gutter with hour labels */
 .gcal-gutter {

@@ -47,10 +47,13 @@ Then open http://127.0.0.1:4173. The chat label under AI Planner shows which pla
 9. "Demo week" label shown only on the Monday cell in Month view; green background still covers all 5 demo-week days.
 10. Removed duplicate `setAnchor(today)` in `goToToday`.
 
-**Round-3 fixes (commit after round-2):**
-- Week/Day column header is now placed inside the vertical scroll container (`.gcal-time-grid-wrap`) rather than alongside it, so both header and day columns share the same `scrollbar-gutter: stable` lane — header and columns are within 1 px at 1024 px, 1280 px, and 375 px.
-- `.gcal-dom` has a fixed `height: 32px` and `display: inline-flex` so the today-circle and plain date numbers take the same vertical space — all five "+" buttons sit on one row.
-- Removed the stale `isInDemo` variable and its comment from `MonthView`; demo-week label uses `isDemoWeekRange && isoWeekdayIndex(iso) === 0` directly.
+**Round-3 fixes (commit af7fe72):**
+- Week/Day column header placed inside `.gcal-time-grid-wrap` (vertical scroller) so both share the same `scrollbar-gutter: stable` lane. Desktop (1024 px, 1280 px) verified: console check all true.
+- `.gcal-dom` fixed `height: 32px` / `display: inline-flex` so all five "+" buttons sit on one row.
+- Removed stale `isInDemo` variable from `MonthView`.
+
+**Round-4 fix (commit after round-3):**
+- Restored `min-width` on `.gcal-col-headers` (accidentally removed in round 3 with an incorrect "inherited" comment — CSS `min-width` is not inherited). Both `.gcal-col-headers` and `.gcal-time-grid` now share a single CSS custom property `--gcal-min-w: 500px` so they can never drift apart. Console check all true at 375 px (before and after horizontal scroll), 1024 px, and 1280 px.
 
 **How to try it:**
 ```sh
