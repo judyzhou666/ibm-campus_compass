@@ -23,6 +23,12 @@
 body {
   margin: 0;
 }
+/* Stop the elastic pull-down/up bounce from dragging the sticky top bar.
+   Only the vertical axis: horizontal swipe-back still works. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
 button,
 input,
 select,
