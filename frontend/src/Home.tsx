@@ -59,7 +59,11 @@ function Announcements({
   const at = Math.min(index, list.length - 1);
   const n = list[at];
   const e = EVENTS.find((x) => x.id === n.eventId)!;
-  const step = (by: number) => setIndex((at + by + list.length) % list.length);
+  // Functional update: several quick swipes may land before a re-render.
+  const step = (by: number) =>
+    setIndex(
+      (i) => (Math.min(i, list.length - 1) + by + list.length) % list.length,
+    );
   stepRef.current = step;
   return (
     <section

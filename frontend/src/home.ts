@@ -37,25 +37,57 @@ export const HOME_CATEGORIES: HomeCategory[] = [
 ];
 
 /**
- * Turns a stream of trackpad wheel deltas into at most one slide step per
- * swipe. A swipe (including its momentum tail) ends after `idleMs` without
- * wheel events. Returns 1 (next), -1 (previous) or 0 (no change).
+ * Turns a stream of trackpad wheel deltas into one slide step per swipe.
+ *
+ * After a step, macOS keeps sending momentum events that shrink for a second
+ * or more after the fingers lift. Those are ignored, but a new swipe is
+ * recognised straight away, even mid-momentum: one in the opposite direction
+ * steps back at once, and one in the same direction shows up as deltas that
+ * grow again (after a short cooldown, so one swipe never steps twice).
+ * Returns 1 (next), -1 (previous) or 0 (no change).
  */
-export function createWheelSwipe(threshold = 40, idleMs = 250) {
+export function createWheelSwipe(
+  threshold = 30,
+  idleMs = 200,
+  cooldownMs = 250,
+) {
   let total = 0;
   let last = -Infinity;
-  let fired = false;
+  let lastStep = -Infinity;
+  let prev = 0;
+  let locked = false;
+  let dir = 0;
   return (dx: number, dy: number, now: number): -1 | 0 | 1 => {
-    if (now - last > idleMs) {
-      total = 0;
-      fired = false;
-    }
+    const idle = now - last > idleMs;
     last = now;
-    if (fired || Math.abs(dx) <= Math.abs(dy)) return 0;
+    const mag = Math.abs(dx);
+    const sign = Math.sign(dx);
+    if (idle) {
+      locked = false;
+      total = 0;
+    }
+    if (mag <= Math.abs(dy) || !sign) {
+      prev = mag;
+      return 0;
+    }
+    if (locked) {
+      const reversed = sign !== dir;
+      const rising = mag > prev * 1.5 + 2 && now - lastStep > cooldownMs;
+      if (reversed || rising) {
+        locked = false;
+        total = 0;
+      }
+    }
+    prev = mag;
+    if (locked) return 0;
+    if (Math.sign(total) !== sign) total = 0;
     total += dx;
     if (Math.abs(total) < threshold) return 0;
-    fired = true;
-    return total > 0 ? 1 : -1;
+    locked = true;
+    dir = sign;
+    lastStep = now;
+    total = 0;
+    return sign > 0 ? 1 : -1;
   };
 }
 
