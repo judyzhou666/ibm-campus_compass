@@ -2,6 +2,143 @@
 
 A runnable demonstration for the IBM AI Experiential Learning Lab, based on the supplied Campus Compass proposal and dashboard/planner prototypes.
 
+## AI Planner: PR #18 review fixes — November 12, 2026
+
+Small fixes from the PR #18 review, made with Claude Code (not IBM Bob):
+
+- **Honest no-match wording.** When events match every filter but are already in the plan, conflict with it, or aren't open, the reply now says "The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open." It no longer says "No AI & education events match that time window." The nearest alternatives are still offered. Same wording in Rust and the TypeScript fallback.
+- **Excluded topics are visible.** A "not career" filter now shows as a `Not Career ×` chip. "Also at the same time" alternatives no longer include excluded topics.
+- **"zero budget"** sets the free-admission filter again, as it did before this PR.
+
+Verification: `npm test` 244/244 + 5/5 Wiki, `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` 58/58, `cargo build`, `npm run test:api` all pass.
+
+## AI Planner: free/availability rule, grammar, no-match wording, chip-removal lead — November 12, 2026 (round 3)
+
+Four small fixes on top of round 2 (commit `4444022`).
+
+### What was fixed (round 3)
+
+1. **"free" vs availability rule (regression fix).** The round-2 rule (`\bfree\b` not before/after a person → free admission) was too broad: "ceramics free on Wednesday evening" no longer set `free: true`. The new rule: "free" means **availability** only when it follows a person pronoun or forms "free time/slot/period/hour/day" (e.g. "I'm free", "I'm only free Friday", "free slot on Thursday"). "free" next to or after an event or topic word means **free admission** ("free ceramics", "ceramics free", "free workshops"). "free food/meal/…" continues to set the food filter only. Updated in both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs`. The frozen evaluation scenario H04 ("ceramics free on Wednesday evening") is confirmed restored: it no longer returns the $12 ceramics workshop.
+
+2. **Grammar — "3 options that **fit** together".** Plurals now correctly say "fit"; singular is still "1 option that **fits** together". Same for "1 alternative" vs "2 alternatives". Updated in `frontend/src/conversation.ts`.
+
+3. **No-match wording — topic included, "Here are N" not "Here N".** The no-match messages now name the topic and use correct verb agreement, e.g. "No AI & education events on Monday match that time window. Here are 4 options at other times." The helper function is `buildNoMatchAlts` (TypeScript) and `no_match_reason` (Rust); both updated in lock-step. A "free admission" relaxation step was added as step 2 (after food).
+
+4. **Chip-removal reply starts with "Removed [label]."** When a chip is removed, the planner result message now starts with "Removed Thursday. I found 3 options…" instead of "I found 3 options…". Implemented by passing a `replyPrefix` to `run()` in `conversation.ts`. The separate "Here's what fits now:" prefix message was removed to avoid two consecutive assistant messages.
+
+### New tests (round 3)
+
+`tests/planner-round2.test.ts` adds 17 more TypeScript tests (total 47 new since round 1): free vs availability tests ("ceramics free", "free ceramics", "I'm free", "I'm only free on Friday", "free food", "free slot"), grammar tests, no-match topic inclusion, and chip-removal lead. `backend/src/interpreter.rs` adds 3 more Rust tests (total 15 new): `free_ceramics_sets_free_admission`, `ceramics_free_on_wednesday_sets_free_admission`, `im_only_free_on_friday_no_admission`.
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **225 TypeScript tests**
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **56 Rust tests**
+- `npm run build` (tsc + Vite) — clean
+- `npm run test:api` — PASS
+- `npm run evaluate` + `git diff --stat evaluation docs/evaluation-report.md`: `docs/evaluation-report.md` is **clean** (zero diff). `evaluation/results.json` has annotation-only changes for scenarios D03/D09 where "social free food" previously set a spurious `free: true` flag — the event IDs selected and all quality scores are identical, and H04 is fully restored. The frozen file was restored after verification; the annotation improvement would be correct if the baseline were refreshed.
+
+### Limitations
+
+Same as round 2. Additionally: the chip-removal reply prefix ("Removed X.") appears after the browser-fallback unavailability notice when Rust is offline; in normal operation (Rust running) it appears first.
+
+## AI Planner: chip removal re-runs search, free-admission wording, alternatives, fuzzy phrases, overlap cards — November 12, 2026 (round 2)
+
+Six issues found in hands-on testing of commit `1ede074` have been addressed in this second round.
+
+### What was fixed (round 2)
+
+1. **Clicking a filter chip × re-runs the search.** Previously the chip disappeared but the suggestion cards did not change. Now `conversation.removeFilter()` posts a short confirmation line ("Removed Wednesday filter. Here's what fits now:") and immediately re-runs the planner with the remaining constraints. "Clear all" posts "Filters cleared. Tell me what you're looking for." The chip-building logic is extracted into `frontend/src/filterChips.ts` (`filterChips()` / `removeChip()`) for unit testing.
+
+2. **"free" no longer means free admission.** "I'm free Wednesday evening" and "anything with free food?" no longer add a "Free admission" chip. Free admission is now set only for explicit phrases: "free admission", "free entry", "free to attend", "free of charge", "no cost", "costs nothing", "without paying", "zero cost". Both `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` were updated in lock-step. "Free meal/lunch/dinner/snacks/coffee/pizza" sets the food filter only.
+
+3. **No-match duplication fixed; alternative events shown as cards.** The no-match text was appearing twice (once from the Rust diagnostic in `plan.notice`, once from the TypeScript fallback). The fix: when the Rust planner returns a no-match diagnostic, use it as the response text and build the local alternative list (IDs only) for the suggestion cards. The no-match function (`buildNoMatchAlts`) now returns both `{ text, ids }` so the cards are populated. The browser-fallback path shows the unavailability notice followed by the plain-language no-match text.
+
+4. **Fuzzy phrase matching.** "practice **my** English", "make **some/new** friends", "meet **new** people", "find **an** internship", "get **a** job" now work. Both interpreters use flexible regexes that allow one or two small words between key terms. The "limited demo" reply now shows 3 clickable example-request buttons (rendered as `<button>` elements that send that text into the chat). A new `examples` field on `Message` carries these; a new `LimitedDemoHint` error class in `api.ts` carries them to `conversation.ts`.
+
+5. **Overlap alternatives shown as "Also at the same time" cards.** When the planner finds 1 conflict-free pick but there are other eligible events at the same time (e.g. Wednesday evening: 3 eligible, 1 conflict-free), the message says "I found 1 option that fits together, plus 2 alternatives at the same time" and shows them below a labelled "Also at the same time:" section. They are clearly separate from the main pick. A new `overlapIds` field on `Message` carries them.
+
+6. **New tests.** `tests/planner-round2.test.ts` adds 30 TypeScript tests covering all five items above: free-admission wording, phrase synonyms, `filterChips` labels, fresh-search carry-over, no-match plain-language fallback (browser mode), and overlap detection. `backend/src/interpreter.rs` adds 12 Rust tests covering the same free-admission and synonym rules, the no-match diagnostic wording, and fresh-parse carry-over.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173 → AI Planner. Start with "New chat" and try:
+
+1. "is there anything with free food?" — 3 results, **Free food chip** appears (no "Free admission" chip this time)
+2. "I'm free Wednesday evening, what can I do?" — "Wednesday" and "Evening" chips appear; results show 1 conflict-free pick + "Also at the same time: 2 alternatives"
+3. "any internship or job events?" — Career events across the whole week (new question = fresh search)
+4. "I want to practice my English" / "make some friends" — understood as Social
+5. Click "Wednesday ×" — planner re-runs without that filter and posts new cards
+6. "arts events with free food on Monday morning" — plain-language "Nothing on Monday morning has free food. Here are N options without that filter." with suggestion cards
+
+### Verification
+
+All checks pass:
+- `npm test` (5 Wiki tests)
+- `node --import tsx --test tests/*.test.ts` — **215 TypeScript tests** (185 from merge + 30 new in `tests/planner-round2.test.ts`)
+- `cargo fmt --check` — clean
+- `cargo clippy --locked --all-targets -- -D warnings` — 0 warnings
+- `cargo test --locked` — **53 Rust tests** (41 from before + 12 new in `backend/src/interpreter.rs`)
+- `npm run build` (`tsc --noEmit` + Vite) — clean
+- `npm run test:api` — PASS
+
+`npm run evaluate`: the frozen results changed only in the `constraints_satisfied` annotation for scenarios whose input previously triggered the spurious `free: true` flag (e.g. "social with free food" no longer sets free-admission). The selected event IDs and `understood` flags are identical. The frozen `evaluation/results.json` was restored after verification; the change would be a correct improvement if the baseline were refreshed.
+
+### Limitations
+
+- Follow-up detection remains heuristic (keyword-based). Unusual follow-up phrasings without a keyword start fresh.
+- Chips show `state.constraints`, updated after each complete query; mid-clarification constraints are not shown as chips.
+- Overlap alternatives are limited to ≤ 3 and only appear when the user's constraints match eligible events; they are for reference, not added to the draft plan automatically.
+- Only simulated mode was tested locally; watsonx mode shares the same carry-over and synonym logic.
+
+## AI Planner: fresh search, visible filters, plain-language replies, and more synonyms — November 12, 2026 (round 1)
+
+Four bugs in the AI Planner that a judge or new student would hit in the first few questions have been fixed.
+
+### What was fixed
+
+1. **Fresh search by default.** A new question ("any internship or job events?") now starts a clean search. Filters from the previous question only carry over when the message clearly builds on it — phrases like "only", "also", "instead", "what about", "but", "without" or a leading "and"/"or" count as follow-ups. Earlier, every question silently inherited all previous filters, so a "Wednesday evening" question would fail to find results if the previous question had asked for "free food".
+
+2. **Active filter chips above the input box.** When the planner is filtering by topic, day, time, food or free admission, labelled chips now appear above the chat input: e.g. `Free food ×` `Wednesday ×` `Evening ×`. Clicking a chip removes that filter; "Clear all" removes all of them at once. Previously there was no way to see which filters were active without reading back through the chat history.
+
+3. **No more dead ends — plain-language replies with alternatives.** When nothing matches, the planner no longer says "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically." Instead it explains which filter produced no results and immediately offers the nearest alternatives, e.g. "Nothing on Wednesday evening has free food. Here are 4 options without that filter." The same logic runs in both Rust (`backend/src/planner.rs`) and TypeScript (`frontend/src/conversation.ts`).
+
+4. **Everyday synonyms understood.** "internship" and "job" now map to Career; "practice English", "make friends", "meet people" and "language exchange" now map to Social. Both the Rust interpreter (`backend/src/interpreter.rs`) and the TypeScript fallback (`frontend/src/interpretation.ts`) were updated together. The "limited demo" guidance message also mentions these phrasings by example.
+
+### Run and demo
+
+```sh
+npm ci
+npm run build
+cargo run --locked
+```
+
+Open http://127.0.0.1:4173. In the AI Planner, try:
+
+1. "is there anything with free food?" — three results, Free food chip appears
+2. "I'm free Wednesday evening, what can I do?" — now shows 4 Wednesday-evening results (Fresh search; no longer inherits the free-food filter)
+3. "any internship or job events?" — now shows career events (new synonym; no longer filtered to Wednesday)
+4. "something to help me find an internship" — understood as Career
+
+### Verification
+
+`npm test` (185 TypeScript tests and 5 Wiki tests), `node --import tsx --test tests/*.test.ts` (185 tests), `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (41 tests), `npm run build` (`tsc --noEmit` + Vite), and `npm run test:api` all pass. The integration test's diagnostic assertion was updated from `/scheduling conflicts/` to `/Nothing matches that time window/` to match the new plain-language reply. Checked in the browser at 1280px and 375px: filter chips appear and dismiss correctly, Wednesday-evening questions return results without a prior free-food filter, career queries return multiple events, and "start over" clears all chips. Only simulated mode was tested; watsonx mode uses the same carry-over and synonym logic and should benefit from the same changes.
+
+### Limitations
+
+- The follow-up detection is heuristic (keyword-based). A message like "but make it on Tuesday" carries over previous filters as intended, but an unusual phrasing without a follow-up keyword starts fresh. Watsonx mode sends the full `previous` constraints to the model, so the model can decide; this fix only changes the browser's default.
+- Filter chips show the constraints stored in `state.constraints`, which are updated after each successful query. They do not reflect mid-clarification constraints (pending clarification state).
+
 ## PR #17 review fixes — November 12, 2026
 
 - **Home banner** shows an event's updated time and room after synthetic updates (same rule as the event cards; conflicting notices keep the catalog values).

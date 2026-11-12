@@ -52,8 +52,8 @@ export function validateConstraints(
 
 const keywords = {
   "AI & education": /\b(ai|education|research|learning|tech|coding|data)\b/i,
-  Career: /\b(career|job|industry|alumni|networking|resume|professional)\b/i,
-  Social: /\b(social|friend|friends|meet|people|dinner|lunch|community)\b/i,
+  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship))\b/i,
+  Social: /\b(social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people)\b/i,
   "Arts & culture":
     /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics)\b/i,
   Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance)\b/i,
@@ -166,7 +166,7 @@ export function interpretRequest(
           : h * 60 + minute;
     }
   }
-  if (test(/\b(free food|free meal|meal|dinner|lunch)\b/)) c.food = "Free meal";
+  if (test(/\b(free food|free meal|free lunch|free dinner|free snacks|free coffee|free pizza|free breakfast|meal|dinner|lunch)\b/)) c.food = "Free meal";
   if (test(/\b(coffee|tea|snack|refreshment)/) && !c.food)
     c.food = "Coffee & snacks";
   if (test(/\b(paid food|buy food|food for sale|food available for purchase)\b/) && !c.food)
@@ -175,7 +175,31 @@ export function interpretRequest(
     c.food = "None";
   if (test(/\b(unknown food|food (is |not )?(un)?confirmed|food status unknown)\b/) && !c.food)
     c.food = "Unknown";
-  if (test(/\b(free|no cost|no-cost|zero budget)\b/)) c.free = true;
+  // "free" next to an event or topic word means FREE ADMISSION (e.g. "free ceramics",
+  // "ceramics free on Wednesday", "free workshops"). "free" describing the *person's*
+  // availability sets no cost filter (e.g. "I'm free", "free time", "I'm only free Friday").
+  // "free food/meal/…" is already handled above (food filter only).
+  //
+  // Person-availability forms: subject + optional adverb + "free"
+  //   "I'm free", "I am free", "I'm only free", "when I'm free", "free time/slot/period/hour"
+  const isPersonFree =
+    /\b(?:i(?:'m| am)|we(?:'re| are)|you(?:'re| are)|they(?:'re| are))(?:\s+\w+)?\s+free\b/i.test(q) ||
+    /\bwhen\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b/i.test(q) ||
+    /\bif\s+(?:i(?:'m| am)|you(?:'re| are))\s+free\b/i.test(q) ||
+    /\bfree\s+(?:time|slot|period|hour|day)\b/i.test(q);
+  const hasFree = /\bfree\b/i.test(q);
+  if (hasFree && !isPersonFree && !c.food) {
+    // "free" next to a topic/event word → free admission
+    understood = true;
+    c.free = true;
+  }
+  // Explicit free-admission phrases set free even when food is also mentioned.
+  if (
+    test(
+      /\b(free admission|free entry|free to attend|free of charge|no cost|no-cost|costs? nothing|without paying|zero cost|zero budget)\b/,
+    )
+  )
+    c.free = true;
   if (test(/\b(any food|food doesn.t matter|no food preference)\b/))
     delete c.food;
   const n = q.match(/\b([1-5])\s+(?:events|choices|options)/);

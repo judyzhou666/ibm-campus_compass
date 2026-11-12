@@ -44,6 +44,21 @@ export const planningKey = (state: DemoState) =>
   JSON.stringify([schedulePayload(state), state.constraints]);
 
 class InputError extends Error {}
+/** Thrown when the message wasn't understood; carries clickable example prompts. */
+export class LimitedDemoHint extends InputError {
+  constructor(
+    message: string,
+    readonly examples: string[],
+  ) {
+    super(message);
+  }
+}
+
+const DEMO_EXAMPLES = [
+  "Career events on Wednesday",
+  "Something to help me find an internship",
+  "Social events with free food on Thursday",
+];
 
 async function post(
   path: string,
@@ -86,8 +101,9 @@ export async function requestPlan(
   // model can interpret them; the server's response determines understood/clarification.
   const locallyUnderstood = interpreted.understood;
   if (!locallyUnderstood && !watsonxMode) {
-    throw new InputError(
-      "I\u2019m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: \u201CAI events on Tuesday after 1 PM.\u201D",
+    throw new LimitedDemoHint(
+      "I\u2019m a limited demo planner. Try an interest like AI, career, social, arts, or wellbeing, plus a day or time:",
+      DEMO_EXAMPLES,
     );
   }
   try {
@@ -118,11 +134,16 @@ export async function requestPlan(
     if (!result.understood) {
       // Simulated mode: show the limited-demo hint.
       // Watsonx mode always sets understood:true, so this only fires for simulated.
-      throw new InputError(
-        locallyUnderstood
-          ? "The simulated planner did not understand this request. Try an interest, day or time."
-          : "I\u2019m a limited demo planner. Try an interest such as AI, career, social, arts, or wellbeing, plus a day or time. For example: \u201CAI events on Tuesday after 1 PM.\u201D",
-      );
+      if (locallyUnderstood) {
+        throw new InputError(
+          "The simulated planner did not understand this request. Try an interest, day or time.",
+        );
+      } else {
+        throw new LimitedDemoHint(
+          "I\u2019m a limited demo planner. Try an interest like AI, career, social, arts, or wellbeing, plus a day or time:",
+          DEMO_EXAMPLES,
+        );
+      }
     }
     return {
       constraints: result.constraints,
