@@ -82,6 +82,12 @@ export interface Message {
   role: "user" | "assistant";
   text: string;
   eventIds?: string[];
+  /** Event IDs that overlap the conflict-free picks; shown as "Also at the same time" cards. */
+  overlapIds?: string[];
+  /** Event IDs for no-match alternatives (one filter dropped); shown as suggestion cards. */
+  altIds?: string[];
+  /** Clickable example prompts shown as buttons below the message text (e.g. for "limited demo" hint). */
+  examples?: string[];
   evidence?: RecommendationEvidence[];
 }
 export interface Post {
@@ -127,6 +133,8 @@ export interface DemoState extends Schedule {
   joinedCommunities: string[];
   posts: Post[];
   comments: ForumComment[];
+  /** Forum likes saved in this browser: "post:<id>" or "comment:<postId>:<index>". */
+  likes: string[];
   postDraft: PostDraft | null;
   draft: string[];
   constraints: Constraints;

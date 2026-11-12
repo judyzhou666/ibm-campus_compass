@@ -213,33 +213,137 @@ fn events_comparison(e: &Event, state: &Schedule, c: &Constraints, events: &[Eve
     }
 }
 
+const DAY_NAMES: [&str; 5] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+fn alt_count(state: &Schedule, c: &Constraints, events: &[Event]) -> usize {
+    let mut c4 = c.clone();
+    c4.limit = Some(4);
+    recommend(state, &c4, events).len()
+}
+
 pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> String {
-    let within: Vec<_> = events
-        .iter()
-        .filter(|e| matches_constraints(e, c))
-        .collect();
-    if within.is_empty() {
-        return "No synthetic catalog records satisfy these topic/day/time/cost/food filters. State which filter you want to change; none will be relaxed automatically.".into();
-    }
-    let mut conflicts = 0;
-    let mut restrictions = 0;
-    let mut cancelled = 0;
-    let mut missing = 0;
-    let mut already = 0;
-    for e in within {
-        if state.plan.contains(&e.id) {
-            already += 1;
+    let topic_prefix = match c.topics.as_deref() {
+        Some(ts) if !ts.is_empty() => format!("{} ", ts.join(" or ")),
+        _ => String::new(),
+    };
+    let n1 = |n: usize| {
+        if n == 1 {
+            "is 1 option".to_owned()
+        } else {
+            format!("are {n} options")
         }
-        match issue(e, state, events).as_deref() {
-            Some(s) if s.starts_with("Conflicts") => conflicts += 1,
-            Some("Cancelled in demo") => cancelled += 1,
-            Some(s) if s.contains("RSVP") || s.contains("metadata") => missing += 1,
-            Some(_) => restrictions += 1,
-            None => {}
+    };
+    let day_str_fn = |c: &Constraints| match c.days.as_deref() {
+        Some([d]) if (*d as usize) < DAY_NAMES.len() => {
+            format!(" on {}", DAY_NAMES[*d as usize])
+        }
+        _ => String::new(),
+    };
+    let time_str_fn = |c: &Constraints| match (c.after, c.before) {
+        (Some(t), _) if t >= 1020 => " in the evening".to_owned(),
+        (Some(t), _) if t >= 720 => " in the afternoon".to_owned(),
+        (_, Some(t)) if t <= 720 => " in the morning".to_owned(),
+        _ => String::new(),
+    };
+    // When events match every filter but none can be recommended, they are blocked by the
+    // student's plan or are unavailable. Say so instead of claiming no events match.
+    let blocked_lead = events.iter().any(|e| matches_constraints(e, c)).then(|| {
+        format!(
+            "The matching {topic_prefix}events{}{} are already in your plan, conflict with it, or aren't open.",
+            day_str_fn(c),
+            time_str_fn(c)
+        )
+    });
+    let say = |lead: String, tail: String| match &blocked_lead {
+        Some(blocked) => format!("{blocked} {tail}"),
+        None => format!("{lead} {tail}"),
+    };
+
+    // 1. Drop food filter
+    if c.food.is_some() {
+        let mut no_food = c.clone();
+        no_food.food = None;
+        let alt = alt_count(state, &no_food, events);
+        if alt > 0 {
+            let food_label = match c.food.as_deref() {
+                Some("Free meal") => "free food".to_owned(),
+                Some(f) => f.to_lowercase(),
+                None => "food".to_owned(),
+            };
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} have {food_label}."),
+                format!("Here {} without the {food_label} filter.", n1(alt)),
+            );
         }
     }
-    format!(
-        "Within your filters: {conflicts} scheduling conflicts, {restrictions} full/restricted/unknown-eligibility records, {cancelled} cancellations, {missing} incomplete/invalid records, and {already} already-chosen events. No calendar changes made. Please explicitly choose which filter to change."
+    // 2. Drop free-admission filter
+    if c.free.is_some_and(|f| f) {
+        let mut no_free = c.clone();
+        no_free.free = None;
+        let alt = alt_count(state, &no_free, events);
+        if alt > 0 {
+            let day_str = day_str_fn(c);
+            let time_str = time_str_fn(c);
+            return say(
+                format!("No {topic_prefix}events{day_str}{time_str} are free admission."),
+                format!("Here {} including paid ones.", n1(alt)),
+            );
+        }
+    }
+    // 3. Drop day filter
+    if c.days.as_ref().is_some_and(|d| !d.is_empty()) {
+        let mut no_day = c.clone();
+        no_day.days = None;
+        let alt = alt_count(state, &no_day, events);
+        if alt > 0 {
+            let day_names: Vec<&str> = c
+                .days
+                .as_deref()
+                .unwrap_or(&[])
+                .iter()
+                .filter_map(|&d| DAY_NAMES.get(d as usize).copied())
+                .collect();
+            let day_str = if day_names.is_empty() {
+                "that day".to_owned()
+            } else {
+                day_names.join("/")
+            };
+            return say(
+                format!("No {topic_prefix}events on {day_str} match."),
+                format!("Here {} on other days.", n1(alt)),
+            );
+        }
+    }
+    // 4. Drop time filter
+    if c.after.is_some() || c.before.is_some() {
+        let mut no_time = c.clone();
+        no_time.after = None;
+        no_time.before = None;
+        let alt = alt_count(state, &no_time, events);
+        if alt > 0 {
+            return say(
+                format!("No {topic_prefix}events match that time window."),
+                format!("Here {} at other times.", n1(alt)),
+            );
+        }
+    }
+    // 5. Drop topic filter
+    if c.topics.as_ref().is_some_and(|t| !t.is_empty()) {
+        let mut no_topic = c.clone();
+        no_topic.topics = None;
+        let alt = alt_count(state, &no_topic, events);
+        if alt > 0 {
+            return say(
+                format!("No {topic_prefix}events fit the other filters."),
+                format!("Here {} from other areas.", n1(alt)),
+            );
+        }
+    }
+    say(
+        "Nothing matched in this demo week.".into(),
+        "Try a different day, topic, or time, or say \"start over\" to clear all filters.".into(),
     )
 }
 

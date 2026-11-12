@@ -137,7 +137,13 @@ try {
       state: schedulePayload(state),
     })
   ).json();
-  assert.match(impossible.diagnostic, /scheduling conflicts/);
+  // Plain-language diagnostic: an AI Tuesday-morning event exists but conflicts with the
+  // schedule, so the reply must say that rather than claim nothing matches, then offer
+  // the nearest alternatives with the time filter dropped.
+  assert.match(
+    impossible.diagnostic,
+    /^The matching AI & education events on Tuesday in the morning are already in your plan, conflict with it, or aren't open\. Here (is|are) \d options? at other times\.$/,
+  );
   const diverse = await (
     await post("/api/plan", {
       message: "AI career social events",

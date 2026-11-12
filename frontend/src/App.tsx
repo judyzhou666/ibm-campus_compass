@@ -24,6 +24,7 @@ import {
   Week,
 } from "./components.tsx";
 import { ChatEvents, PlannerCalendar, RsvpDialog } from "./PlannerPanels.tsx";
+import { filterChips, removeChip } from "./filterChips.ts";
 import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
@@ -1147,6 +1148,20 @@ export default function App() {
                         ) : null}
                         <div className="bubble">
                           {m.text}
+                          {m.role === "assistant" && m.examples?.length ? (
+                            <div className="example-prompts">
+                              {m.examples.map((ex) => (
+                                <button
+                                  key={ex}
+                                  className="example-prompt-btn"
+                                  disabled={busy}
+                                  onClick={() => void chat(ex, {})}
+                                >
+                                  {ex}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
                           {m.role === "assistant" && m.eventIds?.length ? (
                             <ChatEvents
                               ids={m.eventIds}
@@ -1155,6 +1170,25 @@ export default function App() {
                               onDetails={setDetail}
                               onAdd={add}
                             />
+                          ) : null}
+                          {m.role === "assistant" && m.altIds?.length ? (
+                            <ChatEvents
+                              ids={m.altIds}
+                              state={state}
+                              onDetails={setDetail}
+                              onAdd={add}
+                            />
+                          ) : null}
+                          {m.role === "assistant" && m.overlapIds?.length ? (
+                            <>
+                              <p className="overlap-label">Also at the same time:</p>
+                              <ChatEvents
+                                ids={m.overlapIds}
+                                state={state}
+                                onDetails={setDetail}
+                                onAdd={add}
+                              />
+                            </>
                           ) : null}
                         </div>
                       </div>
@@ -1178,6 +1212,39 @@ export default function App() {
                       </button>
                     ))}
                   </div>
+                  {/* Active filter chips — show constraints currently in use; clicking re-runs the search */}
+                  {(() => {
+                    const chips = filterChips(state.constraints);
+                    if (!chips.length) return null;
+                    return (
+                      <div className="active-filters" role="group" aria-label="Active search filters">
+                        <span className="active-filters-label">Filtering by:</span>
+                        {chips.map((chip) => (
+                          <button
+                            key={chip.label}
+                            className="filter-chip"
+                            onClick={() =>
+                              void conversation.removeFilter(
+                                chip.label,
+                                removeChip(state.constraints, chip),
+                              )
+                            }
+                            disabled={busy}
+                            aria-label={`Remove filter: ${chip.label}`}
+                          >
+                            {chip.label} ×
+                          </button>
+                        ))}
+                        <button
+                          className="filter-chip filter-chip-clear"
+                          onClick={() => void conversation.removeFilter("", {}, true)}
+                          disabled={busy}
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    );
+                  })()}
                   <form
                     className="composer"
                     onSubmit={(e) => {
