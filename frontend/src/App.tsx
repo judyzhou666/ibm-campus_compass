@@ -1034,7 +1034,7 @@ export default function App() {
           {page === "planner" ? (
             <>
               <Heading
-                title="Hi, ask Mimi, your AI Chatbot! What would you like to do this week, and when are you free?"
+                title="Hi, Ask Mimi, your AI Chatbot!"
                 description="Discover opportunities that fit your interests and your actual free time."
                 timezone={state.timezone}
               >
