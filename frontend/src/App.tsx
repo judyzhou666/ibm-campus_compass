@@ -31,7 +31,7 @@ import { applyNextBatch, nextBatch, relativeTime, effectiveEvents } from "./upda
 
 const labels = {
   review: "Team data review",
-  dashboard: "Dashboard",
+  dashboard: "My Dashboard",
   calendar: "My Calendar",
   explore: "Explore Events",
   forum: "Discussion Forum",
@@ -61,6 +61,9 @@ const prompts = [
   "A social event with free food",
   "Career events after 1 PM",
 ];
+/** Sidebar tabs shown nested under a parent tab. */
+const subTabs: Partial<Record<Page, Page>> = { calendar: "dashboard" };
+const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
   return page in labels ? (page as Page) : "dashboard";
@@ -123,6 +126,23 @@ export default function App() {
   const [message, setMessage] = useState(""),
     [detail, setDetail] = useState<string | null>(null),
     [menu, setMenu] = useState(false);
+  // Desktop-only: the student can shrink the sidebar to an icon rail. The
+  // choice is a per-browser convenience, so storage failures are ignored.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+  }, [collapsed]);
   const [toast, setToast] = useState("");
   const [toastActions, setToastActions] = useState<ToastAction[]>([]);
   const [toastHeld, setToastHeld] = useState(false);
@@ -456,7 +476,16 @@ export default function App() {
           onSkip={() => update((s) => ({ ...s, onboarded: true }))}
         />
       ) : null}
-      <aside className={`sidebar ${menu ? "open" : ""}`} id="sidebar">
+      <header className="topbar">
+        <button
+          className="mobile-menu"
+          aria-label="Toggle navigation"
+          aria-expanded={menu}
+          aria-controls="sidebar"
+          onClick={() => setMenu(!menu)}
+        >
+          <Icon name="menu" />
+        </button>
         <a
           className="brand"
           href="#dashboard"
@@ -468,10 +497,116 @@ export default function App() {
           <span className="logo">
             <Icon name="compass" />
           </span>
-          <span>
+          <span className="brand-text">
             Campus<small>COMPASS</small>
           </span>
         </a>
+        <form
+          className="search"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQuery(search.trim());
+            setFilter("All");
+            setPage("explore");
+          }}
+        >
+          <Icon name="search" />
+          <input
+            aria-label="Search events"
+            placeholder="Search events"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button type="submit" className="search-go" aria-label="Search">
+            <Icon name="search" />
+          </button>
+        </form>
+        <nav className="top-links" aria-label="Quick links">
+          {(
+            [
+              ["explore", "Find events"],
+              ["calendar", "My calendar"],
+              ["forum", "Forum"],
+            ] as [Page, string][]
+          ).map(([p, label]) => (
+            <button
+              key={p}
+              className={page === p ? "active" : ""}
+              aria-current={page === p ? "page" : undefined}
+              onClick={() => nav(p)}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            className={`top-cta ${page === "planner" ? "active" : ""}`}
+            aria-current={page === "planner" ? "page" : undefined}
+            onClick={() => nav("planner")}
+          >
+            Plan with AI
+          </button>
+        </nav>
+        <div className="top-actions">
+          <button
+            className="icon-btn"
+            aria-label={
+              nextBatch(state.appliedUpdateIds)
+                ? "Check for updates (new batch available)"
+                : "Notifications"
+            }
+            onClick={checkForUpdates}
+            style={{ position: "relative" }}
+          >
+            <Icon name="bell" />
+            {nextBatch(state.appliedUpdateIds) ? (
+              <span
+                className="badge"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  fontSize: "0.65rem",
+                  minWidth: "0.9rem",
+                  padding: "0 0.2rem",
+                  lineHeight: 1.4,
+                  pointerEvents: "none",
+                }}
+              >
+                !
+              </span>
+            ) : null}
+          </button>
+          {state.signedIn ? (
+            <button
+              className="avatar"
+              aria-label={`Open profile for ${state.name}`}
+              style={{ border: 0 }}
+              onClick={() => nav("profile")}
+            >
+              {state.name[0] || "J"}
+            </button>
+          ) : (
+            <button className="sign-in" onClick={() => setSigningIn(true)}>
+              Sign in
+            </button>
+          )}
+        </div>
+      </header>
+      <aside
+        className={`sidebar ${menu ? "open" : ""} ${collapsed ? "collapsed" : ""}`}
+        id="sidebar"
+      >
+        <button
+          className="collapse-toggle"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          aria-controls="sidebar"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <Icon name={collapsed ? "chevronRight" : "chevronLeft"} />
+        </button>
         <nav className="nav" aria-label="Main navigation">
           {(
             Object.keys(labels).filter((key) => key !== "review") as Page[]
@@ -479,12 +614,20 @@ export default function App() {
             <div key={p}>
               {i === 6 ? <div className="break" /> : null}
               <button
-                className={page === p ? "active" : ""}
+                className={[
+                  page === p ? "active" : "",
+                  subTabs[p] ? "sub" : "",
+                  subTabs[p] && page === subTabs[p] ? "parent-active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 aria-current={page === p ? "page" : undefined}
+                title={collapsed ? labels[p] : undefined}
+                aria-label={collapsed ? labels[p] : undefined}
                 onClick={() => nav(p)}
               >
                 <Icon name={navIcons[p]} />
-                {labels[p]}
+                <span className="nav-label">{labels[p]}</span>
                 {p === "saved" && state.saved.length > 0 ? (
                   <span className="badge">{state.saved.length}</span>
                 ) : null}
@@ -519,108 +662,6 @@ export default function App() {
         </div>
       </aside>
       <div className="shell">
-        <header className="topbar">
-          <button
-            className="mobile-menu"
-            aria-label="Toggle navigation"
-            aria-expanded={menu}
-            aria-controls="sidebar"
-            onClick={() => setMenu(!menu)}
-          >
-            <Icon name="menu" />
-          </button>
-          <form
-            className="search"
-            role="search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setQuery(search.trim());
-              setFilter("All");
-              setPage("explore");
-            }}
-          >
-            <Icon name="search" />
-            <input
-              aria-label="Search events"
-              placeholder="Search events"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button type="submit" className="search-go" aria-label="Search">
-              <Icon name="search" />
-            </button>
-          </form>
-          <nav className="top-links" aria-label="Quick links">
-            {(
-              [
-                ["explore", "Find events"],
-                ["calendar", "My calendar"],
-                ["forum", "Forum"],
-              ] as [Page, string][]
-            ).map(([p, label]) => (
-              <button
-                key={p}
-                className={page === p ? "active" : ""}
-                aria-current={page === p ? "page" : undefined}
-                onClick={() => nav(p)}
-              >
-                {label}
-              </button>
-            ))}
-            <button
-              className={`top-cta ${page === "planner" ? "active" : ""}`}
-              aria-current={page === "planner" ? "page" : undefined}
-              onClick={() => nav("planner")}
-            >
-              Plan with AI
-            </button>
-          </nav>
-          <div className="top-actions">
-            <button
-              className="icon-btn"
-              aria-label={
-                nextBatch(state.appliedUpdateIds)
-                  ? "Check for updates (new batch available)"
-                  : "Notifications"
-              }
-              onClick={checkForUpdates}
-              style={{ position: "relative" }}
-            >
-              <Icon name="bell" />
-              {nextBatch(state.appliedUpdateIds) ? (
-                <span
-                  className="badge"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    fontSize: "0.65rem",
-                    minWidth: "0.9rem",
-                    padding: "0 0.2rem",
-                    lineHeight: 1.4,
-                    pointerEvents: "none",
-                  }}
-                >
-                  !
-                </span>
-              ) : null}
-            </button>
-            {state.signedIn ? (
-              <button
-                className="avatar"
-                aria-label={`Open profile for ${state.name}`}
-                style={{ border: 0 }}
-                onClick={() => nav("profile")}
-              >
-                {state.name[0] || "J"}
-              </button>
-            ) : (
-              <button className="sign-in" onClick={() => setSigningIn(true)}>
-                Sign in
-              </button>
-            )}
-          </div>
-        </header>
         <main id="main">
           {page === "dashboard" ? (
             <>
