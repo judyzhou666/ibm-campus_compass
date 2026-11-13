@@ -2,6 +2,7 @@
  * Pure date-math helpers for CalendarView.
  * No React, no DOM, no side effects.
  */
+import { occursOn } from "./recurrence.ts";
 import { DEMO, demoTodayIndex, weekDates } from "./config.ts";
 import type { DemoConfig } from "./config.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
@@ -326,8 +327,10 @@ export type CalendarItem =
       start: number;
       end: number;
       location?: string;
-      /** True for weekly-repeating items */
-      weekly: boolean;
+      /** True for repeating items (any repeat rule). */
+      repeating: boolean;
+      /** Saved under Calendar = "Class / busy time": drawn like a class. */
+      asClass: boolean;
     };
 
 /**
@@ -352,31 +355,20 @@ export function itemsForDate(
       }
     }
   }
-  // Personal events: one-off on this exact date, or weekly on this weekday
+  // Personal events: every item whose repeat rule lands on this date.
   for (const pe of state.personalEvents ?? []) {
-    let onThisDate = false;
-    if (pe.repeat === "none") {
-      onThisDate = pe.date === iso;
-    } else if (pe.repeat === "weekly" && wd < 5) {
-      // weekly: matches if the same weekday (compare weekday of pe.date to wd)
-      const peWd = (() => {
-        const d = isoToNoonUTC(pe.date).getUTCDay();
-        return d === 0 ? 6 : d - 1;
-      })();
-      onThisDate = peWd === wd;
-    }
-    if (onThisDate) {
-      items.push({
-        kind: "personal",
-        id: pe.id,
-        title: pe.title,
-        day: wd,
-        start: pe.start,
-        end: pe.end,
-        location: pe.location,
-        weekly: pe.repeat === "weekly",
-      });
-    }
+    if (!occursOn(pe, iso)) continue;
+    items.push({
+      kind: "personal",
+      id: pe.id,
+      title: pe.title,
+      day: wd,
+      start: pe.start,
+      end: pe.end,
+      location: pe.location,
+      repeating: pe.repeat !== "none",
+      asClass: pe.calendar === "class",
+    });
   }
   const dayIdx = demoDayIndex(iso);
   if (dayIdx >= 0) {

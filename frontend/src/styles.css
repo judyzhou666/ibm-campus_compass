@@ -6085,3 +6085,108 @@ input.switch:focus-visible {
 .create-locked p {
   margin: 0;
 }
+
+/* Own items saved under Calendar = "Class / busy time": grey like classes */
+.gcal-personal.gcal-personal-class,
+.gcal-chip-personal.gcal-personal-class {
+  background: #f0f1ec;
+  color: var(--ink);
+  border-left-color: #c4c9bf;
+  box-shadow: inset 2px 0 0 #c4c9bf;
+}
+.gcal-personal.gcal-personal-class {
+  box-shadow: none;
+}
+.gcal-personal.gcal-personal-class:hover {
+  background: #e6e8e1;
+}
+
+/* Event dialog: custom repeat panel (Google Calendar / Canvas style) */
+.pe-custom {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: -4px 0 0;
+  display: grid;
+  gap: 12px;
+  background: var(--bg);
+}
+.pe-custom legend {
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.pe-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.pe-custom input[type="number"] {
+  width: 64px;
+}
+.pe-custom select,
+.pe-custom input[type="number"],
+.pe-custom input[type="date"] {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  background: white;
+}
+.pe-weekdays {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pe-day {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pe-day.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+.pe-day:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.pe-ends {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.pe-ends-title {
+  font-weight: 700;
+  font-size: 12px;
+}
+.pe-ends label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pe-ends input:disabled {
+  opacity: 0.5;
+}
+.pe-rule-summary {
+  margin: 0;
+  font-size: 12px;
+  color: var(--green-dark);
+}
+.pe-field-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: -8px 0 0;
+}

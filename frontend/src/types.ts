@@ -131,8 +131,15 @@ export interface PersonalEvent {
   start: number;
   /** End time in minutes after midnight (> start). */
   end: number;
-  /** "none" = single occurrence; "weekly" = repeats on the same weekday from date onward. */
-  repeat: "none" | "weekly";
+  /**
+   * Google/Canvas-style repeat preset (see recurrence.ts). "weekly" repeats on
+   * the weekday of `date`; "custom" uses `rule`.
+   */
+  repeat: "none" | "daily" | "weekly" | "monthly" | "yearly" | "weekdays" | "custom";
+  /** Only for repeat = "custom". */
+  rule?: import("./recurrence.ts").RepeatRule;
+  /** Shown as a class / busy time (grey) instead of a personal item (blue). */
+  calendar?: "personal" | "class";
   location?: string;
 }
 
