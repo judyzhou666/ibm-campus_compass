@@ -48,7 +48,7 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 
 ## Technology
 
-- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/). Judy's review of the synthetic update feed is exported in `bob_sessions/Judy/`; Tingting's exports are still being added, so the work above is not yet backed by an export.
+- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/). Judy's review of the synthetic update feed is exported in `bob_sessions/Judy/`; Tingting's three tasks above (calendar views, AI Planner fix, README overview) are exported in `bob_sessions/Tingting/`.
 - **IBM watsonx.ai Granite** — optional live interpreter and ranker via `PLANNER_PROVIDER=watsonx`. Default is the deterministic simulated planner. Every reply is labelled with the mode that produced it.
 - **Rust** (Axum, Tokio, Serde) — backend API, typed validation, deterministic scheduling logic.
 - **React + TypeScript + Vite** — frontend; browser-local state; explicitly labelled simulation fallback when the backend is unavailable.

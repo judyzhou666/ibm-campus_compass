@@ -2,6 +2,17 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Bob sessions: Tingting's exported task histories — November 13, 2026
+
+Added three IBM Bob task exports (made with Bob's own export, unedited) to `bob_sessions/Tingting/`:
+- the calendar Day/Week/Month/Year views (PR #12);
+- the AI Planner fresh search and filter chips (PR #18);
+- the first-impression / README overview cleanup (PR #21).
+
+The README's Technology line now points to them. Committed with Claude Code.
+
+**Verification.** Each file is valid JSON in Bob's export format (`version`, `exportedAt`, `workspace`, `tasks`). A scan found no API keys, tokens or private keys.
+
 ## Explore: two-level categories and a Filters panel — November 13, 2026
 
 The Explore chip row mixed event type with five food states (including "No food" and "Food unknown") and allowed only one choice at a time. It is now:
