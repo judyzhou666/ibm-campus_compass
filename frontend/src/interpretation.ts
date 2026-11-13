@@ -84,12 +84,12 @@ function focusTerms(q: string, excluded: string[]) {
 }
 
 const keywords = {
-  "AI & education": /\b(ai|education|research|learning|tech|coding|data)\b/i,
-  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship))\b/i,
-  Social: /\b(social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people)\b/i,
+  "AI & education": /\b(ai|education|research|learning|tech|coding|data|edtech|ed\s+tech|phd|doctoral|doctorate|grad(?:uate)?\s+school|academics?|thesis|dissertation|seminars?|teaching|pedagogy|professors?|faculty)\b/i,
+  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|opt|cpt|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship)\b/i,
+  Social: /\b(social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people|international|clubs?|party|parties|games?|trivia|hang\s+out|mixer)\b/i,
   "Arts & culture":
-    /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics)\b/i,
-  Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance)\b/i,
+    /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics|music|concerts?|painting|drawing|theat(?:er|re)|photography|crafts?)\b/i,
+  Wellbeing: /\b(wellbeing|wellness|relax|mindful|movement|quiet|balance|stress|mental\s+health|yoga|meditation|exercise|fitness|run|running|sleep|burnout)\b/i,
 };
 export class PlanningClarification extends Error {
   constructor(
@@ -273,4 +273,37 @@ export function interpretRequest(
       ? "Do you mean AM or PM? Please include AM/PM, or use an unambiguous 24-hour time."
       : undefined;
   return { constraints: c, understood, clarification, clocks, restatement };
+}
+
+/** Everyday words that carry no search meaning on their own. */
+const FILLER = new Set(
+  (
+    "a about after all also am an and any anything are around as at attend be before best but by can " +
+    "campus choices could do does events event find for from get give go good great have help hello hey hi how " +
+    "i im in interested interesting into is it its just kind kinds know like looking look lot lots " +
+    "maybe me mimi more my near need new next of on one options or other our out " +
+    "please plan planning recommend really show so some something student students suggest " +
+    "thanks thank that the them there these they things thing this those to today tomorrow too " +
+    "type types up us want we week what when where which who will with would you your " +
+    // Words the interpreter uses for days, times, dates, food, cost and access.
+    "monday tuesday wednesday thursday friday saturday sunday mon tue tues wed thu thur thurs fri sat sun " +
+    "weekday weekdays weekend weekends morning mornings afternoon afternoons evening evenings night nights " +
+    "tonight noon midnight pm early late only not no without except but busy available cant can't " +
+    "november nov october oct december dec january jan " +
+    "free food coffee snacks snack meal meals pizza drinks refreshments admission cost paid rsvp drop " +
+    "nearby close walking distance reset start over any time day days limit"
+  ).split(" "),
+);
+
+/**
+ * Words in a request the simulated planner could not use, for an honest reply
+ * ("I couldn’t match ‘edtech’…"). Only meaningful when the request produced no
+ * topic or other filter: then every remaining content word went unmatched.
+ */
+export function unmatchedWords(text: string): string[] {
+  const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
+  const out: string[] = [];
+  for (const w of words)
+    if (w.length > 1 && !FILLER.has(w) && !out.includes(w) && out.length < 4) out.push(w);
+  return out;
 }

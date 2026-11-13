@@ -2,6 +2,30 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: understands student words and stops giving the same answer — November 13, 2026
+
+In Simulated mode, different questions got the same three cards. The keyword planner did not know words like "edtech", "PhD" or "OPT". A request that only contained "plan … event" counted as understood, but had no topic, so the planner quietly fell back to the profile interests and said nothing about it. Example: "can you help me to plan event for edtech phd path?" returned the profile's career and social picks.
+
+- **Student vocabulary**, kept identical in `frontend/src/interpretation.ts` and `backend/src/interpreter.rs`:
+  - AI & education: EdTech, PhD, doctoral, grad school, academic, thesis, dissertation, seminar, teaching, pedagogy, professor, faculty.
+  - Career: OPT, CPT, visa, sponsorship, employer, recruiting, interview, CV, job fair, mentor.
+  - Social: international, club, party, games, trivia, hang out, mixer.
+  - Arts: music, concert, painting, drawing, theatre, photography, crafts.
+  - Wellbeing: stress, mental health, yoga, meditation, exercise, fitness, run, sleep, burnout.
+- **No silent fallback.** When a request names no topic, the reply now starts with "You didn't name a topic, so these picks follow your profile interests (…)". In Simulated mode it also names the words it could not match, e.g. "I couldn't match "fun"…", and suggests words that work.
+- Live watsonx is unchanged and still not enabled. This is the deterministic planner, not an LLM.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 306 TypeScript + 5 Wiki tests, including the new `tests/planner-vocabulary.test.ts`.
+- `cargo test`: 64, including the matching `student_vocabulary_maps_to_topics`.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (Rust/TypeScript parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser against the rebuilt Rust server:
+  - The EdTech PhD question now returns AI & education picks (Creative coding, Student research lightning talks, Learning with AI, AI and pedagogy) with an "AI & education" filter chip.
+  - "how do I apply for OPT" returns career picks.
+  - "something fun on Monday" explains that "fun" was not matched and names the profile interests used.
+
 ## AI Planner: honest labels on alternative cards — November 13, 2026
 
 When the Rust planner answered, the "Also at the same time" and nearby-alternative cards still said "Simulated browser suggestion", the same wording as the browser-fallback planner, so they looked like a mode mix-up next to the "Rust planner · Simulated" header. These cards really are chosen by the browser's demo rules. They now say so in their own words: "Same-time alternative, chosen by the browser's demo rules…" or "Nearby alternative, chosen by the browser's demo rules…". Main picks keep the planner's "How the planner checked this" evidence, and browser-fallback picks keep "Simulated browser suggestion". Made with Claude Code.
