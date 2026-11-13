@@ -33,8 +33,11 @@ export function ChatEvents({
   onDetails,
   onAdd,
   evidence = [],
+  note = "Simulated browser suggestion. Open details to check the fictional record and current availability.",
 }: {
   evidence?: import("./types.ts").RecommendationEvidence[];
+  /** Fine print for cards without planner evidence (fallback or alternatives). */
+  note?: string;
   ids: string[];
   state: DemoState;
   onDetails: (id: string) => void;
@@ -100,10 +103,7 @@ export function ChatEvents({
                 </dl>
               </details>
             ) : (
-              <p className="fineprint">
-                Simulated browser suggestion. Open details to check the
-                fictional record and current availability.
-              </p>
+              <p className="fineprint">{note}</p>
             )}
             {problem ? <p className="event-problem">{problem}</p> : null}
             <div className="row">

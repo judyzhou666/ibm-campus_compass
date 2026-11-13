@@ -1210,6 +1210,7 @@ export default function App() {
                           {m.role === "assistant" && m.altIds?.length ? (
                             <ChatEvents
                               ids={m.altIds}
+                              note="Nearby alternative, chosen by the browser's demo rules. Open details to check the fictional record and current availability."
                               state={state}
                               onDetails={setDetail}
                               onAdd={add}
@@ -1220,6 +1221,7 @@ export default function App() {
                               <p className="overlap-label">Also at the same time:</p>
                               <ChatEvents
                                 ids={m.overlapIds}
+                                note="Same-time alternative, chosen by the browser's demo rules. Open details to check the fictional record and current availability."
                                 state={state}
                                 onDetails={setDetail}
                                 onAdd={add}

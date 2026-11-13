@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: honest labels on alternative cards — November 13, 2026
+
+When the Rust planner answered, the "Also at the same time" and nearby-alternative cards still said "Simulated browser suggestion", the same wording as the browser-fallback planner, so they looked like a mode mix-up next to the "Rust planner · Simulated" header. These cards really are chosen by the browser's demo rules. They now say so in their own words: "Same-time alternative, chosen by the browser's demo rules…" or "Nearby alternative, chosen by the browser's demo rules…". Main picks keep the planner's "How the planner checked this" evidence, and browser-fallback picks keep "Simulated browser suggestion". Made with Claude Code.
+
+**Verification.** `npm test` (308 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+
 ## Bob sessions: Tingting's exported task histories — November 13, 2026
 
 Added three IBM Bob task exports (made with Bob's own export, unedited) to `bob_sessions/Tingting/`:
