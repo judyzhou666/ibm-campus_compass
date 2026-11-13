@@ -1,4 +1,5 @@
 export const paths: Record<string, string> = {
+  filter: "M3 5h18l-7 8v6l-4 2v-8Z",
   compass: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z M16 8l-3 5-5 3 3-5 5-3Z",
   home: "m3 10 9-7 9 7v11h-6v-7H9v7H3Z",
   monitor: "M3 4h18v12H3Z M8 21h8 M12 16v5",

@@ -2,6 +2,134 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: "what is OPT?" is a Career question again — November 13, 2026
+
+Review fix on PR #28. The noun-only OPT rule from the previous commit matched a bare "opt" only when it was the whole message (`^opt$`). So "what is OPT?", "OPT events", "OPT help" and "how does OPT work" no longer found Career events. Now "opt" also counts at the start of a message and after "is", "does", "apply" or "the", plus more nouns after it (events, help, work, sessions, workshops). "I'd opt for something quiet" still maps to Wellbeing. Changed in both interpreters.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (318 TypeScript + 5 Wiki tests), `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (65), `npm run build`, `npm run test:api` and `npm run evaluate` (no diff) pass.
+
+## AI Planner: PR #28 review fixes for OPT and exclusions — November 13, 2026
+
+Judy's review of PR #28 noted two interpreter problems. Both are fixed in `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` together, so the two interpreters stay identical:
+
+- **"opt" as a verb meant Career.** "I'd opt for something quiet" was read as a Career request. OPT now counts only as a noun: "OPT" on its own, "for / about / on / with / stem / my OPT", or "OPT application / status / visa / extension / eligibility / employment / job / questions / timeline / workshop / session". CPT is unchanged. The patterns avoid lookahead, which Rust's `regex` crate does not support.
+- **Exclusions had no word boundaries.** `(?:no|not|avoid|without)\s+(?:any\s+)?(?:words)` matched inside longer words, so "not optional" excluded Career and "cannot" counted as "not". The pattern now has `\b` at both ends in both interpreters.
+
+Made with Claude Code.
+
+**Verification.**
+- New tests in `tests/planner-vocabulary.test.ts` and `opt_noun_and_whole_word_exclusions` in Rust.
+- `npm test`: 318 TypeScript + 5 Wiki tests. `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- Against the rebuilt server and in the browser chat:
+  - "I'd opt for something quiet" shows a Wellbeing filter and wellbeing events.
+  - "how do I apply for OPT" returns Career.
+  - "career events, attendance not optional" keeps Career with nothing excluded.
+
+## Fix search and the demo script's "Find a replacement" step — November 13, 2026
+
+Found by testing the site like a student and following `docs/demo-script.md` step by step in the browser.
+
+**1. Header search needed the exact phrase.** "career workshop", "free food", "AI lab", "resume help" and "international students" all returned 0 events, while "AI" matched the letters "ai" inside other words.
+- Search now matches every meaningful word as a whole word (simple plurals allowed), in any order.
+- It looks across title, description, topic, host, location, the Explore categories and sub-categories, the day and time of day, and "free food" / "free admission".
+- Filler words such as "events", "for", "students" and "help" are ignored.
+- The logic is `matchesSearch` in `frontend/src/filters.ts`.
+
+**2. The demo's replacement step found nothing.** After "AI career social 3 events after 1 PM" and then "career on Tuesday afternoon", the cancelled event was "AI ethics roundtable" (Monday). "Find a replacement" still searched with the latest filters, "Career; Tuesday; 12:00–17:00", and replied "No replacement satisfies the current filters".
+- Each planned event now remembers the chat filters that found it (`planSources` in the browser-local state; `{}` for events added outside the chat). A replacement uses those filters. Older saved plans fall back to the latest search, as before.
+- "Simulate event cancellation" now also shows while the side calendar is open. The script's first step opens it, which used to hide the button.
+- Filter summaries use 12-hour times ("start after 12 PM") like the rest of the site.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 316 TypeScript + 5 Wiki tests, including the new `tests/search-and-replacement.test.ts`.
+- `cargo test`: 64.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (Rust/TypeScript parity) all pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser at 1280px:
+  - "career workshop" finds 2 events.
+  - The demo script, run exactly as written with the side calendar open, now offers "AI and pedagogy: cross-school dialogue" (Mon 3 PM) as the replacement. The other three choices are kept.
+
+## Explore: "Fits my free time" hides every clashing event — November 13, 2026
+
+Review fix on PR #28. "Fits my free time" decided whether an event clashed by checking whether `issue()` began with "Conflicts with". But `issue()` reports access problems (full, members only, eligibility not confirmed, cancelled) before it checks the time. So such an event stayed listed even when it overlapped a class, a personal calendar item or a planned event. The overlap check is now `conflictWith()` in `frontend/src/planner.ts`; `issue()` and the Explore filter both use it, and what `issue()` returns is unchanged.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (306 TypeScript + 5 Wiki tests; the free-time test now also puts a class over e15), `npm run build`, `npm run test:api` and `npm run evaluate` (no diff) pass.
+
+## AI Planner: understands student words and stops giving the same answer — November 13, 2026
+
+In Simulated mode, different questions got the same three cards. The keyword planner did not know words like "edtech", "PhD" or "OPT". A request that only contained "plan … event" counted as understood, but had no topic, so the planner quietly fell back to the profile interests and said nothing about it. Example: "can you help me to plan event for edtech phd path?" returned the profile's career and social picks.
+
+- **Student vocabulary**, kept identical in `frontend/src/interpretation.ts` and `backend/src/interpreter.rs`:
+  - AI & education: EdTech, PhD, doctoral, grad school, academic, thesis, dissertation, seminar, teaching, pedagogy, professor, faculty.
+  - Career: OPT, CPT, visa, sponsorship, employer, recruiting, interview, CV, job fair, mentor.
+  - Social: international, club, party, games, trivia, hang out, mixer.
+  - Arts: music, concert, painting, drawing, theatre, photography, crafts.
+  - Wellbeing: stress, mental health, yoga, meditation, exercise, fitness, run, sleep, burnout.
+- **No silent fallback.** When a request names no topic, the reply now starts with "You didn't name a topic, so these picks follow your profile interests (…)". In Simulated mode it also names the words it could not match, e.g. "I couldn't match "fun"…", and suggests words that work.
+- Live watsonx is unchanged and still not enabled. This is the deterministic planner, not an LLM.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 306 TypeScript + 5 Wiki tests, including the new `tests/planner-vocabulary.test.ts`.
+- `cargo test`: 64, including the matching `student_vocabulary_maps_to_topics`.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (Rust/TypeScript parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser against the rebuilt Rust server:
+  - The EdTech PhD question now returns AI & education picks (Creative coding, Student research lightning talks, Learning with AI, AI and pedagogy) with an "AI & education" filter chip.
+  - "how do I apply for OPT" returns career picks.
+  - "something fun on Monday" explains that "fun" was not matched and names the profile interests used.
+
+## AI Planner: honest labels on alternative cards — November 13, 2026
+
+When the Rust planner answered, the "Also at the same time" and nearby-alternative cards still said "Simulated browser suggestion", the same wording as the browser-fallback planner, so they looked like a mode mix-up next to the "Rust planner · Simulated" header. These cards really are chosen by the browser's demo rules. They now say so in their own words: "Same-time alternative, chosen by the browser's demo rules…" or "Nearby alternative, chosen by the browser's demo rules…". Main picks keep the planner's "How the planner checked this" evidence, and browser-fallback picks keep "Simulated browser suggestion". Made with Claude Code.
+
+**Verification.** `npm test` (308 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+
+## Bob sessions: Tingting's exported task histories — November 13, 2026
+
+Added three IBM Bob task exports (made with Bob's own export, unedited) to `bob_sessions/Tingting/`:
+- the calendar Day/Week/Month/Year views (PR #12);
+- the AI Planner fresh search and filter chips (PR #18);
+- the first-impression / README overview cleanup (PR #21).
+
+The README's Technology line now points to them. Committed with Claude Code.
+
+**Verification.** Each file is valid JSON in Bob's export format (`version`, `exportedAt`, `workspace`, `tasks`). A scan found no API keys, tokens or private keys.
+
+## Explore: two-level categories and a Filters panel — November 13, 2026
+
+The Explore chip row mixed event type with five food states (including "No food" and "Food unknown") and allowed only one choice at a time. It is now:
+
+- **Six categories with sub-categories** (`frontend/src/taxonomy.ts`): Academic & Research, Career & Jobs, Community & Social, Wellbeing, Arts & Creative, International Students. Clicking a category opens its topics as checkboxes with event counts. Topics with no events this week are greyed out with "(0)". CPT / OPT sits under both Career and International Students. Works with the mouse, touch and keyboard (Enter, arrow keys, Space, Escape).
+- **A Filters panel** next to All, with filters that can be combined: day, time of day, fits my free time (only time clashes with classes, personal calendar items or planned events), free food (one switch for free meal, coffee & snacks, light refreshments and popcorn), free admission, host (from the data), who it's for (international, first-generation) and registration.
+- **Active choices show as removable chips** with Clear all. An empty result offers Clear filters.
+- **Home tiles** now show the six categories plus Free food, and each tile's count matches what Explore shows. **Admin drafts** use the new names; drafts saved under old names still load.
+- **Data.** Each event in `data/events.json` gained a `subcategories` list. No existing field changed, so the Rust planner (whose `Event` struct ignores unknown fields) and the frozen evaluation are unaffected. `npm run evaluate` leaves `docs/evaluation-report.md` and `evaluation/results.json` unchanged.
+
+**Tools.** IBM Bob drafted the first pass (sub-category choices and a first filter bar) but ran out of tokens before finishing or committing. Bob's draft also rewrote every event's `category` and reformatted `goal_type`. Claude Code finished the work:
+- kept Bob's sub-category choices (fixing a few that sat under the wrong parent) without touching the original fields;
+- added the taxonomy module, the day/time/free-time/host filters, the active chips, the CSS and the tests;
+- merged main (PRs #25 and #27).
+
+No new fictional events were added. The Internships, Part-time & on-campus jobs, CPT / OPT, Meet professors and Course load topics have 0 events for now.
+
+**Verification.**
+- `npm test`: 298 TypeScript + 5 Wiki tests, including the new `tests/explore-filters.test.ts`.
+- `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (63), `cargo build --locked`, `npm run test:api` and `npm run evaluate` (no diff) all pass.
+- Browser checks with the mouse at 1280px:
+  - Career & Jobs → Networking + Resume gives 7 events; adding Free food gives 5.
+  - Fits my free time hides time clashes but keeps an event whose only problem is unconfirmed eligibility (this bug was found and fixed during the check).
+  - Removing a chip with × and Clear all both work.
+  - The Home Free food tile opens Explore with 21 events.
+- Keyboard-only use of the Academic & Research topics works.
+- At 375px, the topics list and Filters panel fit with no horizontal scroll.
+
 ## Consolidate basic profile editing — November 12, 2026
 
 Made Display Name and Major / Program read-only in the main Profile preferences form and added an Edit action that opens the existing Basic Information editor. Both views continue to use the existing browser-local state. Student/Admin identity and Calendar behavior were left unchanged. Made with Codex.

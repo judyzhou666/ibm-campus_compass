@@ -27,8 +27,8 @@ The institutional benefits — improved resource discoverability, cross-school r
 
 What the app does today, from the student's view:
 
-- **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
-- **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
+- **Home** — announcement carousel, browse-by-category tiles (Academic & Research, Career & Jobs, Community & Social, Wellbeing, Arts & Creative, International Students, Free food), and a preference-ranked list of upcoming events.
+- **Explore Events** — six categories that open into sub-categories (e.g. Career & Jobs › Internships, CPT / OPT) plus a Filters panel (day, time, fits my free time, free food, free admission, host, audience, registration) with removable filter chips. Event cards show access conditions, food, RSVP status and source provenance.
 - **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. Ranks events that mention the student's own words first ("AI in education") and understands demo-week dates such as "Nov 6" or "Nov 3–5". The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
 - **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views, personal event creation/editing/dragging (blue items), and campus events (green, fixed time).
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.
@@ -48,7 +48,7 @@ The planner is mapped to three of the lab's archetypes based on what is actually
 
 ## Technology
 
-- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/). Judy's review of the synthetic update feed is exported in `bob_sessions/Judy/`; Tingting's exports are still being added, so the work above is not yet backed by an export.
+- **IBM Bob** — used to write the calendar Day/Week/Month/Year views (four rounds), the AI Planner filter fix (three rounds) and the first version of this README overview; review fixes and merges on top were made with Claude Code, as recorded per entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Exported Bob task histories: [`bob_sessions/`](bob_sessions/). Judy's review of the synthetic update feed is exported in `bob_sessions/Judy/`; Tingting's three tasks above (calendar views, AI Planner fix, README overview) are exported in `bob_sessions/Tingting/`.
 - **IBM watsonx.ai Granite** — optional live interpreter and ranker via `PLANNER_PROVIDER=watsonx`. Default is the deterministic simulated planner. Every reply is labelled with the mode that produced it.
 - **Rust** (Axum, Tokio, Serde) — backend API, typed validation, deterministic scheduling logic.
 - **React + TypeScript + Vite** — frontend; browser-local state; explicitly labelled simulation fallback when the backend is unavailable.

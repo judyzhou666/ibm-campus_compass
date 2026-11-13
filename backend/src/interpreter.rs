@@ -199,11 +199,11 @@ impl SimulatedInterpreter {
             c.excluded = None;
         }
         let keywords = [
-            "ai|education|research|learning|tech|coding|data",
-            r"career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)",
-            r"social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people",
-            "art|arts|culture|cultural|film|museum|creative|sketch|ceramics",
-            "wellbeing|wellness|relax|mindful|movement|quiet|balance",
+            r"ai|education|research|learning|tech|coding|data|edtech|ed\s+tech|phd|doctoral|doctorate|grad(?:uate)?\s+school|academics?|thesis|dissertation|seminars?|teaching|pedagogy|professors?|faculty",
+            r"career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|cpt|^opt|(?:for|about|on|with|stem|my|is|does|apply|the)\s+opt|opt\s+(?:application|status|visa|extension|eligibility|employment|jobs?|questions?|timeline|workshops?|sessions?|events?|help|work|works)|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship",
+            r"social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people|international|clubs?|party|parties|games?|trivia|hang\s+out|mixer",
+            r"art|arts|culture|cultural|film|museum|creative|sketch|ceramics|music|concerts?|painting|drawing|theat(?:er|re)|photography|crafts?",
+            r"wellbeing|wellness|relax|mindful|movement|quiet|balance|stress|mental\s+health|yoga|meditation|exercise|fitness|run|running|sleep|burnout",
         ];
         let mut topics = Vec::new();
         let mut excluded = Vec::new();
@@ -212,7 +212,9 @@ impl SimulatedInterpreter {
                 topics.push(topic.to_string());
             }
             if matches(
-                &format!(r"(?:no|not|avoid|without)\s+(?:any\s+)?(?:{words})"),
+                // Word boundaries on both ends, so "not optional" or "cannot" do
+                // not count as excluding a topic. Mirrored in interpretation.ts.
+                &format!(r"\b(?:no|not|avoid|without)\s+(?:any\s+)?(?:{words})\b"),
                 &q,
             ) {
                 excluded.push(topic.to_string());
@@ -726,5 +728,60 @@ mod date_and_focus_tests {
         let picks = recommend(&state, &c, &events);
         assert_eq!(picks.len(), 3);
         assert!(picks.iter().all(|e| relevance(e, &focus) == 2));
+    }
+
+    /// Mirrors tests/planner-vocabulary.test.ts so both interpreters agree.
+    #[test]
+    fn student_vocabulary_maps_to_topics() {
+        let topics = |msg: &str| parse(msg).constraints.topics.unwrap_or_default();
+        assert_eq!(
+            topics("can you help me to plan event for edtech phd path?"),
+            vec!["AI & education"]
+        );
+        assert_eq!(
+            topics("grad school and thesis advice"),
+            vec!["AI & education"]
+        );
+        assert_eq!(topics("how do I apply for OPT"), vec!["Career"]);
+        assert_eq!(topics("CPT and visa sponsorship"), vec!["Career"]);
+        assert!(topics("show me options").is_empty());
+        assert_eq!(topics("trivia night"), vec!["Social"]);
+        assert_eq!(topics("music or a concert"), vec!["Arts & culture"]);
+        assert_eq!(topics("yoga to reduce stress"), vec!["Wellbeing"]);
+        assert_eq!(
+            parse("no yoga").constraints.excluded,
+            Some(vec!["Wellbeing".to_string()])
+        );
+    }
+
+    /// PR #28 review: OPT only as a noun; exclusions need whole words.
+    #[test]
+    fn opt_noun_and_whole_word_exclusions() {
+        let topics = |msg: &str| parse(msg).constraints.topics.unwrap_or_default();
+        assert_eq!(topics("OPT"), vec!["Career"]);
+        assert_eq!(topics("questions about OPT"), vec!["Career"]);
+        assert_eq!(topics("OPT application timeline"), vec!["Career"]);
+        assert_eq!(topics("I'd opt for something quiet"), vec!["Wellbeing"]);
+        for q in [
+            "what is OPT?",
+            "OPT events",
+            "OPT help",
+            "how does OPT work",
+        ] {
+            assert_eq!(topics(q), vec!["Career"], "{q}");
+        }
+        let c = parse("career events, attendance not optional").constraints;
+        assert_eq!(c.topics, Some(vec!["Career".to_string()]));
+        assert_eq!(c.excluded, None);
+        assert_eq!(
+            parse("I cannot wait for career events")
+                .constraints
+                .excluded,
+            None
+        );
+        assert_eq!(
+            parse("not career").constraints.excluded,
+            Some(vec!["Career".to_string()])
+        );
     }
 }

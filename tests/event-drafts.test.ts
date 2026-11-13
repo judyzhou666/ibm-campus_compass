@@ -6,7 +6,7 @@ import { fresh } from "../frontend/src/state.ts";
 const form = {
   title: "  AI study circle  ",
   topic: "AI & education",
-  category: "Academic",
+  category: "Academic & Research",
   day: "4",
   start: "15:00",
   end: "16:30",

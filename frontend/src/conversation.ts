@@ -1,4 +1,8 @@
-import { PlanningClarification, interpretRequest } from "./interpretation.ts";
+import {
+  PlanningClarification,
+  interpretRequest,
+  unmatchedWords,
+} from "./interpretation.ts";
 import { parseDemoDates, partialWeekNote } from "./demoDates.ts";
 import { requestPlan, planningKey, planModeLabel, LimitedDemoHint } from "./api.ts";
 import { EVENTS, when } from "./data.ts";
@@ -44,6 +48,8 @@ export function createConversation(
     replyPrefix?: string,
     /** A separate first paragraph, e.g. which requested dates are in the demo week. */
     lead?: string,
+    /** The student's own words, to name any the simulated planner could not match. */
+    askedText?: string,
   ) {
     const token = ++version;
     const snapshot = demo.read(),
@@ -99,6 +105,19 @@ export function createConversation(
           ? `${availabilityChangeSummary}\n\nI found ${matches.length} ${matches.length === 1 ? "option" : "options"} on your remaining available days. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
           : `${availabilityChangeSummary}\n\nI couldn't find an eligible, conflict-free match for those days in this demo week. I haven't changed your calendar.\n\nTry a different day or interest, or say "start over" to clear all filters.`;
       } else if (matches.length) {
+        // No topic named: say so, instead of silently using the profile
+        // interests (which made different questions look like the same answer).
+        let topicNote = "";
+        if (!plan.constraints.topics?.length && !plan.constraints.focus?.length) {
+          const basis = snapshot.interests.length
+            ? `your profile interests (${snapshot.interests.join(", ")})`
+            : "a mix of categories";
+          const missed =
+            askedText && plan.mode === "simulated" ? unmatchedWords(askedText) : [];
+          topicNote = missed.length
+            ? `I couldn’t match ${missed.map((w) => `“${w}”`).join(", ")} to anything in this demo catalog, so these picks follow ${basis}. Try a topic such as AI & education, career, social, arts or wellbeing, or words like PhD, internship, OPT, trivia or yoga.\n\n`
+            : `You didn’t name a topic, so these picks follow ${basis}.\n\n`;
+        }
         // Find eligible events that overlap the conflict-free picks (up to 3).
         overlapIds = findOverlapAlternatives(matches, plan.constraints, snapshot);
         const overlapCount = overlapIds.length;
@@ -107,8 +126,8 @@ export function createConversation(
           ? `I found 1 option${overlapCount > 0 ? ` that fits together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time` : " for your week"}. It fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.`
           : `I found ${n} options${overlapCount > 0 ? ` that fit together, plus ${overlapCount} ${overlapCount === 1 ? "alternative" : "alternatives"} at the same time` : " for your week"}. Each fits your current commitments${snapshot.buffer ? " with a 15-minute travel buffer" : ""}.`;
         response = replyPrefix
-          ? `${replyPrefix} ${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
-          : `${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
+          ? `${topicNote}${replyPrefix} ${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`
+          : `${topicNote}${base}\n\nView the details or add an event below. Events marked RSVP required need your confirmation first.`;
       } else {
         // Nothing matched. Use the Rust diagnostic when present (avoids duplicating the same
         // message from both Rust and the TypeScript fallback), otherwise build one here.
@@ -377,7 +396,10 @@ export function createConversation(
     pending = undefined;
     remove(old.id);
     await run((snapshot) => {
-      const constraints = replacementConstraints(snapshot.constraints, old);
+      // Use the search that found the cancelled event, not the latest chat
+      // search (which may be about a different topic or day).
+      const source = snapshot.planSources?.[old.id] ?? snapshot.constraints;
+      const constraints = replacementConstraints(source, old);
       return requestPlan("Find events", constraints, snapshot, fetcher);
     }, old);
   }
@@ -575,6 +597,7 @@ export function createConversation(
         undefined,
         undefined,
         dates ? partialWeekNote(dates) : undefined,
+        resolvedText,
       );
     },
   };
