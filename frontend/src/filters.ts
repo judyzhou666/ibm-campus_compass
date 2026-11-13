@@ -6,7 +6,7 @@
  * together) plus combinable panel filters: AND across groups, OR within one.
  */
 import { DAYS, EVENTS } from "./data.ts";
-import { issue } from "./planner.ts";
+import { conflictWith } from "./planner.ts";
 import { eventCategories, eventSubs, subCategory } from "./taxonomy.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
 
@@ -111,14 +111,15 @@ export function panelCount(s: ExploreSelection) {
 /**
  * True when `e` overlaps a class, a personal calendar item or a planned event
  * (with the travel buffer). Eligibility, capacity and RSVP problems are not
- * time clashes, so "Fits my free time" leaves those events listed.
+ * time clashes, so "Fits my free time" leaves those events listed, but a full
+ * or members-only event that also clashes is still hidden.
  */
 export const clashes = (e: CampusEvent, state: DemoState) =>
-  issue(e, state)?.startsWith("Conflicts with") ?? false;
+  conflictWith(e, state) !== undefined;
 
 /**
  * True when `e` passes the selection. `state` is needed only for "Fits my free
- * time" (classes, personal calendar items and the plan, via issue()).
+ * time" (classes, personal calendar items and the plan, via conflictWith()).
  */
 export function matchesExplore(
   e: CampusEvent,

@@ -2,6 +2,14 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Explore: "Fits my free time" hides every clashing event — November 13, 2026
+
+Review fix on PR #28. "Fits my free time" decided whether an event clashed by checking whether `issue()` began with "Conflicts with". But `issue()` reports access problems (full, members only, eligibility not confirmed, cancelled) before it checks the time. So such an event stayed listed even when it overlapped a class, a personal calendar item or a planned event. The overlap check is now `conflictWith()` in `frontend/src/planner.ts`; `issue()` and the Explore filter both use it, and what `issue()` returns is unchanged.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (306 TypeScript + 5 Wiki tests; the free-time test now also puts a class over e15), `npm run build`, `npm run test:api` and `npm run evaluate` (no diff) pass.
+
 ## AI Planner: understands student words and stops giving the same answer — November 13, 2026
 
 In Simulated mode, different questions got the same three cards. The keyword planner did not know words like "edtech", "PhD" or "OPT". A request that only contained "plan … event" counted as understood, but had no topic, so the planner quietly fell back to the profile interests and said nothing about it. Example: "can you help me to plan event for edtech phd path?" returned the profile's career and social picks.

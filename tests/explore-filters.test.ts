@@ -178,6 +178,15 @@ test("Fits my free time hides clashes with classes and personal items", () => {
   assert.ok(!ids(sel, withPersonal).includes(target.id));
   // Unconfirmed eligibility (e15) is not a time clash, so it stays listed.
   assert.ok(ids(sel, { ...base, blocks: [] }).includes("e15"));
+  // ...but an access problem must not hide a real clash: a class over e15 hides it.
+  const e15 = event("e15");
+  const overE15 = {
+    ...base,
+    blocks: [
+      { id: "b2", title: "Class", day: e15.day, start: e15.start, end: e15.end },
+    ],
+  };
+  assert.ok(!ids(sel, overE15).includes("e15"));
   // Without the switch the clashing event is still listed.
   assert.ok(ids(ALL, withClass).includes(target.id));
 });
