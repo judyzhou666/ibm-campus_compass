@@ -4,7 +4,8 @@ import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import { DEFAULT_READ_IDS } from "./notifications.ts";
-import type { DemoState, PersonalEvent } from "./types.ts";
+import type { Constraints, DemoState, PersonalEvent } from "./types.ts";
+import { validateConstraints } from "./interpretation.ts";
 import { GOAL_TYPES } from "./types.ts";
 
 export function createStore<T>(initial: T) {
@@ -51,6 +52,7 @@ export const fresh = (): DemoState => ({
   likes: [],
   postDraft: null,
   draft: [],
+  planSources: {},
   constraints: {},
   messages: [],
   name: "Judy",
@@ -216,6 +218,7 @@ export function restore(): DemoState {
         : [],
       // Chat filters restart after reload; saved plans and availability are retained.
       constraints: {},
+      planSources: restorePlanSources(value.planSources),
       appliedUpdateIds: Array.isArray(value.appliedUpdateIds)
         ? value.appliedUpdateIds.filter((id: unknown) => typeof id === "string")
         : [],
@@ -255,4 +258,20 @@ export function restore(): DemoState {
   } catch {
     return fresh();
   }
+}
+
+/** Keeps only valid filters, keyed by event id, for events that exist. */
+function restorePlanSources(value: unknown): Record<string, Constraints> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, Constraints> = {};
+  for (const [id, c] of Object.entries(value).slice(0, 200)) {
+    if (!EVENTS.some((e) => e.id === id)) continue;
+    try {
+      validateConstraints(c);
+      out[id] = c;
+    } catch {
+      // Drop malformed entries; the replacement then falls back to the latest search.
+    }
+  }
+  return out;
 }

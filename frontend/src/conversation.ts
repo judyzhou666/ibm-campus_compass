@@ -396,7 +396,10 @@ export function createConversation(
     pending = undefined;
     remove(old.id);
     await run((snapshot) => {
-      const constraints = replacementConstraints(snapshot.constraints, old);
+      // Use the search that found the cancelled event, not the latest chat
+      // search (which may be about a different topic or day).
+      const source = snapshot.planSources?.[old.id] ?? snapshot.constraints;
+      const constraints = replacementConstraints(source, old);
       return requestPlan("Find events", constraints, snapshot, fetcher);
     }, old);
   }

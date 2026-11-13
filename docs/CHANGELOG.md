@@ -2,6 +2,31 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Fix search and the demo script's "Find a replacement" step — November 13, 2026
+
+Found by testing the site like a student and following `docs/demo-script.md` step by step in the browser.
+
+**1. Header search needed the exact phrase.** "career workshop", "free food", "AI lab", "resume help" and "international students" all returned 0 events, while "AI" matched the letters "ai" inside other words.
+- Search now matches every meaningful word as a whole word (simple plurals allowed), in any order.
+- It looks across title, description, topic, host, location, the Explore categories and sub-categories, the day and time of day, and "free food" / "free admission".
+- Filler words such as "events", "for", "students" and "help" are ignored.
+- The logic is `matchesSearch` in `frontend/src/filters.ts`.
+
+**2. The demo's replacement step found nothing.** After "AI career social 3 events after 1 PM" and then "career on Tuesday afternoon", the cancelled event was "AI ethics roundtable" (Monday). "Find a replacement" still searched with the latest filters, "Career; Tuesday; 12:00–17:00", and replied "No replacement satisfies the current filters".
+- Each planned event now remembers the chat filters that found it (`planSources` in the browser-local state; `{}` for events added outside the chat). A replacement uses those filters. Older saved plans fall back to the latest search, as before.
+- "Simulate event cancellation" now also shows while the side calendar is open. The script's first step opens it, which used to hide the button.
+- Filter summaries use 12-hour times ("start after 12 PM") like the rest of the site.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 316 TypeScript + 5 Wiki tests, including the new `tests/search-and-replacement.test.ts`.
+- `cargo test`: 64.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (Rust/TypeScript parity) all pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser at 1280px:
+  - "career workshop" finds 2 events.
+  - The demo script, run exactly as written with the side calendar open, now offers "AI and pedagogy: cross-school dialogue" (Mon 3 PM) as the replacement. The other three choices are kept.
+
 ## Explore: "Fits my free time" hides every clashing event — November 13, 2026
 
 Review fix on PR #28. "Fits my free time" decided whether an event clashed by checking whether `issue()` began with "Conflicts with". But `issue()` reports access problems (full, members only, eligibility not confirmed, cancelled) before it checks the time. So such an event stayed listed even when it overlapped a class, a personal calendar item or a planned event. The overlap check is now `conflictWith()` in `frontend/src/planner.ts`; `issue()` and the Explore filter both use it, and what `issue()` returns is unchanged.

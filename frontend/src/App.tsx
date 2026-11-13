@@ -30,7 +30,12 @@ import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
-import { ALL, matchesExplore, selectionFor } from "./filters.ts";
+import {
+  ALL,
+  matchesExplore,
+  matchesSearch,
+  selectionFor,
+} from "./filters.ts";
 import { News } from "./News.tsx";
 import {
   NotificationDetail,
@@ -513,11 +518,7 @@ export default function App() {
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        matchesExplore(e, filter, state) &&
-        (!query ||
-          `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
-            .toLowerCase()
-            .includes(query.toLowerCase())),
+        matchesExplore(e, filter, state) && (!query || matchesSearch(e, query)),
     );
   const cards = (list: typeof EVENTS) => (
     <div className="event-grid">
@@ -566,6 +567,37 @@ export default function App() {
           return eff ? !!issue(eff, state, effEvents) : false;
         })(),
     );
+  // "Simulate event cancellation" (demo script step) shows next to the side
+  // calendar too, so presenters do not have to hide the calendar first.
+  const changeOfPlans = state.plan.some((id) => !state.cancelled.includes(id)) ? (
+      <section className="panel">
+        <h2>Try a change of plans</h2>
+        <p className="sub">
+          Simulate a cancellation, then find an alternative that
+          fits.
+        </p>
+        <Button
+          className="small"
+          onClick={() => {
+            const id = demo
+              .read()
+              .plan.find(
+                (id) => !demo.read().cancelled.includes(id),
+              );
+            if (id)
+              update((s) => ({
+                ...s,
+                cancelled: [...s.cancelled, id],
+              }));
+            notify(
+              "Demo cancellation created. Your other events are unchanged.",
+            );
+          }}
+        >
+          Simulate event cancellation
+        </Button>
+      </section>
+    ) : null;
   const detailEvent = EVENTS.find((e) => e.id === detail);
   const campusZone = isTimeZone(state.timezone)
     ? state.timezone
@@ -1318,11 +1350,14 @@ export default function App() {
                   <p className="fineprint">{chatFineprint}</p>
                 </section>
                 {calendarOpen ? (
-                  <PlannerCalendar
-                    state={state}
-                    onClose={() => setCalendarOpen(false)}
-                    onDetails={setDetail}
-                  />
+                  <div className="stack">
+                    <PlannerCalendar
+                      state={state}
+                      onClose={() => setCalendarOpen(false)}
+                      onDetails={setDetail}
+                    />
+                    {changeOfPlans}
+                  </div>
                 ) : (
                   <aside className="stack">
                     <section className="panel">
@@ -1372,35 +1407,7 @@ export default function App() {
                         You choose what makes it into your week.
                       </p>
                     </section>
-                    {state.plan.some((id) => !state.cancelled.includes(id)) ? (
-                      <section className="panel">
-                        <h2>Try a change of plans</h2>
-                        <p className="sub">
-                          Simulate a cancellation, then find an alternative that
-                          fits.
-                        </p>
-                        <Button
-                          className="small"
-                          onClick={() => {
-                            const id = demo
-                              .read()
-                              .plan.find(
-                                (id) => !demo.read().cancelled.includes(id),
-                              );
-                            if (id)
-                              update((s) => ({
-                                ...s,
-                                cancelled: [...s.cancelled, id],
-                              }));
-                            notify(
-                              "Demo cancellation created. Your other events are unchanged.",
-                            );
-                          }}
-                        >
-                          Simulate event cancellation
-                        </Button>
-                      </section>
-                    ) : null}
+                    {changeOfPlans}
                   </aside>
                 )}
               </div>

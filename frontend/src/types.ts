@@ -163,6 +163,12 @@ export interface DemoState extends Schedule {
   postDraft: PostDraft | null;
   draft: string[];
   constraints: Constraints;
+  /**
+   * The chat filters that found each planned event (event id → filters), so a
+   * replacement for a cancelled event uses that search, not the latest one.
+   * Events added outside the chat map to {} (just their own topic).
+   */
+  planSources?: Record<string, Constraints>;
   messages: Message[];
   /** IDs of EventUpdate entries that have been applied to the local demo state. */
   appliedUpdateIds: string[];

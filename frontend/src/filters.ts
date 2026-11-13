@@ -242,3 +242,56 @@ export function activeChips(s: ExploreSelection): ActiveChip[] {
 export const subCount = (cat: string, id: string, events = EVENTS) =>
   events.filter((e) => matchesExplore(e, { ...ALL, category: cat, subs: [id] }))
     .length;
+
+/** Words that do not narrow a search ("events for international students"). */
+const SEARCH_FILLER = new Set(
+  (
+    "a an and the for of on in at to with by from or any some all me my i find show search events event student students " +
+    "help need want looking like about something anything things thing this week what where when how can get please"
+  ).split(" "),
+);
+const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+
+/** Everything a student might type to find this event, lowercased. */
+function searchText(e: CampusEvent) {
+  const subs = eventSubs(e).map((id) => subCategory(id)?.label ?? "");
+  return [
+    e.title,
+    e.description,
+    e.topic,
+    e.category,
+    e.food,
+    e.location,
+    e.rsvp,
+    e.host_school ?? "",
+    ...(e.goal_type ?? []),
+    ...eventCategories(e),
+    ...subs,
+    FREE_FOOD.includes(e.food) ? "free food" : "",
+    e.cost === 0 ? "free admission" : "",
+    DAY_NAMES[e.day] ?? "",
+    TIMES[timeOfDay(e.start)],
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Header search: every meaningful word must appear as a whole word (simple
+ * plurals allowed), in any order and any field. So "career workshop", "free
+ * food" and "international students" find events, and "AI" no longer matches
+ * the "ai" inside other words.
+ */
+export function matchesSearch(e: CampusEvent, query: string) {
+  const words = (query.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
+    (w) => !SEARCH_FILLER.has(w),
+  );
+  if (!words.length) return true;
+  const text = searchText(e);
+  return words.every((w) => {
+    const stem = w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
+    return new RegExp(`\\b${escapeRe(stem)}(?:s|es)?\\b`).test(text);
+  });
+}
