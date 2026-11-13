@@ -2,6 +2,14 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Calendar: editing a class keeps its place in the list — November 13, 2026
+
+Review fix on PR #29. Saving an edit removed the item from both lists before adding it back, so every edited class or personal item moved to the end of its list. Now the item is removed only from the *other* list, which is still what lets a class turn into a personal item and back. An edit that stays in the same list replaces the item in place.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (297 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+
 ## Calendar: editable Frequency and Calendar, Google/Canvas-style repeats — November 13, 2026
 
 Editing a class (e.g. "Research Methods") showed Date, Frequency and Calendar as dropdowns, but they were disabled, so they could not be opened or changed. Frequency also offered only "Does not repeat" and "Weekly".

@@ -861,20 +861,15 @@ export function CalendarView({
 
   // ── Save handler ──────────────────────────────────────────────────────────
   function handleSave(payload: PersonalEventSavePayload) {
-    // Editing removes the old entry from both lists first, so changing the
-    // Calendar or Frequency can turn a class into a personal item and back.
-    const strip = (s: DemoState): DemoState =>
-      payload.replaces
-        ? {
-            ...s,
-            blocks: s.blocks.filter((x) => x.id !== payload.replaces),
-            personalEvents: (s.personalEvents ?? []).filter((x) => x.id !== payload.replaces),
-          }
-        : s;
+    // Editing removes the old entry from the *other* list, so changing the
+    // Calendar or Frequency can turn a class into a personal item and back,
+    // while an edit within the same list replaces it in place (keeps order).
+    const drop = <T extends { id: string }>(list: T[]) =>
+      payload.replaces ? list.filter((x) => x.id !== payload.replaces) : list;
     if (payload.block) {
       const b = payload.block;
       onUpdate((s0) => {
-        const s = strip(s0);
+        const s = { ...s0, personalEvents: drop(s0.personalEvents ?? []) };
         const existing = s.blocks.find((x) => x.id === b.id);
         if (existing) {
           return { ...s, blocks: s.blocks.map((x) => (x.id === b.id ? b : x)) };
@@ -903,7 +898,7 @@ export function CalendarView({
     } else if (payload.personalEvent) {
       const pe = payload.personalEvent;
       onUpdate((s0) => {
-        const s = strip(s0);
+        const s = { ...s0, blocks: drop(s0.blocks) };
         const existing = (s.personalEvents ?? []).find((x) => x.id === pe.id);
         if (existing) {
           return { ...s, personalEvents: (s.personalEvents ?? []).map((x) => (x.id === pe.id ? pe : x)) };
