@@ -43,6 +43,28 @@ describe("student vocabulary", () => {
     assert.deepEqual(topics("yoga to reduce stress"), ["Wellbeing"]);
   });
 
+  it("OPT means Career only as a noun, not the verb (PR #28 review)", () => {
+    assert.deepEqual(topics("OPT"), ["Career"]);
+    assert.deepEqual(topics("questions about OPT"), ["Career"]);
+    assert.deepEqual(topics("OPT application timeline"), ["Career"]);
+    assert.deepEqual(topics("I'd opt for something quiet"), ["Wellbeing"]);
+  });
+
+  it("exclusions need whole words (PR #28 review)", () => {
+    const c = interpretRequest(
+      "career events, attendance not optional",
+    ).constraints;
+    assert.deepEqual(c.topics, ["Career"]);
+    assert.equal(c.excluded, undefined);
+    assert.equal(
+      interpretRequest("I cannot wait for career events").constraints.excluded,
+      undefined,
+    );
+    assert.deepEqual(interpretRequest("not career").constraints.excluded, [
+      "Career",
+    ]);
+  });
+
   it("negations still exclude", () => {
     assert.deepEqual(interpretRequest("no yoga").constraints.excluded, [
       "Wellbeing",

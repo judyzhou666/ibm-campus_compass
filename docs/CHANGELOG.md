@@ -2,6 +2,24 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: PR #28 review fixes for OPT and exclusions — November 13, 2026
+
+Judy's review of PR #28 noted two interpreter problems. Both are fixed in `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` together, so the two interpreters stay identical:
+
+- **"opt" as a verb meant Career.** "I'd opt for something quiet" was read as a Career request. OPT now counts only as a noun: "OPT" on its own, "for / about / on / with / stem / my OPT", or "OPT application / status / visa / extension / eligibility / employment / job / questions / timeline / workshop / session". CPT is unchanged. The patterns avoid lookahead, which Rust's `regex` crate does not support.
+- **Exclusions had no word boundaries.** `(?:no|not|avoid|without)\s+(?:any\s+)?(?:words)` matched inside longer words, so "not optional" excluded Career and "cannot" counted as "not". The pattern now has `\b` at both ends in both interpreters.
+
+Made with Claude Code.
+
+**Verification.**
+- New tests in `tests/planner-vocabulary.test.ts` and `opt_noun_and_whole_word_exclusions` in Rust.
+- `npm test`: 318 TypeScript + 5 Wiki tests. `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- Against the rebuilt server and in the browser chat:
+  - "I'd opt for something quiet" shows a Wellbeing filter and wellbeing events.
+  - "how do I apply for OPT" returns Career.
+  - "career events, attendance not optional" keeps Career with nothing excluded.
+
 ## Fix search and the demo script's "Find a replacement" step — November 13, 2026
 
 Found by testing the site like a student and following `docs/demo-script.md` step by step in the browser.

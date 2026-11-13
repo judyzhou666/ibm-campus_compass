@@ -85,7 +85,7 @@ function focusTerms(q: string, excluded: string[]) {
 
 const keywords = {
   "AI & education": /\b(ai|education|research|learning|tech|coding|data|edtech|ed\s+tech|phd|doctoral|doctorate|grad(?:uate)?\s+school|academics?|thesis|dissertation|seminars?|teaching|pedagogy|professors?|faculty)\b/i,
-  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|opt|cpt|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship)\b/i,
+  Career: /\b(career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|cpt|^opt$|(?:for|about|on|with|stem|my)\s+opt|opt\s+(?:application|status|visa|extension|eligibility|employment|jobs?|questions?|timeline|workshop|session)|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship)\b/i,
   Social: /\b(social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people|international|clubs?|party|parties|games?|trivia|hang\s+out|mixer)\b/i,
   "Arts & culture":
     /\b(art|arts|culture|cultural|film|museum|creative|sketch|ceramics|music|concerts?|painting|drawing|theat(?:er|re)|photography|crafts?)\b/i,
@@ -150,7 +150,9 @@ export function interpretRequest(
     .filter(([k, re]) =>
       test(
         new RegExp(
-          `(?:no|not|avoid|without)\\s+(?:any\\s+)?(?:${re.source.replace(/\\b/g, "")})`,
+          // Word boundaries on both ends, so "not optional" or "cannot" do
+          // not count as excluding a topic. Mirrored in interpreter.rs.
+          `\\b(?:no|not|avoid|without)\\s+(?:any\\s+)?(?:${re.source.replace(/\\b/g, "")})\\b`,
           "i",
         ),
       ),
