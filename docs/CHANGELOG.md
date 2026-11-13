@@ -2,6 +2,34 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Explore: two-level categories and a Filters panel — November 13, 2026
+
+The Explore chip row mixed event type with five food states (including "No food" and "Food unknown") and allowed only one choice at a time. It is now:
+
+- **Six categories with sub-categories** (`frontend/src/taxonomy.ts`): Academic & Research, Career & Jobs, Community & Social, Wellbeing, Arts & Creative, International Students. Clicking a category opens its topics as checkboxes with event counts. Topics with no events this week are greyed out with "(0)". CPT / OPT sits under both Career and International Students. Works with the mouse, touch and keyboard (Enter, arrow keys, Space, Escape).
+- **A Filters panel** next to All, with filters that can be combined: day, time of day, fits my free time (only time clashes with classes, personal calendar items or planned events), free food (one switch for free meal, coffee & snacks, light refreshments and popcorn), free admission, host (from the data), who it's for (international, first-generation) and registration.
+- **Active choices show as removable chips** with Clear all. An empty result offers Clear filters.
+- **Home tiles** now show the six categories plus Free food, and each tile's count matches what Explore shows. **Admin drafts** use the new names; drafts saved under old names still load.
+- **Data.** Each event in `data/events.json` gained a `subcategories` list. No existing field changed, so the Rust planner (whose `Event` struct ignores unknown fields) and the frozen evaluation are unaffected. `npm run evaluate` leaves `docs/evaluation-report.md` and `evaluation/results.json` unchanged.
+
+**Tools.** IBM Bob drafted the first pass (sub-category choices and a first filter bar) but ran out of tokens before finishing or committing. Bob's draft also rewrote every event's `category` and reformatted `goal_type`. Claude Code finished the work:
+- kept Bob's sub-category choices (fixing a few that sat under the wrong parent) without touching the original fields;
+- added the taxonomy module, the day/time/free-time/host filters, the active chips, the CSS and the tests;
+- merged main (PRs #25 and #27).
+
+No new fictional events were added. The Internships, Part-time & on-campus jobs, CPT / OPT, Meet professors and Course load topics have 0 events for now.
+
+**Verification.**
+- `npm test`: 298 TypeScript + 5 Wiki tests, including the new `tests/explore-filters.test.ts`.
+- `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (63), `cargo build --locked`, `npm run test:api` and `npm run evaluate` (no diff) all pass.
+- Browser checks with the mouse at 1280px:
+  - Career & Jobs → Networking + Resume gives 7 events; adding Free food gives 5.
+  - Fits my free time hides time clashes but keeps an event whose only problem is unconfirmed eligibility (this bug was found and fixed during the check).
+  - Removing a chip with × and Clear all both work.
+  - The Home Free food tile opens Explore with 21 events.
+- Keyboard-only use of the Academic & Research topics works.
+- At 375px, the topics list and Filters panel fit with no horizontal scroll.
+
 ## Consolidate basic profile editing — November 12, 2026
 
 Made Display Name and Major / Program read-only in the main Profile preferences form and added an Edit action that opens the existing Basic Information editor. Both views continue to use the existing browser-local state. Student/Admin identity and Calendar behavior were left unchanged. Made with Codex.

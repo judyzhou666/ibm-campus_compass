@@ -8,13 +8,34 @@ import {
   timeIn,
 } from "./config.ts";
 import { COMMUNITIES, communityHash } from "./communities.ts";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
 import { issue, reasons } from "./planner.ts";
 import { paths } from "./icons.ts";
 import { ROLES, ROLE_INFO, type Role } from "./identity.ts";
 import type { CampusEvent, DemoState } from "./types.ts";
 import { busyBlocks } from "./personalEvents.ts";
+import {
+  ALL,
+  AUDIENCES,
+  HOSTS,
+  RSVP,
+  TIMES,
+  activeChips,
+  panelCount,
+  subCount,
+  type Audience,
+  type ExploreSelection,
+  type RsvpMode,
+  type TimeOfDay,
+} from "./filters.ts";
+import { TOP_CATEGORIES, subsOf } from "./taxonomy.ts";
 import {
   updateBadge,
   hasConflict,
@@ -97,38 +118,296 @@ export function Heading({
     </div>
   );
 }
+/**
+ * Explore Events filter bar: All, six categories (click opens their
+ * sub-categories) and a Filters panel with combinable conditions. Active
+ * choices show as removable chips with Clear all.
+ */
 export function Filters({
   value,
   onChange,
+  count,
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  value: ExploreSelection;
+  onChange: (value: ExploreSelection) => void;
+  count: number;
 }) {
+  const [openCat, setOpenCat] = useState<string | null>(null);
+  const [panel, setPanel] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const catBtns = useRef<Record<string, HTMLButtonElement | null>>({});
+  const filterBtn = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const chips = activeChips(value);
+  const panelOn = panelCount(value);
+
+  // Clicking outside closes the open popover or panel.
+  useEffect(() => {
+    if (!openCat && !panel) return;
+    const away = (ev: PointerEvent) => {
+      if (wrap.current && !wrap.current.contains(ev.target as Node)) {
+        setOpenCat(null);
+        setPanel(false);
+      }
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [openCat, panel]);
+  // Move focus into whatever just opened.
+  useEffect(() => {
+    if (openCat)
+      popRef.current?.querySelector<HTMLInputElement>("input:not(:disabled)")?.focus();
+  }, [openCat]);
+  useEffect(() => {
+    if (panel) panelRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+  }, [panel]);
+
+  const closeCat = () => {
+    const cat = openCat;
+    setOpenCat(null);
+    if (cat) catBtns.current[cat]?.focus();
+  };
+  const closePanel = () => {
+    setPanel(false);
+    filterBtn.current?.focus();
+  };
+  const clickCat = (cat: string) => {
+    setPanel(false);
+    if (value.category !== cat) {
+      onChange({ ...value, category: cat, subs: [] });
+      setOpenCat(cat);
+    } else setOpenCat(openCat === cat ? null : cat);
+  };
+  // Arrow keys move between the enabled checkboxes of the open popover.
+  const arrows = (ev: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      closeCat();
+      return;
+    }
+    if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    const boxes = [
+      ...(popRef.current?.querySelectorAll<HTMLInputElement>("input:not(:disabled)") ?? []),
+    ];
+    if (!boxes.length) return;
+    ev.preventDefault();
+    const i = boxes.indexOf(document.activeElement as HTMLInputElement);
+    const next = ev.key === "ArrowDown" ? i + 1 : i - 1;
+    boxes[(next + boxes.length) % boxes.length].focus();
+  };
+  const toggle = <T,>(list: T[], x: T) =>
+    list.includes(x) ? list.filter((y) => y !== x) : [...list, x];
+  const check = (
+    label: string,
+    on: boolean,
+    flip: () => void,
+    key = label,
+  ) => (
+    <label key={key} className={`check-chip ${on ? "active" : ""}`}>
+      <input type="checkbox" checked={on} onChange={flip} />
+      {label}
+    </label>
+  );
+
   return (
-    <div className="filters">
-      {[
-        "All",
-        "Academic",
-        "Career",
-        "Social",
-        "Workshops",
-        "Wellbeing",
-        "Arts",
-        "Free Food",
-        "Coffee & snacks",
-        "Paid food",
-        "No food",
-        "Food unknown",
-      ].map((c) => (
+    <div className="explore-filters" ref={wrap}>
+      <div className="filters" role="group" aria-label="Event categories">
         <button
-          key={c}
-          className={`chip ${value === c ? "active" : ""}`}
-          aria-pressed={value === c}
-          onClick={() => onChange(c)}
+          className={`chip ${value.category === "All" ? "active" : ""}`}
+          aria-pressed={value.category === "All"}
+          onClick={() => {
+            onChange({ ...value, category: "All", subs: [] });
+            setOpenCat(null);
+          }}
         >
-          {c}
+          All
         </button>
-      ))}
+        {TOP_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            ref={(el) => {
+              catBtns.current[cat] = el;
+            }}
+            className={`chip ${value.category === cat ? "active" : ""}`}
+            aria-pressed={value.category === cat}
+            aria-expanded={openCat === cat}
+            aria-controls="subcat-pop"
+            onClick={() => clickCat(cat)}
+          >
+            {cat}
+            {value.category === cat && value.subs.length ? ` (${value.subs.length})` : ""}
+            <span className="chip-caret" aria-hidden="true">
+              {openCat === cat ? "▴" : "▾"}
+            </span>
+          </button>
+        ))}
+        <button
+          ref={filterBtn}
+          className={`chip chip-filters ${panelOn ? "active" : ""}`}
+          aria-expanded={panel}
+          aria-controls="filter-panel"
+          onClick={() => {
+            setOpenCat(null);
+            setPanel(!panel);
+          }}
+        >
+          <Icon name="filter" /> Filters
+          {panelOn ? <span className="chip-badge">{panelOn}</span> : null}
+        </button>
+      </div>
+      {openCat ? (
+        <div
+          id="subcat-pop"
+          className="subcat-pop"
+          ref={popRef}
+          role="group"
+          aria-label={`${openCat} topics`}
+          onKeyDown={arrows}
+        >
+          <p className="pop-title">
+            {openCat}: pick topics, or leave all unticked for everything
+          </p>
+          <div className="pop-options">
+            {subsOf(openCat).map((sub) => {
+              const n = subCount(openCat, sub.id);
+              const on = value.subs.includes(sub.id);
+              return (
+                <label
+                  key={sub.id}
+                  className={`check-row ${n === 0 ? "empty" : ""}`}
+                  title={n === 0 ? "No events in this demo week yet" : undefined}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    disabled={n === 0}
+                    onChange={() =>
+                      onChange({ ...value, subs: toggle(value.subs, sub.id) })
+                    }
+                  />
+                  <span>{sub.label}</span>
+                  <small>({n})</small>
+                </label>
+              );
+            })}
+          </div>
+          <div className="pop-actions">
+            <button className="text-btn" onClick={() => onChange({ ...value, subs: [] })}>
+              Show all {openCat}
+            </button>
+            <button className="btn" onClick={closeCat}>
+              Done
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {panel ? (
+        <div
+          id="filter-panel"
+          className="filter-panel"
+          ref={panelRef}
+          role="group"
+          aria-label="More filters"
+          onKeyDown={(ev) => {
+            if (ev.key === "Escape") {
+              ev.preventDefault();
+              closePanel();
+            }
+          }}
+        >
+          <fieldset>
+            <legend>Day</legend>
+            {DAYS.map((d, i) =>
+              check(d, value.days.includes(i), () =>
+                onChange({ ...value, days: toggle(value.days, i) }),
+              ),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>Time of day</legend>
+            {(Object.keys(TIMES) as TimeOfDay[]).map((t) =>
+              check(TIMES[t], value.times.includes(t), () =>
+                onChange({ ...value, times: toggle(value.times, t) }),
+              ),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>My schedule</legend>
+            {check("Fits my free time", value.fitsFreeTime, () =>
+              onChange({ ...value, fitsFreeTime: !value.fitsFreeTime }),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>Food and cost</legend>
+            {check("Free food", value.freeFood, () =>
+              onChange({ ...value, freeFood: !value.freeFood }),
+            )}
+            {check("Free admission", value.freeAdmission, () =>
+              onChange({ ...value, freeAdmission: !value.freeAdmission }),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>Host</legend>
+            {HOSTS.map((h) =>
+              check(h, value.hosts.includes(h), () =>
+                onChange({ ...value, hosts: toggle(value.hosts, h) }),
+              ),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>Who it’s for</legend>
+            {(Object.keys(AUDIENCES) as Audience[]).map((a) =>
+              check(AUDIENCES[a], value.audience.includes(a), () =>
+                onChange({ ...value, audience: toggle(value.audience, a) }),
+              ),
+            )}
+          </fieldset>
+          <fieldset>
+            <legend>Registration</legend>
+            {(Object.keys(RSVP) as RsvpMode[]).map((r) =>
+              check(RSVP[r], value.rsvp.includes(r), () =>
+                onChange({ ...value, rsvp: toggle(value.rsvp, r) }),
+              ),
+            )}
+          </fieldset>
+          <div className="pop-actions">
+            <button
+              className="text-btn"
+              onClick={() => onChange({ ...ALL, category: value.category, subs: value.subs })}
+            >
+              Clear these filters
+            </button>
+            <button className="btn primary" onClick={closePanel}>
+              Show {count} {count === 1 ? "event" : "events"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {chips.length ? (
+        <div className="active-filters" role="group" aria-label="Active filters">
+          <span className="active-filters-label">Filtering by:</span>
+          {chips.map((c) => (
+            <button
+              key={c.key}
+              className="filter-chip"
+              aria-label={`Remove filter: ${c.label}`}
+              onClick={() => onChange(c.remove(value))}
+            >
+              {c.label} ×
+            </button>
+          ))}
+          <button
+            className="filter-chip filter-chip-clear"
+            onClick={() => {
+              onChange(ALL);
+              setOpenCat(null);
+            }}
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

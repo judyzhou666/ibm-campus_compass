@@ -30,7 +30,7 @@ import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
-import { matchesFilter } from "./filters.ts";
+import { ALL, matchesExplore, selectionFor } from "./filters.ts";
 import { News } from "./News.tsx";
 import {
   NotificationDetail,
@@ -161,7 +161,7 @@ export default function App() {
   const [selectedCommunity, setSelectedCommunity] = useState(() =>
     communityFromHash(location.hash),
   );
-  const [filter, setFilter] = useState("All"),
+  const [filter, setFilter] = useState(ALL),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
   const [message, setMessage] = useState(""),
@@ -246,7 +246,7 @@ export default function App() {
     setOpenNote(null);
     setBellOpen(false);
     setProfileOpen(false);
-    setFilter("All");
+    setFilter(ALL);
     setQuery("");
     setSearch("");
     // The URL follows page state (see the URL effect below); switching tabs
@@ -513,7 +513,7 @@ export default function App() {
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        matchesFilter(e, filter) &&
+        matchesExplore(e, filter, state) &&
         (!query ||
           `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
             .toLowerCase()
@@ -622,7 +622,7 @@ export default function App() {
           onSubmit={(e) => {
             e.preventDefault();
             setQuery(search.trim());
-            setFilter("All");
+            setFilter(ALL);
             setPage("explore");
           }}
         >
@@ -834,7 +834,7 @@ export default function App() {
               onViewNotifications={() => openNotifications()}
               onCategory={(f) => {
                 nav("explore");
-                setFilter(f);
+                setFilter(selectionFor(f));
               }}
               onExplore={() => nav("explore")}
               onProfile={() => nav("profile")}
@@ -1033,8 +1033,12 @@ export default function App() {
                     : "Follow your curiosity. There’s more happening than you think."
                 }
               />
-              <div className="section-bar">
-                <Filters value={filter} onChange={setFilter} />
+              <div className="section-bar explore-bar">
+                <Filters
+                  value={filter}
+                  onChange={setFilter}
+                  count={list.length}
+                />
                 <span className="date">
                   {list.length} fictional{" "}
                   {list.length === 1 ? "event" : "events"}
@@ -1065,9 +1069,15 @@ export default function App() {
                 >
                   Try another keyword or category, or bookmark an event.
                   <p>
-                    <Button onClick={() => nav("explore")}>
-                      Explore events
-                    </Button>
+                    {filter !== ALL ? (
+                      <Button onClick={() => setFilter(ALL)}>
+                        Clear filters
+                      </Button>
+                    ) : (
+                      <Button onClick={() => nav("explore")}>
+                        Explore events
+                      </Button>
+                    )}
                   </p>
                 </Empty>
               ) : null}

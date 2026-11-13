@@ -27,8 +27,8 @@ The institutional benefits — improved resource discoverability, cross-school r
 
 What the app does today, from the student's view:
 
-- **Home** — announcement carousel, browse-by-category tiles (Academic, Career, Social, Workshops, Wellbeing, Arts, Free food), and a preference-ranked list of upcoming events.
-- **Explore Events** — searchable, filterable event cards with access conditions, food, RSVP status and source provenance.
+- **Home** — announcement carousel, browse-by-category tiles (Academic & Research, Career & Jobs, Community & Social, Wellbeing, Arts & Creative, International Students, Free food), and a preference-ranked list of upcoming events.
+- **Explore Events** — six categories that open into sub-categories (e.g. Career & Jobs › Internships, CPT / OPT) plus a Filters panel (day, time, fits my free time, free food, free admission, host, audience, registration) with removable filter chips. Event cards show access conditions, food, RSVP status and source provenance.
 - **AI Planner ("Mimi")** — conversational chat with visible, removable filter chips and a draft-plan sidebar. Ranks events that mention the student's own words first ("AI in education") and understands demo-week dates such as "Nov 6" or "Nov 3–5". The student approves every addition; every add re-checks the latest schedule. Optional watsonx mode (see below).
 - **My Dashboard** — Weekly Calendar strip with week navigation; **Full Calendar** sub-page with Day/Week/Month/Year views, personal event creation/editing/dragging (blue items), and campus events (green, fixed time).
 - **Discussion Forum** — searchable communities, local posts, join/leave, related events.

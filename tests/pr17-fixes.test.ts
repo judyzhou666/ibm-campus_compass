@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EVENTS } from "../frontend/src/data.ts";
 import { fresh } from "../frontend/src/state.ts";
-import { matchesFilter } from "../frontend/src/filters.ts";
+import { matchesExplore, selectionFor } from "../frontend/src/filters.ts";
+
+const matchesFilter = (e: (typeof EVENTS)[number], f: string) =>
+  matchesExplore(e, selectionFor(f));
 import { posterTone } from "../frontend/src/components.tsx";
 import { categoryCount, withUpdates } from "../frontend/src/home.ts";
 import { bufferBlocker } from "../frontend/src/settings.ts";
@@ -27,15 +30,14 @@ test("announcement time and room follow applied synthetic updates", () => {
 });
 
 test("Arts and Wellbeing chips include events filed under another category", () => {
-  const arts = EVENTS.filter((e) => matchesFilter(e, "Arts"));
+  const arts = EVENTS.filter((e) => matchesFilter(e, "Arts & Creative"));
   assert.ok(arts.some((e) => e.title === "Film club evening"));
-  assert.ok(
-    arts.every((e) => e.category === "Arts" || e.topic === "Arts & culture"),
-  );
+  assert.ok(arts.some((e) => e.title === "Ceramics beginner workshop"));
+  assert.ok(!arts.some((e) => e.category === "Career"));
   const wellbeing = EVENTS.filter((e) => matchesFilter(e, "Wellbeing"));
   assert.ok(wellbeing.some((e) => e.title === "Wednesday noon run"));
   // Home counts use the same predicate as Explore.
-  for (const f of ["Academic", "Arts", "Wellbeing", "Free Food"])
+  for (const f of ["Academic & Research", "Arts & Creative", "Wellbeing", "Free food"])
     assert.equal(
       categoryCount(f),
       EVENTS.filter((e) => matchesFilter(e, f)).length,

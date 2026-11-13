@@ -58,6 +58,8 @@ export interface CampusEvent extends TimeSlot {
   food_status?: string;
   host_school?: string;
   goal_type?: string[];
+  /** Explore sub-category ids (see taxonomy.ts). */
+  subcategories?: string[];
   access_conditions?: AccessConditions;
 }
 export interface Schedule {

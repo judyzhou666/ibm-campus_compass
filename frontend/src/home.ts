@@ -7,7 +7,8 @@
  * No AI is involved; the ranking is a simple, explainable score.
  */
 import { EVENTS } from "./data.ts";
-import { matchesFilter } from "./filters.ts";
+import { FREE_FOOD_FILTER, matchesExplore, selectionFor } from "./filters.ts";
+import { TOP_CATEGORIES, eventCategories } from "./taxonomy.ts";
 import { issue } from "./planner.ts";
 import { effectiveEvents, effectiveUpdate, hasConflict } from "./updates.ts";
 import { fresh } from "./state.ts";
@@ -24,23 +25,53 @@ export interface HomeCategory {
 }
 
 /**
- * Quick entries for the kinds of opportunity the proposal names: learning,
- * career and social events, hands-on workshops, wellbeing, arts and culture,
- * and simply coming for a meal. Each one matches an Explore Events filter.
+ * Quick entries for the six Explore categories plus free food. Each one opens
+ * Explore Events with the same selection, so the counts always match.
  */
 export const HOME_CATEGORIES: HomeCategory[] = [
-  { label: "Academic", filter: "Academic", icon: "academic", tone: "academic" },
-  { label: "Career", filter: "Career", icon: "briefcase", tone: "career" },
-  { label: "Social", filter: "Social", icon: "users", tone: "social" },
-  { label: "Workshops", filter: "Workshops", icon: "pencil", tone: "academic" },
+  {
+    label: "Academic & Research",
+    filter: "Academic & Research",
+    icon: "academic",
+    tone: "academic",
+  },
+  {
+    label: "Career & Jobs",
+    filter: "Career & Jobs",
+    icon: "briefcase",
+    tone: "career",
+  },
+  {
+    label: "Community & Social",
+    filter: "Community & Social",
+    icon: "users",
+    tone: "social",
+  },
   { label: "Wellbeing", filter: "Wellbeing", icon: "heart", tone: "wellbeing" },
-  { label: "Arts", filter: "Arts", icon: "palette", tone: "arts" },
-  { label: "Free food", filter: "Free Food", icon: "food", tone: "social" },
+  {
+    label: "Arts & Creative",
+    filter: "Arts & Creative",
+    icon: "palette",
+    tone: "arts",
+  },
+  {
+    label: "International Students",
+    filter: "International Students",
+    icon: "globe",
+    tone: "career",
+  },
+  {
+    label: "Free food",
+    filter: FREE_FOOD_FILTER,
+    icon: "food",
+    tone: "social",
+  },
 ];
 
-/** Number of catalog events an Explore filter would show. */
+/** Number of catalog events the Explore selection for `filter` shows. */
 export function categoryCount(filter: string, events = EVENTS) {
-  return events.filter((e) => matchesFilter(e, filter)).length;
+  const sel = selectionFor(filter);
+  return events.filter((e) => matchesExplore(e, sel)).length;
 }
 
 /**
@@ -146,13 +177,13 @@ export function homeRecommendations(
     );
     return { personalized: true, events: ranked.slice(0, limit) };
   }
-  const queues = HOME_CATEGORIES.filter((c) => c.filter !== "Free Food").map(
-    (c) =>
-      open
-        .filter((e) => e.category === c.filter)
-        .sort(
-          (a, b) => Number(b.cost === 0) - Number(a.cost === 0) || byTime(a, b),
-        ),
+  // One queue per category; an event is queued under its first category.
+  const queues = TOP_CATEGORIES.map((c) =>
+    open
+      .filter((e) => eventCategories(e)[0] === c)
+      .sort(
+        (a, b) => Number(b.cost === 0) - Number(a.cost === 0) || byTime(a, b),
+      ),
   );
   const picked: CampusEvent[] = [];
   while (picked.length < limit && queues.some((q) => q.length)) {
