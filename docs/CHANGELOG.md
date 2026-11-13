@@ -2,6 +2,14 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: "what is OPT?" is a Career question again — November 13, 2026
+
+Review fix on PR #28. The noun-only OPT rule from the previous commit matched a bare "opt" only when it was the whole message (`^opt$`). So "what is OPT?", "OPT events", "OPT help" and "how does OPT work" no longer found Career events. Now "opt" also counts at the start of a message and after "is", "does", "apply" or "the", plus more nouns after it (events, help, work, sessions, workshops). "I'd opt for something quiet" still maps to Wellbeing. Changed in both interpreters.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (318 TypeScript + 5 Wiki tests), `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (65), `npm run build`, `npm run test:api` and `npm run evaluate` (no diff) pass.
+
 ## AI Planner: PR #28 review fixes for OPT and exclusions — November 13, 2026
 
 Judy's review of PR #28 noted two interpreter problems. Both are fixed in `frontend/src/interpretation.ts` and `backend/src/interpreter.rs` together, so the two interpreters stay identical:

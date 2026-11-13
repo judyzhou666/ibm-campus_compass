@@ -48,6 +48,8 @@ describe("student vocabulary", () => {
     assert.deepEqual(topics("questions about OPT"), ["Career"]);
     assert.deepEqual(topics("OPT application timeline"), ["Career"]);
     assert.deepEqual(topics("I'd opt for something quiet"), ["Wellbeing"]);
+    for (const q of ["what is OPT?", "OPT events", "OPT help", "how does OPT work"])
+      assert.deepEqual(topics(q), ["Career"], q);
   });
 
   it("exclusions need whole words (PR #28 review)", () => {

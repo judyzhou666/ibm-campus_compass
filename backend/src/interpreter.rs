@@ -200,7 +200,7 @@ impl SimulatedInterpreter {
         }
         let keywords = [
             r"ai|education|research|learning|tech|coding|data|edtech|ed\s+tech|phd|doctoral|doctorate|grad(?:uate)?\s+school|academics?|thesis|dissertation|seminars?|teaching|pedagogy|professors?|faculty",
-            r"career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|cpt|^opt$|(?:for|about|on|with|stem|my)\s+opt|opt\s+(?:application|status|visa|extension|eligibility|employment|jobs?|questions?|timeline|workshop|session)|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship",
+            r"career|jobs?|internships?|industry|alumni|networking|resume|professional|work experience|hiring|find\s+(?:a\s+)?(?:job|internship|work)|get\s+(?:a\s+)?job|land\s+(?:a\s+)?(?:job|internship)|cpt|^opt|(?:for|about|on|with|stem|my|is|does|apply|the)\s+opt|opt\s+(?:application|status|visa|extension|eligibility|employment|jobs?|questions?|timeline|workshops?|sessions?|events?|help|work|works)|visa|sponsorship|employers?|recruit(?:ing|ers?)|interviews?|cv|job\s+fair|mentors?|mentorship",
             r"social|friends?|meet|people|dinner|lunch|community|language exchange|practice\s+(?:my\s+|some\s+|their\s+)?english|make\s+(?:some\s+|new\s+)?friends?|meet\s+(?:some\s+|new\s+|other\s+)?people|talk\s+to\s+(?:new\s+|other\s+)?people|international|clubs?|party|parties|games?|trivia|hang\s+out|mixer",
             r"art|arts|culture|cultural|film|museum|creative|sketch|ceramics|music|concerts?|painting|drawing|theat(?:er|re)|photography|crafts?",
             r"wellbeing|wellness|relax|mindful|movement|quiet|balance|stress|mental\s+health|yoga|meditation|exercise|fitness|run|running|sleep|burnout",
@@ -762,6 +762,14 @@ mod date_and_focus_tests {
         assert_eq!(topics("questions about OPT"), vec!["Career"]);
         assert_eq!(topics("OPT application timeline"), vec!["Career"]);
         assert_eq!(topics("I'd opt for something quiet"), vec!["Wellbeing"]);
+        for q in [
+            "what is OPT?",
+            "OPT events",
+            "OPT help",
+            "how does OPT work",
+        ] {
+            assert_eq!(topics(q), vec!["Career"], "{q}");
+        }
         let c = parse("career events, attendance not optional").constraints;
         assert_eq!(c.topics, Some(vec!["Career".to_string()]));
         assert_eq!(c.excluded, None);
