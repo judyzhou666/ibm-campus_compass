@@ -2,8 +2,14 @@
  * PersonalEventDialog — Canvas-style Create/Edit dialog for student-owned
  * calendar items.
  *
- * Fields: Title, Date, From/To (15-min steps), Frequency, Location, Calendar
- * (Personal or Class / busy time → becomes a state.blocks entry when saved).
+ * Fields: Title, Date, From/To (15-min steps), Frequency (Google/Canvas-style
+ * presets plus Custom: every N days/weeks/months/years, weekdays, ends),
+ * Location, Calendar (Personal or Class / busy time).
+ *
+ * Every field can be changed, also for classes. A class that repeats weekly
+ * on one weekday (Mon–Fri) with no end or location stays a `state.blocks`
+ * entry (the backend's busy-time format); anything else is saved as a
+ * PersonalEvent, which the planner also treats as busy time.
  *
  * Used by CalendarView for create (empty form) and edit (pre-filled form).
  * Calls onSave / onDelete / onClose; the parent owns state mutations.
@@ -11,6 +17,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { PersonalEvent, Block } from "./types.ts";
 import { isoToNoonUTC } from "./calendarGrid.ts";
+import {
+  REPEAT_PRESETS,
+  WEEKDAYS_LONG,
+  WEEKDAYS_SHORT,
+  describeRule,
+  presetLabel,
+  ruleFor,
+  type RepeatPreset,
+  type RepeatRule,
+  type RepeatUnit,
+} from "./recurrence.ts";
 import { weekDates } from "./config.ts";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -39,15 +56,6 @@ function isoWeekday(iso: string): number {
   return dow === 0 ? 6 : dow - 1;
 }
 
-const WEEKDAY_NAMES = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
 
 // ── Sub-types ─────────────────────────────────────────────────────────────────
 
@@ -55,8 +63,13 @@ const WEEKDAY_NAMES = [
 export interface PersonalEventSavePayload {
   /** personal event to upsert — undefined when saving as a block */
   personalEvent?: PersonalEvent;
-  /** block to upsert — only when Calendar = "Class / busy time" + weekly + weekday */
+  /** block to upsert — a class repeating weekly on one weekday (Mon–Fri) */
   block?: Block;
+  /**
+   * The id being edited. The parent removes it from both lists before
+   * upserting, so a class can become a personal item and back.
+   */
+  replaces?: string;
 }
 
 export interface PersonalEventDialogProps {
@@ -72,6 +85,71 @@ export interface PersonalEventDialogProps {
   /** Called only in edit mode. id is PersonalEvent.id or Block.id */
   onDelete: (id: string, kind: "personal" | "block") => void;
   onClose: () => void;
+}
+
+const UNITS: { value: RepeatUnit; one: string; many: string }[] = [
+  { value: "day", one: "day", many: "days" },
+  { value: "week", one: "week", many: "weeks" },
+  { value: "month", one: "month", many: "months" },
+  { value: "year", one: "year", many: "years" },
+];
+
+/** Pure save rule, exported for tests. */
+export function savePayload(
+  form: {
+    id: string;
+    title: string;
+    date: string;
+    start: number;
+    end: number;
+    preset: RepeatPreset;
+    rule: RepeatRule | null;
+    location: string;
+    calendar: "personal" | "class";
+  },
+  replaces?: string,
+): PersonalEventSavePayload {
+  const wd = isoWeekday(form.date);
+  const simpleWeekly =
+    form.preset === "weekly" ||
+    (form.preset === "custom" &&
+      form.rule?.unit === "week" &&
+      form.rule.interval === 1 &&
+      form.rule.weekdays?.length === 1 &&
+      form.rule.weekdays[0] === wd &&
+      !form.rule.until &&
+      !form.rule.count);
+  if (form.calendar === "class" && simpleWeekly && wd < 5 && !form.location) {
+    return {
+      block: { id: form.id, title: form.title, day: wd, start: form.start, end: form.end },
+      replaces,
+    };
+  }
+  const pe: PersonalEvent = {
+    id: form.id,
+    title: form.title,
+    date: form.date,
+    start: form.start,
+    end: form.end,
+    repeat: form.preset,
+    ...(form.preset === "custom" && form.rule ? { rule: form.rule } : {}),
+    ...(form.calendar === "class" ? { calendar: "class" as const } : {}),
+    ...(form.location ? { location: form.location } : {}),
+  };
+  return { personalEvent: pe, replaces };
+}
+
+/** Problem with a custom rule, in plain words, or "" when it is fine. */
+export function ruleProblem(rule: RepeatRule | null, date: string) {
+  if (!rule) return "";
+  if (!Number.isInteger(rule.interval) || rule.interval < 1 || rule.interval > 99)
+    return "Repeat every 1 to 99.";
+  if (rule.unit === "week" && !rule.weekdays?.length) return "Pick at least one day.";
+  if (rule.until !== undefined && !(rule.until >= date))
+    return "The end date must be on or after the start date.";
+  if (rule.count !== undefined && !(rule.count >= 1 && rule.count <= 400))
+    return "Choose 1 to 400 occurrences.";
+  return "";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -95,31 +173,42 @@ export function PersonalEventDialog({
     item?.date ?? blockDate ?? defaultDate ?? new Date().toISOString().slice(0, 10);
   const initStart = snap15(item?.start ?? block?.start ?? defaultStart ?? 540);
   const initEnd = snap15(item?.end ?? block?.end ?? Math.min(initStart + 60, 1440));
-  const initRepeat: "none" | "weekly" =
-    block != null ? "weekly" : (item?.repeat ?? "none");
-  const initCalendar: "personal" | "class" = block != null ? "class" : "personal";
+  const initPreset: RepeatPreset = block != null ? "weekly" : (item?.repeat ?? "none");
+  const initCalendar: "personal" | "class" =
+    block != null || item?.calendar === "class" ? "class" : "personal";
 
   const [title, setTitle] = useState(item?.title ?? block?.title ?? "");
   const [date, setDate] = useState(initDate);
   const [startStr, setStartStr] = useState(minsToHHMM(initStart));
   const [endStr, setEndStr] = useState(minsToHHMM(initEnd));
-  const [repeat, setRepeat] = useState<"none" | "weekly">(initRepeat);
+  const [preset, setPreset] = useState<RepeatPreset>(initPreset);
+  const [custom, setCustom] = useState<RepeatRule>(
+    item?.rule ?? ruleFor("weekly", initDate)!,
+  );
+  const [ends, setEnds] = useState<"never" | "on" | "after">(
+    item?.rule?.until ? "on" : item?.rule?.count ? "after" : "never",
+  );
   const [location, setLocation] = useState(item?.location ?? "");
   const [calendar, setCalendar] = useState<"personal" | "class">(initCalendar);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const startMins = HHMMToMins(startStr);
   const endMins = HHMMToMins(endStr);
-  const weekdayIdx = isoWeekday(date);
-  const isWeekend = weekdayIdx >= 5;
+  const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const rule: RepeatRule | null =
+    preset === "custom"
+      ? {
+          unit: custom.unit,
+          interval: custom.interval,
+          ...(custom.unit === "week" ? { weekdays: custom.weekdays ?? [] } : {}),
+          ...(custom.unit === "month" ? { monthly: custom.monthly ?? "weekday" } : {}),
+          ...(ends === "on" ? { until: custom.until ?? date } : {}),
+          ...(ends === "after" ? { count: custom.count ?? 5 } : {}),
+        }
+      : null;
+  const problem = dateOk ? ruleProblem(rule, date) : "";
   const valid =
-    title.trim().length > 0 &&
-    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
-    endMins > startMins;
-  // Class/busy time only works for Mon–Fri + weekly
-  const calendarClass = calendar === "class";
-  const submitDisabled =
-    !valid || (calendarClass && (isWeekend || repeat !== "weekly"));
+    title.trim().length > 0 && dateOk && endMins > startMins && !problem;
 
   const isEdit = item !== null || block !== null;
   const editId = item?.id ?? block?.id ?? null;
@@ -151,37 +240,25 @@ export function PersonalEventDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-
     const snappedStart = snap15(startMins);
     const snappedEnd = snap15(endMins);
     if (snappedEnd <= snappedStart) return;
-
-    if (calendarClass && repeat === "weekly" && !isWeekend) {
-      // Save as a Block (class / busy time)
-      const week = weekDates();
-      const day = week.indexOf(date);
-      if (day >= 0) {
-        const b: Block = {
+    onSave(
+      savePayload(
+        {
           id: editId ?? crypto.randomUUID(),
           title: title.trim(),
-          day,
+          date,
           start: snappedStart,
           end: snappedEnd,
-        };
-        onSave({ block: b });
-      }
-    } else {
-      const pe: PersonalEvent = {
-        id: editId ?? crypto.randomUUID(),
-        title: title.trim(),
-        date,
-        start: snappedStart,
-        end: snappedEnd,
-        repeat,
-        ...(location.trim() ? { location: location.trim() } : {}),
-      };
-      onSave({ personalEvent: pe });
-    }
+          preset,
+          rule,
+          location: location.trim(),
+          calendar,
+        },
+        editId ?? undefined,
+      ),
+    );
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -194,10 +271,16 @@ export function PersonalEventDialog({
     onDelete(editId, block != null ? "block" : "personal");
   }
 
-  const weekdayLabel =
-    repeat === "weekly" && !isWeekend
-      ? `Weekly on ${WEEKDAY_NAMES[weekdayIdx]}`
-      : "Weekly";
+  const patch = (p: Partial<RepeatRule>) => setCustom((c) => ({ ...c, ...p }));
+  const toggleDay = (d: number) => {
+    const now = custom.weekdays ?? [];
+    patch({
+      weekdays: now.includes(d) ? now.filter((x) => x !== d) : [...now, d].sort(),
+    });
+  };
+  const weekdayName = dateOk ? WEEKDAYS_LONG[isoWeekday(date)] : "";
+  const unitWord = (u: (typeof UNITS)[number]) =>
+    custom.interval === 1 ? u.one : u.many;
 
   return (
     <>
@@ -245,14 +328,14 @@ export function PersonalEventDialog({
           </div>
 
           {/* Date */}
-          <div className="field">
+          <div className="field pe-field-full">
             <label htmlFor="pe-date">Date</label>
             <input
               id="pe-date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              disabled={block !== null}
+              required
             />
           </div>
 
@@ -269,7 +352,7 @@ export function PersonalEventDialog({
                   setStartStr(e.target.value);
                   const s = HHMMToMins(e.target.value);
                   if (HHMMToMins(endStr) <= s) {
-                    setEndStr(minsToHHMM(Math.min(s + 60, 1440)));
+                    setEndStr(minsToHHMM(Math.min(s + 60, 1439)));
                   }
                 }}
               />
@@ -290,18 +373,148 @@ export function PersonalEventDialog({
           )}
 
           {/* Frequency */}
-          <div className="field">
+          <div className="field pe-field-full">
             <label htmlFor="pe-repeat">Frequency</label>
             <select
               id="pe-repeat"
-              value={repeat}
-              onChange={(e) => setRepeat(e.target.value as "none" | "weekly")}
-              disabled={block !== null}
+              value={preset}
+              onChange={(e) => {
+                const next = e.target.value as RepeatPreset;
+                // Opening Custom starts from what was chosen before.
+                if (next === "custom" && preset !== "custom" && dateOk)
+                  setCustom(ruleFor(preset === "none" ? "weekly" : preset, date)!);
+                setPreset(next);
+              }}
             >
-              <option value="none">Does not repeat</option>
-              <option value="weekly">{weekdayLabel}</option>
+              {REPEAT_PRESETS.map((p) => (
+                <option key={p} value={p}>
+                  {dateOk ? presetLabel(p, date) : p}
+                </option>
+              ))}
             </select>
           </div>
+
+          {preset === "custom" ? (
+            <fieldset className="pe-custom pe-field-full">
+              <legend>Custom repeat</legend>
+              <div className="pe-custom-row">
+                <label htmlFor="pe-interval">Repeat every</label>
+                <input
+                  id="pe-interval"
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={Number.isNaN(custom.interval) ? "" : custom.interval}
+                  onChange={(e) => patch({ interval: e.target.valueAsNumber })}
+                />
+                <select
+                  aria-label="Repeat unit"
+                  value={custom.unit}
+                  onChange={(e) => {
+                    const unit = e.target.value as RepeatUnit;
+                    patch({
+                      unit,
+                      weekdays:
+                        unit === "week" && !custom.weekdays?.length && dateOk
+                          ? [isoWeekday(date)]
+                          : custom.weekdays,
+                    });
+                  }}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u.value} value={u.value}>
+                      {unitWord(u)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {custom.unit === "week" ? (
+                <div className="pe-weekdays" role="group" aria-label="Repeat on">
+                  {WEEKDAYS_SHORT.map((d, i) => {
+                    const on = (custom.weekdays ?? []).includes(i);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        className={`pe-day${on ? " active" : ""}`}
+                        aria-pressed={on}
+                        aria-label={WEEKDAYS_LONG[i]}
+                        onClick={() => toggleDay(i)}
+                      >
+                        {d.slice(0, 1)}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+              {custom.unit === "month" && dateOk ? (
+                <select
+                  aria-label="Monthly on"
+                  value={custom.monthly ?? "weekday"}
+                  onChange={(e) =>
+                    patch({ monthly: e.target.value as "date" | "weekday" })
+                  }
+                >
+                  <option value="date">Monthly on day {Number(date.slice(8))}</option>
+                  <option value="weekday">
+                    {presetLabel("monthly", date)}
+                  </option>
+                </select>
+              ) : null}
+              <div className="pe-ends" role="radiogroup" aria-label="Ends">
+                <span className="pe-ends-title">Ends</span>
+                <label>
+                  <input
+                    type="radio"
+                    name="pe-ends"
+                    checked={ends === "never"}
+                    onChange={() => setEnds("never")}
+                  />
+                  Never
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="pe-ends"
+                    checked={ends === "on"}
+                    onChange={() => setEnds("on")}
+                  />
+                  On
+                  <input
+                    type="date"
+                    aria-label="End date"
+                    value={custom.until ?? date}
+                    min={date}
+                    disabled={ends !== "on"}
+                    onChange={(e) => patch({ until: e.target.value })}
+                  />
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="pe-ends"
+                    checked={ends === "after"}
+                    onChange={() => setEnds("after")}
+                  />
+                  After
+                  <input
+                    type="number"
+                    aria-label="Number of occurrences"
+                    min={1}
+                    max={400}
+                    value={custom.count ?? 5}
+                    disabled={ends !== "after"}
+                    onChange={(e) => patch({ count: e.target.valueAsNumber })}
+                  />
+                  occurrences
+                </label>
+              </div>
+              {rule && dateOk && !problem ? (
+                <p className="pe-rule-summary">{describeRule(rule, date)}</p>
+              ) : null}
+            </fieldset>
+          ) : null}
+          {problem ? <p className="pe-field-error">{problem}</p> : null}
 
           {/* Location */}
           <div className="field pe-field-full">
@@ -317,36 +530,32 @@ export function PersonalEventDialog({
           </div>
 
           {/* Calendar */}
-          <div className="field">
+          <div className="field pe-field-full">
             <label htmlFor="pe-calendar">Calendar</label>
             <select
               id="pe-calendar"
               value={calendar}
               onChange={(e) => setCalendar(e.target.value as "personal" | "class")}
-              disabled={block !== null}
             >
               <option value="personal">Personal</option>
               <option value="class">Class / busy time</option>
             </select>
           </div>
-
-          {calendarClass && isWeekend && (
-            <p className="pe-field-error">
-              Class / busy time only works on Mon–Fri.
+          {calendar === "class" && preset !== "none" && weekdayName ? (
+            <p className="pe-field-hint pe-field-full">
+              The AI Planner treats every occurrence in the demo week as busy time.
             </p>
-          )}
-          {calendarClass && !isWeekend && repeat !== "weekly" && (
-            <p className="pe-field-error">
-              Class / busy time must be set to weekly.
-            </p>
-          )}
+          ) : null}
 
           {/* Actions */}
           <div className="pe-dialog-actions">
             {isEdit ? (
               confirmDelete ? (
                 <div className="pe-confirm-delete">
-                  <span>Delete &ldquo;{title}&rdquo;?</span>
+                  <span>
+                    Delete &ldquo;{title}&rdquo;
+                    {preset !== "none" ? " and all its repeats" : ""}?
+                  </span>
                   <button
                     type="button"
                     className="btn danger small"
@@ -379,7 +588,7 @@ export function PersonalEventDialog({
               <button
                 type="submit"
                 className="btn primary small"
-                disabled={submitDisabled}
+                disabled={!valid}
               >
                 {isEdit ? "Save" : "Create"}
               </button>

@@ -9,13 +9,13 @@ import { EVENTS, time } from "./data.ts";
 import { issue } from "./planner.ts";
 import { effectiveEvents } from "./updates.ts";
 import { busyBlocks } from "./personalEvents.ts";
+import { daysBetween, occursOn, shiftSeries } from "./recurrence.ts";
 import type { Block, CampusEvent, DemoState, PersonalEvent } from "./types.ts";
 import { Icon } from "./components.tsx";
 import {
   type CalView,
   type CalendarItem,
   HOUR_PX,
-  addDays,
   attentionTag,
   blockDropAllowed,
   clampEnd,
@@ -297,11 +297,11 @@ function DayColumn({
 
         if (item.kind === "personal") {
           const isDragging = dragState?.active && dragState.id === item.id;
-          const lbl = `${item.title}, ${timeText}${item.location ? ", " + item.location : ""}${item.weekly ? " (weekly)" : ""}`;
+          const lbl = `${item.title}, ${timeText}${item.location ? ", " + item.location : ""}${item.repeating ? " (repeats)" : ""}`;
           return (
             <div
               key={item.id}
-              className={`gcal-event-block gcal-personal${isDragging ? " gcal-dragging" : ""}`}
+              className={`gcal-event-block gcal-personal${item.asClass ? " gcal-personal-class" : ""}${isDragging ? " gcal-dragging" : ""}`}
               style={style}
               role="button"
               aria-label={lbl + " (editable)"}
@@ -520,7 +520,7 @@ function MonthView({
   onDetail: (id: string) => void;
   onEditPersonal: (id: string) => void;
   onCreateAt: (iso: string, startMins: number) => void;
-  onMonthDrop: (id: string, kind: "personal" | "block", targetIso: string) => void;
+  onMonthDrop: (id: string, kind: "personal" | "block", targetIso: string, fromIso: string) => void;
 }) {
   const dates = monthGridDates(anchor);
   const demoWeek = weekDates();
@@ -572,7 +572,7 @@ function MonthView({
       if (!ds.active) onEditPersonal(ds.id);
       return;
     }
-    onMonthDrop(ds.id, ds.kind, ds.targetIso);
+    onMonthDrop(ds.id, ds.kind, ds.targetIso, ds.origIso);
   }
 
   return (
@@ -670,11 +670,11 @@ function MonthView({
                 return (
                   <div
                     key={item.id}
-                    className={`gcal-month-chip gcal-chip-personal${isDraggingThis ? " gcal-dragging" : ""}`}
+                    className={`gcal-month-chip gcal-chip-personal${item.asClass ? " gcal-personal-class" : ""}${isDraggingThis ? " gcal-dragging" : ""}`}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${item.title}, ${time(item.start)}–${time(item.end)}${item.weekly ? " (weekly)" : ""} (editable)`}
-                    title={`${item.title}${item.weekly ? " (weekly)" : ""}`}
+                    aria-label={`${item.title}, ${time(item.start)}–${time(item.end)}${item.repeating ? " (repeats)" : ""} (editable)`}
+                    title={`${item.title}${item.repeating ? " (repeats)" : ""}`}
                     onPointerDown={(e) => startMonthDrag(e, item.id, "personal", iso)}
                     onClick={(e) => { e.stopPropagation(); /* handled in endMonthDrag */ }}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEditPersonal(item.id); } }}
@@ -733,14 +733,7 @@ function MiniMonth({
           const dayIdx = demoDayIndex(iso);
           const hasEvent =
             (dayIdx >= 0 && state.plan.some((id) => EVENTS.find((e) => e.id === id)?.day === dayIdx)) ||
-            (state.personalEvents ?? []).some((pe) => {
-              if (pe.repeat === "none") return pe.date === iso;
-              const peWd = (() => {
-                const d = new Date(`${pe.date}T12:00:00Z`).getUTCDay();
-                return d === 0 ? 6 : d - 1;
-              })();
-              return pe.repeat === "weekly" && peWd === isoWeekdayIndex(iso) && peWd < 5;
-            });
+            (state.personalEvents ?? []).some((pe) => occursOn(pe, iso));
           return (
             <button
               key={iso}
@@ -868,9 +861,20 @@ export function CalendarView({
 
   // ── Save handler ──────────────────────────────────────────────────────────
   function handleSave(payload: PersonalEventSavePayload) {
+    // Editing removes the old entry from both lists first, so changing the
+    // Calendar or Frequency can turn a class into a personal item and back.
+    const strip = (s: DemoState): DemoState =>
+      payload.replaces
+        ? {
+            ...s,
+            blocks: s.blocks.filter((x) => x.id !== payload.replaces),
+            personalEvents: (s.personalEvents ?? []).filter((x) => x.id !== payload.replaces),
+          }
+        : s;
     if (payload.block) {
       const b = payload.block;
-      onUpdate((s) => {
+      onUpdate((s0) => {
+        const s = strip(s0);
         const existing = s.blocks.find((x) => x.id === b.id);
         if (existing) {
           return { ...s, blocks: s.blocks.map((x) => (x.id === b.id ? b : x)) };
@@ -898,7 +902,8 @@ export function CalendarView({
       }
     } else if (payload.personalEvent) {
       const pe = payload.personalEvent;
-      onUpdate((s) => {
+      onUpdate((s0) => {
+        const s = strip(s0);
         const existing = (s.personalEvents ?? []).find((x) => x.id === pe.id);
         if (existing) {
           return { ...s, personalEvents: (s.personalEvents ?? []).map((x) => (x.id === pe.id ? pe : x)) };
@@ -911,23 +916,16 @@ export function CalendarView({
       });
       // Check overlap with campus events
       const planEvents = eff(state.appliedUpdateIds ?? []);
-      const demoWeekDates = weekDates();
-      let peDay = -1;
-      if (pe.repeat === "none") {
-        peDay = demoWeekDates.indexOf(pe.date);
-      } else if (pe.repeat === "weekly") {
-        const peWd = (() => {
-          const d = new Date(`${pe.date}T12:00:00Z`).getUTCDay();
-          return d === 0 ? 6 : d - 1;
-        })();
-        peDay = peWd < 5 ? peWd : -1;
-      }
-      if (peDay >= 0) {
+      const peDays = weekDates()
+        .slice(0, 5)
+        .map((iso, day) => (occursOn(pe, iso) ? day : -1))
+        .filter((day) => day >= 0);
+      if (peDays.length) {
         const overlap = planEvents.find(
           (e) =>
             state.plan.includes(e.id) &&
             !state.cancelled.includes(e.id) &&
-            e.day === peDay &&
+            peDays.includes(e.day) &&
             e.start < pe.end + state.buffer &&
             pe.start < e.end + state.buffer,
         );
@@ -958,15 +956,14 @@ export function CalendarView({
   }
 
   // ── Month drop handler ────────────────────────────────────────────────────
-  function handleMonthDrop(id: string, kind: "personal" | "block", targetIso: string) {
+  function handleMonthDrop(id: string, kind: "personal" | "block", targetIso: string, fromIso: string) {
     const prevBlocks = [...state.blocks];
     const prevPersonal = [...(state.personalEvents ?? [])];
 
     if (kind === "block") {
       if (!blockDropAllowed(targetIso)) { notify("Classes can only be placed on Mon–Fri."); return; }
-      const demoWeekDates = weekDates();
-      const newDay = demoWeekDates.indexOf(targetIso);
-      if (newDay < 0) { notify("Classes can only be placed on Mon–Fri."); return; }
+      // Classes repeat every week, so any Mon–Fri date sets the weekday.
+      const newDay = isoWeekdayIndex(targetIso);
       const b = state.blocks.find((x) => x.id === id);
       if (!b) return;
       onUpdate((s) => ({ ...s, blocks: s.blocks.map((x) => x.id === id ? { ...x, day: newDay } : x) }));
@@ -977,17 +974,13 @@ export function CalendarView({
     } else {
       const pe = (state.personalEvents ?? []).find((x) => x.id === id);
       if (!pe) return;
-      let newDate = targetIso;
-      if (pe.repeat === "weekly") {
-        if (!blockDropAllowed(targetIso)) { notify("Weekly events can only be placed on Mon–Fri."); return; }
-        const targetWd = isoWeekdayIndex(targetIso);
-        const peDate = new Date(`${pe.date}T12:00:00Z`);
-        const peWd = peDate.getUTCDay() === 0 ? 6 : peDate.getUTCDay() - 1;
-        newDate = addDays(pe.date, targetWd - peWd);
-      }
+      // A repeating item moves as a whole series by the same number of days.
+      const shift = daysBetween(fromIso, targetIso);
       onUpdate((s) => ({
         ...s,
-        personalEvents: (s.personalEvents ?? []).map((x) => x.id === id ? { ...x, date: newDate } : x),
+        personalEvents: (s.personalEvents ?? []).map((x) =>
+          x.id !== id ? x : x.repeat === "none" ? { ...x, date: targetIso } : shiftSeries(x, shift),
+        ),
       }));
       notify(
         `Moved "${pe.title}" to ${DAY_NAMES_FULL[isoWeekdayIndex(targetIso)]}`,
@@ -1163,14 +1156,8 @@ export function CalendarView({
     const prevPersonal = [...(state.personalEvents ?? [])];
 
     if (ds.kind === "class") {
-      const demoWeekDates = weekDates();
-      const newDay = demoWeekDates.indexOf(targetIso);
-      if (newDay < 0) {
-        notify("Classes can only be placed on Mon–Fri.");
-        setDragState(null);
-        dragRef.current = null;
-        return;
-      }
+      // Classes repeat every week, so any Mon–Fri date sets the weekday.
+      const newDay = isoWeekdayIndex(targetIso);
       onUpdate((s) => ({
         ...s,
         blocks: s.blocks.map((b) =>
@@ -1182,13 +1169,13 @@ export function CalendarView({
         ...s,
         personalEvents: (s.personalEvents ?? []).map((pe) => {
           if (pe.id !== ds.id) return pe;
-          if (pe.repeat === "weekly") {
-            const targetWd = isoWeekdayIndex(targetIso);
-            const peDate = new Date(`${pe.date}T12:00:00Z`);
-            const peWd = peDate.getUTCDay() === 0 ? 6 : peDate.getUTCDay() - 1;
-            const diff = targetWd - peWd;
-            return { ...pe, date: addDays(pe.date, diff), start: newStart, end: newEnd };
-          }
+          // A repeating item moves as a whole series by the same offset.
+          if (pe.repeat !== "none")
+            return {
+              ...shiftSeries(pe, daysBetween(ds.origIso, targetIso)),
+              start: newStart,
+              end: newEnd,
+            };
           return { ...pe, date: targetIso, start: newStart, end: newEnd };
         }),
       }));

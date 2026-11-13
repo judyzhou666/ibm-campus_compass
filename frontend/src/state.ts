@@ -6,6 +6,7 @@ import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import { DEFAULT_READ_IDS } from "./notifications.ts";
 import type { DemoState, PersonalEvent } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
+import { REPEAT_PRESETS, cleanRule } from "./recurrence.ts";
 
 export function createStore<T>(initial: T) {
   let value = initial;
@@ -244,9 +245,17 @@ export function restore(): DemoState {
                 (p.start as number) >= 0 &&
                 (p.end as number) <= 1440 &&
                 (p.start as number) < (p.end as number) &&
-                (p.repeat === "none" || p.repeat === "weekly") &&
+                REPEAT_PRESETS.includes(p.repeat as never) &&
+                (p.repeat !== "custom" || cleanRule(p.rule) !== null) &&
+                (p.calendar === undefined || p.calendar === "personal" || p.calendar === "class") &&
                 (p.location === undefined || typeof p.location === "string")
               );
+            })
+            .map((p: PersonalEvent) => {
+              // Keep only the fields we know; a custom rule is re-validated.
+              const { rule, ...rest } = p;
+              const clean = p.repeat === "custom" ? cleanRule(rule) : null;
+              return clean ? { ...rest, rule: clean } : rest;
             })
             .slice(0, 200)
         : [],

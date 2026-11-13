@@ -2,6 +2,36 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Calendar: editable Frequency and Calendar, Google/Canvas-style repeats — November 13, 2026
+
+Editing a class (e.g. "Research Methods") showed Date, Frequency and Calendar as dropdowns, but they were disabled, so they could not be opened or changed. Frequency also offered only "Does not repeat" and "Weekly".
+
+- **Every field can be edited**, for classes too. A class can be moved to another weekday from the Date field, switched to Personal, or given any repeat. A class that repeats weekly on one weekday (Mon–Fri) with no end or location stays a busy-time block, which is the format the Rust backend validates. Anything else is saved as a personal item marked "Class / busy time" and drawn grey. Both count as busy time for the AI Planner.
+- **Frequency matches Google Calendar / Canvas:** Does not repeat, Daily, Weekly on Tuesday, Monthly on the first Tuesday, Annually on November 3, Every weekday (Monday to Friday), Custom….
+- **Custom…** opens a panel inside the dialog:
+  - repeat every N days / weeks / months / years;
+  - weekday circles for weekly rules;
+  - same date or same nth weekday for monthly rules;
+  - ends Never / On a date / After N occurrences (max 400);
+  - a plain summary such as "Every week on Tue, Thu, 3 times". Problems are explained in plain words.
+- **One shared rule** (`frontend/src/recurrence.ts`, `occursOn`) now drives the Day/Week/Month/Year views, the mini calendar, the busy-time check sent to the planner, the overlap warning and drag. It replaces five copies of weekly-only logic.
+  - A daily or every-weekday item now blocks every demo weekday it covers.
+  - Repeating items now also show on weekends.
+  - Dragging any repeating item moves the whole series, including its weekdays and end date.
+  - Classes can be dropped on any Mon–Fri date, not only dates in the demo week.
+- Saved items from before keep working ("none" / "weekly"). Custom rules are re-validated on restore.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 308 TypeScript + 5 Wiki tests, including the new `tests/recurrence.test.ts`.
+- `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (63), `npm run test:api` and `npm run evaluate` (no diff) all pass.
+- In the browser with the mouse at 1280px:
+  - Opened Research Methods: every field is enabled, and the Frequency list shows the seven options above.
+  - Chose Custom, clicked Thursday, then After 3. The summary read "Every week on Tue, Thu, 3 times". After saving, the class shows grey on Tue and Thu, only on Tue Nov 10 the next week, and not at all the week after.
+  - Reopened it: the rule is kept. Switched back to Weekly on Tuesday: it is a normal weekly class again, with nothing left over.
+- At 375px, the Custom panel fits with no horizontal scroll.
+
 ## Consolidate basic profile editing — November 12, 2026
 
 Made Display Name and Major / Program read-only in the main Profile preferences form and added an Edit action that opens the existing Basic Information editor. Both views continue to use the existing browser-local state. Student/Admin identity and Calendar behavior were left unchanged. Made with Codex.
