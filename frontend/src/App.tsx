@@ -231,7 +231,7 @@ export default function App() {
   }
   function profileAction(action: ProfileAction) {
     setProfileOpen(false);
-    if (action === "profile") nav("profile");
+    if (action === "profile") openProfileEditor();
     else if (action === "create") nav("create");
     else if (action === "review") nav("review");
     else if (action === "switch")
@@ -819,26 +819,34 @@ export default function App() {
             time. Your next great discovery.
           </div>
           {state.signedIn ? (
-            <div className="user user-profile-card">
-              <div className="user-profile-info">
-                <span className="avatar">{state.name[0] || "J"}</span>
-                <div>
-                  <strong>{state.name}’s campus</strong>
-                  <small>
-                    {state.role === "admin"
-                      ? ROLE_INFO.admin.sidebar
-                      : [state.studentStatus, "Demo profile"]
-                          .filter(Boolean)
-                          .join(" · ")}
-                  </small>
+            <div className="user-profile-entry">
+              <div
+                className="user user-profile-card"
+                role="button"
+                tabIndex={0}
+                aria-label={`Edit profile for ${state.name}`}
+                onClick={openProfileEditor}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (!event.repeat) openProfileEditor();
+                  }
+                }}
+              >
+                <div className="user-profile-info">
+                  <span className="avatar">{state.name[0] || "J"}</span>
+                  <div>
+                    <strong>{state.name}’s campus</strong>
+                    <small>
+                      {state.role === "admin"
+                        ? ROLE_INFO.admin.sidebar
+                        : [state.studentStatus, "Demo profile"]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </small>
+                  </div>
                 </div>
               </div>
-              <button
-                className="btn primary user-profile-edit"
-                onClick={openProfileEditor}
-              >
-                Edit Profile
-              </button>
             </div>
           ) : (
             <div className="user">
