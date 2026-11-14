@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Sidebar profile card opens editing — November 13, 2026
+
+Removed the separate Edit Profile button and made the signed-in sidebar user card the keyboard-accessible entry point to the existing profile editor. Added hover and focus indication. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, relevant profile and Student/Admin tests, and desktop/mobile browser checks pass.
+
 ## AI Planner: "what is OPT?" is a Career question again — November 13, 2026
 
 Review fix on PR #28. The noun-only OPT rule from the previous commit matched a bare "opt" only when it was the whole message (`^opt$`). So "what is OPT?", "OPT events", "OPT help" and "how does OPT work" no longer found Career events. Now "opt" also counts at the start of a message and after "is", "does", "apply" or "the", plus more nouns after it (events, help, work, sessions, workshops). "I'd opt for something quiet" still maps to Wellbeing. Changed in both interpreters.

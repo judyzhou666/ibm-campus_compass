@@ -819,7 +819,19 @@ export default function App() {
             time. Your next great discovery.
           </div>
           {state.signedIn ? (
-            <div className="user user-profile-card">
+            <div
+              className="user user-profile-card"
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit profile for ${state.name}`}
+              onClick={openProfileEditor}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  if (!event.repeat) openProfileEditor();
+                }
+              }}
+            >
               <div className="user-profile-info">
                 <span className="avatar">{state.name[0] || "J"}</span>
                 <div>
@@ -833,12 +845,6 @@ export default function App() {
                   </small>
                 </div>
               </div>
-              <button
-                className="btn primary user-profile-edit"
-                onClick={openProfileEditor}
-              >
-                Edit Profile
-              </button>
             </div>
           ) : (
             <div className="user">

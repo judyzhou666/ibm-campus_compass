@@ -196,18 +196,22 @@ textarea {
   padding: 18px 6px 0;
 }
 .user-profile-card {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background-color 0.15s;
+}
+.user-profile-card:hover {
+  background: var(--mint);
+}
+.user-profile-card:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
 .user-profile-info {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-}
-.user-profile-edit {
-  width: 100%;
 }
 .avatar {
   width: 36px;
@@ -4543,17 +4547,8 @@ button.gcal-event-block {
     justify-content: center;
     padding: 18px 0 0;
   }
-  .sidebar.collapsed .user-profile-card {
-    gap: 8px;
-  }
   .sidebar.collapsed .user-profile-info {
     justify-content: center;
-  }
-  .sidebar.collapsed .user-profile-edit {
-    padding: 5px 3px;
-    font-size: 10px;
-    line-height: 1.1;
-    white-space: normal;
   }
 }
 @media (max-width: 700px) {
