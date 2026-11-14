@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Header profile action opens the editor — November 13, 2026
+
+Routed the avatar dropdown's View profile action through the same shared profile editor entry point as the sidebar card. The dropdown closes when navigating. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, profile and Student/Admin tests, and browser checks for both entry points, save/cancel, and persistence pass.
+
 ## Sidebar profile card opens editing — November 13, 2026
 
 Removed the separate Edit Profile button and made the signed-in sidebar user card the keyboard-accessible entry point to the existing profile editor. Added hover and focus indication. Made with Codex.

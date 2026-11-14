@@ -231,7 +231,7 @@ export default function App() {
   }
   function profileAction(action: ProfileAction) {
     setProfileOpen(false);
-    if (action === "profile") nav("profile");
+    if (action === "profile") openProfileEditor();
     else if (action === "create") nav("create");
     else if (action === "review") nav("review");
     else if (action === "switch")
