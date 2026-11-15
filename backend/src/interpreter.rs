@@ -256,6 +256,20 @@ impl SimulatedInterpreter {
             .filter(|(_, day)| matches(&format!(r"\b{day}(?:day|sday|nesday|rsday)?\b"), &q))
             .map(|(i, _)| i as u8)
             .collect();
+        // The demo clock is Monday 9 AM (day 0), so "today"/"tonight" is Monday and
+        // "tomorrow" is Tuesday. Named weekdays win. Mirrored in interpretation.ts.
+        if days.is_empty() {
+            let mut relative = Vec::new();
+            if matches(r"\b(?:today|tonight)\b", &q) {
+                relative.push(0);
+            }
+            if matches(r"\btomorrow\b", &q) {
+                relative.push(1);
+            }
+            if !relative.is_empty() {
+                c.days = Some(relative);
+            }
+        }
         if !days.is_empty() {
             c.days = Some(days);
         }
@@ -280,7 +294,7 @@ impl SimulatedInterpreter {
             c.after = Some(720);
             c.before = Some(1020);
         }
-        if matches(r"\bevening", &q) {
+        if matches(r"\b(?:evening|tonight)", &q) {
             c.after = Some(1020);
             c.before = None;
         }
@@ -562,7 +576,7 @@ mod round2_tests {
             "Should name the topic, got: {reason}"
         );
         assert!(
-            reason.contains("free food"),
+            reason.contains("free meal"),
             "Should name the dropped filter, got: {reason}"
         );
         // Should NOT be duplicated — the full sentence should appear only once.
@@ -752,6 +766,17 @@ mod date_and_focus_tests {
             parse("no yoga").constraints.excluded,
             Some(vec!["Wellbeing".to_string()])
         );
+    }
+
+    /// "today"/"tonight" is Monday and "tomorrow" Tuesday (demo clock Monday 9 AM).
+    #[test]
+    fn relative_days_use_the_demo_clock() {
+        assert_eq!(parse("any events tomorrow").constraints.days, Some(vec![1]));
+        assert_eq!(parse("career events today").constraints.days, Some(vec![0]));
+        let tonight = parse("something social tonight").constraints;
+        assert_eq!(tonight.days, Some(vec![0]));
+        assert_eq!(tonight.after, Some(1020));
+        assert_eq!(parse("tomorrow or Friday").constraints.days, Some(vec![4]));
     }
 
     /// PR #28 review: OPT only as a noun; exclusions need whole words.

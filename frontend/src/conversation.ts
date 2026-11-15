@@ -109,14 +109,15 @@ export function createConversation(
         // interests (which made different questions look like the same answer).
         let topicNote = "";
         if (!plan.constraints.topics?.length && !plan.constraints.focus?.length) {
+          // Interests rank the picks; they do not filter them.
           const basis = snapshot.interests.length
-            ? `your profile interests (${snapshot.interests.join(", ")})`
-            : "a mix of categories";
+            ? `are ranked by your profile interests (${snapshot.interests.join(", ")})`
+            : "are a mix from every category";
           const missed =
             askedText && plan.mode === "simulated" ? unmatchedWords(askedText) : [];
           topicNote = missed.length
-            ? `I couldn’t match ${missed.map((w) => `“${w}”`).join(", ")} to anything in this demo catalog, so these picks follow ${basis}. Try a topic such as AI & education, career, social, arts or wellbeing, or words like PhD, internship, OPT, trivia or yoga.\n\n`
-            : `You didn’t name a topic, so these picks follow ${basis}.\n\n`;
+            ? `I couldn’t match ${missed.map((w) => `“${w}”`).join(", ")} to anything in this demo catalog, so these picks ${basis}. Try a topic such as AI & education, career, social, arts or wellbeing, or words like PhD, internship, OPT, trivia or yoga.\n\n`
+            : `You didn’t name a topic, so these picks ${basis}.\n\n`;
         }
         // Find eligible events that overlap the conflict-free picks (up to 3).
         overlapIds = findOverlapAlternatives(matches, plan.constraints, snapshot);
@@ -257,11 +258,18 @@ export function createConversation(
       delete noFood.food;
       const alt = recommend(snapshot, noFood, 4, true);
       if (alt.length) {
-        const foodLabel = constraints.food === "Free meal" ? "free food" : constraints.food.toLowerCase();
+        // The planner's "free food" means a free meal (the frozen evaluation
+        // relies on that); say so, and point to the wider Explore filter.
+        const meal = constraints.food === "Free meal";
+        const has = meal ? "a free meal" : constraints.food.toLowerCase();
+        const filter = meal ? "free-meal" : constraints.food.toLowerCase();
+        const hint = meal
+          ? " For coffee, snacks or light refreshments, ask for “coffee” or use Explore’s Free food filter."
+          : "";
         return {
           text: say(
-            `No ${topicStr}events${dayStr}${timeStr} have ${foodLabel}.`,
-            `Here ${n1(alt.length)} without the ${foodLabel} filter — tap one to see details.`,
+            `No ${topicStr}events${dayStr}${timeStr} have ${has}.`,
+            `Here ${n1(alt.length)} without the ${filter} filter — tap one to see details.${hint}`,
           ),
           ids: alt.map((e) => e.id),
         };

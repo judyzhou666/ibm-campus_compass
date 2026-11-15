@@ -2,6 +2,23 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: "today/tomorrow/tonight", accurate free-meal and interests wording — November 14, 2026
+
+Found by sending typical student questions through the planner. Each change was made in `frontend/src/interpretation.ts`/`conversation.ts` and `backend/src/interpreter.rs`/`planner.rs` together, so both planners stay in step.
+- **"today", "tonight" and "tomorrow"** were ignored ("any events tomorrow" showed Monday and Tuesday). The demo clock is Monday 9 AM, so "today"/"tonight" now means Monday ("tonight" also means evening) and "tomorrow" means Tuesday. A weekday named in the same message still wins.
+- **"Free food" in the planner means a free meal** (the frozen evaluation relies on this), while Explore's Free food filter also covers coffee & snacks, light refreshments and popcorn. So "free food on Wednesday evening" said none existed while Explore showed one. The planner's reply and chip now say "a free meal" / "Free meal" and point to "coffee" or Explore's Free food filter for the wider options. What the planner selects is unchanged.
+- **"These picks follow your profile interests"** was inaccurate, because interests rank picks rather than filter them. It now reads "are ranked by your profile interests", or "are a mix from every category" when no interests are set.
+
+Made with Claude Code.
+
+**Verification.**
+- New tests in `tests/planner-vocabulary.test.ts` and `relative_days_use_the_demo_clock` in Rust.
+- `npm test`: 337 TypeScript + 5 Wiki tests. `cargo test`: 66.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser against the rebuilt server:
+  - "any events tomorrow" shows a "Tuesday" chip and only Tue Nov 3 events.
+  - "free food on Wednesday evening" says "have a free meal" with a "Free meal" chip and the pointer to Explore's Free food filter.
+
 ## AI Planner: replies keep their labels and alternatives after a reload — November 14, 2026
 
 Found while testing the site like a student. After a page reload, every earlier AI Planner reply was restored with only its text and main event IDs. As a result:

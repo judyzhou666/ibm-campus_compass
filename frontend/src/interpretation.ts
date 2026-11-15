@@ -171,6 +171,15 @@ export function interpretRequest(
       : -1,
   ).filter((i) => i >= 0);
   if (days.length) c.days = days;
+  // The demo clock is Monday 9 AM (day 0), so "today"/"tonight" is Monday and
+  // "tomorrow" is Tuesday. Named weekdays win. Mirrored in interpreter.rs.
+  if (!days.length) {
+    const relative = [
+      ...(test(/\b(?:today|tonight)\b/) ? [0] : []),
+      ...(test(/\btomorrow\b/) ? [1] : []),
+    ];
+    if (relative.length) c.days = relative;
+  }
   if (test(/\bweekend|saturday|sunday\b/)) c.days = [5, 6];
   if (test(/\bweekday/)) c.days = [0, 1, 2, 3, 4];
   // Month-day dates ("Nov 6-12") override weekday words and are limited to the demo week.
@@ -185,7 +194,7 @@ export function interpretRequest(
     c.after = 720;
     c.before = 1020;
   }
-  if (test(/\bevening/)) {
+  if (test(/\b(?:evening|tonight)/)) {
     c.after = 1020;
     delete c.before;
   }

@@ -272,16 +272,26 @@ pub fn no_match_reason(state: &Schedule, c: &Constraints, events: &[Event]) -> S
         no_food.food = None;
         let alt = alt_count(state, &no_food, events);
         if alt > 0 {
-            let food_label = match c.food.as_deref() {
-                Some("Free meal") => "free food".to_owned(),
-                Some(f) => f.to_lowercase(),
-                None => "food".to_owned(),
+            // "Free food" means a free meal here (the frozen evaluation relies on
+            // that); say so. Mirrors buildNoMatchAlts in conversation.ts.
+            let (has, filter) = match c.food.as_deref() {
+                Some("Free meal") => ("a free meal".to_owned(), "free-meal".to_owned()),
+                Some(f) => (f.to_lowercase(), f.to_lowercase()),
+                None => ("food".to_owned(), "food".to_owned()),
             };
             let day_str = day_str_fn(c);
             let time_str = time_str_fn(c);
             return say(
-                format!("No {topic_prefix}events{day_str}{time_str} have {food_label}."),
-                format!("Here {} without the {food_label} filter.", n1(alt)),
+                format!("No {topic_prefix}events{day_str}{time_str} have {has}."),
+                format!(
+                    "Here {} without the {filter} filter.{}",
+                    n1(alt),
+                    if c.food.as_deref() == Some("Free meal") {
+                        " For coffee, snacks or light refreshments, ask for \u{201c}coffee\u{201d} or use Explore\u{2019}s Free food filter."
+                    } else {
+                        ""
+                    }
+                ),
             );
         }
     }

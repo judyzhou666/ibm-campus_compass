@@ -146,9 +146,9 @@ describe("filterChips labels", () => {
     assert.equal(chips[0].label, "Morning");
   });
 
-  it("produces 'Free food' chip for food=Free meal", () => {
+  it("produces 'Free meal' chip for food=Free meal", () => {
     const chips = filterChips({ food: "Free meal" });
-    assert.equal(chips[0].label, "Free food");
+    assert.equal(chips[0].label, "Free meal");
     assert.deepEqual(chips[0].keys, ["food"]);
   });
 
@@ -168,7 +168,7 @@ describe("filterChips labels", () => {
     const c: Constraints = { days: [2], after: 1020, food: "Free meal" };
     const chips = filterChips(c);
     // chip for food
-    const foodChip = chips.find((ch) => ch.label === "Free food")!;
+    const foodChip = chips.find((ch) => ch.label === "Free meal")!;
     const after = removeChip(c, foodChip);
     assert.equal(after.food, undefined);
     assert.deepEqual(after.days, [2]);
