@@ -91,7 +91,7 @@ test("restore: drops personalEvents with bad date", () => {
 });
 
 test("restore: drops personalEvents with invalid repeat", () => {
-  const invalid = { ...makePE(), repeat: "daily" as PersonalEvent["repeat"] };
+  const invalid = { ...makePE(), repeat: "hourly" as PersonalEvent["repeat"] };
   const saved = { ...fresh(), personalEvents: [invalid] };
   withStorage(JSON.stringify(saved), () => {
     const restored = restore();

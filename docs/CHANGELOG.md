@@ -2,6 +2,59 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Calendar: merge main into PR #29 after #28 — November 14, 2026
+
+Merged `main` into `Tingting-calendar` (#28 Explore/search/AI Planner, #30 profile) and resolved the expected conflicts, keeping both sides:
+- `docs/CHANGELOG.md`: all entries kept.
+- `frontend/src/styles.css`: the Explore-filter block from #28 and the Custom-repeat block from this PR.
+
+Checked `state.ts` and `types.ts` as Judy asked: `planSources` from #28 and the new `PersonalEvent` repeat rules plus their restore validation are both present. Added a test for the interaction between the two PRs: a daily personal item becomes busy time on every weekday, so Explore's "Fits my free time" hides clashing events on all of them.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 329 TypeScript + 5 Wiki tests. `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser: a "Daily study block", 3–4 PM, created in the calendar dialog shows on all seven days. With "Fits my free time" on, Explore goes from 48 to 27 events, and the afternoon events still listed all fall outside 3–4 PM plus the travel buffer.
+
+## Calendar: editing a class keeps its place in the list — November 13, 2026
+
+Review fix on PR #29. Saving an edit removed the item from both lists before adding it back, so every edited class or personal item moved to the end of its list. Now the item is removed only from the *other* list, which is still what lets a class turn into a personal item and back. An edit that stays in the same list replaces the item in place.
+
+Made with Claude Code.
+
+**Verification.** `npm test` (297 TypeScript + 5 Wiki tests), `npm run build` and `npm run test:api` pass.
+
+## Calendar: editable Frequency and Calendar, Google/Canvas-style repeats — November 13, 2026
+
+Editing a class (e.g. "Research Methods") showed Date, Frequency and Calendar as dropdowns, but they were disabled, so they could not be opened or changed. Frequency also offered only "Does not repeat" and "Weekly".
+
+- **Every field can be edited**, for classes too. A class can be moved to another weekday from the Date field, switched to Personal, or given any repeat. A class that repeats weekly on one weekday (Mon–Fri) with no end or location stays a busy-time block, which is the format the Rust backend validates. Anything else is saved as a personal item marked "Class / busy time" and drawn grey. Both count as busy time for the AI Planner.
+- **Frequency matches Google Calendar / Canvas:** Does not repeat, Daily, Weekly on Tuesday, Monthly on the first Tuesday, Annually on November 3, Every weekday (Monday to Friday), Custom….
+- **Custom…** opens a panel inside the dialog:
+  - repeat every N days / weeks / months / years;
+  - weekday circles for weekly rules;
+  - same date or same nth weekday for monthly rules;
+  - ends Never / On a date / After N occurrences (max 400);
+  - a plain summary such as "Every week on Tue, Thu, 3 times". Problems are explained in plain words.
+- **One shared rule** (`frontend/src/recurrence.ts`, `occursOn`) now drives the Day/Week/Month/Year views, the mini calendar, the busy-time check sent to the planner, the overlap warning and drag. It replaces five copies of weekly-only logic.
+  - A daily or every-weekday item now blocks every demo weekday it covers.
+  - Repeating items now also show on weekends.
+  - Dragging any repeating item moves the whole series, including its weekdays and end date.
+  - Classes can be dropped on any Mon–Fri date, not only dates in the demo week.
+- Saved items from before keep working ("none" / "weekly"). Custom rules are re-validated on restore.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 308 TypeScript + 5 Wiki tests, including the new `tests/recurrence.test.ts`.
+- `npm run build`, `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (63), `npm run test:api` and `npm run evaluate` (no diff) all pass.
+- In the browser with the mouse at 1280px:
+  - Opened Research Methods: every field is enabled, and the Frequency list shows the seven options above.
+  - Chose Custom, clicked Thursday, then After 3. The summary read "Every week on Tue, Thu, 3 times". After saving, the class shows grey on Tue and Thu, only on Tue Nov 10 the next week, and not at all the week after.
+  - Reopened it: the rule is kept. Switched back to Weekly on Tuesday: it is a normal weekly class again, with nothing left over.
+- At 375px, the Custom panel fits with no horizontal scroll.
+
 ## Address profile entry review feedback — November 13, 2026
 
 Renamed the avatar menu action to Edit profile and adjusted the sidebar profile card divider and hover padding while preserving keyboard activation. Made with Codex.
