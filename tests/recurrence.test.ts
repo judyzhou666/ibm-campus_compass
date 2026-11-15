@@ -286,3 +286,30 @@ test("dialog explains bad custom rules in plain words", () => {
   );
   assert.equal(ruleProblem({ unit: "day", interval: 1, count: 3 }, d), "");
 });
+
+test("Explore 'Fits my free time' hides clashes on every day a daily item covers (#28 + #29)", async () => {
+  const { matchesExplore, ALL } = await import("../frontend/src/filters.ts");
+  const { EVENTS } = await import("../frontend/src/data.ts");
+  // Daily 3–4 PM from Mon Nov 2: overlaps afternoon events on several days.
+  const state = {
+    ...fresh(),
+    blocks: [],
+    personalEvents: [
+      pe({ date: "2026-11-02", start: 900, end: 960, repeat: "daily" }),
+    ],
+  };
+  const sel = { ...ALL, fitsFreeTime: true };
+  const overlapping = EVENTS.filter(
+    (e) => e.start < 960 + state.buffer && 900 < e.end + state.buffer,
+  );
+  const days = new Set(overlapping.map((e) => e.day));
+  assert.ok(
+    days.size >= 3,
+    "the fixture should overlap events on several days",
+  );
+  for (const e of overlapping)
+    assert.equal(matchesExplore(e, sel, state), false, e.title);
+  // Without the daily item, at least some of them are listed again.
+  const free = { ...state, personalEvents: [] };
+  assert.ok(overlapping.some((e) => matchesExplore(e, sel, free)));
+});
