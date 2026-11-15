@@ -1,7 +1,7 @@
 import { DEMO, WEEK_LABEL, dayLabel } from "./config.ts";
 import { useEffect, useRef, useState } from "react";
 import { DAYS, EVENTS, time, when } from "./data.ts";
-import { Button, Icon } from "./components.tsx";
+import { Button, Icon, cardClick } from "./components.tsx";
 import { issue, reasons } from "./planner.ts";
 import { effectiveEvents } from "./updates.ts";
 import { busyBlocks } from "./personalEvents.ts";
@@ -52,7 +52,12 @@ export function ChatEvents({
           problem = issue(event, state),
           found = evidence.find((item) => item.event_id === id);
         return (
-          <article className="chat-event" key={id} aria-label={event.title}>
+          <article
+            className="chat-event"
+            key={id}
+            aria-label={event.title}
+            onClick={cardClick(() => onDetails(id))}
+          >
             <span className="tag">{event.category}</span>
             <h3>{event.title}</h3>
             <p className="meta">{when(event)}</p>

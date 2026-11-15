@@ -6350,3 +6350,24 @@ input.switch:focus-visible {
   color: var(--muted);
   margin: -8px 0 0;
 }
+
+/* The whole event card opens the event page (title, details or white space). */
+.event-card,
+.chat-event {
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.event-card:hover,
+.chat-event:hover {
+  border-color: #bacdbc;
+  box-shadow: 0 6px 20px #183e3114;
+}
+.event-card:hover .event-title,
+.chat-event:hover h3 {
+  color: var(--green);
+}
+.event-card:focus-within {
+  border-color: var(--green);
+}

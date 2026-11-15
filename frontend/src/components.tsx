@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { DAYS, EVENTS, time as formatTime, when } from "./data.ts";
@@ -411,6 +412,21 @@ export function Filters({
     </div>
   );
 }
+/**
+ * Click anywhere on a card to open its event page, not only on the title.
+ * Clicks on the card's own controls (bookmark, Add to calendar, links,
+ * fields) keep their own action, and selecting text does not open the page.
+ * Keyboard users still use the title button, which opens the same page.
+ */
+export function cardClick(open: () => void) {
+  return (ev: MouseEvent<HTMLElement>) => {
+    const target = ev.target as HTMLElement;
+    const control = target.closest("button, a, input, select, textarea, label, summary, details");
+    if (control && control !== ev.currentTarget) return;
+    if (globalThis.getSelection?.()?.toString()) return;
+    open();
+  };
+}
 export function EventCard({
   event: e,
   state,
@@ -437,6 +453,7 @@ export function EventCard({
   return (
     <article
       className={`event-card${badge === "needs-confirmation" ? " event-card--conflict" : badge === "updated" ? " event-card--updated" : ""}`}
+      onClick={cardClick(() => onDetail(e.id))}
     >
       <div className={`poster ${category}`}>
         <small>

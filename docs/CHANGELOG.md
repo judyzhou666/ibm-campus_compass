@@ -2,6 +2,27 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Event cards: click anywhere to open the event — November 14, 2026
+
+Only the event title opened the event page, so students often clicked the poster, the details or the white space and nothing happened. Now a click anywhere on an Explore, Saved or Home event card, or on an AI Planner suggestion card, opens the event page (`cardClick` in `frontend/src/components.tsx`).
+- The card's own controls keep their job: the bookmark saves, "Add to calendar" adds, and "View details" opens.
+- Selecting text on a card does not open the page.
+- Keyboard users still use the title button.
+- Cards show a pointer cursor and a hover highlight, so it's clear they can be clicked.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 332 TypeScript + 5 Wiki tests, including the new `tests/card-click.test.ts`.
+- `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` shows no diff.
+- In the browser at 1280px:
+  - Clicking the white space beside "Last checked" opened "Your first role in responsible tech".
+  - Clicking a poster opened "Conversations beyond your major".
+  - The bookmark saved the event (2→3 saved) without opening the page.
+  - "Add to calendar" added the event without opening the page.
+- At 375px, tapping a card's white space opened the event.
+
 ## Calendar: merge main into PR #29 after #28 — November 14, 2026
 
 Merged `main` into `Tingting-calendar` (#28 Explore/search/AI Planner, #30 profile) and resolved the expected conflicts, keeping both sides:
