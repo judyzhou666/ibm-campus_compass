@@ -2,6 +2,21 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Calendar: merge main into PR #29 after #28 — November 14, 2026
+
+Merged `main` into `Tingting-calendar` (#28 Explore/search/AI Planner, #30 profile) and resolved the expected conflicts, keeping both sides:
+- `docs/CHANGELOG.md`: all entries kept.
+- `frontend/src/styles.css`: the Explore-filter block from #28 and the Custom-repeat block from this PR.
+
+Checked `state.ts` and `types.ts` as Judy asked: `planSources` from #28 and the new `PersonalEvent` repeat rules plus their restore validation are both present. Added a test for the interaction between the two PRs: a daily personal item becomes busy time on every weekday, so Explore's "Fits my free time" hides clashing events on all of them.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 329 TypeScript + 5 Wiki tests. `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser: a "Daily study block", 3–4 PM, created in the calendar dialog shows on all seven days. With "Fits my free time" on, Explore goes from 48 to 27 events, and the afternoon events still listed all fall outside 3–4 PM plus the travel buffer.
+
 ## Calendar: editing a class keeps its place in the list — November 13, 2026
 
 Review fix on PR #29. Saving an edit removed the item from both lists before adding it back, so every edited class or personal item moved to the end of its list. Now the item is removed only from the *other* list, which is still what lets a class turn into a personal item and back. An edit that stays in the same list replaces the item in place.
