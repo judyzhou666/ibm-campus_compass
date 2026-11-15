@@ -43,7 +43,7 @@ export function profileMenuItems(
           { action: "review" as const, label: "Team data review" },
         ]
       : []),
-    { action: "profile", label: "View profile" },
+    { action: "profile", label: "Edit profile" },
     { action: "switch", label: `Sign in as ${ROLE_INFO[other].label}` },
     { action: "signout", label: "Sign out" },
   ];

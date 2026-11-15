@@ -24,10 +24,8 @@ export function constraintSummary(c: Constraints): string {
   return [
     c.topics?.join(" / "),
     c.days && `days: ${c.days.map((d) => days[d]).join(", ")}`,
-    c.after != null &&
-      `start after ${Math.floor(c.after / 60)}:${String(c.after % 60).padStart(2, "0")}`,
-    c.before != null &&
-      `finish before ${Math.floor(c.before / 60)}:${String(c.before % 60).padStart(2, "0")}`,
+    c.after != null && `start after ${formatTime(c.after)}`,
+    c.before != null && `finish before ${formatTime(c.before)}`,
     c.food && `food: ${c.food}`,
     c.free && "free admission",
     c.excluded?.length && `excluding ${c.excluded.join(", ")}`,

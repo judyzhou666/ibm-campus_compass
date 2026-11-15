@@ -30,7 +30,12 @@ import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
-import { matchesFilter } from "./filters.ts";
+import {
+  ALL,
+  matchesExplore,
+  matchesSearch,
+  selectionFor,
+} from "./filters.ts";
 import { News } from "./News.tsx";
 import {
   NotificationDetail,
@@ -161,7 +166,7 @@ export default function App() {
   const [selectedCommunity, setSelectedCommunity] = useState(() =>
     communityFromHash(location.hash),
   );
-  const [filter, setFilter] = useState("All"),
+  const [filter, setFilter] = useState(ALL),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
   const [message, setMessage] = useState(""),
@@ -226,7 +231,7 @@ export default function App() {
   }
   function profileAction(action: ProfileAction) {
     setProfileOpen(false);
-    if (action === "profile") nav("profile");
+    if (action === "profile") openProfileEditor();
     else if (action === "create") nav("create");
     else if (action === "review") nav("review");
     else if (action === "switch")
@@ -246,7 +251,7 @@ export default function App() {
     setOpenNote(null);
     setBellOpen(false);
     setProfileOpen(false);
-    setFilter("All");
+    setFilter(ALL);
     setQuery("");
     setSearch("");
     // The URL follows page state (see the URL effect below); switching tabs
@@ -513,11 +518,7 @@ export default function App() {
   const filterEvents = (list: typeof EVENTS) =>
     list.filter(
       (e) =>
-        matchesFilter(e, filter) &&
-        (!query ||
-          `${e.title} ${e.description} ${e.topic} ${e.food} ${e.host_school ?? ""} ${(e.goal_type ?? []).join(" ")}`
-            .toLowerCase()
-            .includes(query.toLowerCase())),
+        matchesExplore(e, filter, state) && (!query || matchesSearch(e, query)),
     );
   const cards = (list: typeof EVENTS) => (
     <div className="event-grid">
@@ -566,6 +567,37 @@ export default function App() {
           return eff ? !!issue(eff, state, effEvents) : false;
         })(),
     );
+  // "Simulate event cancellation" (demo script step) shows next to the side
+  // calendar too, so presenters do not have to hide the calendar first.
+  const changeOfPlans = state.plan.some((id) => !state.cancelled.includes(id)) ? (
+      <section className="panel">
+        <h2>Try a change of plans</h2>
+        <p className="sub">
+          Simulate a cancellation, then find an alternative that
+          fits.
+        </p>
+        <Button
+          className="small"
+          onClick={() => {
+            const id = demo
+              .read()
+              .plan.find(
+                (id) => !demo.read().cancelled.includes(id),
+              );
+            if (id)
+              update((s) => ({
+                ...s,
+                cancelled: [...s.cancelled, id],
+              }));
+            notify(
+              "Demo cancellation created. Your other events are unchanged.",
+            );
+          }}
+        >
+          Simulate event cancellation
+        </Button>
+      </section>
+    ) : null;
   const detailEvent = EVENTS.find((e) => e.id === detail);
   const campusZone = isTimeZone(state.timezone)
     ? state.timezone
@@ -622,7 +654,7 @@ export default function App() {
           onSubmit={(e) => {
             e.preventDefault();
             setQuery(search.trim());
-            setFilter("All");
+            setFilter(ALL);
             setPage("explore");
           }}
         >
@@ -787,26 +819,34 @@ export default function App() {
             time. Your next great discovery.
           </div>
           {state.signedIn ? (
-            <div className="user user-profile-card">
-              <div className="user-profile-info">
-                <span className="avatar">{state.name[0] || "J"}</span>
-                <div>
-                  <strong>{state.name}’s campus</strong>
-                  <small>
-                    {state.role === "admin"
-                      ? ROLE_INFO.admin.sidebar
-                      : [state.studentStatus, "Demo profile"]
-                          .filter(Boolean)
-                          .join(" · ")}
-                  </small>
+            <div className="user-profile-entry">
+              <div
+                className="user user-profile-card"
+                role="button"
+                tabIndex={0}
+                aria-label={`Edit profile for ${state.name}`}
+                onClick={openProfileEditor}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (!event.repeat) openProfileEditor();
+                  }
+                }}
+              >
+                <div className="user-profile-info">
+                  <span className="avatar">{state.name[0] || "J"}</span>
+                  <div>
+                    <strong>{state.name}’s campus</strong>
+                    <small>
+                      {state.role === "admin"
+                        ? ROLE_INFO.admin.sidebar
+                        : [state.studentStatus, "Demo profile"]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </small>
+                  </div>
                 </div>
               </div>
-              <button
-                className="btn primary user-profile-edit"
-                onClick={openProfileEditor}
-              >
-                Edit Profile
-              </button>
             </div>
           ) : (
             <div className="user">
@@ -834,7 +874,7 @@ export default function App() {
               onViewNotifications={() => openNotifications()}
               onCategory={(f) => {
                 nav("explore");
-                setFilter(f);
+                setFilter(selectionFor(f));
               }}
               onExplore={() => nav("explore")}
               onProfile={() => nav("profile")}
@@ -1033,8 +1073,12 @@ export default function App() {
                     : "Follow your curiosity. There’s more happening than you think."
                 }
               />
-              <div className="section-bar">
-                <Filters value={filter} onChange={setFilter} />
+              <div className="section-bar explore-bar">
+                <Filters
+                  value={filter}
+                  onChange={setFilter}
+                  count={list.length}
+                />
                 <span className="date">
                   {list.length} fictional{" "}
                   {list.length === 1 ? "event" : "events"}
@@ -1065,9 +1109,15 @@ export default function App() {
                 >
                   Try another keyword or category, or bookmark an event.
                   <p>
-                    <Button onClick={() => nav("explore")}>
-                      Explore events
-                    </Button>
+                    {filter !== ALL ? (
+                      <Button onClick={() => setFilter(ALL)}>
+                        Clear filters
+                      </Button>
+                    ) : (
+                      <Button onClick={() => nav("explore")}>
+                        Explore events
+                      </Button>
+                    )}
                   </p>
                 </Empty>
               ) : null}
@@ -1200,6 +1250,7 @@ export default function App() {
                           {m.role === "assistant" && m.altIds?.length ? (
                             <ChatEvents
                               ids={m.altIds}
+                              note="Nearby alternative, chosen by the browser's demo rules. Open details to check the fictional record and current availability."
                               state={state}
                               onDetails={setDetail}
                               onAdd={add}
@@ -1210,6 +1261,7 @@ export default function App() {
                               <p className="overlap-label">Also at the same time:</p>
                               <ChatEvents
                                 ids={m.overlapIds}
+                                note="Same-time alternative, chosen by the browser's demo rules. Open details to check the fictional record and current availability."
                                 state={state}
                                 onDetails={setDetail}
                                 onAdd={add}
@@ -1306,11 +1358,14 @@ export default function App() {
                   <p className="fineprint">{chatFineprint}</p>
                 </section>
                 {calendarOpen ? (
-                  <PlannerCalendar
-                    state={state}
-                    onClose={() => setCalendarOpen(false)}
-                    onDetails={setDetail}
-                  />
+                  <div className="stack">
+                    <PlannerCalendar
+                      state={state}
+                      onClose={() => setCalendarOpen(false)}
+                      onDetails={setDetail}
+                    />
+                    {changeOfPlans}
+                  </div>
                 ) : (
                   <aside className="stack">
                     <section className="panel">
@@ -1360,35 +1415,7 @@ export default function App() {
                         You choose what makes it into your week.
                       </p>
                     </section>
-                    {state.plan.some((id) => !state.cancelled.includes(id)) ? (
-                      <section className="panel">
-                        <h2>Try a change of plans</h2>
-                        <p className="sub">
-                          Simulate a cancellation, then find an alternative that
-                          fits.
-                        </p>
-                        <Button
-                          className="small"
-                          onClick={() => {
-                            const id = demo
-                              .read()
-                              .plan.find(
-                                (id) => !demo.read().cancelled.includes(id),
-                              );
-                            if (id)
-                              update((s) => ({
-                                ...s,
-                                cancelled: [...s.cancelled, id],
-                              }));
-                            notify(
-                              "Demo cancellation created. Your other events are unchanged.",
-                            );
-                          }}
-                        >
-                          Simulate event cancellation
-                        </Button>
-                      </section>
-                    ) : null}
+                    {changeOfPlans}
                   </aside>
                 )}
               </div>

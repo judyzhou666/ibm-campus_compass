@@ -47,14 +47,14 @@ test("identity defaults to Student; only a known role is restored", () => {
 test("profile menu shows the other identity and admin-only review", () => {
   assert.deepEqual(
     profileMenuItems("student").map((i) => i.label),
-    ["View profile", "Sign in as Admin", "Sign out"],
+    ["Edit profile", "Sign in as Admin", "Sign out"],
   );
   assert.deepEqual(
     profileMenuItems("admin").map((i) => i.label),
     [
       "Create event",
       "Team data review",
-      "View profile",
+      "Edit profile",
       "Sign in as Student",
       "Sign out",
     ],

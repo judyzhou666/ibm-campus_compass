@@ -2,7 +2,7 @@ import { enrollEvent } from "./api.ts";
 import { EVENTS } from "./data.ts";
 import { issue } from "./planner.ts";
 import { createStore, type DemoStore } from "./state.ts";
-import type { Rsvp } from "./types.ts";
+import type { DemoState, Rsvp } from "./types.ts";
 
 export type EnrollmentOutcome =
   | { kind: "added"; notice: string }
@@ -10,6 +10,16 @@ export type EnrollmentOutcome =
   | { kind: "rsvp" }
   | { kind: "rejected"; message: string }
   | { kind: "ignored" };
+
+/** True when `id` was suggested by the latest chat search. */
+function fromChat(s: DemoState, id: string) {
+  if (s.draft.includes(id)) return true;
+  const last = [...s.messages].reverse().find((m) => m.role === "assistant");
+  return Boolean(
+    last &&
+      [...(last.eventIds ?? []), ...(last.altIds ?? []), ...(last.overlapIds ?? [])].includes(id),
+  );
+}
 
 export function createEnrollment(demo: DemoStore, fetcher = globalThis.fetch) {
   const status = createStore<{ busy: boolean; rsvpEvent: string | null }>({
@@ -40,6 +50,11 @@ export function createEnrollment(demo: DemoStore, fetcher = globalThis.fetch) {
       demo.update((s) => ({
         ...s,
         plan: [...s.plan, id],
+        // Remember which chat search found it (for a later replacement).
+        planSources: {
+          ...(s.planSources ?? {}),
+          [id]: fromChat(s, id) ? s.constraints : {},
+        },
         rsvps: result.rsvpConfirmed
           ? [...s.rsvps.filter((x) => x !== id), id]
           : s.rsvps,

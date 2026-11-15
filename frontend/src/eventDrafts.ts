@@ -4,15 +4,10 @@
  * shared catalog that the Rust server builds in.
  */
 import { TOPICS } from "./data.ts";
+import { TOP_CATEGORIES, legacyCategory } from "./taxonomy.ts";
 
-export const DRAFT_CATEGORIES = [
-  "Academic",
-  "Career",
-  "Social",
-  "Workshops",
-  "Wellbeing",
-  "Arts",
-] as const;
+/** The six Explore categories; older drafts with retired names are mapped. */
+export const DRAFT_CATEGORIES = TOP_CATEGORIES;
 export const DRAFT_FOOD = [
   "None",
   "Coffee & snacks",
@@ -110,6 +105,10 @@ export function restoreDrafts(value: unknown): EventDraft[] {
     const r = draftFromForm(
       {
         ...d,
+        category:
+          typeof d.category === "string"
+            ? legacyCategory(d.category, typeof d.topic === "string" ? d.topic : "")
+            : d.category,
         day: String(d.day),
         cost: String(d.cost),
         start: clock(d.start),

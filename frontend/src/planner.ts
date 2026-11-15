@@ -31,7 +31,21 @@ export function issue(
   if (e.access === "members") return "Membership not verified";
   if (!["open", "members", "full"].includes(e.access))
     return "Eligibility not confirmed";
-  const conflict = [
+  const conflict = conflictWith(e, state, planEvents);
+  return conflict
+    ? `Conflicts with ${conflict.title}${state.buffer ? " (including travel time)" : ""}`
+    : null;
+}
+/**
+ * The class, personal calendar item or planned event that `e` overlaps
+ * (with the travel buffer), if any. Pass the event with its effective times.
+ */
+export function conflictWith(
+  e: CampusEvent,
+  state: Schedule,
+  planEvents: CampusEvent[] = EVENTS,
+) {
+  return [
     ...busyBlocks(state),
     ...planEvents.filter(
       (x) =>
@@ -40,9 +54,6 @@ export function issue(
         !state.cancelled.includes(x.id),
     ),
   ].find((x) => overlap(e, x, state.buffer));
-  return conflict
-    ? `Conflicts with ${conflict.title}${state.buffer ? " (including travel time)" : ""}`
-    : null;
 }
 export function recommend(
   state: Schedule,
