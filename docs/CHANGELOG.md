@@ -2,6 +2,27 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## AI Planner: replies keep their labels and alternatives after a reload — November 14, 2026
+
+Found while testing the site like a student. After a page reload, every earlier AI Planner reply was restored with only its text and main event IDs. As a result:
+- Rust-planner picks lost "How the planner checked this" and were relabelled **"Simulated browser suggestion"**, a wrong mode label.
+- The "Also at the same time" alternatives and example prompts disappeared, while the text still said "plus 3 alternatives".
+
+`restore()` in `frontend/src/state.ts` now also restores, with validation:
+- the planner's evidence (only for the message's own picks, with known fields and capped lengths);
+- the same-time and nearby alternative IDs (only events in the catalog);
+- the example prompts.
+
+Malformed saved data is dropped.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 335 TypeScript + 5 Wiki tests, including the new `tests/chat-restore.test.ts`.
+- `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` shows no diff.
+- In the browser: after "AI career social 3 events after 1 PM" and a reload, the reply still shows 3 picks with "How the planner checked this" and the 3 labelled same-time alternatives, the same as before the reload.
+
 ## Event cards: click anywhere to open the event — November 14, 2026
 
 Only the event title opened the event page, so students often clicked the poster, the details or the white space and nothing happened. Now a click anywhere on an Explore, Saved or Home event card, or on an AI Planner suggestion card, opens the event page (`cardClick` in `frontend/src/components.tsx`).
