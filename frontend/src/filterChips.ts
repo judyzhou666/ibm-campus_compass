@@ -35,7 +35,7 @@ export function filterChips(c: Constraints): FilterChip[] {
   }
   if (c.food)
     chips.push({
-      label: c.food === "Free meal" ? "Free food" : c.food,
+      label: c.food === "Free meal" ? "Free meal" : c.food,
       keys: ["food"],
     });
   if (c.free) chips.push({ label: "Free admission", keys: ["free"] });

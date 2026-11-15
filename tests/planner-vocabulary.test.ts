@@ -48,7 +48,12 @@ describe("student vocabulary", () => {
     assert.deepEqual(topics("questions about OPT"), ["Career"]);
     assert.deepEqual(topics("OPT application timeline"), ["Career"]);
     assert.deepEqual(topics("I'd opt for something quiet"), ["Wellbeing"]);
-    for (const q of ["what is OPT?", "OPT events", "OPT help", "how does OPT work"])
+    for (const q of [
+      "what is OPT?",
+      "OPT events",
+      "OPT help",
+      "how does OPT work",
+    ])
       assert.deepEqual(topics(q), ["Career"], q);
   });
 
@@ -65,6 +70,25 @@ describe("student vocabulary", () => {
     assert.deepEqual(interpretRequest("not career").constraints.excluded, [
       "Career",
     ]);
+  });
+
+  it("today, tonight and tomorrow use the demo clock (Monday 9 AM)", () => {
+    assert.deepEqual(
+      interpretRequest("any events tomorrow").constraints.days,
+      [1],
+    );
+    assert.deepEqual(
+      interpretRequest("career events today").constraints.days,
+      [0],
+    );
+    const tonight = interpretRequest("something social tonight").constraints;
+    assert.deepEqual(tonight.days, [0]);
+    assert.equal(tonight.after, 1020);
+    // A named weekday wins over "tomorrow".
+    assert.deepEqual(
+      interpretRequest("tomorrow or Friday").constraints.days,
+      [4],
+    );
   });
 
   it("negations still exclude", () => {
@@ -86,6 +110,24 @@ describe("unmatched words", () => {
       "giraffes",
       "dancing",
     ]);
+  });
+});
+
+describe("free-meal wording", () => {
+  it("says 'a free meal' and points to wider free food when none match", async () => {
+    const demo = createStore(fresh());
+    await createConversation(
+      demo,
+      () => {},
+      async () => {
+        throw Error("offline");
+      },
+    ).chat("free food on Wednesday evening");
+    const text = demo.read().messages.at(-1)!.text;
+    assert.match(text, /have a free meal\./);
+    assert.match(text, /without the free-meal filter/);
+    assert.match(text, /Explore’s Free food filter/);
+    assert.ok(!text.includes("have free food"), text);
   });
 });
 
@@ -114,7 +156,7 @@ describe("replies say what they are based on", () => {
     await createConversation(demo, () => {}, offline).chat("events on Monday");
     assert.match(
       lastReply(demo),
-      /You didn’t name a topic, so these picks follow your profile interests \(Career\)\./,
+      /You didn’t name a topic, so these picks are ranked by your profile interests \(Career\)\./,
     );
   });
 

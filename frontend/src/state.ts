@@ -4,7 +4,13 @@ import { isTimeZone, storageKey } from "./config.ts";
 import { COMMUNITIES } from "./communities.ts";
 import { DEFAULT_BLOCKS, EVENTS, TOPICS } from "./data.ts";
 import { DEFAULT_READ_IDS } from "./notifications.ts";
-import type { Constraints, DemoState, PersonalEvent } from "./types.ts";
+import type {
+  Constraints,
+  DemoState,
+  Message,
+  PersonalEvent,
+  RecommendationEvidence,
+} from "./types.ts";
 import { validateConstraints } from "./interpretation.ts";
 import { GOAL_TYPES } from "./types.ts";
 import { REPEAT_PRESETS, cleanRule } from "./recurrence.ts";
@@ -143,11 +149,7 @@ export function restore(): DemoState {
                 typeof m.text === "string",
             )
             .slice(-100)
-            .map((m: DemoState["messages"][number]) => ({
-              role: m.role,
-              text: m.text,
-              eventIds: ids(m.eventIds),
-            }))
+            .map((m: DemoState["messages"][number]) => restoreMessage(m, ids))
         : [],
       posts: Array.isArray(value.posts)
         ? value.posts
@@ -282,5 +284,62 @@ function restorePlanSources(value: unknown): Record<string, Constraints> {
       // Drop malformed entries; the replacement then falls back to the latest search.
     }
   }
+  return out;
+}
+
+/**
+ * A saved chat message with everything its cards need after a reload: the
+ * planner's evidence (so Rust answers keep "How the planner checked this"
+ * instead of looking like the browser fallback), the same-time and nearby
+ * alternatives, and example prompts. Anything malformed is dropped.
+ */
+function restoreMessage(
+  m: Message,
+  ids: (input: unknown) => string[],
+): Message {
+  const out: Message = { role: m.role, text: m.text, eventIds: ids(m.eventIds) };
+  const overlapIds = ids(m.overlapIds);
+  if (overlapIds.length) out.overlapIds = overlapIds;
+  const altIds = ids(m.altIds);
+  if (altIds.length) out.altIds = altIds;
+  if (Array.isArray(m.examples)) {
+    const examples = m.examples
+      .filter((x): x is string => typeof x === "string" && x.length > 0 && x.length <= 200)
+      .slice(0, 6);
+    if (examples.length) out.examples = examples;
+  }
+  if (Array.isArray(m.evidence)) {
+    const evidence = m.evidence
+      .map(restoreEvidence)
+      .filter(
+        (x): x is RecommendationEvidence =>
+          x !== null && (out.eventIds ?? []).includes(x.event_id),
+      )
+      .slice(0, 10);
+    if (evidence.length) out.evidence = evidence;
+  }
+  return out;
+}
+
+const text = (v: unknown) => typeof v === "string" && v.length <= 2000;
+
+function restoreEvidence(v: unknown): RecommendationEvidence | null {
+  if (!v || typeof v !== "object") return null;
+  const e = v as Record<string, unknown>;
+  const required = ["interest_match", "schedule_fit", "practical", "trade_offs"];
+  if (typeof e.event_id !== "string" || !required.every((k) => text(e[k]))) return null;
+  const out: RecommendationEvidence = {
+    event_id: e.event_id,
+    interest_match: e.interest_match as string,
+    schedule_fit: e.schedule_fit as string,
+    practical: e.practical as string,
+    trade_offs: e.trade_offs as string,
+  };
+  for (const k of ["comparison", "discovery_context", "ai_reason"] as const)
+    if (text(e[k])) out[k] = e[k] as string;
+  if (Array.isArray(e.cited_fields))
+    out.cited_fields = e.cited_fields
+      .filter((x): x is string => typeof x === "string" && x.length <= 60)
+      .slice(0, 12);
   return out;
 }

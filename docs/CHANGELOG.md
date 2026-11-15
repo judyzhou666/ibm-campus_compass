@@ -2,6 +2,71 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Event page: the back link says where it returns to — November 14, 2026
+
+The event page's back link always said "Back to events", even when the page was opened from a notification, the AI Planner or the calendar. It now names the page you came from, e.g. "Back to Notifications" or "Back to AI Planner". `EventDetails` takes a `backLabel` that App fills from the current page. Made with Claude Code.
+
+**Verification.** `npm test` (337 + 5) and `npm run build` pass. In the browser: Notifications → tea table invitation → View event shows "Back to Notifications", which returns to that notification.
+
+## AI Planner: "today/tomorrow/tonight", accurate free-meal and interests wording — November 14, 2026
+
+Found by sending typical student questions through the planner. Each change was made in `frontend/src/interpretation.ts`/`conversation.ts` and `backend/src/interpreter.rs`/`planner.rs` together, so both planners stay in step.
+- **"today", "tonight" and "tomorrow"** were ignored ("any events tomorrow" showed Monday and Tuesday). The demo clock is Monday 9 AM, so "today"/"tonight" now means Monday ("tonight" also means evening) and "tomorrow" means Tuesday. A weekday named in the same message still wins.
+- **"Free food" in the planner means a free meal** (the frozen evaluation relies on this), while Explore's Free food filter also covers coffee & snacks, light refreshments and popcorn. So "free food on Wednesday evening" said none existed while Explore showed one. The planner's reply and chip now say "a free meal" / "Free meal" and point to "coffee" or Explore's Free food filter for the wider options. What the planner selects is unchanged.
+- **"These picks follow your profile interests"** was inaccurate, because interests rank picks rather than filter them. It now reads "are ranked by your profile interests", or "are a mix from every category" when no interests are set.
+
+Made with Claude Code.
+
+**Verification.**
+- New tests in `tests/planner-vocabulary.test.ts` and `relative_days_use_the_demo_clock` in Rust.
+- `npm test`: 337 TypeScript + 5 Wiki tests. `cargo test`: 66.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` (parity) pass. `npm run evaluate` leaves the frozen evaluation unchanged.
+- In the browser against the rebuilt server:
+  - "any events tomorrow" shows a "Tuesday" chip and only Tue Nov 3 events.
+  - "free food on Wednesday evening" says "have a free meal" with a "Free meal" chip and the pointer to Explore's Free food filter.
+
+## AI Planner: replies keep their labels and alternatives after a reload — November 14, 2026
+
+Found while testing the site like a student. After a page reload, every earlier AI Planner reply was restored with only its text and main event IDs. As a result:
+- Rust-planner picks lost "How the planner checked this" and were relabelled **"Simulated browser suggestion"**, a wrong mode label.
+- The "Also at the same time" alternatives and example prompts disappeared, while the text still said "plus 3 alternatives".
+
+`restore()` in `frontend/src/state.ts` now also restores, with validation:
+- the planner's evidence (only for the message's own picks, with known fields and capped lengths);
+- the same-time and nearby alternative IDs (only events in the catalog);
+- the example prompts.
+
+Malformed saved data is dropped.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 335 TypeScript + 5 Wiki tests, including the new `tests/chat-restore.test.ts`.
+- `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` shows no diff.
+- In the browser: after "AI career social 3 events after 1 PM" and a reload, the reply still shows 3 picks with "How the planner checked this" and the 3 labelled same-time alternatives, the same as before the reload.
+
+## Event cards: click anywhere to open the event — November 14, 2026
+
+Only the event title opened the event page, so students often clicked the poster, the details or the white space and nothing happened. Now a click anywhere on an Explore, Saved or Home event card, or on an AI Planner suggestion card, opens the event page (`cardClick` in `frontend/src/components.tsx`).
+- The card's own controls keep their job: the bookmark saves, "Add to calendar" adds, and "View details" opens.
+- Selecting text on a card does not open the page.
+- Keyboard users still use the title button.
+- Cards show a pointer cursor and a hover highlight, so it's clear they can be clicked.
+
+Made with Claude Code.
+
+**Verification.**
+- `npm test`: 332 TypeScript + 5 Wiki tests, including the new `tests/card-click.test.ts`.
+- `cargo test`: 65.
+- `cargo fmt --check`, `cargo clippy -D warnings`, `npm run build` and `npm run test:api` pass. `npm run evaluate` shows no diff.
+- In the browser at 1280px:
+  - Clicking the white space beside "Last checked" opened "Your first role in responsible tech".
+  - Clicking a poster opened "Conversations beyond your major".
+  - The bookmark saved the event (2→3 saved) without opening the page.
+  - "Add to calendar" added the event without opening the page.
+- At 375px, tapping a card's white space opened the event.
+
 ## Calendar: merge main into PR #29 after #28 — November 14, 2026
 
 Merged `main` into `Tingting-calendar` (#28 Explore/search/AI Planner, #30 profile) and resolved the expected conflicts, keeping both sides:
