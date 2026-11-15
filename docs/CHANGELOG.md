@@ -2,6 +2,24 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Address profile entry review feedback — November 13, 2026
+
+Renamed the avatar menu action to Edit profile and adjusted the sidebar profile card divider and hover padding while preserving keyboard activation. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, `npm test` (318 TypeScript + 5 Wiki tests), and desktop/mobile/collapsed-sidebar browser checks pass.
+
+## Header profile action opens the editor — November 13, 2026
+
+Routed the avatar dropdown's View profile action through the same shared profile editor entry point as the sidebar card. The dropdown closes when navigating. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, profile and Student/Admin tests, and browser checks for both entry points, save/cancel, and persistence pass.
+
+## Sidebar profile card opens editing — November 13, 2026
+
+Removed the separate Edit Profile button and made the signed-in sidebar user card the keyboard-accessible entry point to the existing profile editor. Added hover and focus indication. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, relevant profile and Student/Admin tests, and desktop/mobile browser checks pass.
+
 ## AI Planner: "what is OPT?" is a Career question again — November 13, 2026
 
 Review fix on PR #28. The noun-only OPT rule from the previous commit matched a bare "opt" only when it was the whole message (`^opt$`). So "what is OPT?", "OPT events", "OPT help" and "how does OPT work" no longer found Career events. Now "opt" also counts at the start of a message and after "is", "does", "apply" or "the", plus more nouns after it (events, help, work, sessions, workshops). "I'd opt for something quiet" still maps to Wellbeing. Changed in both interpreters.
