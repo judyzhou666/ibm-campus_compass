@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Event page: the back link says where it returns to — November 14, 2026
+
+The event page's back link always said "Back to events", even when the page was opened from a notification, the AI Planner or the calendar. It now names the page you came from, e.g. "Back to Notifications" or "Back to AI Planner". `EventDetails` takes a `backLabel` that App fills from the current page. Made with Claude Code.
+
+**Verification.** `npm test` (337 + 5) and `npm run build` pass. In the browser: Notifications → tea table invitation → View event shows "Back to Notifications", which returns to that notification.
+
 ## AI Planner: "today/tomorrow/tonight", accurate free-meal and interests wording — November 14, 2026
 
 Found by sending typical student questions through the planner. Each change was made in `frontend/src/interpretation.ts`/`conversation.ts` and `backend/src/interpreter.rs`/`planner.rs` together, so both planners stay in step.

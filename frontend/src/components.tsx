@@ -696,10 +696,13 @@ export function EventDetails({
   onRemove,
   onSave,
   onDetail,
+  backLabel = "events",
 }: {
   event: CampusEvent;
   state: DemoState;
   onClose: () => void;
+  /** Where the back link returns to, e.g. "Notifications" ("Back to Notifications"). */
+  backLabel?: string;
   onCommunity: (id: string) => void;
   onAdd: (id: string) => void;
   onRemove: (id: string) => void;
@@ -909,7 +912,7 @@ export function EventDetails({
 
           <button type="button" className="ed-back" onClick={onClose}>
             <Icon name="arrow" />
-            Back to events
+            Back to {backLabel}
           </button>
 
           {/* Poster banner */}

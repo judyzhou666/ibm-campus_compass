@@ -1635,6 +1635,7 @@ export default function App() {
           event={detailEvent}
           state={state}
           onClose={closeDetail}
+          backLabel={labels[page]}
           onCommunity={(id) => nav("forum", id)}
           onAdd={add}
           onRemove={remove}
