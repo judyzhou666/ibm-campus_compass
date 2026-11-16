@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## New search description and link-preview tags — November 15, 2026
+
+The page description that search engines show is now the team's sentence, "Campus follow your preference, create your portfolio." (the only change to the team's wording is the spelling of "portfolio"). `frontend/index.html` also gains Open Graph and Twitter card tags, so links shared in Slack, iMessage or LinkedIn show the Campfolio title, that sentence and the logo from the Cloudflare site `campfolio.jzhou-jinru.workers.dev`. Made with Claude Code.
+
+**Verification.** `npm test` (337 + 5) and `npm run build` pass, and the local server returns the new tags. The live site still serves the pre-Campfolio build, so the preview image resolves only after the next Cloudflare deployment.
+
 ## Campfolio logo in the top bar, favicon and About — November 15, 2026
 
 The team's new Campfolio logo (an open campus map with an arch and location pins) replaces the green compass tile. The white background was made transparent with ImageMagick: the outside was flood-filled, letter holes and edges got soft alpha, and the book's white page edges stayed opaque. Three files are in `frontend/public/assets/`: `campfolio-mark.png` (icon only) beside the "Campfolio" wordmark in the top bar, now in the logo's blue (`--brand-blue`); `campfolio-icon.png` as the browser favicon and touch icon; and `campfolio-logo.png` (icon and wordmark) at the top of Settings › About. On phones the top bar shows the mark alone, as before. The compass icon in empty states and the welcome hero is unchanged. Made with Claude Code.
