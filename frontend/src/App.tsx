@@ -67,7 +67,7 @@ const labels = {
   forum: "Discussion Forum",
   planner: "AI Planner",
   saved: "Saved Events",
-  profile: "Profile",
+  profile: "My Preferences",
   settings: "Settings",
   notifications: "Notifications",
 };

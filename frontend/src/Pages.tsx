@@ -345,7 +345,7 @@ export function Profile({
   return (
     <>
       <Heading
-        title="A little about you."
+        title="My Preferences"
         description="Your interests and availability help make better recommendations."
       >
         {state.signedIn ? (
