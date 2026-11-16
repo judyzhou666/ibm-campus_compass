@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Restored fictional-profile guidance in Edit Profile — November 16, 2026
+
+Edit Profile's existing heading description now reads: "Use a fictional profile for classroom demonstrations. Changes stay in this browser." This restores the classroom reminder without adding a separate component or changing form behavior. Made with Codex.
+
+**Verification.** TypeScript typecheck and frontend production build pass. Browser checks for Student/Admin at 1440px and 390px confirmed the exact description appears once beneath the heading and fits within the viewport. Existing Edit Profile regression flows, including Save/Cancel, and the preserved My Preferences browser regression pass. The untracked preferences test was not modified or staged.
+
 ## Campfolio Step 4: Availability & Schedule and calendar navigation — November 16, 2026
 
 My Preferences now groups existing commitments under Availability & Schedule, with a Current Busy Times heading and a count derived from the saved busy-time state. View Calendar opens the existing My Calendar page. Existing busy-time deletion and browser-local persistence are retained. Implemented with IBM Bob in `5d4bb94`; documented retrospectively with Codex.

@@ -235,7 +235,7 @@ export function Profile({
       <>
         <Heading
           title="Edit Profile"
-          description="Update your basic information. Changes stay in this browser."
+          description="Use a fictional profile for classroom demonstrations. Changes stay in this browser."
         />
         <div className="profile-editor-layout">
           <section
