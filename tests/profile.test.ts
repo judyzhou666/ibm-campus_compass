@@ -199,3 +199,40 @@ test("basic profile fields restore from the existing browser-local state", () =>
     else Reflect.deleteProperty(globalThis, "localStorage");
   }
 });
+
+test("status choices preserve every saved non-predefined value exactly", async () => {
+  const { STUDENT_STATUSES, studentStatusChoice } =
+    await import("../frontend/src/profile.ts");
+  for (const status of STUDENT_STATUSES)
+    assert.equal(studentStatusChoice(status), status);
+  assert.equal(studentStatusChoice(""), "");
+  for (const status of [
+    "Visiting researcher",
+    "graduate student",
+    " Graduate student ",
+    "other",
+  ])
+    assert.equal(studentStatusChoice(status), "other");
+});
+
+test("custom status retains the existing optional-field and length validation", () => {
+  const input = {
+    name: "Casey",
+    studentStatus: "Visiting researcher",
+    university: "",
+    major: "",
+  };
+  assert.equal(validateBasicInformation(input).valid, true);
+  assert.equal(
+    validateBasicInformation({ ...input, studentStatus: "x".repeat(80) }).valid,
+    true,
+  );
+  assert.equal(
+    validateBasicInformation({ ...input, studentStatus: "x".repeat(81) }).valid,
+    false,
+  );
+  assert.equal(
+    validateBasicInformation({ ...input, studentStatus: "" }).valid,
+    true,
+  );
+});
