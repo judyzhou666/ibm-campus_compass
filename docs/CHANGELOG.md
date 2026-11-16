@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Cloudflare build reconnected to GitHub — November 15, 2026
+
+The `campfolio` Worker had lost its GitHub connection, so the merges of the Campfolio rename and the SEO changes produced no Cloudflare builds. The team reconnected the repository in the Cloudflare dashboard and changed the deploy command from the old `--name=ibm-campus-compass` to `npx wrangler deploy --assets=./dist --name=campfolio`, matching `wrangler.jsonc`. This entry is the first push to `main` after that fix, to trigger the build. Made with Claude Code.
+
+**Verification.** Checked after the push: a Cloudflare build for this commit, and https://campfolio.jinruzhou.com serving the Campfolio title, description and logo.
+
 ## Cloudflare auto-deploy from main — November 15, 2026
 
 Added `wrangler.jsonc` so Cloudflare Workers Builds can deploy the `campfolio` Worker on every push to `main`. It serves the built `dist/` folder as static assets; unknown paths, including `/api/*`, still return 404, as on the current live site, so the planner keeps its labelled browser simulation. README gains a "Public demo on Cloudflare" section. Made with Claude Code.
