@@ -107,6 +107,8 @@ const prompts = [
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
 const PROFILE_DISCARD_MESSAGE =
   "You have unsaved profile changes. If you leave now, your edits will be discarded.";
+const PREF_DISCARD_MESSAGE =
+  "You have unsaved preference changes. If you leave now, your edits will be discarded.";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
   return page in labels ? (page as Page) : "home";
@@ -169,6 +171,7 @@ export default function App() {
   const profileEditModeRef = useRef(profileEditMode);
   profileEditModeRef.current = profileEditMode;
   const profileDirtyRef = useRef(false);
+  const prefDirtyRef = useRef(false);
   const [selectedCommunity, setSelectedCommunity] = useState(() =>
     communityFromHash(location.hash),
   );
@@ -223,6 +226,8 @@ export default function App() {
   const [signingIn, setSigningIn] = useState<Role | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileExitPromptOpen, setProfileExitPromptOpen] = useState(false);
+  // Which guard triggered the exit prompt: "profile" = Edit Profile, "pref" = My Preferences.
+  const exitPromptKindRef = useRef<"profile" | "pref">("profile");
   const profileExitDialogRef = useRef<HTMLDialogElement>(null);
   const profileExitActionRef = useRef<(() => void) | null>(null);
   const profileInputFocusRef = useRef<
@@ -248,6 +253,13 @@ export default function App() {
   }
   function continueAfterProfileExit(action: () => void) {
     if (profileEditModeRef.current && profileDirtyRef.current) {
+      exitPromptKindRef.current = "profile";
+      profileExitActionRef.current = action;
+      setProfileExitPromptOpen(true);
+      return;
+    }
+    if (!profileEditModeRef.current && prefDirtyRef.current) {
+      exitPromptKindRef.current = "pref";
       profileExitActionRef.current = action;
       setProfileExitPromptOpen(true);
       return;
@@ -263,6 +275,7 @@ export default function App() {
     const action = profileExitActionRef.current;
     profileExitActionRef.current = null;
     setProfileExitPromptOpen(false);
+    prefDirtyRef.current = false;
     exitProfileEditor();
     action?.();
   }
@@ -400,7 +413,9 @@ export default function App() {
   }, []);
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent) {
-      if (!profileEditModeRef.current || !profileDirtyRef.current) return;
+      const profileDirty = profileEditModeRef.current && profileDirtyRef.current;
+      const prefDirty = !profileEditModeRef.current && prefDirtyRef.current;
+      if (!profileDirty && !prefDirty) return;
       event.preventDefault();
       event.returnValue = "";
     }
@@ -713,8 +728,16 @@ export default function App() {
           stayInProfileEditor();
         }}
       >
-        <h2 id="profile-exit-heading">Unsaved profile changes</h2>
-        <p id="profile-exit-description">{PROFILE_DISCARD_MESSAGE}</p>
+        <h2 id="profile-exit-heading">
+          {exitPromptKindRef.current === "pref"
+            ? "Unsaved preference changes"
+            : "Unsaved profile changes"}
+        </h2>
+        <p id="profile-exit-description">
+          {exitPromptKindRef.current === "pref"
+            ? PREF_DISCARD_MESSAGE
+            : PROFILE_DISCARD_MESSAGE}
+        </p>
         <div className="profile-exit-actions">
           <button
             type="button"
@@ -1650,6 +1673,9 @@ export default function App() {
               onEditBasicInformation={openProfileEditor}
               onProfileDirtyChange={(dirty) => {
                 profileDirtyRef.current = dirty;
+              }}
+              onPrefDirtyChange={(dirty) => {
+                prefDirtyRef.current = dirty;
               }}
               onBasicInformationFocus={(input) => {
                 profileInputFocusRef.current = input;

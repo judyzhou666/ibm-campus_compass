@@ -1,6 +1,6 @@
 import { dayLabel } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSubPage } from "./navigation.ts";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { overlap } from "./planner.ts";
@@ -29,11 +29,29 @@ type Props = {
   onCancelBasicInformation?: () => void;
   onSaveBasicInformation?: () => void;
   onProfileDirtyChange?: (dirty: boolean) => void;
+  onPrefDirtyChange?: (dirty: boolean) => void;
   onBasicInformationFocus?: (
     input: HTMLInputElement | HTMLSelectElement,
   ) => void;
   onCalendar?: () => void;
 };
+/** Sort a string array for order-insensitive comparison. */
+function sortedCopy(arr: string[]): string[] {
+  return [...arr].sort();
+}
+function prefsDiffer(
+  interests: string[],
+  goalTypes: string[],
+  goals: string,
+  preferredTime: string,
+  saved: { interests: string[]; goal_types: string[]; goals: string; preferred_time: string },
+): boolean {
+  const a = sortedCopy(interests).join("\0");
+  const b = sortedCopy(saved.interests).join("\0");
+  const c = sortedCopy(goalTypes).join("\0");
+  const d = sortedCopy(saved.goal_types).join("\0");
+  return a !== b || c !== d || goals !== saved.goals || preferredTime !== saved.preferred_time;
+}
 export function Profile({
   state,
   update,
@@ -44,6 +62,7 @@ export function Profile({
   onCancelBasicInformation,
   onSaveBasicInformation,
   onProfileDirtyChange,
+  onPrefDirtyChange,
   onBasicInformationFocus,
   onCalendar,
 }: Props) {
@@ -62,6 +81,41 @@ export function Profile({
       ? state.studentStatus
       : "",
   );
+  // Controlled state for the preferences form.
+  const [prefInterests, setPrefInterests] = useState<string[]>(
+    () => state.interests,
+  );
+  const [prefGoalTypes, setPrefGoalTypes] = useState<string[]>(
+    () => state.goal_types ?? [],
+  );
+  const [prefGoals, setPrefGoals] = useState(() => state.goals);
+  const [prefTime, setPrefTime] = useState(() => state.preferred_time || "any");
+  // Status: null = no message, "saved" = success, "saving" = in progress.
+  const [prefSaveStatus, setPrefSaveStatus] = useState<
+    null | "saving" | "saved"
+  >(null);
+  // The snapshot of what is currently persisted (for dirty comparison).
+  const savedPrefRef = useRef({
+    interests: state.interests,
+    goal_types: state.goal_types ?? [],
+    goals: state.goals,
+    preferred_time: state.preferred_time || "any",
+  });
+  const prefDirty = prefsDiffer(
+    prefInterests,
+    prefGoalTypes,
+    prefGoals,
+    prefTime,
+    savedPrefRef.current,
+  );
+  // Notify App when dirty state changes.
+  const prevPrefDirty = useRef(prefDirty);
+  useEffect(() => {
+    if (prevPrefDirty.current !== prefDirty) {
+      prevPrefDirty.current = prefDirty;
+      onPrefDirtyChange?.(prefDirty);
+    }
+  });
   useEffect(() => {
     if (editBasicInformation) return;
     setBasicInformation({
@@ -105,15 +159,26 @@ export function Profile({
   }
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const f = new FormData(event.currentTarget);
+    if (!prefDirty || prefSaveStatus === "saving") return;
+    setPrefSaveStatus("saving");
+    const trimmedGoals = prefGoals.trim();
     update((s) => ({
       ...s,
-      interests: f.getAll("topics").map(String),
-      goal_types: f.getAll("goal_types").map(String),
+      interests: prefInterests,
+      goal_types: prefGoalTypes,
       onboarded: true,
-      goals: String(f.get("goals") || "").trim(),
-      preferred_time: String(f.get("preferred_time") || "any"),
+      goals: trimmedGoals,
+      preferred_time: prefTime,
     }));
+    savedPrefRef.current = {
+      interests: prefInterests,
+      goal_types: prefGoalTypes,
+      goals: trimmedGoals,
+      preferred_time: prefTime,
+    };
+    setPrefGoals(trimmedGoals);
+    setPrefSaveStatus("saved");
+    onPrefDirtyChange?.(false);
     notify("Preferences saved. Ask the planner for updated suggestions.");
   }
   function addBlock(event: FormEvent<HTMLFormElement>) {
@@ -373,7 +438,15 @@ export function Profile({
                     type="checkbox"
                     name="topics"
                     value={t}
-                    defaultChecked={state.interests.includes(t)}
+                    checked={prefInterests.includes(t)}
+                    onChange={(e) => {
+                      setPrefInterests((prev) =>
+                        e.target.checked
+                          ? [...prev, t]
+                          : prev.filter((x) => x !== t),
+                      );
+                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                    }}
                   />
                   {t}
                 </label>
@@ -392,7 +465,15 @@ export function Profile({
                     type="checkbox"
                     name="goal_types"
                     value={g}
-                    defaultChecked={state.goal_types?.includes(g)}
+                    checked={prefGoalTypes.includes(g)}
+                    onChange={(e) => {
+                      setPrefGoalTypes((prev) =>
+                        e.target.checked
+                          ? [...prev, g]
+                          : prev.filter((x) => x !== g),
+                      );
+                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                    }}
                   />
                   {g.charAt(0).toUpperCase() + g.slice(1)}
                 </label>
@@ -404,7 +485,15 @@ export function Profile({
             </p>
             <label className="field">
               Research / career exploration goals (optional)
-              <input name="goals" maxLength={240} defaultValue={state.goals} />
+              <input
+                name="goals"
+                maxLength={240}
+                value={prefGoals}
+                onChange={(e) => {
+                  setPrefGoals(e.target.value);
+                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                }}
+              />
             </label>
             {!watsonxMode && (
               <p className="fineprint" data-simulated-only>
@@ -423,7 +512,11 @@ export function Profile({
               Preferred event time
               <select
                 name="preferred_time"
-                defaultValue={state.preferred_time || "any"}
+                value={prefTime}
+                onChange={(e) => {
+                  setPrefTime(e.target.value);
+                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                }}
               >
                 <option value="any">Any time</option>
                 <option value="morning">Morning</option>
@@ -436,7 +529,22 @@ export function Profile({
               availability constraint. Use the chat for strict time limits, busy
               times and travel buffer in Settings.
             </p>
-            <button className="btn primary">Save preferences</button>
+            {prefDirty && (
+              <p className="profile-dirty-status" role="status">
+                Unsaved changes
+              </p>
+            )}
+            {!prefDirty && prefSaveStatus === "saved" && (
+              <p className="pref-save-success" role="status">
+                Your preferences have been saved.
+              </p>
+            )}
+            <button
+              className="btn primary"
+              disabled={!prefDirty || prefSaveStatus === "saving"}
+            >
+              Save preferences
+            </button>
           </section>
         </form>
         <section className="panel">
