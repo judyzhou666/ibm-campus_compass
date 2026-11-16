@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Campfolio Step 5: unsaved changes and save feedback for My Preferences — November 16, 2026
+
+Preferences form (`My Preferences` page) now tracks whether the editable fields — interests, goal types, research/career goals, and preferred event time — differ from the last-saved snapshot. When they do, an "Unsaved changes" badge appears above the Save button; when they match the saved state, the badge disappears. Saving displays "Your preferences have been saved." The Save Preferences button is disabled when there are no unsaved changes or a save is in progress, preventing duplicate submits. After navigating away from My Preferences with unsaved changes, the existing "Unsaved profile changes" dialog is reused, retitled "Unsaved preference changes", to offer Stay or Discard. The browser `beforeunload` guard is extended to also fire for unsaved preferences. Busy Times (blocks) are saved immediately per-block and are not part of the preferences save transaction. No new persistence mechanism was added. Made with IBM Bob.
+
+**Verification.** `npx tsc --noEmit` clean, `npm run build` passes (497 KB JS, 89 KB CSS), `npm test` (343 application tests + 5 Wiki tests), `cargo fmt --check` clean, `cargo clippy` clean, `cargo test` (66 tests). Browser-level scenarios (Save disabled on load, unsaved-changes indicator, revert clears indicator, save success, Stay/Discard navigation) could not be verified in this execution environment.
+
 ## Review fixes: empty academic status and browser test instructions — November 16, 2026
 
 Student Status now distinguishes an empty value with Not specified, which stores the empty string and leaves custom drafts intact when switching options. Existing custom values, validation and persistence are unchanged. The manual profile browser regression documents its server/tooling requirements, complete environment-variable invocation and macOS browser-path discovery without assuming a fixed application path. Judy's `f892462` focus restoration remains intact. Made with Codex.
