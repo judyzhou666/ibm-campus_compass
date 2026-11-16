@@ -2,6 +2,30 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Campfolio Step 4: Availability & Schedule and calendar navigation — November 16, 2026
+
+My Preferences now groups existing commitments under Availability & Schedule, with a Current Busy Times heading and a count derived from the saved busy-time state. View Calendar opens the existing My Calendar page. Existing busy-time deletion and browser-local persistence are retained. Implemented with IBM Bob in `5d4bb94`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. The subsequent synchronized-branch verification passed the relevant frontend tests and browser checks for calendar navigation, busy-time counts, deletion and persistence. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 3: organized preference sections — November 16, 2026
+
+My Preferences now presents Your Interests, Your Goals and Event Time Preferences as separate sections. Existing interest and goal-type checkboxes, research/career goals text and preferred event time remain in the preferences form. Implemented with IBM Bob in `4e98f29`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks on the synchronized branch confirmed preference editing, saving and restoration after refresh for Student and Admin. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 2: removed duplicate profile fields — November 16, 2026
+
+Removed the read-only Display Name and Major / Program fields, their Edit link and the associated profile helper text from My Preferences. These fields remain available in Edit Profile; stored profile values and preference controls are preserved. Implemented with IBM Bob in `bc5dce1`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks confirmed that profile values remain intact and both the sidebar user card and avatar menu still open Edit Profile. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 1: renamed Profile to My Preferences — November 16, 2026
+
+Renamed the sidebar Profile item and its page heading to My Preferences. Settings guidance now uses the same name. The existing profile route and separate Edit Profile entry points remain unchanged. Implemented with IBM Bob in `e4d9ea1`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks confirmed the My Preferences sidebar label and heading on the existing route. No tests were rerun for this documentation-only update.
+
 ## Unsaved preference guard fixes — November 16, 2026
 
 Review fixes for the My Preferences unsaved-changes prompt. Opening Edit Profile now asks before dropping a preference draft; before, it discarded the draft silently and left a stale flag that prompted later with nothing unsaved. Discard while staying on My Preferences now clears the draft from the form. Stay after following a link keeps the address on My Preferences. Adding or removing spaces around the goals text alone no longer counts as a change, since Save trims it. The time-preference note now points to Availability & Schedule for busy times. Made with Claude Code.
