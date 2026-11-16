@@ -2,6 +2,15 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Bob sessions: tasks run on Bella's Bob account — November 16, 2026
+
+Added three IBM Bob task exports (made with Bob's own export, unedited) to `bob_sessions/Bella/`. Judy ran these tasks on Bella's Bob account on November 12, so the resulting commits are authored by Judy:
+- reviewing and finishing the WIP commit `23c66e0` (Prompt 3b re-planning);
+- the event detail page redesign (PR #19);
+- removing the Demo Scenario Launcher from the AI Planner (PR #20).
+
+**Verification.** Checked the exports for API keys, IAM tokens, project IDs and other credentials; none found. No application code changed, so no tests were run.
+
 ## Extracted preference dirty-state comparison — November 16, 2026
 
 Moved the existing `prefsDiffer` function and its sorting helper from Pages into the pure `frontend/src/preferences.ts` module. Pages imports the function without changing its calls, save handler or guards. The saved snapshot type reuses DemoState fields; comparison retains order-insensitive selections, trimmed goals and exact time values. Made with Codex.
