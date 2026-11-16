@@ -1,6 +1,6 @@
 # Doris — Bob Task Session Exports
 
-This folder will hold Doris's real Bob IDE task exports for the Campus Compass project,
+This folder contains Doris's real Bob IDE task exports for the Campus Compass project,
 following the same conventions as `bob_sessions/Judy/` and `bob_sessions/Tingting/`.
 
 ## How to add exports
@@ -34,4 +34,4 @@ bob-task-<uuid>-YYYY-MM-DD.json
 - Check exports for API keys, IAM tokens, or project IDs before committing.
 - Make sure Bob is on the provisioned team **ibm-skillsbuild-ell** (Settings → General).
 
-Real exports will be added here as development tasks are completed on the `Doris` branch.
+This folder contains genuine IBM Bob task-history exports from Doris's Campus Compass development sessions. Additional session exports will be added as future tasks are completed.

@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Updated Doris Bob export documentation — November 16, 2026
+
+Updated `bob_sessions/Doris/README.md` to acknowledge the existing Bob task-history export rather than describing exports as future-only. Export instructions, consumption-summary guidance, team workspace information and sensitive-data precautions are preserved. Made with Codex.
+
+**Verification.** Reviewed the existing `bob-tasks-ibm-campus_compass-2026-11-16.md` export and final Markdown diff. Only the README and this required log entry changed; existing exports and the untracked browser test remain unchanged. Application tests and builds were not run for this documentation-only update.
+
 ## Removed unused preference save state and callback — November 16, 2026
 
 Removed the synchronous preferences handler's intermediate saving state and related guards. With the inline success message already removed, the remaining saved/null state and edit-time resets had no visible effect and were removed too. Save remains disabled when preferences are unchanged, with the existing toast, persistence and navigation protection preserved. Removed the unused `onEditBasicInformation` prop declaration, destructuring and App wiring; both functional Edit Profile entry points are unchanged. Made with Codex after fast-forwarding Doris to the PR #38 merge on main.
