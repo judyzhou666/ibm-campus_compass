@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Unsaved Profile Changes and Save Feedback — November 15, 2026
+
+The Edit Profile form now detects changes against saved values, disables Save when the draft is unchanged, and confirms successful saves. Leaving with a changed draft offers Stay or Discard, while Cancel keeps its existing immediate discard behavior. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in tests (9) pass. Browser checks confirmed dirty/reverted states, preview updates, save confirmation and sidebar update, navigation Stay/Discard, Cancel, and saved data after refresh.
+
 ## Live Profile Preview — November 15, 2026
 
 Edit Profile now shows an unsaved preview derived from the current Basic Information draft. It follows field edits immediately, labels empty values, and stays beside the form on wide screens. On narrow screens it stacks below. Made with Codex.

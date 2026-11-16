@@ -104,6 +104,8 @@ const prompts = [
   "Career events after 1 PM",
 ];
 const SIDEBAR_KEY = "campus-compass:sidebar-collapsed";
+const PROFILE_DISCARD_MESSAGE =
+  "You have unsaved profile changes. If you leave now, your edits will be discarded.";
 const validPage = (s: string): Page => {
   const page = s.split("?")[0];
   return page in labels ? (page as Page) : "home";
@@ -163,6 +165,9 @@ export default function App() {
     validPage(location.hash.slice(1)),
   );
   const [profileEditMode, setProfileEditMode] = useState(false);
+  const profileEditModeRef = useRef(profileEditMode);
+  profileEditModeRef.current = profileEditMode;
+  const profileDirtyRef = useRef(false);
   const [selectedCommunity, setSelectedCommunity] = useState(() =>
     communityFromHash(location.hash),
   );
@@ -216,6 +221,10 @@ export default function App() {
   // The identity preselected in the sign-in dialog, or null when it is closed.
   const [signingIn, setSigningIn] = useState<Role | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileExitPromptOpen, setProfileExitPromptOpen] = useState(false);
+  const profileExitDialogRef = useRef<HTMLDialogElement>(null);
+  const profileExitActionRef = useRef<(() => void) | null>(null);
+  const profileInputFocusRef = useRef<HTMLInputElement | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -229,21 +238,49 @@ export default function App() {
     setToastActions(actions);
     setToastHeld(false);
   }
+  function exitProfileEditor() {
+    profileDirtyRef.current = false;
+    profileEditModeRef.current = false;
+    setProfileEditMode(false);
+  }
+  function continueAfterProfileExit(action: () => void) {
+    if (profileEditModeRef.current && profileDirtyRef.current) {
+      profileExitActionRef.current = action;
+      setProfileExitPromptOpen(true);
+      return;
+    }
+    exitProfileEditor();
+    action();
+  }
+  function stayInProfileEditor() {
+    profileExitActionRef.current = null;
+    setProfileExitPromptOpen(false);
+  }
+  function discardProfileChangesAndContinue() {
+    const action = profileExitActionRef.current;
+    profileExitActionRef.current = null;
+    setProfileExitPromptOpen(false);
+    exitProfileEditor();
+    action?.();
+  }
   function profileAction(action: ProfileAction) {
     setProfileOpen(false);
     if (action === "profile") openProfileEditor();
     else if (action === "create") nav("create");
     else if (action === "review") nav("review");
-    else if (action === "switch")
-      setSigningIn(state.role === "student" ? "admin" : "student");
-    else {
-      update((s) => ({ ...s, signedIn: false }));
-      notify("Signed out. Your demo plans stay in this browser.");
+    else if (action === "switch") {
+      continueAfterProfileExit(() =>
+        setSigningIn(state.role === "student" ? "admin" : "student"),
+      );
+    } else {
+      continueAfterProfileExit(() => {
+        update((s) => ({ ...s, signedIn: false }));
+        notify("Signed out. Your demo plans stay in this browser.");
+      });
     }
   }
 
-  function nav(next: Page, communityId?: string) {
-    setProfileEditMode(false);
+  function performNavigation(next: Page, communityId?: string) {
     setSelectedCommunity(next === "forum" && communityId ? communityId : null);
     setPage(next);
     setMenu(false);
@@ -254,12 +291,19 @@ export default function App() {
     setFilter(ALL);
     setQuery("");
     setSearch("");
-    // The URL follows page state (see the URL effect below); switching tabs
-    // replaces the history entry, so Back never steps between sibling tabs.
     window.scrollTo(0, 0);
   }
+  function nav(
+    next: Page,
+    communityId?: string,
+    preserveProfileEditor = false,
+  ) {
+    if (preserveProfileEditor) performNavigation(next, communityId);
+    else continueAfterProfileExit(() => performNavigation(next, communityId));
+  }
   function openProfileEditor() {
-    nav("profile");
+    nav("profile", undefined, true);
+    profileEditModeRef.current = true;
     setProfileEditMode(true);
   }
   useEffect(() => {
@@ -325,11 +369,22 @@ export default function App() {
         e,
         () => {
           // A link or typed URL changed the hash: go there as a tab switch.
-          setPage(validPage(location.hash.slice(1)));
-          setSelectedCommunity(communityFromHash(location.hash));
-          setDetail(null);
-          setOpenNote(null);
-          setMenu(false);
+          const nextPage = validPage(location.hash.slice(1));
+          const goToLink = () => {
+            setPage(nextPage);
+            setSelectedCommunity(communityFromHash(location.hash));
+            setDetail(null);
+            setOpenNote(null);
+            setMenu(false);
+          };
+          if (nextPage !== validPage(appUrlRef.current.slice(1))) {
+            if (profileEditModeRef.current && profileDirtyRef.current) {
+              history.replaceState(history.state, "", appUrlRef.current);
+            }
+            continueAfterProfileExit(goToLink);
+            return;
+          }
+          goToLink();
         },
         () => appUrlRef.current,
       );
@@ -337,6 +392,26 @@ export default function App() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+  useEffect(() => {
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      if (!profileEditModeRef.current || !profileDirtyRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+  useEffect(() => {
+    const dialog = profileExitDialogRef.current;
+    if (!dialog) return;
+    if (profileExitPromptOpen && !dialog.open) dialog.showModal();
+    else if (!profileExitPromptOpen && dialog.open) {
+      dialog.close();
+      if (profileEditModeRef.current) {
+        requestAnimationFrame(() => profileInputFocusRef.current?.focus());
+      }
+    }
+  }, [profileExitPromptOpen]);
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -614,6 +689,36 @@ export default function App() {
 
   return (
     <>
+      <dialog
+        ref={profileExitDialogRef}
+        className="profile-exit-dialog"
+        aria-labelledby="profile-exit-heading"
+        aria-describedby="profile-exit-description"
+        onCancel={(event) => {
+          event.preventDefault();
+          stayInProfileEditor();
+        }}
+      >
+        <h2 id="profile-exit-heading">Unsaved profile changes</h2>
+        <p id="profile-exit-description">{PROFILE_DISCARD_MESSAGE}</p>
+        <div className="profile-exit-actions">
+          <button
+            type="button"
+            className="btn"
+            autoFocus
+            onClick={stayInProfileEditor}
+          >
+            Stay and continue editing
+          </button>
+          <button
+            type="button"
+            className="btn danger"
+            onClick={discardProfileChangesAndContinue}
+          >
+            Discard changes and leave
+          </button>
+        </div>
+      </dialog>
       {!state.onboarded ? (
         <Welcome
           onStart={() => {
@@ -651,9 +756,11 @@ export default function App() {
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
-            setQuery(search.trim());
-            setFilter(ALL);
-            setPage("explore");
+            continueAfterProfileExit(() => {
+              setQuery(search.trim());
+              setFilter(ALL);
+              setPage("explore");
+            });
           }}
         >
           <Icon name="search" />
@@ -1522,9 +1629,15 @@ export default function App() {
               notify={notify}
               watsonxMode={watsonxMode}
               editBasicInformation={profileEditMode}
-              onCancelBasicInformation={() => setProfileEditMode(false)}
-              onSaveBasicInformation={() => setProfileEditMode(false)}
+              onCancelBasicInformation={exitProfileEditor}
+              onSaveBasicInformation={exitProfileEditor}
               onEditBasicInformation={openProfileEditor}
+              onProfileDirtyChange={(dirty) => {
+                profileDirtyRef.current = dirty;
+              }}
+              onBasicInformationFocus={(input) => {
+                profileInputFocusRef.current = input;
+              }}
             />
           ) : null}
           {page === "forum" ? (

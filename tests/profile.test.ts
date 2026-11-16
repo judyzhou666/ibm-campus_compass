@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   basicInformationPreview,
+  hasBasicInformationChanges,
   validateBasicInformation,
 } from "../frontend/src/profile.ts";
 import { restore } from "../frontend/src/state.ts";
@@ -84,6 +85,34 @@ test("profile preview follows the current draft values as fields change", () => 
     studentStatus: "Graduate student",
     university: "",
     major: "",
+  });
+});
+
+test("profile dirty detection clears when draft values return to saved values", () => {
+  const saved = {
+    name: "Judy",
+    studentStatus: "Graduate student",
+    university: "Example University",
+    major: "Learning Sciences",
+  };
+  assert.equal(hasBasicInformationChanges(saved, saved), false);
+  for (const field of ["name", "studentStatus", "university", "major"] as const) {
+    const changed = { ...saved, [field]: `${saved[field]} updated` };
+    assert.equal(hasBasicInformationChanges(changed, saved), true, field);
+    assert.equal(
+      hasBasicInformationChanges(
+        { ...changed, [field]: saved[field] },
+        saved,
+      ),
+      false,
+      field,
+    );
+  }
+  assert.deepEqual(saved, {
+    name: "Judy",
+    studentStatus: "Graduate student",
+    university: "Example University",
+    major: "Learning Sciences",
   });
 });
 

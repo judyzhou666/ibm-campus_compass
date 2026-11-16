@@ -1201,6 +1201,46 @@ p {
   gap: 12px;
   flex-wrap: wrap;
 }
+.profile-dirty-status {
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0 0 14px;
+  padding: 7px 10px;
+  border-left: 3px solid var(--green);
+  border-radius: 6px;
+  background: var(--mint);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.profile-exit-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  box-shadow: 0 18px 55px #183e312e;
+}
+.profile-exit-dialog::backdrop {
+  background: #15291f70;
+}
+.profile-exit-dialog h2 {
+  margin: 0 0 10px;
+}
+.profile-exit-dialog p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.profile-exit-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .profile-edit-link {
   justify-self: start;
 }

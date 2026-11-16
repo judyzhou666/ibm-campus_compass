@@ -10,8 +10,10 @@ import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
 import {
   basicInformationPreview,
+  hasBasicInformationChanges,
   validateBasicInformation,
 } from "./profile.ts";
+import type { BasicInformation } from "./profile.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -24,6 +26,8 @@ type Props = {
   onEditBasicInformation?: () => void;
   onCancelBasicInformation?: () => void;
   onSaveBasicInformation?: () => void;
+  onProfileDirtyChange?: (dirty: boolean) => void;
+  onBasicInformationFocus?: (input: HTMLInputElement) => void;
 };
 export function Profile({
   state,
@@ -34,6 +38,8 @@ export function Profile({
   onEditBasicInformation,
   onCancelBasicInformation,
   onSaveBasicInformation,
+  onProfileDirtyChange,
+  onBasicInformationFocus,
 }: Props) {
   const [error, setError] = useState("");
   const [basicInformation, setBasicInformation] = useState(() => ({
@@ -42,15 +48,39 @@ export function Profile({
     university: state.university,
     major: state.major,
   }));
+  useEffect(() => {
+    if (editBasicInformation) return;
+    setBasicInformation({
+      name: state.name,
+      studentStatus: state.studentStatus,
+      university: state.university,
+      major: state.major,
+    });
+    setError("");
+    onProfileDirtyChange?.(false);
+  }, [
+    editBasicInformation,
+    state.name,
+    state.studentStatus,
+    state.university,
+    state.major,
+  ]);
+  function changeBasicInformation(field: keyof BasicInformation, value: string) {
+    const draft = { ...basicInformation, [field]: value };
+    setBasicInformation(draft);
+    onProfileDirtyChange?.(hasBasicInformationChanges(draft, state));
+  }
   function saveBasicInformation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hasBasicInformationChanges(basicInformation, state)) return;
     const result = validateBasicInformation(basicInformation);
     if (!result.valid) {
       setError(result.error);
       return;
     }
     update((s) => ({ ...s, ...result.value }));
-    notify("Profile information saved.");
+    onProfileDirtyChange?.(false);
+    notify("Profile updated.");
     onSaveBasicInformation?.();
   }
   function save(event: FormEvent<HTMLFormElement>) {
@@ -106,6 +136,7 @@ export function Profile({
     notify("Busy time added. Future recommendations will respect it.");
   }
   if (editBasicInformation) {
+    const isDirty = hasBasicInformationChanges(basicInformation, state);
     const preview = basicInformationPreview(basicInformation);
     return (
       <>
@@ -119,7 +150,19 @@ export function Profile({
             aria-labelledby="basic-information-heading"
           >
             <h2 id="basic-information-heading">Basic Information</h2>
-            <form className="form-grid" onSubmit={saveBasicInformation}>
+            {isDirty ? (
+              <p className="profile-dirty-status" role="status">
+                Unsaved changes
+              </p>
+            ) : null}
+            <form
+              className="form-grid"
+              onSubmit={saveBasicInformation}
+              onFocusCapture={(event) => {
+                if (event.target instanceof HTMLInputElement)
+                  onBasicInformationFocus?.(event.target);
+              }}
+            >
               <label className="field">
                 Display Name
                 <input
@@ -127,10 +170,7 @@ export function Profile({
                   name="displayName"
                   value={basicInformation.name}
                   onChange={(event) =>
-                    setBasicInformation((current) => ({
-                      ...current,
-                      name: event.target.value,
-                    }))
+                    changeBasicInformation("name", event.target.value)
                   }
                   maxLength={30}
                   autoComplete="name"
@@ -144,10 +184,7 @@ export function Profile({
                   name="studentStatus"
                   value={basicInformation.studentStatus}
                   onChange={(event) =>
-                    setBasicInformation((current) => ({
-                      ...current,
-                      studentStatus: event.target.value,
-                    }))
+                    changeBasicInformation("studentStatus", event.target.value)
                   }
                   maxLength={80}
                   placeholder="For example, undergraduate student"
@@ -159,10 +196,7 @@ export function Profile({
                   name="university"
                   value={basicInformation.university}
                   onChange={(event) =>
-                    setBasicInformation((current) => ({
-                      ...current,
-                      university: event.target.value,
-                    }))
+                    changeBasicInformation("university", event.target.value)
                   }
                   maxLength={120}
                   autoComplete="organization"
@@ -175,10 +209,7 @@ export function Profile({
                   name="major"
                   value={basicInformation.major}
                   onChange={(event) =>
-                    setBasicInformation((current) => ({
-                      ...current,
-                      major: event.target.value,
-                    }))
+                    changeBasicInformation("major", event.target.value)
                   }
                   maxLength={120}
                   placeholder="Enter your major or program"
@@ -190,7 +221,11 @@ export function Profile({
                 </p>
               ) : null}
               <div className="profile-form-actions field full">
-                <button type="submit" className="btn primary">
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={!isDirty}
+                >
                   Save Changes
                 </button>
                 <button

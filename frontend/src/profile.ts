@@ -5,6 +5,18 @@ export interface BasicInformation {
   major: string;
 }
 
+export function hasBasicInformationChanges(
+  draft: BasicInformation,
+  saved: BasicInformation,
+): boolean {
+  return (
+    draft.name !== saved.name ||
+    draft.studentStatus !== saved.studentStatus ||
+    draft.university !== saved.university ||
+    draft.major !== saved.major
+  );
+}
+
 export interface BasicInformationPreview {
   avatar: string;
   name: string;
