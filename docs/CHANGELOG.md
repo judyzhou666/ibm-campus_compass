@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Bob sessions: Tingting's task histories as Markdown — November 16, 2026
+
+Replaced two of Tingting's JSON task exports in `bob_sessions/Tingting/` with Bob's Markdown exports of the same tasks, unedited: the AI Planner fresh search and filter chips (`dcd03d75…`, PR #18) and the first impression / README overview cleanup (`55fddeb9…`, PR #21). Added a Markdown export of a further task, `e5b7d495…`, a proposal for the category and food filter chips based on two campus newsletters; Bob marks it "Status: error". The calendar views task (`80b40395…`, PR #12) stays as JSON until it is exported as Markdown.
+
+**Verification.** Matched task IDs and titles against the replaced JSON files. Checked the exports for API keys, IAM tokens, project IDs, credentials and email addresses; none found. No application code changed.
+
 ## Bob sessions: tasks run on Bella's Bob account — November 16, 2026
 
 Added three IBM Bob task exports (made with Bob's own export, unedited) to `bob_sessions/Bella/`. Judy ran these tasks on Bella's Bob account on November 12, so the resulting commits are authored by Judy:
