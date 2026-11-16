@@ -92,7 +92,7 @@ See [docs/backend.md](docs/backend.md) for full backend and watsonx setup, and t
 
 ## Public demo on Cloudflare
 
-The static frontend is published at https://campfolio.jzhou-jinru.workers.dev. Cloudflare Workers Builds deploys it on every push to `main`: build command `npm run build`, deploy command `npx wrangler deploy`, using [wrangler.jsonc](wrangler.jsonc). The Rust server is not deployed there, so the AI Planner shows **Browser fallback · Simulated**.
+The static frontend is published at https://campfolio.jinruzhou.com (also https://campfolio.jzhou-jinru.workers.dev). Cloudflare Workers Builds deploys it on every push to `main`: build command `npm run build`, deploy command `npx wrangler deploy`, using [wrangler.jsonc](wrangler.jsonc). The Rust server is not deployed there, so the AI Planner shows **Browser fallback · Simulated**.
 
 ## Three-minute demo
 

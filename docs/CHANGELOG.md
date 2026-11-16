@@ -10,7 +10,7 @@ Added `wrangler.jsonc` so Cloudflare Workers Builds can deploy the `campfolio` W
 
 ## New search description and link-preview tags — November 15, 2026
 
-The page description that search engines show is now the team's sentence, "Campus follow your preference, create your portfolio." (the only change to the team's wording is the spelling of "portfolio"). `frontend/index.html` also gains Open Graph and Twitter card tags, so links shared in Slack, iMessage or LinkedIn show the Campfolio title, that sentence and the logo from the Cloudflare site `campfolio.jzhou-jinru.workers.dev`. Made with Claude Code.
+The page description that search engines show is now the team's sentence, "Campus follow your preference, create your portfolio." (the only change to the team's wording is the spelling of "portfolio"). `frontend/index.html` also gains Open Graph and Twitter card tags, so links shared in Slack, iMessage or LinkedIn show the Campfolio title, that sentence and the logo from the Cloudflare site `campfolio.jinruzhou.com`. Made with Claude Code.
 
 **Verification.** `npm test` (337 + 5) and `npm run build` pass, and the local server returns the new tags. The live site still serves the pre-Campfolio build, so the preview image resolves only after the next Cloudflare deployment.
 
