@@ -115,7 +115,7 @@ export function Profile({
         >
           <h2 id="basic-information-heading">Basic Information</h2>
           <form className="form-grid" onSubmit={saveBasicInformation}>
-            <label className="field full">
+            <label className="field">
               Display Name
               <input
                 autoFocus
@@ -133,7 +133,7 @@ export function Profile({
                 placeholder="Enter your display name"
               />
             </label>
-            <label className="field full">
+            <label className="field">
               Student Status
               <input
                 name="studentStatus"
@@ -148,7 +148,7 @@ export function Profile({
                 placeholder="For example, undergraduate student"
               />
             </label>
-            <label className="field full">
+            <label className="field">
               University
               <input
                 name="university"
@@ -164,7 +164,7 @@ export function Profile({
                 placeholder="Enter your university"
               />
             </label>
-            <label className="field full">
+            <label className="field">
               Major / Program
               <input
                 name="major"

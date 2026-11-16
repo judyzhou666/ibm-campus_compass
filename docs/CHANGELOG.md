@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Responsive two-column Edit Profile form — November 15, 2026
+
+The four Basic Information fields now use the existing two-column form grid on desktop and existing single-column breakpoint on narrow screens. Save and Cancel rows remain full width. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and the profile/sign-in tests (7) pass. Browser checks confirmed the two desktop rows, one-column 390px layout without horizontal overflow, and unchanged Save/Cancel navigation.
+
 ## Cloudflare build reconnected to GitHub — November 15, 2026
 
 The `campfolio` Worker had lost its GitHub connection, so the merges of the Campfolio rename and the SEO changes produced no Cloudflare builds. The team reconnected the repository in the Cloudflare dashboard and changed the deploy command from the old `--name=ibm-campus-compass` to `npx wrangler deploy --assets=./dist --name=campfolio`, matching `wrangler.jsonc`. This entry is the first push to `main` after that fix, to trigger the build. Made with Claude Code.
