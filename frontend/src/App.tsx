@@ -797,9 +797,16 @@ export default function App() {
               {p === "profile" ? <div className="break" /> : null}
               <button
                 className={
-                  page === p || sidebarParent[page] === p ? "active" : ""
+                  (page === p && (p !== "profile" || !profileEditMode)) ||
+                  sidebarParent[page] === p
+                    ? "active"
+                    : ""
                 }
-                aria-current={page === p ? "page" : undefined}
+                aria-current={
+                  page === p && (p !== "profile" || !profileEditMode)
+                    ? "page"
+                    : undefined
+                }
                 title={collapsed ? labels[p] : undefined}
                 aria-label={collapsed ? labels[p] : undefined}
                 onClick={() => nav(p)}

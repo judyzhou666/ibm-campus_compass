@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Distinguish Profile view and edit navigation — November 15, 2026
+
+The sidebar Profile item is now active only on the read-only Profile view, not while the shared Profile page is showing its Edit Profile form. Leaving edit mode restores the Profile highlight. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and the profile/sign-in tests (7) pass. Browser checks covered both editor entry points, navigation highlighting, Save, Cancel and Space activation.
+
 ## Event page: the back link says where it returns to — November 14, 2026
 
 The event page's back link always said "Back to events", even when the page was opened from a notification, the AI Planner or the calendar. It now names the page you came from, e.g. "Back to Notifications" or "Back to AI Planner". `EventDetails` takes a `backLabel` that App fills from the current page. Made with Claude Code.
