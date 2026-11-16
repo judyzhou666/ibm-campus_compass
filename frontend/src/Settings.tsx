@@ -190,6 +190,11 @@ export function Settings(p: Props) {
       return (
         <div className="settings-row settings-about" key={item.id}>
           <div>
+            <img
+              className="settings-about-logo"
+              src="/assets/campfolio-logo.png"
+              alt="Campfolio logo"
+            />
             <h3>{item.title}</h3>
             <p>
               A higher-education opportunity discovery project for the IBM AI

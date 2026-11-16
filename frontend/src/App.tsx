@@ -641,9 +641,7 @@ export default function App() {
             nav("home");
           }}
         >
-          <span className="logo">
-            <Icon name="compass" />
-          </span>
+          <img className="logo-mark" src="/assets/campfolio-mark.png" alt="" />
           <span className="brand-text">
             Campfolio
           </span>
