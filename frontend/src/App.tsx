@@ -228,6 +228,7 @@ export default function App() {
   const [profileExitPromptOpen, setProfileExitPromptOpen] = useState(false);
   // Which guard triggered the exit prompt: "profile" = Edit Profile, "pref" = My Preferences.
   const exitPromptKindRef = useRef<"profile" | "pref">("profile");
+  const [prefFormVersion, setPrefFormVersion] = useState(0);
   const profileExitDialogRef = useRef<HTMLDialogElement>(null);
   const profileExitActionRef = useRef<(() => void) | null>(null);
   const profileInputFocusRef = useRef<
@@ -251,15 +252,16 @@ export default function App() {
     profileEditModeRef.current = false;
     setProfileEditMode(false);
   }
+  /** Which unsaved draft leaving now would discard, if any. */
+  function unsavedDraft(): "profile" | "pref" | null {
+    if (profileEditModeRef.current && profileDirtyRef.current) return "profile";
+    if (prefDirtyRef.current) return "pref";
+    return null;
+  }
   function continueAfterProfileExit(action: () => void) {
-    if (profileEditModeRef.current && profileDirtyRef.current) {
-      exitPromptKindRef.current = "profile";
-      profileExitActionRef.current = action;
-      setProfileExitPromptOpen(true);
-      return;
-    }
-    if (!profileEditModeRef.current && prefDirtyRef.current) {
-      exitPromptKindRef.current = "pref";
+    const draft = unsavedDraft();
+    if (draft) {
+      exitPromptKindRef.current = draft;
       profileExitActionRef.current = action;
       setProfileExitPromptOpen(true);
       return;
@@ -275,7 +277,12 @@ export default function App() {
     const action = profileExitActionRef.current;
     profileExitActionRef.current = null;
     setProfileExitPromptOpen(false);
-    prefDirtyRef.current = false;
+    if (prefDirtyRef.current) {
+      prefDirtyRef.current = false;
+      // Remount My Preferences so a discarded draft does not stay on screen
+      // when the destination is the same page.
+      setPrefFormVersion((v) => v + 1);
+    }
     exitProfileEditor();
     action?.();
   }
@@ -309,18 +316,20 @@ export default function App() {
     setSearch("");
     window.scrollTo(0, 0);
   }
-  function nav(
-    next: Page,
-    communityId?: string,
-    preserveProfileEditor = false,
-  ) {
-    if (preserveProfileEditor) performNavigation(next, communityId);
-    else continueAfterProfileExit(() => performNavigation(next, communityId));
+  function nav(next: Page, communityId?: string) {
+    continueAfterProfileExit(() => performNavigation(next, communityId));
   }
   function openProfileEditor() {
-    nav("profile", undefined, true);
-    profileEditModeRef.current = true;
-    setProfileEditMode(true);
+    if (profileEditModeRef.current) {
+      performNavigation("profile");
+      return;
+    }
+    // Edit Profile replaces My Preferences, so ask before dropping its draft.
+    continueAfterProfileExit(() => {
+      performNavigation("profile");
+      profileEditModeRef.current = true;
+      setProfileEditMode(true);
+    });
   }
   useEffect(() => {
     try {
@@ -397,7 +406,7 @@ export default function App() {
             setMenu(false);
           };
           if (nextPage !== validPage(appUrlRef.current.slice(1))) {
-            if (profileEditModeRef.current && profileDirtyRef.current) {
+            if (unsavedDraft()) {
               history.replaceState(history.state, "", appUrlRef.current);
             }
             continueAfterProfileExit(goToLink);
@@ -413,9 +422,7 @@ export default function App() {
   }, []);
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent) {
-      const profileDirty = profileEditModeRef.current && profileDirtyRef.current;
-      const prefDirty = !profileEditModeRef.current && prefDirtyRef.current;
-      if (!profileDirty && !prefDirty) return;
+      if (!unsavedDraft()) return;
       event.preventDefault();
       event.returnValue = "";
     }
@@ -1662,7 +1669,7 @@ export default function App() {
           ) : null}
           {page === "profile" ? (
             <Profile
-              key={profileEditMode ? "profile-edit" : "profile-view"}
+              key={`${profileEditMode ? "profile-edit" : "profile-view"}-${prefFormVersion}`}
               state={state}
               update={update}
               notify={notify}

@@ -50,7 +50,13 @@ function prefsDiffer(
   const b = sortedCopy(saved.interests).join("\0");
   const c = sortedCopy(goalTypes).join("\0");
   const d = sortedCopy(saved.goal_types).join("\0");
-  return a !== b || c !== d || goals !== saved.goals || preferredTime !== saved.preferred_time;
+  // Save trims goals, so whitespace alone is not an unsaved change.
+  return (
+    a !== b ||
+    c !== d ||
+    goals.trim() !== saved.goals.trim() ||
+    preferredTime !== saved.preferred_time
+  );
 }
 export function Profile({
   state,
@@ -116,6 +122,8 @@ export function Profile({
       onPrefDirtyChange?.(prefDirty);
     }
   });
+  // An unmounted form has no draft; clear App's flag so it cannot go stale.
+  useEffect(() => () => onPrefDirtyChange?.(false), []);
   useEffect(() => {
     if (editBasicInformation) return;
     setBasicInformation({
@@ -526,8 +534,9 @@ export function Profile({
             </label>
             <p className="fineprint">
               This sets a soft preference for ranking — it is not a strict
-              availability constraint. Use the chat for strict time limits, busy
-              times and travel buffer in Settings.
+              availability constraint. Use the chat for strict time limits,
+              Availability &amp; Schedule for busy times and Settings for travel
+              buffer.
             </p>
             {prefDirty && (
               <p className="profile-dirty-status" role="status">

@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Unsaved preference guard fixes — November 16, 2026
+
+Review fixes for the My Preferences unsaved-changes prompt. Opening Edit Profile now asks before dropping a preference draft; before, it discarded the draft silently and left a stale flag that prompted later with nothing unsaved. Discard while staying on My Preferences now clears the draft from the form. Stay after following a link keeps the address on My Preferences. Adding or removing spaces around the goals text alone no longer counts as a change, since Save trims it. The time-preference note now points to Availability & Schedule for busy times. Made with Claude Code.
+
+**Verification.** `npm test` (343 + 5 pass) and `npm run build` pass. In Chrome, `tests/profile-status.browser.mjs` passes for Student and Admin at 1440px and 390px. A one-off script covering the five fixed cases fails on the PR before these fixes and passes after.
+
 ## Campfolio Step 5: unsaved changes and save feedback for My Preferences — November 16, 2026
 
 Preferences form (`My Preferences` page) now tracks whether the editable fields — interests, goal types, research/career goals, and preferred event time — differ from the last-saved snapshot. When they do, an "Unsaved changes" badge appears above the Save button; when they match the saved state, the badge disappears. Saving displays "Your preferences have been saved." The Save Preferences button is disabled when there are no unsaved changes or a save is in progress, preventing duplicate submits. After navigating away from My Preferences with unsaved changes, the existing "Unsaved profile changes" dialog is reused, retitled "Unsaved preference changes", to offer Stay or Discard. The browser `beforeunload` guard is extended to also fire for unsaved preferences. Busy Times (blocks) are saved immediately per-block and are not part of the preferences save transaction. No new persistence mechanism was added. Made with IBM Bob.
