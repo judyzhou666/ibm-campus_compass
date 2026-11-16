@@ -1654,6 +1654,7 @@ export default function App() {
               onBasicInformationFocus={(input) => {
                 profileInputFocusRef.current = input;
               }}
+              onCalendar={openCalendar}
             />
           ) : null}
           {page === "forum" ? (

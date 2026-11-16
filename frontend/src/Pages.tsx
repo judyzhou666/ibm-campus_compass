@@ -32,6 +32,7 @@ type Props = {
   onBasicInformationFocus?: (
     input: HTMLInputElement | HTMLSelectElement,
   ) => void;
+  onCalendar?: () => void;
 };
 export function Profile({
   state,
@@ -44,6 +45,7 @@ export function Profile({
   onSaveBasicInformation,
   onProfileDirtyChange,
   onBasicInformationFocus,
+  onCalendar,
 }: Props) {
   const [error, setError] = useState("");
   const [basicInformation, setBasicInformation] = useState(() => ({
@@ -438,8 +440,30 @@ export function Profile({
           </section>
         </form>
         <section className="panel">
-          <h2>Your busy times</h2>
-          <p className="sub">Sample classes and personal commitments.</p>
+          <div className="avail-header">
+            <div>
+              <h2>Availability &amp; Schedule</h2>
+              <p className="sub">
+                Your commitments help us recommend events that fit your
+                schedule.
+              </p>
+            </div>
+            {onCalendar && (
+              <button
+                type="button"
+                className="btn"
+                onClick={onCalendar}
+              >
+                View Calendar
+              </button>
+            )}
+          </div>
+          <h3 className="avail-subheading">
+            Current Busy Times
+            <span className="avail-count">
+              {plural(state.blocks.length, "busy time")}
+            </span>
+          </h3>
           {state.blocks.map((b) => (
             <div className="block-row" key={b.id}>
               <div>
