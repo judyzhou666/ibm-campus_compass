@@ -90,6 +90,10 @@ cargo run --locked
 
 See [docs/backend.md](docs/backend.md) for full backend and watsonx setup, and the [Wiki — Using watsonx](https://github.com/judyzhou666/ibm-campus_compass/wiki/Using-watsonx) for step-by-step instructions.
 
+## Public demo on Cloudflare
+
+The static frontend is published at https://campfolio.jinruzhou.com (also https://campfolio.jzhou-jinru.workers.dev). Cloudflare Workers Builds deploys it on every push to `main`: build command `npm run build`, deploy command `npx wrangler deploy`, using [wrangler.jsonc](wrangler.jsonc). The Rust server is not deployed there, so the AI Planner shows **Browser fallback · Simulated**.
+
 ## Three-minute demo
 
 Follow [docs/demo-script.md](docs/demo-script.md). Start from **Settings → Reset demo**, then open AI Planner.
