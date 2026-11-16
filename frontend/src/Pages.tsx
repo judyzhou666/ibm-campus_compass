@@ -16,6 +16,7 @@ import {
   validateBasicInformation,
 } from "./profile.ts";
 import type { BasicInformation } from "./profile.ts";
+import { prefsDiffer } from "./preferences.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -35,29 +36,6 @@ type Props = {
   ) => void;
   onCalendar?: () => void;
 };
-/** Sort a string array for order-insensitive comparison. */
-function sortedCopy(arr: string[]): string[] {
-  return [...arr].sort();
-}
-function prefsDiffer(
-  interests: string[],
-  goalTypes: string[],
-  goals: string,
-  preferredTime: string,
-  saved: { interests: string[]; goal_types: string[]; goals: string; preferred_time: string },
-): boolean {
-  const a = sortedCopy(interests).join("\0");
-  const b = sortedCopy(saved.interests).join("\0");
-  const c = sortedCopy(goalTypes).join("\0");
-  const d = sortedCopy(saved.goal_types).join("\0");
-  // Save trims goals, so whitespace alone is not an unsaved change.
-  return (
-    a !== b ||
-    c !== d ||
-    goals.trim() !== saved.goals.trim() ||
-    preferredTime !== saved.preferred_time
-  );
-}
 export function Profile({
   state,
   update,

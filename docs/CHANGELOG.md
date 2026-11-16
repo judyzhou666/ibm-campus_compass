@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Extracted preference dirty-state comparison — November 16, 2026
+
+Moved the existing `prefsDiffer` function and its sorting helper from Pages into the pure `frontend/src/preferences.ts` module. Pages imports the function without changing its calls, save handler or guards. The saved snapshot type reuses DemoState fields; comparison retains order-insensitive selections, trimmed goals and exact time values. Made with Codex.
+
+**Verification.** Added 12 unit tests covering identical values, interest/goal-type ordering and additions/removals, trimmed and meaningful goals, all existing time choices, reversion, empty/default values and input immutability. The new and relevant existing tests pass (38 total); full `npm test` passes (355 application tests plus 5 Wiki tests and dataset smoke checks), as do typecheck and production build. Browser checks using a temporary copy of the preserved regression with current toast assertions pass for Student/Admin at 1440px and 390px, including interest/time dirty and revert states, whitespace goals, saving, persistence and navigation prompts. The original untracked browser script remains unchanged.
+
 ## Removed duplicate preferences save confirmation — November 16, 2026
 
 My Preferences now uses only the existing "Preferences saved. Ask the planner for updated suggestions." toast after saving. Removed the redundant inline "Your preferences have been saved." message and its otherwise unused CSS selector. Save state, dirty indicators, persistence and navigation guards are unchanged. Made with Codex.
