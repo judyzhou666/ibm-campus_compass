@@ -26,7 +26,6 @@ type Props = {
   notify: (text: string) => void;
   watsonxMode?: boolean;
   editBasicInformation?: boolean;
-  onEditBasicInformation?: () => void;
   onCancelBasicInformation?: () => void;
   onSaveBasicInformation?: () => void;
   onProfileDirtyChange?: (dirty: boolean) => void;
@@ -42,7 +41,6 @@ export function Profile({
   notify,
   watsonxMode = false,
   editBasicInformation = false,
-  onEditBasicInformation,
   onCancelBasicInformation,
   onSaveBasicInformation,
   onProfileDirtyChange,
@@ -74,10 +72,6 @@ export function Profile({
   );
   const [prefGoals, setPrefGoals] = useState(() => state.goals);
   const [prefTime, setPrefTime] = useState(() => state.preferred_time || "any");
-  // Status: null = no message, "saved" = success, "saving" = in progress.
-  const [prefSaveStatus, setPrefSaveStatus] = useState<
-    null | "saving" | "saved"
-  >(null);
   // The snapshot of what is currently persisted (for dirty comparison).
   const savedPrefRef = useRef({
     interests: state.interests,
@@ -145,8 +139,7 @@ export function Profile({
   }
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!prefDirty || prefSaveStatus === "saving") return;
-    setPrefSaveStatus("saving");
+    if (!prefDirty) return;
     const trimmedGoals = prefGoals.trim();
     update((s) => ({
       ...s,
@@ -163,7 +156,6 @@ export function Profile({
       preferred_time: prefTime,
     };
     setPrefGoals(trimmedGoals);
-    setPrefSaveStatus("saved");
     onPrefDirtyChange?.(false);
     notify("Preferences saved. Ask the planner for updated suggestions.");
   }
@@ -431,7 +423,6 @@ export function Profile({
                           ? [...prev, t]
                           : prev.filter((x) => x !== t),
                       );
-                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
                     }}
                   />
                   {t}
@@ -458,7 +449,6 @@ export function Profile({
                           ? [...prev, g]
                           : prev.filter((x) => x !== g),
                       );
-                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
                     }}
                   />
                   {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -477,7 +467,6 @@ export function Profile({
                 value={prefGoals}
                 onChange={(e) => {
                   setPrefGoals(e.target.value);
-                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
                 }}
               />
             </label>
@@ -501,7 +490,6 @@ export function Profile({
                 value={prefTime}
                 onChange={(e) => {
                   setPrefTime(e.target.value);
-                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
                 }}
               >
                 <option value="any">Any time</option>
@@ -523,7 +511,7 @@ export function Profile({
             )}
             <button
               className="btn primary"
-              disabled={!prefDirty || prefSaveStatus === "saving"}
+              disabled={!prefDirty}
             >
               Save preferences
             </button>

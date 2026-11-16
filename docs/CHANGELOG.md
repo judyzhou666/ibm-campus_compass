@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Removed unused preference save state and callback — November 16, 2026
+
+Removed the synchronous preferences handler's intermediate saving state and related guards. With the inline success message already removed, the remaining saved/null state and edit-time resets had no visible effect and were removed too. Save remains disabled when preferences are unchanged, with the existing toast, persistence and navigation protection preserved. Removed the unused `onEditBasicInformation` prop declaration, destructuring and App wiring; both functional Edit Profile entry points are unchanged. Made with Codex after fast-forwarding Doris to the PR #38 merge on main.
+
+**Verification.** TypeScript typecheck, full `npm test` (355 application tests plus 5 Wiki tests and dataset smoke checks), frontend production build and 38 relevant tests pass. Preferences browser checks using a temporary copy with current toast assertions and the existing profile-status browser regression both pass for Student/Admin at 1440px and 390px. Coverage includes save/refresh, dirty/revert states, Stay/Discard, both profile entry points and Edit Profile Save/Cancel. The untracked original preferences browser test remains unchanged and unstaged.
+
 ## Extracted preference dirty-state comparison — November 16, 2026
 
 Moved the existing `prefsDiffer` function and its sorting helper from Pages into the pure `frontend/src/preferences.ts` module. Pages imports the function without changing its calls, save handler or guards. The saved snapshot type reuses DemoState fields; comparison retains order-insensitive selections, trimmed goals and exact time values. Made with Codex.
