@@ -380,35 +380,6 @@ export function Profile({
               ))}
             </div>
             <label className="field">
-              Display Name
-              <input
-                value={state.name}
-                readOnly
-                aria-readonly="true"
-              />
-            </label>
-            <p className="sub">
-              Use a fictional profile for classroom demonstrations. Changes stay
-              in this browser.
-            </p>
-            <label className="field">
-              Major / Program
-              <input
-                value={state.major}
-                readOnly
-                aria-readonly="true"
-                placeholder="Not added yet"
-              />
-            </label>
-            <button
-              type="button"
-              className="text-btn inline profile-edit-link"
-              aria-label="Edit basic information"
-              onClick={onEditBasicInformation}
-            >
-              Edit
-            </button>
-            <label className="field">
               Research / career exploration goals (optional)
               <input name="goals" maxLength={240} defaultValue={state.goals} />
             </label>
