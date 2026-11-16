@@ -1,6 +1,7 @@
 :root {
   --green: #235b45;
   --green-dark: #183e31;
+  --brand-blue: #0c62bc;
   --mint: #e8f2e9;
   --bg: #f7f8f5;
   --ink: #22342b;
@@ -108,20 +109,16 @@ textarea {
   gap: 11px;
   padding: 0 9px 37px;
   text-decoration: none;
-  color: var(--green-dark);
+  color: var(--brand-blue);
   font-weight: 750;
   font-size: 20px;
   line-height: 1.1;
   letter-spacing: -0.6px;
 }
-.brand .logo {
-  background: var(--green);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  width: 39px;
+.brand .logo-mark {
+  flex: none;
+  width: auto;
   height: 39px;
-  border-radius: 12px;
 }
 .brand small {
   display: block;
@@ -4578,10 +4575,8 @@ button.gcal-event-block {
 .topbar .search {
   height: 40px;
 }
-.topbar .brand .logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+.topbar .brand .logo-mark {
+  height: 36px;
 }
 .topbar .brand {
   flex: none;
@@ -4610,8 +4605,7 @@ button.gcal-event-block {
   .topbar .brand-text {
     display: none;
   }
-  .topbar .brand .logo {
-    width: 32px;
+  .topbar .brand .logo-mark {
     height: 32px;
   }
 }
@@ -5446,6 +5440,12 @@ h2.settings-title {
 }
 .settings-card .notice {
   margin: 0 26px 22px;
+}
+.settings-about-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+  margin-bottom: 14px;
 }
 .settings-about p + p {
   margin-top: 10px;

@@ -1,5 +1,5 @@
 /**
- * Synthetic update loop for the Campus Compass demo.
+ * Synthetic update loop for the Campfolio demo.
  *
  * Loads data/updates.json (embedded at build time via Vite ?raw import),
  * applies the next unapplied batch to browser-local demo state, and derives

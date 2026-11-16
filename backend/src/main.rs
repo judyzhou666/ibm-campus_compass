@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .parse()?;
     let listener = tokio::net::TcpListener::bind(addr).await?;
     println!(
-        "Campus Compass: http://{} (Rust backend, {label})",
+        "Campfolio: http://{} (Rust backend, {label})",
         listener.local_addr()?
     );
     axum::serve(listener, app_with(provider))

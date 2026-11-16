@@ -22,7 +22,7 @@ export function calendarText(state: DemoState): string | null {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Campus Compass//Fictional Demo//EN",
+    "PRODID:-//Campfolio//Fictional Demo//EN",
     "CALSCALE:GREGORIAN",
     ...chosen.flatMap((e) => [
       "BEGIN:VEVENT",
@@ -35,7 +35,7 @@ export function calendarText(state: DemoState): string | null {
       `DTEND:${stamp(e, e.end)}`,
       `SUMMARY:${clean("[DEMO] " + e.title)}`,
       `LOCATION:${clean(location(e))}`,
-      "DESCRIPTION:Fictional Campus Compass demonstration event. No real reservation.",
+      "DESCRIPTION:Fictional Campfolio demonstration event. No real reservation.",
       "END:VEVENT",
     ]),
     "END:VCALENDAR",

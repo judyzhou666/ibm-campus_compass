@@ -510,7 +510,7 @@ export default function App() {
     a.href = URL.createObjectURL(
       new Blob([text], { type: "text/calendar;charset=utf-8" }),
     );
-    a.download = "campus-compass-demo-week.ics";
+    a.download = "campfolio-demo-week.ics";
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     notify("Exported chosen events. Cancelled events were excluded.");
@@ -641,11 +641,9 @@ export default function App() {
             nav("home");
           }}
         >
-          <span className="logo">
-            <Icon name="compass" />
-          </span>
+          <img className="logo-mark" src="/assets/campfolio-mark.png" alt="" />
           <span className="brand-text">
-            Campus<small>COMPASS</small>
+            Campfolio
           </span>
         </a>
         <form
@@ -897,7 +895,7 @@ export default function App() {
                 title={
                   state.signedIn
                     ? `${firstVisit ? "Welcome" : "Welcome back"}, ${state.name}.`
-                    : "Welcome to Campus Compass."
+                    : "Welcome to Campfolio."
                 }
                 description="A little direction. A world of campus possibilities."
                 timezone={state.timezone}
@@ -990,7 +988,7 @@ export default function App() {
                     <img
                       className="mascot"
                       src="/assets/mascot.png"
-                      alt="Campus Compass cat mascot wearing a green compass bandana"
+                      alt="Campfolio cat mascot wearing a green compass bandana"
                     />
                     <h2>A week that feels like you.</h2>
                     <p>
@@ -1571,7 +1569,7 @@ export default function App() {
           ) : null}
           <footer className="section-footer">
             <span>
-              Campus Compass · IBM AI Experiential Learning Lab project
+              Campfolio · IBM AI Experiential Learning Lab project
             </span>
             <span>
               Fictional data · Demo week, {WEEK_LABEL} · {DEMO.time_zone}

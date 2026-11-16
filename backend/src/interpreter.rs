@@ -145,7 +145,7 @@ fn parse_demo_dates(q: &str) -> Option<(Vec<u8>, String)> {
 
 fn outside_week_message(requested: &str) -> String {
     format!(
-        "Campus Compass only has fictional events for the demo week, {}, so there is nothing on {requested}. Ask about a day in that week, for example “AI events on Friday”.",
+        "Campfolio only has fictional events for the demo week, {}, so there is nothing on {requested}. Ask about a day in that week, for example “AI events on Friday”.",
         demo_week_range()
     )
 }
@@ -697,7 +697,7 @@ mod date_and_focus_tests {
         assert_eq!(
             r.clarification.as_deref(),
             Some(
-                "Campus Compass only has fictional events for the demo week, Mon Nov 2 – Fri Nov 6, 2026, so there is nothing on Nov 7–12. Ask about a day in that week, for example “AI events on Friday”."
+                "Campfolio only has fictional events for the demo week, Mon Nov 2 – Fri Nov 6, 2026, so there is nothing on Nov 7–12. Ask about a day in that week, for example “AI events on Friday”."
             )
         );
     }

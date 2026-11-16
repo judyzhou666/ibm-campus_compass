@@ -1,6 +1,18 @@
-# Campus Compass — Development Log
+# Campfolio — Development Log
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
+
+## Campfolio logo in the top bar, favicon and About — November 15, 2026
+
+The team's new Campfolio logo (an open campus map with an arch and location pins) replaces the green compass tile. The white background was made transparent with ImageMagick: the outside was flood-filled, letter holes and edges got soft alpha, and the book's white page edges stayed opaque. Three files are in `frontend/public/assets/`: `campfolio-mark.png` (icon only) beside the "Campfolio" wordmark in the top bar, now in the logo's blue (`--brand-blue`); `campfolio-icon.png` as the browser favicon and touch icon; and `campfolio-logo.png` (icon and wordmark) at the top of Settings › About. On phones the top bar shows the mark alone, as before. The compass icon in empty states and the welcome hero is unchanged. Made with Claude Code.
+
+**Verification.** `npm test` (337 + 5), `npm run build` and `npm run test:api` pass. In the browser against this branch's build: the mark loads at 36 px in the top bar on desktop and 32 px on a 375 px phone, the favicon link resolves, and the full logo shows in Settings › About.
+
+## Rebrand the website as Campfolio — November 15, 2026
+
+Every visitor-visible "Campus Compass" now reads "Campfolio": the page title, the top-bar wordmark (now a single "Campfolio" word beside the compass logo, replacing "Campus" over "COMPASS"), the sign-in dialog, the welcome notification and its sender, Settings text, the community board description, the mascot's alt text, the footer, the downloaded calendar file (`campfolio-demo-week.ics`, its product ID and event description), and the out-of-week planner reply in both the Rust interpreter and the TypeScript fallback. The fictional campus on event posters is now "Campfolio fictional university", as the team chose. Storage keys, the package and crate names, the binary, calendar UIDs and API routes keep their old `campus-compass` names so saved demo state survives. Every "fictional" and "simulated" label is unchanged. Made with Claude Code.
+
+**Verification.** `npm test` (337 + 5), `npm run build`, `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked` (66) and `npm run test:api` pass. In the browser against this branch's build: the tab title, wordmark, posters, sign-in dialog and welcome notification show Campfolio, and no page text says "Campus Compass".
 
 ## Distinguish Profile view and edit navigation — November 15, 2026
 

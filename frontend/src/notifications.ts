@@ -1,5 +1,5 @@
 /**
- * Notifications for the Campus Compass demo.
+ * Notifications for the Campfolio demo.
  *
  * Two fictional sources feed one list:
  * - a fixed set of demo notifications (invitations, community activity,
@@ -37,7 +37,7 @@ export const KIND_LABELS: Record<NotificationKind, string> = {
   update: "Event updates",
   event: "Events & invitations",
   community: "Communities",
-  system: "Campus Compass",
+  system: "Campfolio",
 };
 
 const eventTitle = (id: string) =>
@@ -50,7 +50,7 @@ export const DEMO_NOTIFICATIONS: AppNotification[] = [
   {
     id: "n1",
     kind: "system",
-    title: "Welcome to Campus Compass",
+    title: "Welcome to Campfolio",
     body: "Your demo week starts today. Save events you like, add classes to My Calendar, and ask the AI Planner to fit events around them. Every event, community and notification in this demo is fictional.",
     sentAt: "2026-11-02T13:30:00Z",
   },
