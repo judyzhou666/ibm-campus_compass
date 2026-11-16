@@ -369,10 +369,13 @@ export default function App() {
         e,
         () => {
           // A link or typed URL changed the hash: go there as a tab switch.
-          const nextPage = validPage(location.hash.slice(1));
+          // Read the hash now: a dirty profile draft restores the old URL
+          // below, before the user chooses Stay or Discard.
+          const nextHash = location.hash;
+          const nextPage = validPage(nextHash.slice(1));
           const goToLink = () => {
             setPage(nextPage);
-            setSelectedCommunity(communityFromHash(location.hash));
+            setSelectedCommunity(communityFromHash(nextHash));
             setDetail(null);
             setOpenNote(null);
             setMenu(false);
@@ -477,15 +480,19 @@ export default function App() {
   }
   /** Opens the Notifications sub-page, optionally at one message. */
   function openNotifications(id?: string) {
-    if (page !== "notifications") {
-      setNotesFrom(page);
-      setNoteFilter(NO_FILTER);
-    }
-    nav("notifications");
-    if (id) {
-      setOpenNote(id);
-      markRead([id]);
-    }
+    // Wait for the unsaved-profile prompt: navigating clears the open
+    // message, and Stay must not mark the message read.
+    continueAfterProfileExit(() => {
+      if (page !== "notifications") {
+        setNotesFrom(page);
+        setNoteFilter(NO_FILTER);
+      }
+      performNavigation("notifications");
+      if (id) {
+        setOpenNote(id);
+        markRead([id]);
+      }
+    });
   }
   function openNotification(id: string) {
     setOpenNote(id);

@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Unsaved-profile prompt keeps the chosen destination — November 15, 2026
+
+Review fixes for the unsaved-changes prompt. Choosing Discard after following a link to a forum community now opens that community, not just the Forum tab. Opening a notification from the bell while the profile draft has changes now waits for the prompt: Discard opens that message, and Stay leaves it unread. Made with Claude Code.
+
+**Verification.** `npm test` (339 + 5 pass) and `npm run build` pass. Not checked in a browser.
+
 ## Unsaved Profile Changes and Save Feedback — November 15, 2026
 
 The Edit Profile form now detects changes against saved values, disables Save when the draft is unchanged, and confirms successful saves. Leaving with a changed draft offers Stay or Discard, while Cancel keeps its existing immediate discard behavior. Made with Codex.
