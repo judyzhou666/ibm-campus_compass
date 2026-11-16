@@ -1,0 +1,11 @@
+// Cloudflare Workers deployment for the public Campfolio demo.
+// Workers Builds runs `npm run build`, then `npx wrangler deploy`, on each push to main.
+// Only the static frontend in dist/ is deployed; the Rust API is not, so the site
+// uses its labelled simulated planner.
+{
+  "name": "campfolio",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}

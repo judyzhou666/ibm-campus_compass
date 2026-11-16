@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Cloudflare auto-deploy from main — November 15, 2026
+
+Added `wrangler.jsonc` so Cloudflare Workers Builds can deploy the `campfolio` Worker on every push to `main`. It serves the built `dist/` folder as static assets; unknown paths, including `/api/*`, still return 404, as on the current live site, so the planner keeps its labelled browser simulation. README gains a "Public demo on Cloudflare" section. Made with Claude Code.
+
+**Verification.** `npx wrangler deploy --dry-run` reads the 8 built files from `dist/` with no bindings. The first real build runs on Cloudflare after this merges.
+
 ## New search description and link-preview tags — November 15, 2026
 
 The page description that search engines show is now the team's sentence, "Campus follow your preference, create your portfolio." (the only change to the team's wording is the spelling of "portfolio"). `frontend/index.html` also gains Open Graph and Twitter card tags, so links shared in Slack, iMessage or LinkedIn show the Campfolio title, that sentence and the logo from the Cloudflare site `campfolio.jzhou-jinru.workers.dev`. Made with Claude Code.
