@@ -30,6 +30,7 @@ import { Welcome } from "./Welcome.tsx";
 import { Forum, Profile } from "./Pages.tsx";
 import { Settings } from "./Settings.tsx";
 import { Home } from "./Home.tsx";
+import { profileAvatarInitial } from "./profile.ts";
 import {
   ALL,
   matchesExplore,
@@ -953,7 +954,9 @@ export default function App() {
                 }}
               >
                 <div className="user-profile-info">
-                  <span className="avatar">{state.name[0] || "J"}</span>
+                  <span className="avatar">
+                    {profileAvatarInitial(state.name, "J")}
+                  </span>
                   <div>
                     <strong>{state.name}’s campus</strong>
                     <small>

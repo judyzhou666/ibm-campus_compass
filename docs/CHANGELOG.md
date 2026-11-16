@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Profile Change Normalization and Avatar Initials — November 15, 2026
+
+Profile dirty detection now compares the trimmed values that Save persists, so whitespace-only differences do not trigger Save or leave warnings. The profile preview and sidebar also share uppercase avatar-initial formatting while retaining their existing empty-name fallbacks. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in/navigation tests (16) pass. Browser checks confirmed trailing whitespace leaves Save disabled, lowercase names show matching initials, and Cancel restores saved values.
+
 ## Unsaved-profile prompt keeps the chosen destination — November 15, 2026
 
 Review fixes for the unsaved-changes prompt. Choosing Discard after following a link to a forum community now opens that community, not just the Forum tab. Opening a notification from the bell while the profile draft has changes now waits for the prompt: Discard opens that message, and Stay leaves it unread. Made with Claude Code.

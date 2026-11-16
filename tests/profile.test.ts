@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   basicInformationPreview,
   hasBasicInformationChanges,
+  profileAvatarInitial,
   validateBasicInformation,
 } from "../frontend/src/profile.ts";
 import { restore } from "../frontend/src/state.ts";
@@ -114,6 +115,63 @@ test("profile dirty detection clears when draft values return to saved values", 
     university: "Example University",
     major: "Learning Sciences",
   });
+});
+
+test("profile dirty detection ignores whitespace removed when saving", () => {
+  const saved = {
+    name: "Judy",
+    studentStatus: "Graduate student",
+    university: "Example University",
+    major: "Learning Sciences",
+  };
+  assert.equal(
+    hasBasicInformationChanges(
+      {
+        ...saved,
+        name: "Judy ",
+        studentStatus: " Graduate student  ",
+        university: "Example University ",
+        major: "  Learning Sciences",
+      },
+      saved,
+    ),
+    false,
+  );
+  assert.equal(
+    hasBasicInformationChanges({ ...saved, university: "Example University 2" }, saved),
+    true,
+  );
+  assert.deepEqual(
+    validateBasicInformation({
+      ...saved,
+      name: "Judy ",
+      studentStatus: " Graduate student  ",
+    }),
+    {
+      valid: true,
+      value: { ...saved },
+    },
+  );
+});
+
+test("preview and sidebar avatar initials share uppercase formatting and fallbacks", () => {
+  for (const name of ["judy", " Judy "]) {
+    const preview = basicInformationPreview({
+      name,
+      studentStatus: "Graduate student",
+      university: "",
+      major: "",
+    });
+    assert.equal(preview.avatar, "J");
+    assert.equal(preview.avatar, profileAvatarInitial(name, "J"));
+  }
+  assert.equal(profileAvatarInitial("  ", "J"), "J");
+  assert.equal(basicInformationPreview({
+    name: "  ",
+    studentStatus: "",
+    university: "",
+    major: "",
+  }).avatar, "?");
 });
 
 test("basic profile fields restore from the existing browser-local state", () => {
