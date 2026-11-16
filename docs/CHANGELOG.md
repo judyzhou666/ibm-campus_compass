@@ -2,6 +2,36 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Profile Change Normalization and Avatar Initials — November 15, 2026
+
+Profile dirty detection now compares the trimmed values that Save persists, so whitespace-only differences do not trigger Save or leave warnings. The profile preview and sidebar also share uppercase avatar-initial formatting while retaining their existing empty-name fallbacks. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in/navigation tests (16) pass. Browser checks confirmed trailing whitespace leaves Save disabled, lowercase names show matching initials, and Cancel restores saved values.
+
+## Unsaved-profile prompt keeps the chosen destination — November 15, 2026
+
+Review fixes for the unsaved-changes prompt. Choosing Discard after following a link to a forum community now opens that community, not just the Forum tab. Opening a notification from the bell while the profile draft has changes now waits for the prompt: Discard opens that message, and Stay leaves it unread. Made with Claude Code.
+
+**Verification.** `npm test` (339 + 5 pass) and `npm run build` pass. Not checked in a browser.
+
+## Unsaved Profile Changes and Save Feedback — November 15, 2026
+
+The Edit Profile form now detects changes against saved values, disables Save when the draft is unchanged, and confirms successful saves. Leaving with a changed draft offers Stay or Discard, while Cancel keeps its existing immediate discard behavior. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in tests (9) pass. Browser checks confirmed dirty/reverted states, preview updates, save confirmation and sidebar update, navigation Stay/Discard, Cancel, and saved data after refresh.
+
+## Live Profile Preview — November 15, 2026
+
+Edit Profile now shows an unsaved preview derived from the current Basic Information draft. It follows field edits immediately, labels empty values, and stays beside the form on wide screens. On narrow screens it stacks below. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in tests (8) pass. Browser checks confirmed live draft updates, no sidebar/header updates before Save, Save and Cancel behavior, wide desktop layout, and a 390px single-column layout without horizontal overflow.
+
+## Responsive two-column Edit Profile form — November 15, 2026
+
+The four Basic Information fields now use the existing two-column form grid on desktop and existing single-column breakpoint on narrow screens. Save and Cancel rows remain full width. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and the profile/sign-in tests (7) pass. Browser checks confirmed the two desktop rows, one-column 390px layout without horizontal overflow, and unchanged Save/Cancel navigation.
+
 ## Cloudflare build reconnected to GitHub — November 15, 2026
 
 The `campfolio` Worker had lost its GitHub connection, so the merges of the Campfolio rename and the SEO changes produced no Cloudflare builds. The team reconnected the repository in the Cloudflare dashboard and changed the deploy command from the old `--name=ibm-campus-compass` to `npx wrangler deploy --assets=./dist --name=campfolio`, matching `wrangler.jsonc`. This entry is the first push to `main` after that fix, to trigger the build. Made with Claude Code.
