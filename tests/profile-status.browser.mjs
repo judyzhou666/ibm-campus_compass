@@ -55,8 +55,10 @@ try {
       };
       const stored = () =>
         page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
-      const select = page.getByLabel("Student Status", { exact: true });
-      const custom = page.getByLabel("Specify your student status", {
+      const select = page.getByLabel("Student Status (Optional)", {
+        exact: true,
+      });
+      const custom = page.getByLabel("Specify your student status (Optional)", {
         exact: true,
       });
       const save = page.getByRole("button", {
@@ -67,6 +69,59 @@ try {
       const cancel = () =>
         page.getByRole("button", { name: "Cancel", exact: true }).click();
       await open();
+      const name = page.getByLabel("Display Name (Required)", { exact: true });
+      const university = page.getByLabel("University (Optional)", {
+        exact: true,
+      });
+      const major = page.getByLabel("Major / Program (Optional)", {
+        exact: true,
+      });
+      assert.equal(await name.evaluate((el) => el.required), true);
+      assert.equal(
+        await name.getAttribute("aria-describedby"),
+        "profile-display-name-help",
+      );
+      assert.equal(
+        await page.locator("#profile-display-name-help").textContent(),
+        "This name appears on your profile and sidebar.",
+      );
+      assert.equal(
+        await page.locator("#student-status-help").textContent(),
+        "Your academic status, not your account role.",
+      );
+      assert.equal(
+        await university.getAttribute("placeholder"),
+        "e.g., University of Pennsylvania",
+      );
+      assert.equal(
+        await major.getAttribute("placeholder"),
+        "e.g., Learning Sciences & Technologies",
+      );
+      for (const optional of [select, custom, university, major]) {
+        assert.equal(await optional.evaluate((el) => el.required), false);
+      }
+      const layout = await page
+        .locator(".profile-basic-editor")
+        .evaluate((el) => {
+          const rect = (selector) =>
+            el.querySelector(selector).getBoundingClientRect();
+          const name = rect('[name="displayName"]');
+          const status = rect('[name="studentStatus"]');
+          return {
+            sameRow: Math.abs(name.y - status.y) < 1,
+            sameColumn: Math.abs(name.x - status.x) < 1,
+            nameHeight: name.height,
+            statusHeight: status.height,
+          };
+        });
+      assert.equal(width === 1440 ? layout.sameRow : layout.sameColumn, true);
+      assert.equal(layout.nameHeight, layout.statusHeight);
+      await name.focus();
+      await page.keyboard.press("Tab");
+      assert.equal(
+        await select.evaluate((el) => el === document.activeElement),
+        true,
+      );
       assert.equal(await select.inputValue(), "other");
       assert.equal(await custom.inputValue(), "Visiting researcher");
       assert.equal(await save.isDisabled(), true);

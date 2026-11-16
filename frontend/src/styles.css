@@ -1128,6 +1128,15 @@ p {
   width: 100%;
   min-width: 0;
 }
+.profile-basic-editor .field input,
+.profile-basic-editor .field select {
+  min-height: 44px;
+}
+.profile-field-help {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .profile-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);

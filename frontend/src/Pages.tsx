@@ -179,9 +179,13 @@ export function Profile({
                   onBasicInformationFocus?.(event.target);
               }}
             >
-              <label className="field">
-                Display Name
+              <div className="field">
+                <label htmlFor="profile-display-name">
+                  Display Name (Required)
+                </label>
                 <input
+                  id="profile-display-name"
+                  aria-describedby="profile-display-name-help"
                   autoFocus
                   name="displayName"
                   value={basicInformation.name}
@@ -193,9 +197,15 @@ export function Profile({
                   required
                   placeholder="Enter your display name"
                 />
-              </label>
+                <small
+                  id="profile-display-name-help"
+                  className="profile-field-help"
+                >
+                  This name appears on your profile and sidebar.
+                </small>
+              </div>
               <div className="field">
-                <label htmlFor="student-status">Student Status</label>
+                <label htmlFor="student-status">Student Status (Optional)</label>
                 <select
                   id="student-status"
                   name="studentStatus"
@@ -217,18 +227,18 @@ export function Profile({
                   ))}
                   <option value="other">Other — Specify your status</option>
                 </select>
-                <small id="student-status-help">
-                  This describes your academic status. It does not change your
-                  account role.
+                <small id="student-status-help" className="profile-field-help">
+                  Your academic status, not your account role.
                 </small>
                 {statusChoice === "other" ? (
                   <>
                     <label htmlFor="custom-student-status">
-                      Specify your student status
+                      Specify your student status (Optional)
                     </label>
                     <input
                       id="custom-student-status"
                       name="customStudentStatus"
+                      aria-describedby="student-status-help"
                       value={customStatus}
                       onChange={(event) => {
                         setCustomStatus(event.target.value);
@@ -243,7 +253,7 @@ export function Profile({
                 ) : null}
               </div>
               <label className="field">
-                University
+                University (Optional)
                 <input
                   name="university"
                   value={basicInformation.university}
@@ -252,11 +262,11 @@ export function Profile({
                   }
                   maxLength={120}
                   autoComplete="organization"
-                  placeholder="Enter your university"
+                  placeholder="e.g., University of Pennsylvania"
                 />
               </label>
               <label className="field">
-                Major / Program
+                Major / Program (Optional)
                 <input
                   name="major"
                   value={basicInformation.major}
@@ -264,7 +274,7 @@ export function Profile({
                     changeBasicInformation("major", event.target.value)
                   }
                   maxLength={120}
-                  placeholder="Enter your major or program"
+                  placeholder="e.g., Learning Sciences & Technologies"
                 />
               </label>
               {error ? (

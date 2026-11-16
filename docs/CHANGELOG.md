@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Edit Profile labels and optional field guidance — November 16, 2026
+
+Edit Profile now marks Display Name as required and academic status, custom status, University and Major / Program as optional. Display Name and academic status have associated helper descriptions; University and Major / Program use example placeholders without inserting values. Scoped styles keep input/select minimum heights and helper typography consistent while retaining the responsive grid, preview and action placement. No validation, status selection, persistence, role or navigation logic changed. Made with Codex (shell and Playwright/Chromium).
+
+**Verification.** TypeScript typecheck, frontend production build and profile/sign-in/navigation tests (18) pass. The existing `tests/profile-status.browser.mjs` regression passes for Student/Admin at 1440px and 390px, with checks for required/optional labels, helper associations, empty optional values, placeholders, input heights, grid alignment and keyboard Tab order alongside status selection, preview, dirty state, Save/Cancel and refresh persistence. Run with external Playwright tooling as described in `docs/backend.md`; no new project dependencies.
+
 ## Student Status dropdown with custom values — November 16, 2026
 
 Edit Profile now offers five common academic statuses plus Other with an optional 80-character custom field. Existing values select an exact preset or restore as custom text. Switching options retains the custom draft until the editor closes; preview and dirty detection use the effective status. Save, Cancel, browser-local persistence, navigation warnings and Student/Admin identity behavior are preserved. Made with Codex (shell, TypeScript checks and Playwright/Chromium).
