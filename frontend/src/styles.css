@@ -1259,6 +1259,29 @@ p {
   align-items: center;
   flex-wrap: wrap;
 }
+.avail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.avail-subheading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+.avail-count {
+  font-weight: 400;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 12px;
+}
 .block-row {
   display: flex;
   justify-content: space-between;
@@ -1277,6 +1300,11 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 24px;
+}
+.pref-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 .topic-options {
   display: flex;

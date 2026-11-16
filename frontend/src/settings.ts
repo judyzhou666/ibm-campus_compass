@@ -33,7 +33,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       {
         id: "profile",
         title: "Demo profile",
-        text: "Your name and sign-in status. Interests, goals and busy times are edited in Profile.",
+        text: "Your name and sign-in status. Interests, goals and busy times are edited in My Preferences.",
         keywords: "name account sign in interests goals major",
       },
       {

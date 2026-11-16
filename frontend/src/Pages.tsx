@@ -1,6 +1,6 @@
 import { dayLabel } from "./config.ts";
 import { COMMUNITIES, toggleCommunityMembership } from "./communities.ts";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSubPage } from "./navigation.ts";
 import { DAYS, EVENTS, TOPICS, time } from "./data.ts";
 import { overlap } from "./planner.ts";
@@ -16,6 +16,7 @@ import {
   validateBasicInformation,
 } from "./profile.ts";
 import type { BasicInformation } from "./profile.ts";
+import { prefsDiffer } from "./preferences.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -29,9 +30,11 @@ type Props = {
   onCancelBasicInformation?: () => void;
   onSaveBasicInformation?: () => void;
   onProfileDirtyChange?: (dirty: boolean) => void;
+  onPrefDirtyChange?: (dirty: boolean) => void;
   onBasicInformationFocus?: (
     input: HTMLInputElement | HTMLSelectElement,
   ) => void;
+  onCalendar?: () => void;
 };
 export function Profile({
   state,
@@ -43,7 +46,9 @@ export function Profile({
   onCancelBasicInformation,
   onSaveBasicInformation,
   onProfileDirtyChange,
+  onPrefDirtyChange,
   onBasicInformationFocus,
+  onCalendar,
 }: Props) {
   const [error, setError] = useState("");
   const [basicInformation, setBasicInformation] = useState(() => ({
@@ -60,6 +65,43 @@ export function Profile({
       ? state.studentStatus
       : "",
   );
+  // Controlled state for the preferences form.
+  const [prefInterests, setPrefInterests] = useState<string[]>(
+    () => state.interests,
+  );
+  const [prefGoalTypes, setPrefGoalTypes] = useState<string[]>(
+    () => state.goal_types ?? [],
+  );
+  const [prefGoals, setPrefGoals] = useState(() => state.goals);
+  const [prefTime, setPrefTime] = useState(() => state.preferred_time || "any");
+  // Status: null = no message, "saved" = success, "saving" = in progress.
+  const [prefSaveStatus, setPrefSaveStatus] = useState<
+    null | "saving" | "saved"
+  >(null);
+  // The snapshot of what is currently persisted (for dirty comparison).
+  const savedPrefRef = useRef({
+    interests: state.interests,
+    goal_types: state.goal_types ?? [],
+    goals: state.goals,
+    preferred_time: state.preferred_time || "any",
+  });
+  const prefDirty = prefsDiffer(
+    prefInterests,
+    prefGoalTypes,
+    prefGoals,
+    prefTime,
+    savedPrefRef.current,
+  );
+  // Notify App when dirty state changes.
+  const prevPrefDirty = useRef(prefDirty);
+  useEffect(() => {
+    if (prevPrefDirty.current !== prefDirty) {
+      prevPrefDirty.current = prefDirty;
+      onPrefDirtyChange?.(prefDirty);
+    }
+  });
+  // An unmounted form has no draft; clear App's flag so it cannot go stale.
+  useEffect(() => () => onPrefDirtyChange?.(false), []);
   useEffect(() => {
     if (editBasicInformation) return;
     setBasicInformation({
@@ -103,15 +145,26 @@ export function Profile({
   }
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const f = new FormData(event.currentTarget);
+    if (!prefDirty || prefSaveStatus === "saving") return;
+    setPrefSaveStatus("saving");
+    const trimmedGoals = prefGoals.trim();
     update((s) => ({
       ...s,
-      interests: f.getAll("topics").map(String),
-      goal_types: f.getAll("goal_types").map(String),
+      interests: prefInterests,
+      goal_types: prefGoalTypes,
       onboarded: true,
-      goals: String(f.get("goals") || "").trim(),
-      preferred_time: String(f.get("preferred_time") || "any"),
+      goals: trimmedGoals,
+      preferred_time: prefTime,
     }));
+    savedPrefRef.current = {
+      interests: prefInterests,
+      goal_types: prefGoalTypes,
+      goals: trimmedGoals,
+      preferred_time: prefTime,
+    };
+    setPrefGoals(trimmedGoals);
+    setPrefSaveStatus("saved");
+    onPrefDirtyChange?.(false);
     notify("Preferences saved. Ask the planner for updated suggestions.");
   }
   function addBlock(event: FormEvent<HTMLFormElement>) {
@@ -160,7 +213,7 @@ export function Profile({
       <>
         <Heading
           title="Edit Profile"
-          description="Update your basic information. Changes stay in this browser."
+          description="Use a fictional profile for classroom demonstrations. Changes stay in this browser."
         />
         <div className="profile-editor-layout">
           <section
@@ -345,7 +398,7 @@ export function Profile({
   return (
     <>
       <Heading
-        title="A little about you."
+        title="My Preferences"
         description="Your interests and availability help make better recommendations."
       >
         {state.signedIn ? (
@@ -360,12 +413,10 @@ export function Profile({
         ) : undefined}
       </Heading>
       <div className="wide-grid">
-        <section className="panel">
-          <h2>What are you curious about?</h2>
-          <p className="sub">
-            Explore beyond your major. These can change anytime.
-          </p>
-          <form onSubmit={save}>
+        <form onSubmit={save} className="pref-sections">
+          <section className="panel">
+            <h2>Your Interests</h2>
+            <p className="sub">What topics would you like to explore?</p>
             <div className="topic-options">
               {TOPICS.map((t) => (
                 <label key={t}>
@@ -373,78 +424,85 @@ export function Profile({
                     type="checkbox"
                     name="topics"
                     value={t}
-                    defaultChecked={state.interests.includes(t)}
+                    checked={prefInterests.includes(t)}
+                    onChange={(e) => {
+                      setPrefInterests((prev) =>
+                        e.target.checked
+                          ? [...prev, t]
+                          : prev.filter((x) => x !== t),
+                      );
+                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                    }}
                   />
                   {t}
                 </label>
               ))}
             </div>
-            <label className="field">
-              Display Name
-              <input
-                value={state.name}
-                readOnly
-                aria-readonly="true"
-              />
-            </label>
+          </section>
+          <section className="panel">
+            <h2>Your Goals</h2>
             <p className="sub">
-              Use a fictional profile for classroom demonstrations. Changes stay
-              in this browser.
+              What do you hope to achieve through campus activities?
+            </p>
+            <div className="topic-options">
+              {GOAL_TYPES.map((g) => (
+                <label key={g}>
+                  <input
+                    type="checkbox"
+                    name="goal_types"
+                    value={g}
+                    checked={prefGoalTypes.includes(g)}
+                    onChange={(e) => {
+                      setPrefGoalTypes((prev) =>
+                        e.target.checked
+                          ? [...prev, g]
+                          : prev.filter((x) => x !== g),
+                      );
+                      if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                    }}
+                  />
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </label>
+              ))}
+            </div>
+            <p className="fineprint">
+              Goal types help the AI planner explain cross-school matches.
+              Not used in simulated mode.
             </p>
             <label className="field">
-              Major / Program
-              <input
-                value={state.major}
-                readOnly
-                aria-readonly="true"
-                placeholder="Not added yet"
-              />
-            </label>
-            <button
-              type="button"
-              className="text-btn inline profile-edit-link"
-              aria-label="Edit basic information"
-              onClick={onEditBasicInformation}
-            >
-              Edit
-            </button>
-            <label className="field">
               Research / career exploration goals (optional)
-              <input name="goals" maxLength={240} defaultValue={state.goals} />
+              <input
+                name="goals"
+                maxLength={240}
+                value={prefGoals}
+                onChange={(e) => {
+                  setPrefGoals(e.target.value);
+                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                }}
+              />
             </label>
             {!watsonxMode && (
               <p className="fineprint" data-simulated-only>
-                These notes stay local. Select topics above to influence matching;
-                free-text goals are not interpreted in the simulated planner.
+                These notes stay local. Select topics above to influence
+                matching; free-text goals are not interpreted in the simulated
+                planner.
               </p>
             )}
-            <div>
-              <p className="sub" style={{ marginBottom: 4 }}>
-                What are you hoping to get out of events? (optional)
-              </p>
-              <div className="topic-options">
-                {GOAL_TYPES.map((g) => (
-                  <label key={g}>
-                    <input
-                      type="checkbox"
-                      name="goal_types"
-                      value={g}
-                      defaultChecked={state.goal_types?.includes(g)}
-                    />
-                    {g.charAt(0).toUpperCase() + g.slice(1)}
-                  </label>
-                ))}
-              </div>
-              <p className="fineprint">
-                Goal types help the AI planner explain cross-school matches.
-                Not used in simulated mode.
-              </p>
-            </div>
+          </section>
+          <section className="panel">
+            <h2>Event Time Preferences</h2>
+            <p className="sub">
+              When do you usually prefer attending events?
+            </p>
             <label className="field">
               Preferred event time
               <select
                 name="preferred_time"
-                defaultValue={state.preferred_time || "any"}
+                value={prefTime}
+                onChange={(e) => {
+                  setPrefTime(e.target.value);
+                  if (prefSaveStatus === "saved") setPrefSaveStatus(null);
+                }}
               >
                 <option value="any">Any time</option>
                 <option value="morning">Morning</option>
@@ -453,15 +511,49 @@ export function Profile({
               </select>
             </label>
             <p className="fineprint">
-              Time preferences affect ranking. Use chat for strict time limits,
-              busy times below and travel buffer in Settings.
+              This sets a soft preference for ranking — it is not a strict
+              availability constraint. Use the chat for strict time limits,
+              Availability &amp; Schedule for busy times and Settings for travel
+              buffer.
             </p>
-            <button className="btn primary">Save preferences</button>
-          </form>
-        </section>
+            {prefDirty && (
+              <p className="profile-dirty-status" role="status">
+                Unsaved changes
+              </p>
+            )}
+            <button
+              className="btn primary"
+              disabled={!prefDirty || prefSaveStatus === "saving"}
+            >
+              Save preferences
+            </button>
+          </section>
+        </form>
         <section className="panel">
-          <h2>Your busy times</h2>
-          <p className="sub">Sample classes and personal commitments.</p>
+          <div className="avail-header">
+            <div>
+              <h2>Availability &amp; Schedule</h2>
+              <p className="sub">
+                Your commitments help us recommend events that fit your
+                schedule.
+              </p>
+            </div>
+            {onCalendar && (
+              <button
+                type="button"
+                className="btn"
+                onClick={onCalendar}
+              >
+                View Calendar
+              </button>
+            )}
+          </div>
+          <h3 className="avail-subheading">
+            Current Busy Times
+            <span className="avail-count">
+              {plural(state.blocks.length, "busy time")}
+            </span>
+          </h3>
           {state.blocks.map((b) => (
             <div className="block-row" key={b.id}>
               <div>

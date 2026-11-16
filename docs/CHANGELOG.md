@@ -2,6 +2,60 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Extracted preference dirty-state comparison — November 16, 2026
+
+Moved the existing `prefsDiffer` function and its sorting helper from Pages into the pure `frontend/src/preferences.ts` module. Pages imports the function without changing its calls, save handler or guards. The saved snapshot type reuses DemoState fields; comparison retains order-insensitive selections, trimmed goals and exact time values. Made with Codex.
+
+**Verification.** Added 12 unit tests covering identical values, interest/goal-type ordering and additions/removals, trimmed and meaningful goals, all existing time choices, reversion, empty/default values and input immutability. The new and relevant existing tests pass (38 total); full `npm test` passes (355 application tests plus 5 Wiki tests and dataset smoke checks), as do typecheck and production build. Browser checks using a temporary copy of the preserved regression with current toast assertions pass for Student/Admin at 1440px and 390px, including interest/time dirty and revert states, whitespace goals, saving, persistence and navigation prompts. The original untracked browser script remains unchanged.
+
+## Removed duplicate preferences save confirmation — November 16, 2026
+
+My Preferences now uses only the existing "Preferences saved. Ask the planner for updated suggestions." toast after saving. Removed the redundant inline "Your preferences have been saved." message and its otherwise unused CSS selector. Save state, dirty indicators, persistence and navigation guards are unchanged. Made with Codex.
+
+**Verification.** TypeScript typecheck, frontend production build and 26 profile/settings/navigation/sign-in tests pass. A temporary copy of the preserved preferences browser regression, with success assertions updated for the toast, passes for Student/Admin at 1440px and 390px. It checks a single accessible toast, no inline success message, disabled Save and cleared dirty indicator after saving, persistence after refresh and Stay/Discard guards. The untracked original test remains untouched and still expects the removed inline text.
+
+## Restored fictional-profile guidance in Edit Profile — November 16, 2026
+
+Edit Profile's existing heading description now reads: "Use a fictional profile for classroom demonstrations. Changes stay in this browser." This restores the classroom reminder without adding a separate component or changing form behavior. Made with Codex.
+
+**Verification.** TypeScript typecheck and frontend production build pass. Browser checks for Student/Admin at 1440px and 390px confirmed the exact description appears once beneath the heading and fits within the viewport. Existing Edit Profile regression flows, including Save/Cancel, and the preserved My Preferences browser regression pass. The untracked preferences test was not modified or staged.
+
+## Campfolio Step 4: Availability & Schedule and calendar navigation — November 16, 2026
+
+My Preferences now groups existing commitments under Availability & Schedule, with a Current Busy Times heading and a count derived from the saved busy-time state. View Calendar opens the existing My Calendar page. Existing busy-time deletion and browser-local persistence are retained. Implemented with IBM Bob in `5d4bb94`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. The subsequent synchronized-branch verification passed the relevant frontend tests and browser checks for calendar navigation, busy-time counts, deletion and persistence. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 3: organized preference sections — November 16, 2026
+
+My Preferences now presents Your Interests, Your Goals and Event Time Preferences as separate sections. Existing interest and goal-type checkboxes, research/career goals text and preferred event time remain in the preferences form. Implemented with IBM Bob in `4e98f29`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks on the synchronized branch confirmed preference editing, saving and restoration after refresh for Student and Admin. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 2: removed duplicate profile fields — November 16, 2026
+
+Removed the read-only Display Name and Major / Program fields, their Edit link and the associated profile helper text from My Preferences. These fields remain available in Edit Profile; stored profile values and preference controls are preserved. Implemented with IBM Bob in `bc5dce1`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks confirmed that profile values remain intact and both the sidebar user card and avatar menu still open Edit Profile. No tests were rerun for this documentation-only update.
+
+## Campfolio Step 1: renamed Profile to My Preferences — November 16, 2026
+
+Renamed the sidebar Profile item and its page heading to My Preferences. Settings guidance now uses the same name. The existing profile route and separate Edit Profile entry points remain unchanged. Implemented with IBM Bob in `e4d9ea1`; documented retrospectively with Codex.
+
+**Verification.** Original implementation diff reviewed. Subsequent browser checks confirmed the My Preferences sidebar label and heading on the existing route. No tests were rerun for this documentation-only update.
+
+## Unsaved preference guard fixes — November 16, 2026
+
+Review fixes for the My Preferences unsaved-changes prompt. Opening Edit Profile now asks before dropping a preference draft; before, it discarded the draft silently and left a stale flag that prompted later with nothing unsaved. Discard while staying on My Preferences now clears the draft from the form. Stay after following a link keeps the address on My Preferences. Adding or removing spaces around the goals text alone no longer counts as a change, since Save trims it. The time-preference note now points to Availability & Schedule for busy times. Made with Claude Code.
+
+**Verification.** `npm test` (343 + 5 pass) and `npm run build` pass. In Chrome, `tests/profile-status.browser.mjs` passes for Student and Admin at 1440px and 390px. A one-off script covering the five fixed cases fails on the PR before these fixes and passes after.
+
+## Campfolio Step 5: unsaved changes and save feedback for My Preferences — November 16, 2026
+
+Preferences form (`My Preferences` page) now tracks whether the editable fields — interests, goal types, research/career goals, and preferred event time — differ from the last-saved snapshot. When they do, an "Unsaved changes" badge appears above the Save button; when they match the saved state, the badge disappears. Saving displays "Your preferences have been saved." The Save Preferences button is disabled when there are no unsaved changes or a save is in progress, preventing duplicate submits. After navigating away from My Preferences with unsaved changes, the existing "Unsaved profile changes" dialog is reused, retitled "Unsaved preference changes", to offer Stay or Discard. The browser `beforeunload` guard is extended to also fire for unsaved preferences. Busy Times (blocks) are saved immediately per-block and are not part of the preferences save transaction. No new persistence mechanism was added. Made with IBM Bob.
+
+**Verification.** `npx tsc --noEmit` clean, `npm run build` passes (497 KB JS, 89 KB CSS), `npm test` (343 application tests + 5 Wiki tests), `cargo fmt --check` clean, `cargo clippy` clean, `cargo test` (66 tests). Browser-level scenarios (Save disabled on load, unsaved-changes indicator, revert clears indicator, save success, Stay/Discard navigation) could not be verified in this execution environment.
+
 ## Review fixes: empty academic status and browser test instructions — November 16, 2026
 
 Student Status now distinguishes an empty value with Not specified, which stores the empty string and leaves custom drafts intact when switching options. Existing custom values, validation and persistence are unchanged. The manual profile browser regression documents its server/tooling requirements, complete environment-variable invocation and macOS browser-path discovery without assuming a fixed application path. Judy's `f892462` focus restoration remains intact. Made with Codex.
