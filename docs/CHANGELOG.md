@@ -2,6 +2,24 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Merged main into Doris (PR #40) — November 16, 2026
+
+Merged `main` into `Doris` after PR #39 (Bob session exports) landed. The only conflict was the top of this log; kept both sides, with the PR #40 entries above PR #39's. Made with Claude Code.
+
+**Verification.** `npm test` passes (355 application tests plus 5 Wiki tests) and `npm run build` succeeds on the merged result.
+
+## Updated Doris Bob export documentation — November 16, 2026
+
+Updated `bob_sessions/Doris/README.md` to acknowledge the existing Bob task-history export rather than describing exports as future-only. Export instructions, consumption-summary guidance, team workspace information and sensitive-data precautions are preserved. Made with Codex.
+
+**Verification.** Reviewed the existing `bob-tasks-ibm-campus_compass-2026-11-16.md` export and final Markdown diff. Only the README and this required log entry changed; existing exports and the untracked browser test remain unchanged. Application tests and builds were not run for this documentation-only update.
+
+## Removed unused preference save state and callback — November 16, 2026
+
+Removed the synchronous preferences handler's intermediate saving state and related guards. With the inline success message already removed, the remaining saved/null state and edit-time resets had no visible effect and were removed too. Save remains disabled when preferences are unchanged, with the existing toast, persistence and navigation protection preserved. Removed the unused `onEditBasicInformation` prop declaration, destructuring and App wiring; both functional Edit Profile entry points are unchanged. Made with Codex after fast-forwarding Doris to the PR #38 merge on main.
+
+**Verification.** TypeScript typecheck, full `npm test` (355 application tests plus 5 Wiki tests and dataset smoke checks), frontend production build and 38 relevant tests pass. Preferences browser checks using a temporary copy with current toast assertions and the existing profile-status browser regression both pass for Student/Admin at 1440px and 390px. Coverage includes save/refresh, dirty/revert states, Stay/Discard, both profile entry points and Edit Profile Save/Cancel. The untracked original preferences browser test remains unchanged and unstaged.
+
 ## Bob sessions: Tingting's task histories as Markdown — November 16, 2026
 
 Replaced two of Tingting's JSON task exports in `bob_sessions/Tingting/` with Bob's Markdown exports of the same tasks, unedited: the AI Planner fresh search and filter chips (`dcd03d75…`, PR #18) and the first impression / README overview cleanup (`55fddeb9…`, PR #21). Added a Markdown export of a further task, `e5b7d495…`, a proposal for the category and food filter chips based on two campus newsletters; Bob marks it "Status: error". The calendar views task (`80b40395…`, PR #12) stays as JSON until it is exported as Markdown.

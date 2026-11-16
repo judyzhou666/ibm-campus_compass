@@ -1677,7 +1677,6 @@ export default function App() {
               editBasicInformation={profileEditMode}
               onCancelBasicInformation={exitProfileEditor}
               onSaveBasicInformation={exitProfileEditor}
-              onEditBasicInformation={openProfileEditor}
               onProfileDirtyChange={(dirty) => {
                 profileDirtyRef.current = dirty;
               }}
