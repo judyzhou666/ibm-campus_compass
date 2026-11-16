@@ -8,6 +8,7 @@ export const STUDENT_STATUSES = [
 
 /** Match exactly so legacy/custom values are never replaced on opening. */
 export function studentStatusChoice(status: string): string {
+  if (status === "") return "";
   return (STUDENT_STATUSES as readonly string[]).includes(status)
     ? status
     : "other";

@@ -1,5 +1,21 @@
-// Run against a built app with CAMPUS_TEST_URL and the optional external
-// PLAYWRIGHT_MODULE / CHROMIUM_PATH tooling (see docs/backend.md).
+// Manual browser regression; not included in npm test or CI. Run from the repo root.
+// Requires npm ci, a built frontend served locally, Playwright, and Chromium.
+// Example (server in another terminal):
+//   npm run build && npx vite preview --host 127.0.0.1 --port 4173
+// Install optional tooling outside the checkout:
+//   npm install --prefix /tmp/campus-browser-tools --no-package-lock playwright
+// Complete example using Playwright's downloaded browser (run its CLI first):
+//   /tmp/campus-browser-tools/node_modules/.bin/playwright install chromium
+//   PLAYWRIGHT_MODULE=/tmp/campus-browser-tools/node_modules/playwright/index.mjs \
+//   CAMPUS_TEST_URL=http://127.0.0.1:4173 \
+//   CHROMIUM_PATH="$(node --input-type=module -e 'import { chromium } from "/tmp/campus-browser-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')" \
+//   node tests/profile-status.browser.mjs
+// On macOS, use the same Playwright CLI/executablePath() discovery, or set
+// CHROMIUM_PATH to the actual executable of your installed Chromium browser;
+// do not assume /usr/bin/chromium (the Linux fallback below) exists on macOS.
+// Launches headless with --no-sandbox. Uses fresh browser contexts and synthetic
+// localStorage; assumes the checked-in demo configuration and an available server.
+// The static Vite preview is sufficient; these profile checks need no backend.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 const { chromium } = await import(
@@ -143,6 +159,10 @@ try {
       assert.equal(await save.isDisabled(), true);
       await custom.fill("Independent scholar");
       await select.selectOption("PhD student");
+      await select.selectOption("");
+      assert.equal(await custom.count(), 0);
+      assert.equal(await preview.textContent(), "Not added yet");
+      assert.equal(await save.isEnabled(), true);
       await select.selectOption("other");
       assert.equal(await custom.inputValue(), "Independent scholar");
       assert.equal(await preview.textContent(), "Independent scholar");
@@ -164,6 +184,7 @@ try {
       );
       await custom.fill("Independent scholar");
       // A status draft still participates in the existing leave guard.
+      await select.focus();
       if (width < 800) {
         await page
           .getByRole("button", { name: "Toggle navigation", exact: true })
@@ -176,6 +197,9 @@ try {
       await page
         .getByRole("button", { name: "Stay and continue editing", exact: true })
         .click();
+      await page.waitForFunction(
+        () => document.activeElement?.id === "student-status",
+      );
       assert.equal(await custom.inputValue(), "Independent scholar");
       if (
         width < 800 &&
@@ -216,8 +240,33 @@ try {
       assert.equal((await stored()).studentStatus, "");
       assert.equal((await stored()).role, role);
       await open();
-      assert.equal(await select.inputValue(), "other");
+      assert.equal(await select.inputValue(), "");
+      assert.equal(
+        await select.locator("option:checked").textContent(),
+        "Not specified",
+      );
+      assert.equal(await custom.count(), 0);
+      assert.equal(await save.isDisabled(), true);
+      await select.selectOption("other");
       assert.equal(await custom.inputValue(), "");
+      assert.equal(await save.isDisabled(), true);
+      await custom.fill("Temporary custom draft");
+      await select.selectOption("");
+      assert.equal(await save.isDisabled(), true);
+      await select.selectOption("other");
+      assert.equal(await custom.inputValue(), "Temporary custom draft");
+      await select.selectOption("Graduate student");
+      await save.click();
+      await open();
+      await select.selectOption("");
+      assert.equal(await save.isEnabled(), true);
+      assert.equal(await preview.textContent(), "Not added yet");
+      await save.click();
+      assert.equal((await stored()).studentStatus, "");
+      await page.reload();
+      await open();
+      assert.equal(await select.inputValue(), "");
+      assert.equal(await custom.count(), 0);
       assert.equal(await save.isDisabled(), true);
       await cancel();
       await page

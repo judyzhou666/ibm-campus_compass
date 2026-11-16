@@ -225,6 +225,7 @@ export function Profile({
                     );
                   }}
                 >
+                  <option value="">Not specified</option>
                   {STUDENT_STATUSES.map((status) => (
                     <option key={status} value={status}>
                       {status}

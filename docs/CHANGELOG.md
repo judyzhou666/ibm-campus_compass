@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Review fixes: empty academic status and browser test instructions — November 16, 2026
+
+Student Status now distinguishes an empty value with Not specified, which stores the empty string and leaves custom drafts intact when switching options. Existing custom values, validation and persistence are unchanged. The manual profile browser regression documents its server/tooling requirements, complete environment-variable invocation and macOS browser-path discovery without assuming a fixed application path. Judy's `f892462` focus restoration remains intact. Made with Codex.
+
+**Verification.** TypeScript typecheck, production build, profile/sign-in/navigation tests (18), full `npm test` (343 application tests plus 5 Wiki tests and dataset smoke checks), and the profile browser regression (Student/Admin at 1440px and 390px) pass. Full tests initially found missing system `rsync`; rerunning with verified Debian rsync/libpopt packages extracted to an external temporary tooling directory passed without project changes. Browser coverage includes empty selection/save/refresh, custom draft retention, preview/dirty state, Save/Cancel, roles and dropdown focus after Stay.
+
 ## Unsaved-profile prompt returns focus to the status dropdown — November 16, 2026
 
 After Stay in the unsaved-changes prompt, focus returns to the last field used in Edit Profile. That now includes the Student Status dropdown, and a custom-status field that was hidden by choosing a preset is skipped. Made with Claude Code.

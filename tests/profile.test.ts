@@ -205,8 +205,8 @@ test("status choices preserve every saved non-predefined value exactly", async (
     await import("../frontend/src/profile.ts");
   for (const status of STUDENT_STATUSES)
     assert.equal(studentStatusChoice(status), status);
+  assert.equal(studentStatusChoice(""), "");
   for (const status of [
-    "",
     "Visiting researcher",
     "graduate student",
     " Graduate student ",
