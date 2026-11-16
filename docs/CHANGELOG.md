@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Live Profile Preview — November 15, 2026
+
+Edit Profile now shows an unsaved preview derived from the current Basic Information draft. It follows field edits immediately, labels empty values, and stays beside the form on wide screens. On narrow screens it stacks below. Made with Codex.
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in tests (8) pass. Browser checks confirmed live draft updates, no sidebar/header updates before Save, Save and Cancel behavior, wide desktop layout, and a 390px single-column layout without horizontal overflow.
+
 ## Responsive two-column Edit Profile form — November 15, 2026
 
 The four Basic Information fields now use the existing two-column form grid on desktop and existing single-column breakpoint on narrow screens. Save and Cancel rows remain full width. Made with Codex.

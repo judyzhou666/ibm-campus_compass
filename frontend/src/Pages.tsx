@@ -8,7 +8,10 @@ import { effectiveEvents } from "./updates.ts";
 import { Button, Heading, Icon } from "./components.tsx";
 import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
-import { validateBasicInformation } from "./profile.ts";
+import {
+  basicInformationPreview,
+  validateBasicInformation,
+} from "./profile.ts";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -103,101 +106,136 @@ export function Profile({
     notify("Busy time added. Future recommendations will respect it.");
   }
   if (editBasicInformation) {
+    const preview = basicInformationPreview(basicInformation);
     return (
       <>
         <Heading
           title="Edit Profile"
           description="Update your basic information. Changes stay in this browser."
         />
-        <section
-          className="panel profile-basic-editor"
-          aria-labelledby="basic-information-heading"
-        >
-          <h2 id="basic-information-heading">Basic Information</h2>
-          <form className="form-grid" onSubmit={saveBasicInformation}>
-            <label className="field">
-              Display Name
-              <input
-                autoFocus
-                name="displayName"
-                value={basicInformation.name}
-                onChange={(event) =>
-                  setBasicInformation((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                maxLength={30}
-                autoComplete="name"
-                required
-                placeholder="Enter your display name"
-              />
-            </label>
-            <label className="field">
-              Student Status
-              <input
-                name="studentStatus"
-                value={basicInformation.studentStatus}
-                onChange={(event) =>
-                  setBasicInformation((current) => ({
-                    ...current,
-                    studentStatus: event.target.value,
-                  }))
-                }
-                maxLength={80}
-                placeholder="For example, undergraduate student"
-              />
-            </label>
-            <label className="field">
-              University
-              <input
-                name="university"
-                value={basicInformation.university}
-                onChange={(event) =>
-                  setBasicInformation((current) => ({
-                    ...current,
-                    university: event.target.value,
-                  }))
-                }
-                maxLength={120}
-                autoComplete="organization"
-                placeholder="Enter your university"
-              />
-            </label>
-            <label className="field">
-              Major / Program
-              <input
-                name="major"
-                value={basicInformation.major}
-                onChange={(event) =>
-                  setBasicInformation((current) => ({
-                    ...current,
-                    major: event.target.value,
-                  }))
-                }
-                maxLength={120}
-                placeholder="Enter your major or program"
-              />
-            </label>
-            {error ? (
-              <p className="field full" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <div className="profile-form-actions field full">
-              <button type="submit" className="btn primary">
-                Save Changes
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={onCancelBasicInformation}
+        <div className="profile-editor-layout">
+          <section
+            className="panel profile-basic-editor"
+            aria-labelledby="basic-information-heading"
+          >
+            <h2 id="basic-information-heading">Basic Information</h2>
+            <form className="form-grid" onSubmit={saveBasicInformation}>
+              <label className="field">
+                Display Name
+                <input
+                  autoFocus
+                  name="displayName"
+                  value={basicInformation.name}
+                  onChange={(event) =>
+                    setBasicInformation((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  maxLength={30}
+                  autoComplete="name"
+                  required
+                  placeholder="Enter your display name"
+                />
+              </label>
+              <label className="field">
+                Student Status
+                <input
+                  name="studentStatus"
+                  value={basicInformation.studentStatus}
+                  onChange={(event) =>
+                    setBasicInformation((current) => ({
+                      ...current,
+                      studentStatus: event.target.value,
+                    }))
+                  }
+                  maxLength={80}
+                  placeholder="For example, undergraduate student"
+                />
+              </label>
+              <label className="field">
+                University
+                <input
+                  name="university"
+                  value={basicInformation.university}
+                  onChange={(event) =>
+                    setBasicInformation((current) => ({
+                      ...current,
+                      university: event.target.value,
+                    }))
+                  }
+                  maxLength={120}
+                  autoComplete="organization"
+                  placeholder="Enter your university"
+                />
+              </label>
+              <label className="field">
+                Major / Program
+                <input
+                  name="major"
+                  value={basicInformation.major}
+                  onChange={(event) =>
+                    setBasicInformation((current) => ({
+                      ...current,
+                      major: event.target.value,
+                    }))
+                  }
+                  maxLength={120}
+                  placeholder="Enter your major or program"
+                />
+              </label>
+              {error ? (
+                <p className="field full" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <div className="profile-form-actions field full">
+                <button type="submit" className="btn primary">
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={onCancelBasicInformation}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </section>
+          <aside
+            className="panel profile-preview"
+            aria-labelledby="profile-preview-heading"
+          >
+            <h2 id="profile-preview-heading">Profile Preview</h2>
+            <p className="profile-preview-note">
+              Live preview of your draft. Save Changes to apply it.
+            </p>
+            <div className="profile-preview-person">
+              <span
+                className="avatar profile-preview-avatar"
+                aria-hidden="true"
               >
-                Cancel
-              </button>
+                {preview.avatar}
+              </span>
+              <strong className="profile-preview-name">{preview.name}</strong>
             </div>
-          </form>
-        </section>
+            <dl className="profile-preview-details">
+              <div>
+                <dt>Student Status</dt>
+                <dd>{preview.studentStatus}</dd>
+              </div>
+              <div>
+                <dt>University</dt>
+                <dd>{preview.university}</dd>
+              </div>
+              <div>
+                <dt>Major / Program</dt>
+                <dd>{preview.major}</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
       </>
     );
   }

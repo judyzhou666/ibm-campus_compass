@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validateBasicInformation } from "../frontend/src/profile.ts";
+import {
+  basicInformationPreview,
+  validateBasicInformation,
+} from "../frontend/src/profile.ts";
 import { restore } from "../frontend/src/state.ts";
 
 test("basic profile information trims values and permits empty optional fields", () => {
@@ -48,6 +51,40 @@ test("basic profile information rejects values beyond field limits", () => {
       error: "One or more fields exceed the maximum length.",
     },
   );
+});
+
+test("profile preview follows the current draft values as fields change", () => {
+  const saved = {
+    name: "Judy",
+    studentStatus: "Graduate student",
+    university: "",
+    major: "",
+  };
+  const initialPreview = basicInformationPreview(saved);
+  assert.equal(initialPreview.avatar, "J");
+  assert.equal(initialPreview.name, "Judy");
+  assert.equal(initialPreview.university, "Not added yet");
+  assert.equal(initialPreview.major, "Not added yet");
+
+  const updatedDraft = {
+    name: "Alex Rivera",
+    studentStatus: "Undergraduate student",
+    university: "Example University",
+    major: "Environmental Studies",
+  };
+  assert.deepEqual(basicInformationPreview(updatedDraft), {
+    avatar: "A",
+    name: "Alex Rivera",
+    studentStatus: "Undergraduate student",
+    university: "Example University",
+    major: "Environmental Studies",
+  });
+  assert.deepEqual(saved, {
+    name: "Judy",
+    studentStatus: "Graduate student",
+    university: "",
+    major: "",
+  });
 });
 
 test("basic profile fields restore from the existing browser-local state", () => {

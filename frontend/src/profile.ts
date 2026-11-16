@@ -5,6 +5,28 @@ export interface BasicInformation {
   major: string;
 }
 
+export interface BasicInformationPreview {
+  avatar: string;
+  name: string;
+  studentStatus: string;
+  university: string;
+  major: string;
+}
+
+export function basicInformationPreview(
+  input: BasicInformation,
+): BasicInformationPreview {
+  const name = input.name.trim();
+  const optionalValue = (value: string) => value.trim() || "Not added yet";
+  return {
+    avatar: name.slice(0, 1).toUpperCase() || "?",
+    name: name || "Not added yet",
+    studentStatus: optionalValue(input.studentStatus),
+    university: optionalValue(input.university),
+    major: optionalValue(input.major),
+  };
+}
+
 export type BasicInformationValidation =
   { valid: true; value: BasicInformation } | { valid: false; error: string };
 
