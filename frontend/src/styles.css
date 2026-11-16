@@ -1222,18 +1222,6 @@ p {
   font-size: 12px;
   font-weight: 600;
 }
-.pref-save-success {
-  display: inline-flex;
-  max-width: 100%;
-  margin: 0 0 14px;
-  padding: 7px 10px;
-  border-left: 3px solid var(--green);
-  border-radius: 6px;
-  background: var(--mint);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-}
 .profile-exit-dialog {
   width: min(440px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);

@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Removed duplicate preferences save confirmation — November 16, 2026
+
+My Preferences now uses only the existing "Preferences saved. Ask the planner for updated suggestions." toast after saving. Removed the redundant inline "Your preferences have been saved." message and its otherwise unused CSS selector. Save state, dirty indicators, persistence and navigation guards are unchanged. Made with Codex.
+
+**Verification.** TypeScript typecheck, frontend production build and 26 profile/settings/navigation/sign-in tests pass. A temporary copy of the preserved preferences browser regression, with success assertions updated for the toast, passes for Student/Admin at 1440px and 390px. It checks a single accessible toast, no inline success message, disabled Save and cleared dirty indicator after saving, persistence after refresh and Stay/Discard guards. The untracked original test remains untouched and still expects the removed inline text.
+
 ## Restored fictional-profile guidance in Edit Profile — November 16, 2026
 
 Edit Profile's existing heading description now reads: "Use a fictional profile for classroom demonstrations. Changes stay in this browser." This restores the classroom reminder without adding a separate component or changing form behavior. Made with Codex.

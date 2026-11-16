@@ -543,11 +543,6 @@ export function Profile({
                 Unsaved changes
               </p>
             )}
-            {!prefDirty && prefSaveStatus === "saved" && (
-              <p className="pref-save-success" role="status">
-                Your preferences have been saved.
-              </p>
-            )}
             <button
               className="btn primary"
               disabled={!prefDirty || prefSaveStatus === "saving"}
