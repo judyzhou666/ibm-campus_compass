@@ -225,7 +225,9 @@ export default function App() {
   const [profileExitPromptOpen, setProfileExitPromptOpen] = useState(false);
   const profileExitDialogRef = useRef<HTMLDialogElement>(null);
   const profileExitActionRef = useRef<(() => void) | null>(null);
-  const profileInputFocusRef = useRef<HTMLInputElement | null>(null);
+  const profileInputFocusRef = useRef<
+    HTMLInputElement | HTMLSelectElement | null
+  >(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => {
@@ -412,7 +414,11 @@ export default function App() {
     else if (!profileExitPromptOpen && dialog.open) {
       dialog.close();
       if (profileEditModeRef.current) {
-        requestAnimationFrame(() => profileInputFocusRef.current?.focus());
+        // The custom-status input is removed when a preset is chosen.
+        requestAnimationFrame(() => {
+          const field = profileInputFocusRef.current;
+          if (field?.isConnected) field.focus();
+        });
       }
     }
   }, [profileExitPromptOpen]);

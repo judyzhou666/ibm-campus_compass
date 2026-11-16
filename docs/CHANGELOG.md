@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Unsaved-profile prompt returns focus to the status dropdown — November 16, 2026
+
+After Stay in the unsaved-changes prompt, focus returns to the last field used in Edit Profile. That now includes the Student Status dropdown, and a custom-status field that was hidden by choosing a preset is skipped. Made with Claude Code.
+
+**Verification.** `npm test` (343 + 5 pass) and `npm run build` pass. Not checked in a browser.
+
 ## Edit Profile labels and optional field guidance — November 16, 2026
 
 Edit Profile now marks Display Name as required and academic status, custom status, University and Major / Program as optional. Display Name and academic status have associated helper descriptions; University and Major / Program use example placeholders without inserting values. Scoped styles keep input/select minimum heights and helper typography consistent while retaining the responsive grid, preview and action placement. No validation, status selection, persistence, role or navigation logic changed. Made with Codex (shell and Playwright/Chromium).
