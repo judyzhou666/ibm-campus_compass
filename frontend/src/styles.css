@@ -1278,6 +1278,11 @@ p {
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 24px;
 }
+.pref-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .topic-options {
   display: flex;
   gap: 8px;

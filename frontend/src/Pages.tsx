@@ -360,12 +360,10 @@ export function Profile({
         ) : undefined}
       </Heading>
       <div className="wide-grid">
-        <section className="panel">
-          <h2>What are you curious about?</h2>
-          <p className="sub">
-            Explore beyond your major. These can change anytime.
-          </p>
-          <form onSubmit={save}>
+        <form onSubmit={save} className="pref-sections">
+          <section className="panel">
+            <h2>Your Interests</h2>
+            <p className="sub">What topics would you like to explore?</p>
             <div className="topic-options">
               {TOPICS.map((t) => (
                 <label key={t}>
@@ -379,38 +377,46 @@ export function Profile({
                 </label>
               ))}
             </div>
+          </section>
+          <section className="panel">
+            <h2>Your Goals</h2>
+            <p className="sub">
+              What do you hope to achieve through campus activities?
+            </p>
+            <div className="topic-options">
+              {GOAL_TYPES.map((g) => (
+                <label key={g}>
+                  <input
+                    type="checkbox"
+                    name="goal_types"
+                    value={g}
+                    defaultChecked={state.goal_types?.includes(g)}
+                  />
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </label>
+              ))}
+            </div>
+            <p className="fineprint">
+              Goal types help the AI planner explain cross-school matches.
+              Not used in simulated mode.
+            </p>
             <label className="field">
               Research / career exploration goals (optional)
               <input name="goals" maxLength={240} defaultValue={state.goals} />
             </label>
             {!watsonxMode && (
               <p className="fineprint" data-simulated-only>
-                These notes stay local. Select topics above to influence matching;
-                free-text goals are not interpreted in the simulated planner.
+                These notes stay local. Select topics above to influence
+                matching; free-text goals are not interpreted in the simulated
+                planner.
               </p>
             )}
-            <div>
-              <p className="sub" style={{ marginBottom: 4 }}>
-                What are you hoping to get out of events? (optional)
-              </p>
-              <div className="topic-options">
-                {GOAL_TYPES.map((g) => (
-                  <label key={g}>
-                    <input
-                      type="checkbox"
-                      name="goal_types"
-                      value={g}
-                      defaultChecked={state.goal_types?.includes(g)}
-                    />
-                    {g.charAt(0).toUpperCase() + g.slice(1)}
-                  </label>
-                ))}
-              </div>
-              <p className="fineprint">
-                Goal types help the AI planner explain cross-school matches.
-                Not used in simulated mode.
-              </p>
-            </div>
+          </section>
+          <section className="panel">
+            <h2>Event Time Preferences</h2>
+            <p className="sub">
+              When do you usually prefer attending events?
+            </p>
             <label className="field">
               Preferred event time
               <select
@@ -424,12 +430,13 @@ export function Profile({
               </select>
             </label>
             <p className="fineprint">
-              Time preferences affect ranking. Use chat for strict time limits,
-              busy times below and travel buffer in Settings.
+              This sets a soft preference for ranking — it is not a strict
+              availability constraint. Use the chat for strict time limits, busy
+              times and travel buffer in Settings.
             </p>
             <button className="btn primary">Save preferences</button>
-          </form>
-        </section>
+          </section>
+        </form>
         <section className="panel">
           <h2>Your busy times</h2>
           <p className="sub">Sample classes and personal commitments.</p>
