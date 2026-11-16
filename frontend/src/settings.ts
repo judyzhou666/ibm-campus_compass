@@ -74,7 +74,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     id: "sync",
     label: "Sync",
     icon: "refresh",
-    blurb: "Getting your plan out of Campus Compass.",
+    blurb: "Getting your plan out of Campfolio.",
     items: [
       {
         id: "export",
@@ -91,7 +91,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       {
         id: "storage",
         title: "Where your data is kept",
-        text: "Your profile, plans, saved events and posts stay in this browser. Planner requests go to the local Campus Compass server.",
+        text: "Your profile, plans, saved events and posts stay in this browser. Planner requests go to the local Campfolio server.",
         keywords: "local storage browser privacy data",
       },
     ],
@@ -166,7 +166,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     items: [
       {
         id: "about",
-        title: "About Campus Compass",
+        title: "About Campfolio",
         text: "A higher-education opportunity discovery project for the IBM AI Experiential Learning Lab.",
         keywords: "team version ibm project fictional",
       },

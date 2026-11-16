@@ -1,6 +1,6 @@
-# Campus Compass
+# Campfolio
 
-A campus opportunity planner that helps university students — starting with first-semester graduate students — discover academic, career and social events and fit them into a realistic week. Built for the IBM AI Experiential Learning Lab.
+Campfolio (formerly Campus Compass) is a campus opportunity planner that helps university students — starting with first-semester graduate students — discover academic, career and social events and fit them into a realistic week. Built for the IBM AI Experiential Learning Lab.
 
 ## Challenge track
 **Bring Your Own Challenge.** Higher education is not one of the four listed tracks; this project names it as its own challenge statement.

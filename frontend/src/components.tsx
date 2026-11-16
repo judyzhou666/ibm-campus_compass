@@ -1576,7 +1576,7 @@ export function SignInDialog({
         onClose();
       }}
     >
-      <h2 id="signin-title">Sign in to Campus Compass</h2>
+      <h2 id="signin-title">Sign in to Campfolio</h2>
       <form
         onSubmit={(e) => {
           e.preventDefault();

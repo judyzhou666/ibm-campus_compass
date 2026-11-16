@@ -50,7 +50,7 @@ describe("demo-week dates", () => {
     assert.equal(r.constraints.days, undefined);
     assert.equal(
       r.clarification,
-      "Campus Compass only has fictional events for the demo week, Mon Nov 2 – Fri Nov 6, 2026, so there is nothing on Nov 7–12. Ask about a day in that week, for example “AI events on Friday”.",
+      "Campfolio only has fictional events for the demo week, Mon Nov 2 – Fri Nov 6, 2026, so there is nothing on Nov 7–12. Ask about a day in that week, for example “AI events on Friday”.",
     );
   });
 

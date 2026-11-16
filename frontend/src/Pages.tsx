@@ -823,7 +823,7 @@ export function Forum({
     <>
       <Heading
         title="Good things start with a hello."
-        description="A sample community board for the Campus Compass demonstration."
+        description="A sample community board for the Campfolio demonstration."
       />
       <div className="forum-layout">
       {/* Left sidebar: community search + filters */}

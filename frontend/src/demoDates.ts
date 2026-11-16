@@ -81,7 +81,7 @@ export const DEMO_WEEK_RANGE = `${demoDay(0)} – ${demoDay(4)}, ${DEMO.week_sta
 
 /** Clarification when none of the requested dates are in the demo week. */
 export function outsideWeekMessage(requested: string) {
-  return `Campus Compass only has fictional events for the demo week, ${DEMO_WEEK_RANGE}, so there is nothing on ${requested}. Ask about a day in that week, for example “AI events on Friday”.`;
+  return `Campfolio only has fictional events for the demo week, ${DEMO_WEEK_RANGE}, so there is nothing on ${requested}. Ask about a day in that week, for example “AI events on Friday”.`;
 }
 
 /** Reply lead when only some of the requested dates are in the demo week. */

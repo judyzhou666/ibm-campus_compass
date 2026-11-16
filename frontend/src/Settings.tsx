@@ -246,7 +246,7 @@ export function Settings(p: Props) {
     <div className="settings-page">
       <aside className="settings-side">
         <h1>Settings</h1>
-        <p className="sub">Customize your Campus Compass demo.</p>
+        <p className="sub">Customize your Campfolio demo.</p>
         <label className="settings-search">
           <Icon name="search" />
           <input
