@@ -10,6 +10,8 @@ import type { DemoState, Post, PostDraft } from "./types.ts";
 import { GOAL_TYPES } from "./types.ts";
 import {
   basicInformationPreview,
+  STUDENT_STATUSES,
+  studentStatusChoice,
   hasBasicInformationChanges,
   validateBasicInformation,
 } from "./profile.ts";
@@ -48,6 +50,14 @@ export function Profile({
     university: state.university,
     major: state.major,
   }));
+  const [statusChoice, setStatusChoice] = useState(() =>
+    studentStatusChoice(state.studentStatus),
+  );
+  const [customStatus, setCustomStatus] = useState(() =>
+    studentStatusChoice(state.studentStatus) === "other"
+      ? state.studentStatus
+      : "",
+  );
   useEffect(() => {
     if (editBasicInformation) return;
     setBasicInformation({
@@ -56,6 +66,12 @@ export function Profile({
       university: state.university,
       major: state.major,
     });
+    setStatusChoice(studentStatusChoice(state.studentStatus));
+    setCustomStatus(
+      studentStatusChoice(state.studentStatus) === "other"
+        ? state.studentStatus
+        : "",
+    );
     setError("");
     onProfileDirtyChange?.(false);
   }, [
@@ -178,18 +194,54 @@ export function Profile({
                   placeholder="Enter your display name"
                 />
               </label>
-              <label className="field">
-                Student Status
-                <input
+              <div className="field">
+                <label htmlFor="student-status">Student Status</label>
+                <select
+                  id="student-status"
                   name="studentStatus"
-                  value={basicInformation.studentStatus}
-                  onChange={(event) =>
-                    changeBasicInformation("studentStatus", event.target.value)
-                  }
-                  maxLength={80}
-                  placeholder="For example, undergraduate student"
-                />
-              </label>
+                  value={statusChoice}
+                  aria-describedby="student-status-help"
+                  onChange={(event) => {
+                    const choice = event.target.value;
+                    setStatusChoice(choice);
+                    changeBasicInformation(
+                      "studentStatus",
+                      choice === "other" ? customStatus : choice,
+                    );
+                  }}
+                >
+                  {STUDENT_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                  <option value="other">Other — Specify your status</option>
+                </select>
+                <small id="student-status-help">
+                  This describes your academic status. It does not change your
+                  account role.
+                </small>
+                {statusChoice === "other" ? (
+                  <>
+                    <label htmlFor="custom-student-status">
+                      Specify your student status
+                    </label>
+                    <input
+                      id="custom-student-status"
+                      name="customStudentStatus"
+                      value={customStatus}
+                      onChange={(event) => {
+                        setCustomStatus(event.target.value);
+                        changeBasicInformation(
+                          "studentStatus",
+                          event.target.value,
+                        );
+                      }}
+                      maxLength={80}
+                    />
+                  </>
+                ) : null}
+              </div>
               <label className="field">
                 University
                 <input

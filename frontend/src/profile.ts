@@ -1,3 +1,18 @@
+export const STUDENT_STATUSES = [
+  "Undergraduate student",
+  "Graduate student",
+  "Master's student",
+  "PhD student",
+  "Exchange student",
+] as const;
+
+/** Match exactly so legacy/custom values are never replaced on opening. */
+export function studentStatusChoice(status: string): string {
+  return (STUDENT_STATUSES as readonly string[]).includes(status)
+    ? status
+    : "other";
+}
+
 export interface BasicInformation {
   name: string;
   studentStatus: string;

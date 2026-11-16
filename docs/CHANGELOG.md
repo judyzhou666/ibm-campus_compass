@@ -2,6 +2,12 @@
 
 This file records every development update since the project started, newest first. Entries were moved here verbatim from README.md (commit `85369ba` and earlier) to keep the README concise. Each entry was authored with the tools noted in that entry (IBM Bob, Claude Code, or Codex). Add a dated entry at the top for each new change.
 
+## Student Status dropdown with custom values — November 16, 2026
+
+Edit Profile now offers five common academic statuses plus Other with an optional 80-character custom field. Existing values select an exact preset or restore as custom text. Switching options retains the custom draft until the editor closes; preview and dirty detection use the effective status. Save, Cancel, browser-local persistence, navigation warnings and Student/Admin identity behavior are preserved. Made with Codex (shell, TypeScript checks and Playwright/Chromium).
+
+**Verification.** `npm run typecheck`, `npm run build`, and profile/sign-in/navigation tests (18) pass. `PLAYWRIGHT_MODULE=/tmp/campus-browser-tools/node_modules/playwright/index.mjs node tests/profile-status.browser.mjs` passes against the built frontend for Student and Admin at 1440px and 390px. Browser checks cover all presets, existing/custom/empty statuses, draft switching, live preview, unchanged storage before Save, Cancel, navigation Stay, Save feedback, refresh persistence, role-specific menus and no horizontal overflow. Playwright is optional external tooling as described in `docs/backend.md`; no dependency or storage migration is needed.
+
 ## Profile Change Normalization and Avatar Initials — November 15, 2026
 
 Profile dirty detection now compares the trimmed values that Save persists, so whitespace-only differences do not trigger Save or leave warnings. The profile preview and sidebar also share uppercase avatar-initial formatting while retaining their existing empty-name fallbacks. Made with Codex.
